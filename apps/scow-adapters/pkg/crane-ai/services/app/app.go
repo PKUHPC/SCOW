@@ -37,7 +37,7 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 	}
 	jobName := taskInfo.Name
 	// Check job step state
-	if taskInfo.Status != craneProtos.TaskStatus_Running {
+	if taskInfo.Status != craneProtos.JobStatus_Running {
 		message := fmt.Errorf("task %v state is: %s", in.JobId, taskInfo.Status.String())
 		logrus.Errorf("[GetAppConnectionInfo] %v", message)
 		return nil, ce.RichError(codes.Internal, "CRANE_FAILED", message.Error())
@@ -119,7 +119,7 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 					fn.ContainerIP = ip
 					continue
 				}
-				containerIP, err := utils.GetContainerIPByExec(taskInfo.TaskId, fn.StepId, taskInfo.Uid, fn.ExecutionNode)
+				containerIP, err := utils.GetContainerIPByExec(taskInfo.JobId, fn.StepId, taskInfo.Uid, fn.ExecutionNode)
 				if err != nil {
 					logrus.Errorf("Failed to get container IP for job %v step %v: %v", jobID, fn.StepId, err)
 					return nil, err
@@ -161,8 +161,8 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 		currentTimestamp := time.Now().UnixMicro()
 		strNum := strconv.FormatInt(currentTimestamp, 10)
 		webFileDestPath := dstDir + "/" + "server_session_info.json" + "-" + strNum
-		logrus.Infof("task.TaskId %v, step.StepId %v, step.Uid %v, webFilePath %v, webFileDestPath %v, nodeName %v", taskInfo.TaskId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName)
-		if err = utils.CopyFromPod(taskInfo.TaskId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName); err != nil {
+		logrus.Infof("task.TaskId %v, step.StepId %v, step.Uid %v, webFilePath %v, webFileDestPath %v, nodeName %v", taskInfo.JobId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName)
+		if err = utils.CopyFromPod(taskInfo.JobId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName); err != nil {
 			logrus.Errorf("copy file failed: %v", err)
 			return &protos.GetAppConnectionInfoResponse{}, nil
 		}
@@ -177,7 +177,7 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 			}
 			randomPassword := string(result)
 			cmd := fmt.Sprintf("echo -e %q | vncpasswd -f > ~/.vnc/passwd", randomPassword)
-			err = utils.ExecContainerCMD(taskInfo.TaskId, step.StepId, taskInfo.Uid, nodeName, cmd)
+			err = utils.ExecContainerCMD(taskInfo.JobId, step.StepId, taskInfo.Uid, nodeName, cmd)
 			if err != nil {
 				err = fmt.Errorf("modify vnc password failed, %v", err)
 				logrus.Errorf("GetAppConnectionInfo failed: %v", err)

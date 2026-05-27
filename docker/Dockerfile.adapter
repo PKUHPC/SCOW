@@ -37,6 +37,7 @@ ARG TARGETARCH
 COPY --from=builder /app/build/bin/scow-ai-adapter /${TARGETARCH}/scow-ai-adapter
 COPY --from=builder /app/build/bin/scow-crane-adapter /${TARGETARCH}/scow-crane-adapter
 COPY --from=builder /app/build/bin/scow-slurm-adapter /${TARGETARCH}/scow-slurm-adapter
+COPY --from=builder /app/build/bin/scow-crane-ai-adapter /${TARGETARCH}/scow-crane-ai-adapter
 
 FROM ccrepo.pku.edu.cn/dockerhub/rockylinux/rockylinux:8.9 AS runtime
 WORKDIR /adapter

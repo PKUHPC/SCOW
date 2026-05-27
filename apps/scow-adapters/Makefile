@@ -25,17 +25,19 @@ BIN_DIR := build/bin
 LINT_PACKAGES := ./cmd/scow-ai-adapter/... \
                  ./cmd/scow-slurm-adapter/... \
                  ./cmd/scow-crane-adapter/... \
+                 ./cmd/scow-crane-ai-adapter/... \
                  ./pkg/common/... \
                  ./pkg/ai/... \
                  ./pkg/slurm/... \
-                 ./pkg/crane/...
+                 ./pkg/crane/... \
+                 ./pkg/crane-ai/...
 
-protos: protos-adapters cranesched
+protos: protos-adapters cranesched cranesched-ai
 
 protos-adapters:
 	go tool buf generate --template buf.gen.yaml ../../libs/protos/scheduler-adapter
 
-build: build-ai build-slurm build-crane
+build: build-ai build-slurm build-crane build-crane-ai
 	@echo "- Building executables with $(GO_VERSION)..."
 	@echo "    - Binaries are in ./$(BIN_DIR)/"
 
@@ -87,6 +89,9 @@ test:
 
 cranesched:
 	go tool buf generate --template buf.genCrane.yaml https://github.com/PKUHPC/CraneSched.git#subdir=protos,tag=V1.1.3
+
+cranesched-ai:
+	go tool buf generate --template buf.genCrane-ai.yaml
 
 build-ci:
 	docker buildx build \

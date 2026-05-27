@@ -227,7 +227,7 @@ func buildContainerCommandWithAddr(req *protos.SubmitJobRequest, config *TrainCo
 	}
 
 	// === Container run flags ===
-	cmdParts = append(cmdParts, "run", "-d")
+	cmdParts = append(cmdParts, "run", "-i -t -d")
 
 	mountArgs := buildMountArgs(config.RWVolumes, config.ROVolumes,
 		req.Script, config.AlgorithmPath, config.DatasetPath, config.ModelPath)

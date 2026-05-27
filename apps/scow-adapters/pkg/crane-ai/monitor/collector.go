@@ -86,18 +86,18 @@ func (c *CraneAICollector) collectOnePartition(partName string) (*monitor.Partit
 	if err != nil {
 		return nil, fmt.Errorf("GetPartitionByName: %w", err)
 	}
-	totalCPU := int64(partInfo.GetResTotal().GetAllocatableRes().GetCpuCoreLimit())
-	allocCPU := int64(partInfo.GetResAlloc().GetAllocatableRes().GetCpuCoreLimit())
-	totalGPU := int64(utils.GetGpuNumsFromPartition(partInfo.GetResTotal().GetDeviceMap()))
-	allocGPU := int64(utils.GetGpuNumsFromPartition(partInfo.GetResAlloc().GetDeviceMap()))
+	totalCPU := int64(partInfo.GetResTotal().GetCpuCount())
+	allocCPU := int64(partInfo.GetResAlloc().GetCpuCount())
+	totalGPU := int64(utils.GetGpuNumsFromPartition(partInfo.GetResTotal().GetGresMap()))
+	allocGPU := int64(utils.GetGpuNumsFromPartition(partInfo.GetResAlloc().GetGresMap()))
 
 	runningTasks, err := utils.GetTaskByPartitionAndStatus(
-		[]string{partName}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Running})
+		[]string{partName}, []craneProtos.JobStatus{craneProtos.JobStatus_Running})
 	if err != nil {
 		return nil, fmt.Errorf("get running tasks: %w", err)
 	}
 	pendingTasks, err := utils.GetTaskByPartitionAndStatus(
-		[]string{partName}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Pending})
+		[]string{partName}, []craneProtos.JobStatus{craneProtos.JobStatus_Pending})
 	if err != nil {
 		return nil, fmt.Errorf("get pending tasks: %w", err)
 	}
@@ -143,25 +143,25 @@ func (c *CraneAICollector) collectOnePartition(partName string) (*monitor.Partit
 
 // countClusterJobUsers 查询全集群活跃作业并统计不同用户数（总计、运行中、排队中）。
 func (c *CraneAICollector) countClusterJobUsers(allPartitions []string) (total, running, pending int64) {
-	queryUsers := func(states []craneProtos.TaskStatus) map[string]struct{} {
-		req := &craneProtos.QueryTasksInfoRequest{
+	queryUsers := func(states []craneProtos.JobStatus) map[string]struct{} {
+		req := &craneProtos.QueryJobsInfoRequest{
 			FilterPartitions:            allPartitions,
 			FilterStates:                states,
-			OptionIncludeCompletedTasks: false,
+			OptionIncludeCompletedJobs: false,
 		}
-		resp, err := client.CraneCtld.QueryTasksInfo(context.Background(), req)
+		resp, err := client.CraneCtld.QueryJobsInfo(context.Background(), req)
 		if err != nil || !resp.GetOk() {
 			return nil
 		}
 		users := make(map[string]struct{})
-		for _, t := range resp.GetTaskInfoList() {
+		for _, t := range resp.GetJobInfoList() {
 			users[t.GetUsername()] = struct{}{}
 		}
 		return users
 	}
 
-	runningUsers := queryUsers([]craneProtos.TaskStatus{craneProtos.TaskStatus_Running})
-	pendingUsers := queryUsers([]craneProtos.TaskStatus{craneProtos.TaskStatus_Pending})
+	runningUsers := queryUsers([]craneProtos.JobStatus{craneProtos.JobStatus_Running})
+	pendingUsers := queryUsers([]craneProtos.JobStatus{craneProtos.JobStatus_Pending})
 
 	allUsers := make(map[string]struct{}, len(runningUsers)+len(pendingUsers))
 	for u := range runningUsers {

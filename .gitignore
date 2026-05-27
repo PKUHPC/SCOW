@@ -9,6 +9,7 @@ apps/scow-adapters/gen/go
 **/coverage/
 .eslintcache
 internal
+!apps/scow-adapters/**/internal
 .turbo
 out
 dist

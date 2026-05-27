@@ -19,10 +19,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	craneProtos "scow-adapters/gen/crane-ai"
 	protos "scow-adapters/gen/go"
 	"scow-adapters/pkg/crane-ai/client"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ClusterNodesInfo struct {
@@ -314,14 +315,14 @@ func GetPartitionByName(partitionName string) (*craneProtos.PartitionInfo, error
 	return response.GetPartitionInfoList()[0], nil
 }
 
-func GetTaskByPartitionAndStatus(partitionList []string, statusList []craneProtos.TaskStatus) ([]*craneProtos.TaskInfo, error) {
-	req := craneProtos.QueryTasksInfoRequest{
-		FilterPartitions:            partitionList,
-		FilterStates:                statusList,
-		OptionIncludeCompletedTasks: false,
+func GetTaskByPartitionAndStatus(partitionList []string, statusList []craneProtos.JobStatus) ([]*craneProtos.JobInfo, error) {
+	req := craneProtos.QueryJobsInfoRequest{
+		FilterPartitions:           partitionList,
+		FilterStates:               statusList,
+		OptionIncludeCompletedJobs: false,
 	}
 
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), &req)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), &req)
 	if err != nil {
 		return nil, err
 	}
@@ -329,17 +330,17 @@ func GetTaskByPartitionAndStatus(partitionList []string, statusList []craneProto
 		return nil, fmt.Errorf("the partitions %v not have task", partitionList)
 	}
 
-	return response.GetTaskInfoList(), nil
+	return response.GetJobInfoList(), nil
 }
 
-func GetTaskByAccountName(accountNames []string) ([]*craneProtos.TaskInfo, error) {
-	req := craneProtos.QueryTasksInfoRequest{
-		OptionIncludeCompletedTasks: true,
-		FilterAccounts:              accountNames,
-		NumLimit:                    99999999,
+func GetTaskByAccountName(accountNames []string) ([]*craneProtos.JobInfo, error) {
+	req := craneProtos.QueryJobsInfoRequest{
+		OptionIncludeCompletedJobs: true,
+		FilterAccounts:             accountNames,
+		NumLimit:                   99999999,
 	}
 
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), &req)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), &req)
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +349,7 @@ func GetTaskByAccountName(accountNames []string) ([]*craneProtos.TaskInfo, error
 		return nil, fmt.Errorf("the account %v not have task", accountNames)
 	}
 
-	return response.GetTaskInfoList(), nil
+	return response.GetJobInfoList(), nil
 }
 
 func GetNodeByPartitionAndStatus(partitionList []string, cranedStateList []craneProtos.CranedResourceState) (uint32, error) {
@@ -438,23 +439,23 @@ func GetNodeByPartition(partitionList []string) (uint32, uint32, uint32, uint32,
 	return idleNodeCount, allocNodeCount, mixNodeCount, downNodeCount, nil
 }
 
-func GetCraneStatesList(stateList []string) []craneProtos.TaskStatus {
-	var statesList []craneProtos.TaskStatus
+func GetCraneStatesList(stateList []string) []craneProtos.JobStatus {
+	var statesList []craneProtos.JobStatus
 	for _, value := range stateList {
 		if value == "PENDING" || value == "PENDDING" {
-			statesList = append(statesList, craneProtos.TaskStatus_Pending)
+			statesList = append(statesList, craneProtos.JobStatus_Pending)
 		} else if value == "RUNNING" {
-			statesList = append(statesList, craneProtos.TaskStatus_Running)
+			statesList = append(statesList, craneProtos.JobStatus_Running)
 		} else if value == "CANCELED" {
-			statesList = append(statesList, craneProtos.TaskStatus_Cancelled)
+			statesList = append(statesList, craneProtos.JobStatus_Cancelled)
 		} else if value == "COMPLETED" {
-			statesList = append(statesList, craneProtos.TaskStatus_Completed)
+			statesList = append(statesList, craneProtos.JobStatus_Completed)
 		} else if value == "FAILED" || value == "NODE_FAIL" {
-			statesList = append(statesList, craneProtos.TaskStatus_Failed)
+			statesList = append(statesList, craneProtos.JobStatus_Failed)
 		} else if value == "TIMEOUT" {
-			statesList = append(statesList, craneProtos.TaskStatus_ExceedTimeLimit)
+			statesList = append(statesList, craneProtos.JobStatus_ExceedTimeLimit)
 		} else {
-			statesList = append(statesList, craneProtos.TaskStatus_Invalid)
+			statesList = append(statesList, craneProtos.JobStatus_Invalid)
 		}
 	}
 	return statesList
@@ -601,13 +602,12 @@ func GetCraneClusterConfig(whitelistPartition, qosList []string) ([]*protos.Part
 			return nil, err
 		}
 		partitionValue := response.GetPartitionInfoList()[0]
-		totalGpusTypeMap := partitionValue.GetResTotal().GetDeviceMap()
-		// device_map:{name_type_map:{key:"npu"  value:{type_count_map:{key:"910B3"  value:8}}}}
+		totalGpusTypeMap := partitionValue.GetResTotal().GetGresMap()
 		gpuCount := GetGpuNumsFromPartition(totalGpusTypeMap)
 		partitions = append(partitions, &protos.Partition{
 			Name:  partitionValue.GetName(),
-			MemMb: partitionValue.GetResTotal().GetAllocatableRes().GetMemoryLimitBytes() / (1024 * 1024),
-			Cores: uint32(partitionValue.GetResTotal().GetAllocatableRes().GetCpuCoreLimit()),
+			MemMb: partitionValue.GetResTotal().GetMemoryBytes() / (1024 * 1024),
+			Cores: uint32(partitionValue.GetResTotal().GetCpuCount()),
 			Gpus:  gpuCount,
 			Nodes: partitionValue.GetAliveNodes(),
 			Qos:   qosList,
@@ -627,9 +627,9 @@ func GetPartitionDeviceType(partitionName string) (string, error) {
 		return "", err
 	}
 	partitionValue := response.GetPartitionInfoList()[0]
-	deviceMap := partitionValue.GetResTotal().GetDeviceMap()
+	gresMap := partitionValue.GetResTotal().GetGresMap()
 
-	for key, _ := range deviceMap.GetNameTypeMap() {
+	for key := range gresMap.GetNameGresMap() {
 		deviceType = key
 	}
 
@@ -669,17 +669,17 @@ func ExtractNodeInfo(info *craneProtos.CranedInfo) *protos.NodeInfo {
 		nodeState = protos.NodeInfo_NOT_AVAILABLE
 	}
 
-	totalMem := info.GetResTotal().GetAllocatableResInNode().GetMemoryLimitBytes() / (1024 * 1024)
-	allocMem := info.GetResAlloc().GetAllocatableResInNode().GetMemoryLimitBytes() / (1024 * 1024)
+	totalMem := info.GetResTotal().GetMemoryBytes() / (1024 * 1024)
+	allocMem := info.GetResAlloc().GetMemoryBytes() / (1024 * 1024)
 
-	totalCpuCores := info.GetResTotal().GetAllocatableResInNode().GetCpuCoreLimit()
-	allocCpuCores := info.GetResAlloc().GetAllocatableResInNode().GetCpuCoreLimit()
+	totalCpuCores := info.GetResTotal().GetCpuCount()
+	allocCpuCores := info.GetResAlloc().GetCpuCount()
 
-	totalGpusTypeMap := info.GetResTotal().GetDedicatedResInNode()
+	totalGpusTypeMap := info.GetResTotal().GetGres()
 	totalGpus := getGpuNums(totalGpusTypeMap)
-	allocGpusTypeMap := info.GetResAlloc().GetDedicatedResInNode()
+	allocGpusTypeMap := info.GetResAlloc().GetGres()
 	allocGpus := getGpuNums(allocGpusTypeMap)
-	IdleGpuCountTypeMap := info.GetResAvail().GetDedicatedResInNode()
+	IdleGpuCountTypeMap := info.GetResAvail().GetGres()
 	idleGpus := getGpuNums(IdleGpuCountTypeMap)
 
 	return &protos.NodeInfo{
@@ -716,18 +716,15 @@ func getGpuNums(data *craneProtos.DedicatedResourceInNode) uint32 {
 	return uint32(typeCount)
 }
 
-// GetGpuNumsFromPartition 获取加速卡的数量 device_map:{name_type_map:{key:"npu"  value:{type_count_map:{key:"910B3"  value:8}}}}
-func GetGpuNumsFromPartition(data *craneProtos.DeviceMap) uint32 {
+// GetGpuNumsFromPartition 获取加速卡的数量
+func GetGpuNumsFromPartition(data *craneProtos.GresMap) uint32 {
 	if data == nil {
 		return 0
 	}
 
-	var gpuCount int
-	for _, typeCountMap := range data.GetNameTypeMap() { //name_type_map:{key:"npu"  value:{type_count_map:{key:"910B3"  value:8}}}
-		for _, count := range typeCountMap.GetTypeCountMap() {
-			gpuCount += int(count)
-		}
-
+	var gpuCount uint64
+	for _, gresCount := range data.GetNameGresMap() {
+		gpuCount += gresCount.GetTotal()
 	}
 
 	return uint32(gpuCount)
@@ -745,17 +742,15 @@ func GetAllPartitions() []string {
 	return partitions
 }
 
-// GetGpuNumsFromJob 获取加速卡的数量 device_map:{name_type_map:{key:"BI" value:{total:8}}}
-func GetGpuNumsFromJob(data *craneProtos.DeviceMap) int32 {
+// GetGpuNumsFromJob 获取加速卡的数量
+func GetGpuNumsFromJob(data *craneProtos.GresMap) int32 {
 	if data == nil {
 		return 0
 	}
 
 	var gpuCount int32
-	for _, typeCountMap := range data.GetNameTypeMap() { //name_type_map:{key:"BI" value:{total:8}}
-		for _, value := range typeCountMap.GetTypeCountMap() {
-			gpuCount += int32(value)
-		}
+	for _, gresCount := range data.GetNameGresMap() {
+		gpuCount += int32(gresCount.GetTotal())
 	}
 
 	return gpuCount
@@ -859,14 +854,14 @@ func GetSummaryClusterNodesInfo(authorizedPartitions []string) (*ClusterNodesInf
 			logrus.Warnf("Unknown node state: %s", state)
 		}
 
-		totalCpuCores := nodeInfo.GetResTotal().GetAllocatableResInNode().GetCpuCoreLimit()
-		allocCpuCores := nodeInfo.GetResAlloc().GetAllocatableResInNode().GetCpuCoreLimit()
+		totalCpuCores := nodeInfo.GetResTotal().GetCpuCount()
+		allocCpuCores := nodeInfo.GetResAlloc().GetCpuCount()
 
-		totalGpusTypeMap := nodeInfo.GetResTotal().GetDedicatedResInNode()
+		totalGpusTypeMap := nodeInfo.GetResTotal().GetGres()
 		totalGpus := getGpuNums(totalGpusTypeMap)
-		allocGpusTypeMap := nodeInfo.GetResAlloc().GetDedicatedResInNode()
+		allocGpusTypeMap := nodeInfo.GetResAlloc().GetGres()
 		allocGpus := getGpuNums(allocGpusTypeMap)
-		IdleGpuCountTypeMap := nodeInfo.GetResAvail().GetDedicatedResInNode()
+		IdleGpuCountTypeMap := nodeInfo.GetResAvail().GetGres()
 		idleGpus := getGpuNums(IdleGpuCountTypeMap)
 
 		logrus.Tracef("GetClusterNodesInfo nodeName: %v, totalGpu: %v, allocGpus: %v, idleGpuCount: %v", nodeName, totalGpus, allocGpus, idleGpus)
@@ -972,7 +967,7 @@ func GetSummaryPartitionsInfo(authorizedPartitions []string) ([]*protos.SummaryP
 		//runningJobNum := len(runningJob)
 
 		// 获取正在排队作业的个数
-		pendingJob, err := GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Pending})
+		pendingJob, err := GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.JobStatus{craneProtos.JobStatus_Pending})
 		if err != nil {
 			logrus.Errorf("GetClusterInfo failed: %v", err)
 			return nil, fmt.Errorf("get pending task failed: %v", err)
@@ -992,11 +987,11 @@ func GetSummaryPartitionsInfo(authorizedPartitions []string) ([]*protos.SummaryP
 		} else {
 			state = protos.SummaryPartitionInfo_NOT_AVAILABLE
 		}
-		TotalCpu := partitionInfo.GetResTotal().GetAllocatableRes().GetCpuCoreLimit()
-		AllocCpu := partitionInfo.GetResAlloc().GetAllocatableRes().GetCpuCoreLimit()
+		TotalCpu := partitionInfo.GetResTotal().GetCpuCount()
+		AllocCpu := partitionInfo.GetResAlloc().GetCpuCount()
 
-		TotalGpu := GetGpuNumsFromPartition(partitionInfo.GetResTotal().GetDeviceMap())
-		AllocGpu := GetGpuNumsFromPartition(partitionInfo.GetResAlloc().GetDeviceMap())
+		TotalGpu := GetGpuNumsFromPartition(partitionInfo.GetResTotal().GetGresMap())
+		AllocGpu := GetGpuNumsFromPartition(partitionInfo.GetResAlloc().GetGresMap())
 
 		var nodeUsage, cpuUsage, gpuUsage float32
 		if partitionInfo.GetTotalNodes() > 0 {
@@ -1044,8 +1039,8 @@ func anyAuthorized(a, b []string) bool {
 	return false
 }
 
-func ParseGres(gres string) *craneProtos.DeviceMap {
-	result := &craneProtos.DeviceMap{NameTypeMap: make(map[string]*craneProtos.TypeCountMap)}
+func ParseGres(gres string) *craneProtos.GresMap {
+	result := &craneProtos.GresMap{NameGresMap: make(map[string]*craneProtos.GresCount)}
 	if gres == "" {
 		return result
 	}
@@ -1061,10 +1056,10 @@ func ParseGres(gres string) *craneProtos.DeviceMap {
 			if gresNameCount == 0 {
 				continue
 			}
-			if _, exist := result.NameTypeMap[name]; !exist {
-				result.NameTypeMap[name] = &craneProtos.TypeCountMap{TypeCountMap: make(map[string]uint64), Total: gresNameCount}
+			if _, exist := result.NameGresMap[name]; !exist {
+				result.NameGresMap[name] = &craneProtos.GresCount{Total: gresNameCount}
 			} else {
-				result.NameTypeMap[name].Total += gresNameCount
+				result.NameGresMap[name].Total += gresNameCount
 			}
 		} else if len(parts) == 3 {
 			gresType := parts[1]
@@ -1076,12 +1071,15 @@ func ParseGres(gres string) *craneProtos.DeviceMap {
 			if count == 0 {
 				continue
 			}
-			if _, exist := result.NameTypeMap[name]; !exist {
-				typeCountMap := make(map[string]uint64)
-				typeCountMap[gresType] = count
-				result.NameTypeMap[name] = &craneProtos.TypeCountMap{TypeCountMap: typeCountMap, Total: 0}
+			if _, exist := result.NameGresMap[name]; !exist {
+				specified := make(map[string]uint64)
+				specified[gresType] = count
+				result.NameGresMap[name] = &craneProtos.GresCount{Specified: specified}
 			} else {
-				result.NameTypeMap[name].TypeCountMap[gresType] = count
+				if result.NameGresMap[name].Specified == nil {
+					result.NameGresMap[name].Specified = make(map[string]uint64)
+				}
+				result.NameGresMap[name].Specified[gresType] = count
 			}
 		} else {
 			logrus.Errorf("Error parsing gres: %s\n", g)
@@ -1176,6 +1174,30 @@ func SplitBeforeUser(fullPath, username string) string {
 }
 
 func CheckAndAddExecPermission(dirPath string) error {
+	// 1. 给目录增加 o+w 权限
+	dirInfo, err := os.Stat(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to stat dir %s: %w", dirPath, err)
+	}
+
+	if !dirInfo.IsDir() {
+		return fmt.Errorf("%s is not a directory", dirPath)
+	}
+
+	dirPerm := dirInfo.Mode().Perm()
+
+	// 检查 others 是否已有写权限
+	if dirPerm&0002 == 0 {
+		newDirPerm := dirPerm | 0002
+
+		if err := os.Chmod(dirPath, newDirPerm); err != nil {
+			return fmt.Errorf("failed to add o+w permission to dir %s: %w", dirPath, err)
+		}
+
+		fmt.Printf("add o+w permission to dir (%s), old perm: %#o, new perm: %#o\n",
+			dirPath, dirPerm, newDirPerm)
+	}
+
 	// 拼接entry.sh的完整路径
 	entryPath := filepath.Join(dirPath, "entry.sh")
 

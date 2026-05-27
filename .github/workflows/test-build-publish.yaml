@@ -286,7 +286,7 @@ jobs:
           fi
 
           for arch in ${archs}; do
-            for binary_name in scow-ai-adapter scow-crane-adapter scow-slurm-adapter; do
+            for binary_name in scow-ai-adapter scow-crane-adapter scow-slurm-adapter scow-crane-ai-adapter; do
               target_url="https://ccrepo.pku.edu.cn/repository/scowbin/$binary_name/${{ steps.target.outputs.target }}/${arch}/$binary_name"
 
               echo "Uploading to: $target_url"
@@ -466,7 +466,7 @@ jobs:
               "${cli_target_url}/scow-cli-${arch}" || echo "File not found or already deleted"
           done
 
-          for adapter in scow-ai-adapter scow-crane-adapter scow-slurm-adapter; do
+          for adapter in scow-ai-adapter scow-crane-adapter scow-slurm-adapter scow-crane-ai-adapter; do
             for arch in amd64; do
               target_url="https://ccrepo.pku.edu.cn/repository/scowbin/${adapter}/${pr_dir}/${arch}/${adapter}"
 

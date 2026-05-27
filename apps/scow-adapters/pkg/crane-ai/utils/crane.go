@@ -371,11 +371,11 @@ func UnblockUserInAccount(userId, accountName string) error {
 }
 
 func HasUnfinishedJobsByUserName(userName string) (bool, error) {
-	request := &craneProtos.QueryTasksInfoRequest{
+	request := &craneProtos.QueryJobsInfoRequest{
 		FilterUsers:                 []string{userName},
-		OptionIncludeCompletedTasks: false,
+		OptionIncludeCompletedJobs: false,
 	}
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), request)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
 
 	if err != nil {
 		return false, err
@@ -384,7 +384,7 @@ func HasUnfinishedJobsByUserName(userName string) (bool, error) {
 		return false, nil
 	}
 
-	if len(response.GetTaskInfoList()) != 0 {
+	if len(response.GetJobInfoList()) != 0 {
 		return true, nil
 	}
 
@@ -441,14 +441,14 @@ func GetJobsStatusDistribution(authorizedPartitions []string) (map[string]*jobCo
 			continue
 		}
 		// 获取正在运行作业的个数
-		runningJob, err := GetTaskByPartitionAndStatus([]string{part.Name}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Running})
+		runningJob, err := GetTaskByPartitionAndStatus([]string{part.Name}, []craneProtos.JobStatus{craneProtos.JobStatus_Running})
 		if err != nil {
 			return nil, fmt.Errorf("get running task failed: %v", err)
 		}
 		runningJobNum := len(runningJob)
 
 		// 获取正在排队作业的个数
-		pendingJob, err := GetTaskByPartitionAndStatus([]string{part.Name}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Pending})
+		pendingJob, err := GetTaskByPartitionAndStatus([]string{part.Name}, []craneProtos.JobStatus{craneProtos.JobStatus_Pending})
 		if err != nil {
 			return nil, fmt.Errorf("get pending task failed: %v", err)
 		}

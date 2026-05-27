@@ -27,7 +27,7 @@ import (
 	pb "scow-adapters/gen/go"
 )
 
-func ValidateContainerJob(task *craneProtos.TaskToCtld) error {
+func ValidateContainerJob(task *craneProtos.JobToCtld) error {
 	containerMeta := task.ContainerMeta
 	if containerMeta == nil {
 		return fmt.Errorf("container metadata is missing")
@@ -35,7 +35,7 @@ func ValidateContainerJob(task *craneProtos.TaskToCtld) error {
 	if task.PodMeta == nil {
 		return fmt.Errorf("pod metadata is required for container tasks")
 	}
-	if task.Type != craneProtos.TaskType_Container {
+	if task.Type != craneProtos.JobType_Container {
 		return fmt.Errorf("task type must be Container")
 	}
 
@@ -85,10 +85,10 @@ func ValidateContainerJob(task *craneProtos.TaskToCtld) error {
 }
 
 // SubmitContainerJob submits a container task via gRPC
-func SubmitContainerJob(task *craneProtos.TaskToCtld) (*craneProtos.SubmitBatchTaskReply, error) {
-	req := &craneProtos.SubmitBatchTaskRequest{Task: task}
+func SubmitContainerJob(task *craneProtos.JobToCtld) (*craneProtos.SubmitBatchJobReply, error) {
+	req := &craneProtos.SubmitBatchJobRequest{Job: task}
 
-	reply, err := client.CraneCtld.SubmitBatchTask(context.Background(), req)
+	reply, err := client.CraneCtld.SubmitBatchJob(context.Background(), req)
 	if err != nil {
 		return reply, fmt.Errorf("failed to submit the container task: %v", err)
 	}
@@ -101,17 +101,17 @@ func SubmitContainerJob(task *craneProtos.TaskToCtld) (*craneProtos.SubmitBatchT
 }
 
 // GetContainerStep 获取容器步骤信息
-func GetContainerStep(jobID, stepID uint32, includeCompleted bool) (*craneProtos.TaskInfo, *craneProtos.StepInfo, error) {
+func GetContainerStep(jobID, stepID uint32, includeCompleted bool) (*craneProtos.JobInfo, *craneProtos.StepInfo, error) {
 	idFilter := map[uint32]*craneProtos.JobStepIds{
 		jobID: {Steps: []uint32{stepID}},
 	}
-	req := craneProtos.QueryTasksInfoRequest{
-		FilterIds:                   idFilter,
-		FilterTaskTypes:             []craneProtos.TaskType{craneProtos.TaskType_Container},
-		OptionIncludeCompletedTasks: includeCompleted,
+	req := craneProtos.QueryJobsInfoRequest{
+		FilterIds:                  idFilter,
+		FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
+		OptionIncludeCompletedJobs: includeCompleted,
 	}
 
-	reply, err := client.CraneCtld.QueryTasksInfo(context.Background(), &req)
+	reply, err := client.CraneCtld.QueryJobsInfo(context.Background(), &req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("query container steps failed: %v", err)
 	}
@@ -120,11 +120,11 @@ func GetContainerStep(jobID, stepID uint32, includeCompleted bool) (*craneProtos
 		return nil, nil, fmt.Errorf("query container steps failed")
 	}
 
-	if len(reply.TaskInfoList) == 0 {
+	if len(reply.JobInfoList) == 0 {
 		return nil, nil, fmt.Errorf("container %d.%d not found", jobID, stepID)
 	}
 
-	task := reply.TaskInfoList[0]
+	task := reply.JobInfoList[0]
 	var targetStep *craneProtos.StepInfo
 	for _, step := range task.StepInfoList {
 		if step.StepId == stepID {
@@ -140,50 +140,50 @@ func GetContainerStep(jobID, stepID uint32, includeCompleted bool) (*craneProtos
 	return task, targetStep, nil
 }
 
-func GetJobById(jobId uint32, user string) (*craneProtos.TaskInfo, error) {
+func GetJobById(jobId uint32, user string) (*craneProtos.JobInfo, error) {
 	filterIds := make(map[uint32]*craneProtos.JobStepIds)
 	filterIds[jobId] = &craneProtos.JobStepIds{}
 	var users []string
 	if user != "" {
 		users = append(users, user)
 	}
-	request := &craneProtos.QueryTasksInfoRequest{
-		FilterTaskTypes:             []craneProtos.TaskType{craneProtos.TaskType_Container},
-		FilterIds:                   filterIds,
-		FilterUsers:                 users,
-		OptionIncludeCompletedTasks: true,
+	request := &craneProtos.QueryJobsInfoRequest{
+		FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
+		FilterIds:                  filterIds,
+		FilterUsers:                users,
+		OptionIncludeCompletedJobs: true,
 	}
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), request)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
 	if err != nil {
 		return nil, fmt.Errorf("query tasks info failed: %v", err)
 	}
 	if !response.GetOk() {
 		return nil, fmt.Errorf("query tasks info failed: %v", err)
 	}
-	if len(response.GetTaskInfoList()) == 0 {
+	if len(response.GetJobInfoList()) == 0 {
 		return nil, fmt.Errorf("the job not found in crane")
 	}
 	// 获取作业信息
-	TaskInfo := response.GetTaskInfoList()[0]
+	TaskInfo := response.GetJobInfoList()[0]
 	return TaskInfo, nil
 }
 
 func CheckJobExit(jobId uint32) (bool, error) {
 	filterIds := make(map[uint32]*craneProtos.JobStepIds)
 	filterIds[jobId] = &craneProtos.JobStepIds{}
-	request := &craneProtos.QueryTasksInfoRequest{
-		FilterTaskTypes:             []craneProtos.TaskType{craneProtos.TaskType_Container},
-		FilterIds:                   filterIds,
-		OptionIncludeCompletedTasks: true,
+	request := &craneProtos.QueryJobsInfoRequest{
+		FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
+		FilterIds:                  filterIds,
+		OptionIncludeCompletedJobs: true,
 	}
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), request)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
 	if err != nil {
 		return false, fmt.Errorf("query tasks info failed: %v", err)
 	}
 	if !response.GetOk() {
 		return false, fmt.Errorf("query tasks info failed: %v", err)
 	}
-	if len(response.GetTaskInfoList()) == 0 {
+	if len(response.GetJobInfoList()) == 0 {
 		return false, nil
 	}
 	return true, nil
@@ -425,9 +425,9 @@ func InvalidDuration() *durationpb.Duration {
 func GetContainerIDAndStepId(reply protoreflect.ProtoMessage) (uint32, uint32, error) {
 	var jobId, stepId uint32
 	switch r := reply.(type) {
-	case *craneProtos.SubmitBatchTaskReply:
+	case *craneProtos.SubmitBatchJobReply:
 		// Primary container step
-		jobId = r.GetTaskId()
+		jobId = r.GetJobId()
 		stepId = 1
 	case *craneProtos.SubmitContainerStepReply:
 		// Specific container step
@@ -442,10 +442,21 @@ func GetContainerIDAndStepId(reply protoreflect.ProtoMessage) (uint32, uint32, e
 func ConvertStepInfoToPodInfo(partition string, stepList []*craneProtos.StepInfo) []*pb.JobInfo_PodInfo {
 	var podInfoList []*pb.JobInfo_PodInfo
 
-	// 遍历StepInfo列表，筛选PRIMARY类型的条目
+	log.Infof("Converting StepInfo to PodInfo for partition %s, total steps: %d", partition, len(stepList))
+	log.Infof("StepInfo steps: %v", stepList)
+
+	// 优先使用COMMON类型（多机训练的worker步骤），没有则退回PRIMARY（开发机等场景）
+	targetType := craneProtos.StepType_PRIMARY
 	for _, step := range stepList {
-		if step.StepType != craneProtos.StepType_PRIMARY {
-			continue // 跳过DAEMON类型
+		if step.StepType == craneProtos.StepType_COMMON {
+			targetType = craneProtos.StepType_COMMON
+			break
+		}
+	}
+
+	for _, step := range stepList {
+		if step.StepType != targetType {
+			continue
 		}
 
 		// 遍历execution_node，每个节点生成一个PodInfo
@@ -462,11 +473,11 @@ func ConvertStepInfoToPodInfo(partition string, stepList []*craneProtos.StepInfo
 			// 映射PodStatus
 			podStatus := pb.JobInfo_UNKNOWN
 			switch step.Status {
-			case craneProtos.TaskStatus_Running:
+			case craneProtos.JobStatus_Running:
 				podStatus = pb.JobInfo_RUNNING
-			case craneProtos.TaskStatus_Completed:
+			case craneProtos.JobStatus_Completed:
 				podStatus = pb.JobInfo_SUCCEEDED
-			case craneProtos.TaskStatus_Failed:
+			case craneProtos.JobStatus_Failed:
 				podStatus = pb.JobInfo_FAILED
 			}
 
@@ -479,6 +490,7 @@ func ConvertStepInfoToPodInfo(partition string, stepList []*craneProtos.StepInfo
 				NodeName:       node,
 				Namespace:      partition,
 				PodName:        podName,
+				PodId:          podName,
 				PodStatus:      podStatus,
 				PodCreatedTime: createdTime,
 				PodEndTime:     endTime,

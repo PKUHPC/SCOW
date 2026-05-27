@@ -115,7 +115,7 @@ func (s *ServerConfig) GetClusterInfo(ctx context.Context, in *protos.GetCluster
 		logrus.Tracef("GetClusterInfo partition info: %v", partitionInfo)
 
 		// 获取正在运行作业的个数
-		runningJob, err := utils.GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Running})
+		runningJob, err := utils.GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.JobStatus{craneProtos.JobStatus_Running})
 		if err != nil {
 			logrus.Errorf("GetClusterInfo failed: %v", err)
 			return nil, ce.RichError(codes.Internal, "CRANE_RUNCOMMAND_ERROR", err.Error())
@@ -123,7 +123,7 @@ func (s *ServerConfig) GetClusterInfo(ctx context.Context, in *protos.GetCluster
 		runningJobNum := len(runningJob)
 
 		// 获取正在排队作业的个数
-		pendingJob, err := utils.GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Pending})
+		pendingJob, err := utils.GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.JobStatus{craneProtos.JobStatus_Pending})
 		if err != nil {
 			logrus.Errorf("GetClusterInfo failed: %v", err)
 			return nil, ce.RichError(codes.Internal, "CRANE_RUNCOMMAND_ERROR", err.Error())
@@ -145,15 +145,15 @@ func (s *ServerConfig) GetClusterInfo(ctx context.Context, in *protos.GetCluster
 		} else {
 			state = protos.PartitionInfo_NOT_AVAILABLE
 		}
-		TotalCpu := partitionInfo.GetResTotal().GetAllocatableRes().GetCpuCoreLimit()
-		AllocCpu := partitionInfo.GetResAlloc().GetAllocatableRes().GetCpuCoreLimit()
-		AvailCpu := partitionInfo.GetResAvail().GetAllocatableRes().GetCpuCoreLimit()
+		TotalCpu := partitionInfo.GetResTotal().GetCpuCount()
+		AllocCpu := partitionInfo.GetResAlloc().GetCpuCount()
+		AvailCpu := partitionInfo.GetResAvail().GetCpuCount()
 		IdleCpu := TotalCpu - AllocCpu
 		NotAvailableCpu := TotalCpu - AvailCpu - AllocCpu
 
-		TotalGpu := utils.GetGpuNumsFromPartition(partitionInfo.GetResTotal().GetDeviceMap())
-		AllocGpu := utils.GetGpuNumsFromPartition(partitionInfo.GetResAlloc().GetDeviceMap())
-		AvailGpu := utils.GetGpuNumsFromPartition(partitionInfo.GetResAvail().GetDeviceMap())
+		TotalGpu := utils.GetGpuNumsFromPartition(partitionInfo.GetResTotal().GetGresMap())
+		AllocGpu := utils.GetGpuNumsFromPartition(partitionInfo.GetResAlloc().GetGresMap())
+		AvailGpu := utils.GetGpuNumsFromPartition(partitionInfo.GetResAvail().GetGresMap())
 		IdleGpu := TotalGpu - AllocGpu
 		NotAvailableGpu := TotalGpu - AvailGpu - AllocGpu
 

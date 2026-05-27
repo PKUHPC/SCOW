@@ -495,7 +495,7 @@ func (m *ProxyManager) CleanInvalidProxies() error {
 
 		// 判断作业是否为有效状态（Running/Pending）
 		jobStatus := jobInfo.Status
-		if jobStatus == craneProtos.TaskStatus_Pending || jobStatus == craneProtos.TaskStatus_Running {
+		if jobStatus == craneProtos.JobStatus_Pending || jobStatus == craneProtos.JobStatus_Running {
 			logrus.Tracef("[job %s] Status is %v, keep proxy", jobName, jobStatus)
 			skipCount++
 			continue
@@ -634,7 +634,7 @@ func LoadJobProxyMetaByPort(jobId uint32, containerPort int32) (*ProxyMeta, erro
 	return nil, nil
 }
 
-func BuildJobForwardInfo(podMeta *craneProtos.PodTaskAdditionalMeta, stepList []*craneProtos.StepInfo) ([]*JobForwardInfo, error) {
+func BuildJobForwardInfo(podMeta *craneProtos.PodJobAdditionalMeta, stepList []*craneProtos.StepInfo) ([]*JobForwardInfo, error) {
 	var jfi []*JobForwardInfo
 
 	// 校验容器端口

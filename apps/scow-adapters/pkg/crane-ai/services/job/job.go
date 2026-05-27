@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -48,13 +49,13 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *protos.CancelJobRequest) 
 		logrus.Errorf("[CancelJob] get job step ids failed: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", "Crane service call failed.")
 	}
-	request := &craneProtos.CancelTaskRequest{
+	request := &craneProtos.CancelJobRequest{
 		OperatorUid:    0,
 		FilterIds:      stepIds,
 		FilterUsername: in.UserId,
-		FilterState:    craneProtos.TaskStatus_Invalid,
+		FilterState:    craneProtos.JobStatus_Invalid,
 	}
-	_, err = client.CraneCtld.CancelTask(context.Background(), request)
+	_, err = client.CraneCtld.CancelJob(context.Background(), request)
 	if err != nil {
 		logrus.Errorf("[CancelJob] cancel job failed: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", "Crane service call failed.")
@@ -69,16 +70,16 @@ func (s *ServerJob) QueryJobTimeLimit(ctx context.Context, in *protos.QueryJobTi
 	logrus.Infof("Received request QueryJobTimeLimit: %v", in)
 	filterIds := make(map[uint32]*craneProtos.JobStepIds)
 	filterIds[in.JobId] = &craneProtos.JobStepIds{Steps: []uint32{1}}
-	request := &craneProtos.QueryTasksInfoRequest{
-		FilterIds:                   filterIds,
-		OptionIncludeCompletedTasks: true, // 包含运行结束的作业
+	request := &craneProtos.QueryJobsInfoRequest{
+		FilterIds:                  filterIds,
+		OptionIncludeCompletedJobs: true, // 包含运行结束的作业
 	}
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), request)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
 	if err != nil {
 		logrus.Errorf("QueryJobTimeLimit failed: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 	}
-	taskInfoList := response.GetTaskInfoList()
+	taskInfoList := response.GetJobInfoList()
 	if len(taskInfoList) == 0 {
 		message := fmt.Sprintf("Task #%d was not found in crane.", in.JobId)
 		logrus.Errorf("QueryJobTimeLimit failed: %v", message)
@@ -102,17 +103,17 @@ func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *protos.ChangeJob
 	// 查询请求体
 	filterIds := make(map[uint32]*craneProtos.JobStepIds)
 	filterIds[in.JobId] = &craneProtos.JobStepIds{Steps: []uint32{1}}
-	requestLimitTime := &craneProtos.QueryTasksInfoRequest{
+	requestLimitTime := &craneProtos.QueryJobsInfoRequest{
 		FilterIds: filterIds,
 	}
 
-	responseLimitTime, err := client.CraneCtld.QueryTasksInfo(context.Background(), requestLimitTime)
+	responseLimitTime, err := client.CraneCtld.QueryJobsInfo(context.Background(), requestLimitTime)
 	if err != nil {
 		logrus.Errorf("ChangeJobTimeLimit failed: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 	}
 
-	taskInfoList := responseLimitTime.GetTaskInfoList()
+	taskInfoList := responseLimitTime.GetJobInfoList()
 	if len(taskInfoList) == 0 {
 		message := fmt.Sprintf("Task #%d was not found in crane.", in.JobId)
 		logrus.Errorf("ChangeJobTimeLimit failed: %v", message)
@@ -130,18 +131,18 @@ func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *protos.ChangeJob
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", "Time limit should be greater than 0.")
 	}
 	// 修改时长限制的请求体
-	request := &craneProtos.ModifyTaskRequest{
-		TaskIds: []uint32{in.JobId},
-		Value: &craneProtos.ModifyTaskRequest_TimeLimitSeconds{
+	request := &craneProtos.ModifyJobRequest{
+		JobIds: []uint32{in.JobId},
+		Value: &craneProtos.ModifyJobRequest_TimeLimitSeconds{
 			TimeLimitSeconds: in.DeltaMinutes*60 + int64(seconds),
 		},
 	}
-	response, err := client.CraneCtld.ModifyTask(context.Background(), request)
+	response, err := client.CraneCtld.ModifyJob(context.Background(), request)
 	if err != nil {
 		logrus.Errorf("ChangeJobTimeLimit failed: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 	}
-	if len(response.GetNotModifiedTasks()) != 0 {
+	if len(response.GetNotModifiedJobs()) != 0 {
 		logrus.Errorf("ChangeJobTimeLimit failed: %v", fmt.Errorf("JOB_NOT_FOUND"))
 		return nil, ce.RichError(codes.NotFound, "JOB_NOT_FOUND", response.GetNotModifiedReasons()[0])
 	}
@@ -164,16 +165,16 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", err.Error())
 	}
 
-	if taskInfo.GetStatus() == craneProtos.TaskStatus_Running {
+	if taskInfo.GetStatus() == craneProtos.JobStatus_Running {
 		elapsedSeconds = time.Now().Unix() - taskInfo.GetStartTime().Seconds
-	} else if taskInfo.GetStatus() == craneProtos.TaskStatus_Pending {
+	} else if taskInfo.GetStatus() == craneProtos.JobStatus_Pending {
 		elapsedSeconds = 0
 	}
 	// 获取作业时长
 	// elapsedSeconds = TaskInfoList.GetEndTime().Seconds - TaskInfoList.GetStartTime().Seconds
-	if taskInfo.GetStatus() == craneProtos.TaskStatus_Running {
+	if taskInfo.GetStatus() == craneProtos.JobStatus_Running {
 		elapsedSeconds = time.Now().Unix() - taskInfo.GetStartTime().Seconds
-	} else if taskInfo.GetStatus() == craneProtos.TaskStatus_Pending {
+	} else if taskInfo.GetStatus() == craneProtos.JobStatus_Pending {
 		elapsedSeconds = 0
 	} else {
 		elapsedSeconds = taskInfo.GetEndTime().Seconds - taskInfo.GetStartTime().Seconds
@@ -181,7 +182,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 
 	// 获取cpu核分配数
 	// cpusAlloc := TaskInfoList.GetAllocCpus()
-	cpusAlloc := taskInfo.GetAllocatedResView().GetAllocatableRes().CpuCoreLimit
+	cpusAlloc := taskInfo.GetAllocatedResView().GetCpuCount()
 	cpusAllocInt32 := int32(cpusAlloc)
 	// 获取节点列表
 	nodeList := taskInfo.GetCranedList()
@@ -207,7 +208,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 
 	if len(in.Fields) == 0 {
 		jobInfo := &protos.JobInfo{
-			JobId:            taskInfo.GetTaskId(),
+			JobId:            taskInfo.GetJobId(),
 			Name:             taskInfo.GetName(),
 			Account:          taskInfo.GetAccount(),
 			User:             taskInfo.GetUsername(),
@@ -231,7 +232,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 	for _, field := range in.Fields {
 		switch field {
 		case "job_id":
-			jobInfo.JobId = taskInfo.GetTaskId()
+			jobInfo.JobId = taskInfo.GetJobId()
 		case "name":
 			jobInfo.Name = taskInfo.GetName()
 		case "account":
@@ -272,26 +273,25 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 
 func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*protos.GetJobsResponse, error) {
 	var (
-		request  *craneProtos.QueryTasksInfoRequest
+		request  *craneProtos.QueryJobsInfoRequest
 		jobsInfo []*protos.JobInfo
 		totalNum uint32
 	)
 	logrus.Tracef("Received request GetJobs: %v", in)
 
 	if in.Filter != nil {
-		base := &craneProtos.QueryTasksInfoRequest{
-			FilterTaskTypes:             []craneProtos.TaskType{craneProtos.TaskType_Container},
-			FilterStates:                utils.GetCraneStatesList(in.Filter.States),
-			FilterUsers:                 in.Filter.Users,
-			FilterAccounts:              in.Filter.Accounts,
-			OptionIncludeCompletedTasks: true,
-			NumLimit:                    99999999,
+		base := &craneProtos.QueryJobsInfoRequest{
+			FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
+			FilterStates:               utils.GetCraneStatesList(in.Filter.States),
+			FilterUsers:                in.Filter.Users,
+			FilterAccounts:             in.Filter.Accounts,
+			OptionIncludeCompletedJobs: true,
+			NumLimit:                   99999999,
 		}
 
 		logrus.Tracef("request: %v", base)
 
 		var startTimeFilter, endTimeFilter int64
-		interval := &craneProtos.TimeInterval{}
 
 		if in.Filter.EndTime != nil {
 			startTimeFilter = in.Filter.EndTime.StartTime.GetSeconds()
@@ -301,29 +301,32 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 			endTimeFilter = in.Filter.SubmitTime.EndTime.GetSeconds()
 		}
 
-		if startTimeFilter != 0 {
-			interval.LowerBound = timestamppb.New(time.Unix(startTimeFilter, 0))
+		if startTimeFilter != 0 || endTimeFilter != 0 {
+			interval := &craneProtos.TimeInterval{}
+			if startTimeFilter != 0 {
+				interval.LowerBound = timestamppb.New(time.Unix(startTimeFilter, 0))
+			}
+			if endTimeFilter != 0 {
+				interval.UpperBound = timestamppb.New(time.Unix(endTimeFilter, 0))
+			}
+			base.FilterEndTimeInterval = interval
 		}
-		if endTimeFilter != 0 {
-			interval.UpperBound = timestamppb.New(time.Unix(endTimeFilter, 0))
-		}
-
-		base.FilterEndTimeInterval = interval
 
 		if in.Filter.JobName != nil {
-			base.FilterTaskNames = []string{*in.Filter.JobName}
+			base.FilterJobNames = []string{*in.Filter.JobName}
 		}
 		request = base
 	} else {
 		// 没有筛选条件的请求体
-		request = &craneProtos.QueryTasksInfoRequest{
-			OptionIncludeCompletedTasks: true,
-			NumLimit:                    99999999,
+		request = &craneProtos.QueryJobsInfoRequest{
+			FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
+			OptionIncludeCompletedJobs: true,
+			NumLimit:                   99999999,
 		}
 	}
 
 	logrus.Tracef("request: %v", request)
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), request)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
 	logrus.Tracef("response: %v", response)
 
 	if err != nil {
@@ -334,22 +337,28 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		logrus.Errorf("GetJobs failed: %v", fmt.Errorf("CRANE_INTERNAL_ERROR"))
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "Crane service internal error.")
 	}
-	if len(response.GetTaskInfoList()) == 0 {
+	if len(response.GetJobInfoList()) == 0 {
 		logrus.Errorf("GetJobs failed: %v", fmt.Errorf("no Task found"))
-		totalNum = uint32(len(response.GetTaskInfoList()))
+		totalNum = uint32(len(response.GetJobInfoList()))
 		return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 	}
-	totalNum = uint32(len(response.GetTaskInfoList()))
-	for _, job := range response.GetTaskInfoList() {
+	totalNum = uint32(len(response.GetJobInfoList()))
+	for _, job := range response.GetJobInfoList() {
+		if len(in.JobTypes) > 0 {
+			savedInfo, err := s.JM.QueryJobInfo(job.GetJobId())
+			if err != nil || !isJobTypeMatch(savedInfo.JobType, in.JobTypes) {
+				continue
+			}
+		}
 		var elapsedSeconds, timeLimitMinutes int64
 		var state string
 		var reason = "no reason"
 		var nodeNum int32
 		var endTime, startTime *timestamppb.Timestamp
-		if job.GetStatus() == craneProtos.TaskStatus_Running {
+		if job.GetStatus() == craneProtos.JobStatus_Running {
 			startTime = job.GetStartTime()
 			elapsedSeconds = time.Now().Unix() - job.GetStartTime().Seconds
-		} else if job.GetStatus() == craneProtos.TaskStatus_Pending {
+		} else if job.GetStatus() == craneProtos.JobStatus_Pending {
 			elapsedSeconds = 0
 		} else {
 			if job.GetNodeNum() != 0 {
@@ -357,13 +366,13 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 			}
 			elapsedSeconds = job.GetEndTime().Seconds - job.GetStartTime().Seconds
 		}
-		cpusAlloc := job.GetAllocatedResView().AllocatableRes.CpuCoreLimit
+		cpusAlloc := job.GetAllocatedResView().GetCpuCount()
 		cpusAllocInt32 := int32(cpusAlloc)
 
-		jobMemAllocMb := job.GetAllocatedResView().GetAllocatableRes().MemoryLimitBytes
+		jobMemAllocMb := job.GetAllocatedResView().GetMemoryBytes()
 		memAllocMb := int64(jobMemAllocMb / (1024 * 1024))
 
-		jobGpusAlloc := job.GetAllocatedResView().GetDeviceMap()
+		jobGpusAlloc := job.GetAllocatedResView().GetGresMap()
 		gpusAlloc := utils.GetGpuNumsFromJob(jobGpusAlloc)
 
 		nodeList := job.GetCranedList()
@@ -391,8 +400,8 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 			reason = "Timeout"
 			endTime = job.GetEndTime()
 		} else {
-			state = "IVALID"
-			reason = "Ivalid"
+			state = "INVALID"
+			reason = "Invalid"
 		}
 		nodeNum = int32(job.GetNodeNum())
 
@@ -412,7 +421,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		if len(in.Fields) == 0 {
 			subJobInfo := &protos.JobInfo{}
 			subJobInfo = &protos.JobInfo{
-				JobId:            job.GetTaskId(),
+				JobId:            job.GetJobId(),
 				Name:             job.GetName(),
 				Account:          job.GetAccount(),
 				User:             job.GetUsername(),
@@ -440,7 +449,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 			for _, field := range in.Fields {
 				switch field {
 				case "job_id":
-					subJobInfo.JobId = job.GetTaskId()
+					subJobInfo.JobId = job.GetJobId()
 				case "name":
 					subJobInfo.Name = job.GetName()
 				case "account":
@@ -538,7 +547,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 			stdout = "job.%j.out"
 		}
 
-		//scriptString += "#CBATCH " + "-A " + in.Account + "\n"
+		scriptString += "#CBATCH " + "-A " + in.Account + "\n"
 		scriptString += "#CBATCH " + "-p " + in.Partition + "\n"
 		if in.Qos != nil {
 			scriptString += "#CBATCH " + "--qos " + *in.Qos + "\n"
@@ -582,6 +591,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		scriptString += "#CBATCH " + "--get-user-env" + "\n"
 		// 表示运行容器任务，此处通过容器来运行训练任务
 		scriptString += "#CBATCH " + "--pod" + "\n"
+		scriptString += "#CBATCH " + "--pod-userns true" + "\n"
 
 		// 生成多节点训练脚本主体（包含容器启动、等待就绪、获取IP、监控等逻辑）
 		scriptBody, err := GenerateMultiNodeTrainScript(in)
@@ -610,8 +620,8 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		writer.Flush()
 
 		os.Chmod(filePath, 0777)
-		//submitResult, err := utils.LocalSubmitJob(filePath, in.UserId)
-		submitResult, err := utils.LocalSubmitJob(filePath, "root")
+		submitResult, err := utils.LocalSubmitJob(filePath, in.UserId)
+		//submitResult, err := utils.LocalSubmitJob(filePath, "root")
 		if err != nil {
 			logrus.Errorf("[SubmitJob] local submit job failed: %v", err)
 			return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", submitResult)
@@ -634,6 +644,16 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 			return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "failed to parse job id from submit result")
 		}
 		logrus.Infof("[SubmitJob] submit Multi-machine training job success: %v", jobId)
+
+		submitJobInfo := &utils.SubmitJobInfo{
+			JobName: in.JobName,
+			JobId:   uint32(jobId),
+			JobType: in.ExtraOptions[0],
+		}
+		if err = s.JM.SaveJobInfo(submitJobInfo); err != nil {
+			logrus.Warnf("save job submit info failed: %v", err)
+		}
+
 		return &protos.SubmitJobResponse{JobId: uint32(jobId), GeneratedScript: scriptString}, nil
 	}
 
@@ -825,7 +845,7 @@ func (s *ServerJob) StreamJobShell(stream protos.JobService_StreamJobShellServer
 		return ce.RichError(codes.Internal, "STREAM_JOB_SHELL_FAILED", err.Error())
 	}
 	// Check job step state
-	if taskInfo.Status != craneProtos.TaskStatus_Running {
+	if taskInfo.Status != craneProtos.JobStatus_Running {
 		message := fmt.Errorf("task %v state is: %s", jobID, taskInfo.Status.String())
 		logrus.Errorf("[StreamJobShell] %v", message)
 		return ce.RichError(codes.Internal, "STREAM_JOB_SHELL_FAILED", message.Error())
@@ -879,26 +899,26 @@ func (s *ServerJob) RunCommandOnJobNodes(ctx context.Context, in *protos.RunComm
 	// 查询作业信息
 	filterIds := make(map[uint32]*craneProtos.JobStepIds)
 	filterIds[in.JobId] = &craneProtos.JobStepIds{Steps: []uint32{1}}
-	request := &craneProtos.QueryTasksInfoRequest{
-		FilterIds:                   filterIds,
-		OptionIncludeCompletedTasks: true,
+	request := &craneProtos.QueryJobsInfoRequest{
+		FilterIds:                  filterIds,
+		OptionIncludeCompletedJobs: true,
 	}
 
-	response, err := client.CraneCtld.QueryTasksInfo(context.Background(), request)
+	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
 	if err != nil {
 		logrus.Errorf("RunCommandOnJobNodes failed to query job %d: %v", in.JobId, err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 	}
 
-	if !response.GetOk() || len(response.GetTaskInfoList()) == 0 {
+	if !response.GetOk() || len(response.GetJobInfoList()) == 0 {
 		logrus.Errorf("RunCommandOnJobNodes failed: Job %d not found", in.JobId)
 		return nil, ce.RichError(codes.NotFound, "JOB_NOT_FOUND", "Job not found")
 	}
 
-	taskInfo := response.GetTaskInfoList()[0]
+	taskInfo := response.GetJobInfoList()[0]
 
 	// 检查作业状态，只有运行中的作业才能执行命令
-	if taskInfo.GetStatus() != craneProtos.TaskStatus_Running {
+	if taskInfo.GetStatus() != craneProtos.JobStatus_Running {
 		logrus.Errorf("RunCommandOnJobNodes failed: Job %d is not running (status: %v)", in.JobId, taskInfo.GetStatus())
 		return nil, ce.RichError(codes.FailedPrecondition, "JOB_NOT_RUNNING", fmt.Sprintf("Job is not running, status: %s", taskInfo.GetStatus()))
 	}
@@ -927,7 +947,91 @@ func (s *ServerJob) RunCommandOnJobNodes(ctx context.Context, in *protos.RunComm
 	}, nil
 }
 
-func (s *ServerJob) submitToScheduler(task *craneProtos.TaskToCtld) (uint32, error) {
+func (s *ServerJob) GetPodLogs(in *protos.GetPodLogsRequest, stream grpc.ServerStreamingServer[protos.GetPodLogsResponse]) error {
+	ctx := stream.Context()
+	logrus.Infof("[GetPodLogs] podId=%s userId=%s", in.GetPodId(), in.GetUserId())
+
+	// Parse "jobID-stepID-nodeName" from PodId (e.g. "381407-1-crane02")
+	podId := in.GetPodId()
+	parts := strings.Split(podId, utils.StepToPodNameEscape)
+	if len(parts) != 3 {
+		return ce.RichError(codes.InvalidArgument, "INVALID_POD_ID", fmt.Sprintf("invalid pod_id format, expected 'jobID-stepID-nodeName', got: %s", podId))
+	}
+	jobID64, err := strconv.ParseUint(parts[0], 10, 32)
+	if err != nil {
+		return ce.RichError(codes.InvalidArgument, "INVALID_POD_ID", fmt.Sprintf("invalid job ID %q: %v", parts[0], err))
+	}
+	jobID := uint32(jobID64)
+	stepID64, err := strconv.ParseUint(parts[1], 10, 32)
+	if err != nil {
+		return ce.RichError(codes.InvalidArgument, "INVALID_POD_ID", fmt.Sprintf("invalid step ID %q: %v", parts[1], err))
+	}
+	stepID := uint32(stepID64)
+	nodeName := parts[2]
+	if nodeName == "" {
+		return ce.RichError(codes.InvalidArgument, "INVALID_POD_ID", "nodeName field in pod_id cannot be empty")
+	}
+
+	// Query crane for job/step info
+	job, step, err := utils.GetContainerStep(jobID, stepID, true)
+	if err != nil {
+		return ce.RichError(codes.NotFound, "CONTAINER_NOT_FOUND", err.Error())
+	}
+	if step.GetContainerMeta() == nil {
+		return ce.RichError(codes.InvalidArgument, "NOT_A_CONTAINER", fmt.Sprintf("step %d.%d is not a container", jobID, stepID))
+	}
+
+	// Determine working directory
+	cwd := step.GetCwd()
+	if cwd == "" {
+		cwd = job.GetCwd()
+	}
+
+	// Build log file path: {cwd}/{jobId}.out/{stepId}.{nodeName}.log
+	logPath := filepath.Join(cwd, fmt.Sprintf("%d.out", jobID), fmt.Sprintf("%d.%s.log", stepID, nodeName))
+
+	if _, statErr := os.Stat(logPath); os.IsNotExist(statErr) {
+		return ce.RichError(codes.NotFound, "LOG_FILE_NOT_FOUND", fmt.Sprintf("log file not found: %s. Do you have shared storage?", logPath))
+	}
+
+	// Read initial log content, respecting optional tail line limit
+	tailN := int(in.GetRowLimit()) // 0 means all lines
+	lines, offset, err := podLogReadFile(logPath, tailN)
+	if err != nil {
+		return ce.RichError(codes.Internal, "READ_LOG_FAILED", err.Error())
+	}
+
+	if len(lines) > 0 {
+		if sendErr := stream.Send(&protos.GetPodLogsResponse{Log: podLogBuildContent(lines)}); sendErr != nil {
+			return sendErr
+		}
+	}
+
+	// For non-running containers, sending the log snapshot is sufficient
+	if step.GetStatus() != craneProtos.JobStatus_Running {
+		return nil
+	}
+
+	// For running containers, poll the log file for new content every 3 seconds
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(3 * time.Second):
+		}
+
+		newContent, newOffset, readErr := podLogReadFromOffset(logPath, offset)
+		offset = newOffset
+		if readErr != nil || len(newContent) == 0 {
+			continue
+		}
+		if sendErr := stream.Send(&protos.GetPodLogsResponse{Log: newContent}); sendErr != nil {
+			return sendErr
+		}
+	}
+}
+
+func (s *ServerJob) submitToScheduler(task *craneProtos.JobToCtld) (uint32, error) {
 	if err := utils.ValidateContainerJob(task); err != nil {
 		return 0, fmt.Errorf("validation container job failed: %v", err)
 	}
@@ -979,4 +1083,96 @@ func (s *ServerJob) checkJob(accountName, userName, workdir string) error {
 	}
 
 	return nil
+}
+
+// isJobTypeMatch 判断已保存的作业类型字符串是否在请求的 JobTypes 列表中
+func isJobTypeMatch(savedType string, jobTypes []protos.JobType) bool {
+	for _, jt := range jobTypes {
+		switch jt {
+		case protos.JobType_JOB_TYPE_DEV_HOST:
+			if savedType == utils.DevHost {
+				return true
+			}
+		case protos.JobType_JOB_TYPE_TRAIN:
+			if savedType == utils.Train {
+				return true
+			}
+		case protos.JobType_JOB_TYPE_INFER:
+			if savedType == utils.Inference {
+				return true
+			}
+		case protos.JobType_JOB_TYPE_APP:
+			if savedType == utils.APP {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// podLogReadFile reads a log file and returns up to tailN last lines (0 = all) and the final file offset.
+func podLogReadFile(logPath string, tailN int) ([]string, int64, error) {
+	file, err := os.Open(logPath)
+	if err != nil {
+		return nil, 0, fmt.Errorf("open log file: %v", err)
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, 0, fmt.Errorf("read log file: %v", err)
+	}
+
+	offset, _ := file.Seek(0, io.SeekCurrent)
+
+	if tailN > 0 && tailN < len(lines) {
+		lines = lines[len(lines)-tailN:]
+	}
+	return lines, offset, nil
+}
+
+// podLogReadFromOffset reads new content appended to logPath since the given byte offset.
+func podLogReadFromOffset(logPath string, offset int64) (string, int64, error) {
+	file, err := os.Open(logPath)
+	if err != nil {
+		return "", offset, fmt.Errorf("open log file: %v", err)
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil || info.Size() <= offset {
+		return "", offset, err
+	}
+
+	if _, err := file.Seek(offset, io.SeekStart); err != nil {
+		return "", offset, err
+	}
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	newOffset, _ := file.Seek(0, io.SeekCurrent)
+	return podLogBuildContent(lines), newOffset, scanner.Err()
+}
+
+// podLogBuildContent strips the containerd log prefix (timestamp stream flag) and joins lines.
+// Containerd format: "2025-09-19T16:56:32.827697838+08:00 stdout F <actual log line>"
+func podLogBuildContent(lines []string) string {
+	var sb strings.Builder
+	for _, line := range lines {
+		parts := strings.SplitN(line, " ", 4)
+		if len(parts) >= 4 {
+			sb.WriteString(parts[3])
+		} else {
+			sb.WriteString(line)
+		}
+		sb.WriteByte('\n')
+	}
+	return sb.String()
 }
