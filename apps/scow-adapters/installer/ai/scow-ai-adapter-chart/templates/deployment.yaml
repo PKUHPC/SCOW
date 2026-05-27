@@ -33,6 +33,8 @@ spec:
           ports:
             - containerPort: {{ .Values.containerPort }}
               protocol: TCP
+            - containerPort: {{ .Values.monitor.port }}
+              protocol: TCP
 
           volumeMounts:
 {{- if .Values.hostPathMounts.enabled }}

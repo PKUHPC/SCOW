@@ -306,7 +306,7 @@ func (c *QueueLabelController) checkLabelConsistency() error {
 	defer logrus.Tracef("[queueLabelController] Completed label consistency check")
 
 	// 1. 获取当前的 partition-info ConfigMap
-	cm, err := c.k8sClient.CoreV1().ConfigMaps("default").Get(context.TODO(), PartitionCmName, metav1.GetOptions{})
+	cm, err := c.k8sClient.CoreV1().ConfigMaps(utils.GetCurrentNamespace()).Get(context.TODO(), PartitionCmName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		logrus.Warnf("[queueLabelController] ConfigMap %s not found, skipping consistency check", PartitionCmName)
 		return nil
@@ -457,13 +457,14 @@ func (c *QueueLabelController) Stop() {
 }
 
 func createConfigMapInformer(k8sClient *kubernetes.Clientset) cache.SharedIndexInformer {
+	namespace := utils.GetCurrentNamespace()
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return k8sClient.CoreV1().ConfigMaps("default").List(context.TODO(), options)
+				return k8sClient.CoreV1().ConfigMaps(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return k8sClient.CoreV1().ConfigMaps("default").Watch(context.TODO(), options)
+				return k8sClient.CoreV1().ConfigMaps(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&corev1.ConfigMap{},

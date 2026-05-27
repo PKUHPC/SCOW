@@ -59,4 +59,7 @@ const (
 	ModeIdmap  UserIdmapMode = "idmap"
 	ModeBindfs UserIdmapMode = "bindfs"
 	CSIDriver                = "idmapcsi.pkuhpc.com"
+
+	// DefaultNamespace 默认命名空间
+	DefaultNamespace = "default"
 )

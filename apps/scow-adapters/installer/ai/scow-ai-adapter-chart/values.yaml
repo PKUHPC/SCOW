@@ -26,7 +26,7 @@ command:
   - /bin/sh
   - -c
 args:
-  - /adapter/scow-ai-adapter
+  - /adapter/scow-adapter
 
 replicaCount: 1
 
@@ -47,13 +47,14 @@ probes:
     periodSeconds: 10
   readiness:
     enabled: true
-    initialDelaSeconds: 2
+    initialDelaySeconds: 2
     periodSeconds: 10
 
 # 是否挂 hostPath（模版挂了 /etc/hosts, /etc/localtime ）
 hostPathMounts:
   enabled: true
   logPath: /data/server.log  # 用于适配器日志映射到宿主机，优先填写共享存储路径
+  type: FileOrCreate
 
 service:
   type: NodePort
@@ -61,6 +62,12 @@ service:
   targetPort: 8972
   nodePort: 30072
   name: scow-ai-adapter-port
+# 适配器监控service
+monitor:
+  port: 8973
+  targetPort: 8973
+  nodePort: 30073
+  name: scow-ai-adapter-monitor-port
 
 configMap:
   name: scow-ai-adapter-config
@@ -124,8 +131,8 @@ configMap:
         accelerator_descriptions: "driver version  470.239.06, cuda version 11.4"
         # cpu 型号
         cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
-        # 显存大小
-        vram_mb: "11441"
+        # 显存大小,MB为单位
+        vram_mb: 11441
         # 加速卡型号
         gpu_model: "Tesla K80"
         # 单pod最大加速卡卡数

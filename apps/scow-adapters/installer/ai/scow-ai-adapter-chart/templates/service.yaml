@@ -14,6 +14,11 @@ spec:
       nodePort: {{ .Values.service.nodePort }}
 {{- end }}
       name: {{ .Values.service.name }}
+    - port: {{ .Values.monitor.port }}
+      targetPort: {{ .Values.monitor.targetPort }}
+{{- if eq .Values.monitor.type "NodePort" }}
+      nodePort: {{ .Values.monitor.nodePort }}
+{{- end }}
+      name: {{ .Values.monitor.name }}
   selector:
     name: scow-ai-adapter
-

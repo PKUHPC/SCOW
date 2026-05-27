@@ -1264,3 +1264,14 @@ func GetClusterMasterNodeHostname() (string, error) {
 	}
 	return masterNode.Name, nil
 }
+
+// GetCurrentNamespace 容器化部署时，pod会自动挂载命名空间信息到/var/run/secrets/kubernetes.io/serviceaccount/namespace
+// 需要兼容二进制部署，目前二进制用的namespace是default
+func GetCurrentNamespace() (namespace string) {
+	data, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil || len(data) == 0 {
+		logrus.Warnf("[GetCurrentNamespace] get current namespace info, %v", err)
+		return DefaultNamespace
+	}
+	return strings.TrimSpace(string(data))
+}

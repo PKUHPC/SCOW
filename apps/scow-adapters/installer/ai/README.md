@@ -33,7 +33,7 @@ command:
   - -c
 # 对应deploy的args  
 args:
-  - /adapter/scow-ai-adapter
+  - /adapter/scow-adapter
 
 # deploy的副本数，目前有定时器，推荐是1
 replicaCount: 1
@@ -72,6 +72,13 @@ service:
   targetPort: 8972
   nodePort: 30072
   name: scow-ai-adapter-port
+  
+  # 适配器监控service 配置  
+monitor: 
+  port: 8973
+  targetPort: 8973
+  nodePort: 30073
+  name: scow-ai-adapter-monitor-port
 
 # 适配器的服务配置信息，以configmap的方式管理
 configMap:
@@ -139,7 +146,7 @@ configMap:
       # cpu 型号
       cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
       # 显存大小
-      vram_mb: "11441"
+      vram_mb: 11441
       # 加速卡型号
       gpu_model: "Tesla K80"
       # 单pod最大加速卡卡数
