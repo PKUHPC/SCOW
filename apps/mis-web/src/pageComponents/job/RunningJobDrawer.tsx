@@ -25,12 +25,15 @@ export const RunningJobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
 
   const { publicConfigClusters } = useStore(ClusterInfoStore);
 
+  const nonPlatformUser = t(pCommon("nonPlatformUser"));
+  const isExternal = !item?.userName;
+
   const drawerItems = [
     [t(pCommon("workName")), "name"],
     [t(pCommon("workId")), "jobId"],
     [t(pCommon("status")), "state"],
-    [t(pCommon("userName")), "userName", (v) => v ?? "-"],
-    [t(pCommon("userId")), "user"],
+    [t(pCommon("userName")), "userName", (v) => isExternal ? nonPlatformUser : (v ?? "-")],
+    [t(pCommon("userId")), "user", (v) => isExternal ? nonPlatformUser : v],
     [t(pCommon("account")), "account"],
     [t(pCommon("accountOwnerName")), "accountOwnerName", (v) => v ?? "-"],
     [t(pCommon("accountOwnerId")), "accountOwnerId", (v) => v ?? "-"],

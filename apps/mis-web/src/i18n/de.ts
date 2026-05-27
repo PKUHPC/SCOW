@@ -1502,12 +1502,12 @@ export default {
         syncClusterAccountUser: {
           syncUserAccount: "Konto-/Benutzerinformationssynchronisierung",
           alertInfo:
-            "SCOW synchronisiert regelmäßig die Informationen von Konten und Benutzern zum Scheduler. " +
+            "Die Plattform synchronisiert regelmäßig die Informationen von Konten und Benutzern zum Scheduler. " +
             "Sie können auf 'Jetzt synchronisieren' klicken, um manuell zu synchronisieren.",
           maxSyncDurationExplanation:
-            "Während der Synchronisierung kann SCOW kontobezogene Informationen nicht ändern." +
+            "Während der Synchronisierung kann die Plattform kontobezogene Informationen nicht ändern." +
             " Um zu verhindern, dass lange Synchronisierungen die normale Benutzererfahrung beeinträchtigen," +
-            ' bietet SCOW einen Parameter "Maximale Bearbeitungszeit für eine einzelne Synchronisierung"' +
+            ' bietet die Plattform einen Parameter "Maximale Bearbeitungszeit für eine einzelne Synchronisierung"' +
             "zur Steuerung der Dauer. Wenn dieses Zeitlimit überschritten wird," +
             " wird die aktuelle Synchronisierung beendet, wobei alle bereits " +
             "synchronisierten Informationen erhalten bleiben.",
@@ -1573,7 +1573,7 @@ export default {
         fetchJobs: {
           jobInfoSync: "Jobinformationssynchronisierung",
           alertMessage:
-            "SCOW synchronisiert regelmäßig Jobinformationen aus dem Cluster. " +
+            "Die Plattform synchronisiert regelmäßig Jobinformationen aus dem Cluster. " +
             "Sie können auf 'Jetzt synchronisieren' klicken, um sofort manuell zu synchronisieren.",
           periodicSyncJobInfo: "Periodische Jobinformationssynchronisierung",
           turnedOn: "Eingeschaltet",

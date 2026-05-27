@@ -512,7 +512,9 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
               width={visibleColumnWeights("user")}
               ellipsis
               title={t(pCommon("user"))}
-              render={(user, record) => `${record.userName} (ID:${user})`}
+              render={(user, record) =>
+                !record.userName ? t(pCommon("nonPlatformUser")) : `${record.userName} (ID:${user})`
+              }
               sorter={(a, b) => a.user.localeCompare(b.user)}
             />
           )}

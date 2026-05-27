@@ -16,6 +16,7 @@ export default {
     user: "用户",
     userId: "用户ID",
     userName: "用户姓名",
+    nonPlatformUser: "非平台用户",
     ownerIdOrName: "用户ID或姓名",
     userFullName: "姓名",
     import: "导入",
@@ -1434,11 +1435,11 @@ export default {
         },
         syncClusterAccountUser: {
           syncUserAccount: "账户用户同步",
-          alertInfo: "SCOW会定期向调度器同步SCOW数据库中账户和用户的信息，您可以点击立刻同步执行一次手动同步。",
+          alertInfo: "平台会定期向调度器同步平台数据库中账户和用户的信息，您可以点击立刻同步执行一次手动同步。",
 
           maxSyncDurationExplanation:
-            "在同步过程中SCOW无法对账户有关的信息进行修改，为了避免同步时间过长影响用户" +
-            "正常使用，SCOW提供了“单次同步最长处理时间”参数来控制同步的处理时间。" +
+            "在同步过程中平台无法对账户有关的信息进行修改，为了避免同步时间过长影响用户" +
+            "正常使用，平台提供了“单次同步最长处理时间”参数来控制同步的处理时间。" +
             "超时后此次同步会中止，同时记录已同步的信息。",
 
           syncAlreadyStarted: "正在进行同步账户用户或同步作业的同步任务。请等待本次同步执行完成后，再重新同步。",
@@ -1520,7 +1521,7 @@ export default {
         },
         fetchJobs: {
           jobInfoSync: "作业信息同步",
-          alertMessage: "SCOW会定时从集群同步作业信息，您可以点击立刻同步执行一次手动同步。",
+          alertMessage: "平台会定时从集群同步作业信息，您可以点击立刻同步执行一次手动同步。",
 
           periodicSyncJobInfo: "周期性同步作业信息",
           turnedOn: "已开启",

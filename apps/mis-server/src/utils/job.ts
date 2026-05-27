@@ -111,9 +111,9 @@ export const getJobsTargetSearchParam = (
 
 interface JobUserAndAccountOwnerDetails {
   biJobIndex: number;
-  userName: string;
-  accountOwnerId?: string;
-  accountOwnerName?: string;
+  userName: string | null;
+  accountOwnerId: string | null;
+  accountOwnerName: string | null;
 }
 
 export type JobUserAndAccountOwnerDetailsMap = Record<number, JobUserAndAccountOwnerDetails>;

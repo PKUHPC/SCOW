@@ -414,7 +414,9 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
           width="9%"
           ellipsis
           title={t(pCommon("user"))}
-          render={(user, record) => `${record.userName} (ID:${user})`}
+          render={(user, record) => !record.userName
+            ? t(pCommon("nonPlatformUser"))
+            : `${record.userName} (ID:${user})`}
         />
         <Table.Column dataIndex="account" ellipsis title={t(pCommon("account"))} />
         <Table.Column<JobInfo>

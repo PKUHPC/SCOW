@@ -24,11 +24,16 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
 
   const { publicConfigClusters } = useStore(ClusterInfoStore);
 
+  const { item, onClose, open } = props;
+
+  const nonPlatformUser = t(pCommon("nonPlatformUser"));
+  const isExternal = !item?.userName;
+
   const drawerItems = [
     [t(pCommon("workName")), "jobName"],
     [t(pCommon("clusterWorkId")), "idJob"],
-    [t(pCommon("userName")), "userName"],
-    [t(pCommon("userId")), "user"],
+    [t(pCommon("userName")), "userName", (v) => (isExternal ? nonPlatformUser : (v ?? "-"))],
+    [t(pCommon("userId")), "user", (v) => (isExternal ? nonPlatformUser : (v ?? "-"))],
     [t(pCommon("account")), "account"],
     [t(pCommon("accountOwnerName")), "accountOwnerName"],
     [t(pCommon("accountOwnerId")), "accountOwnerId"],
@@ -63,8 +68,6 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
       (pr: Props) => pr.showedPrices.includes("tenant"),
     ],
   ] as [string | ((pr: Props) => string), keyof JobInfo, (v: any) => string, (pr: Props) => boolean][];
-
-  const { item, onClose, open } = props;
 
   return (
     <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("detail"))}>

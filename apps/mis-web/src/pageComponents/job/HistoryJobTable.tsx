@@ -480,7 +480,9 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
             width="13%"
             ellipsis
             title={t(pCommon("user"))}
-            render={(user, record) => `${record.userName} (ID:${user})`}
+            render={(user, record) => !record.userName
+              ? t(pCommon("nonPlatformUser"))
+              : `${record.userName} (ID:${user})`}
             sorter={true}
           />
         ) : undefined}

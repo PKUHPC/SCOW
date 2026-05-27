@@ -17,6 +17,7 @@ export default {
     userId: "User ID",
     ownerIdOrName: "ownerId Or Name",
     userName: "Username",
+    nonPlatformUser: "Non-platform User",
     userFullName: "Name",
     import: "Import",
     fresh: "Refresh",
@@ -1518,11 +1519,11 @@ export default {
         syncClusterAccountUser: {
           syncUserAccount: "Account User Synchronization",
           alertInfo:
-            "SCOW will regularly synchronize the information of accounts and users to the scheduler. " +
+            "The platform will regularly synchronize the information of accounts and users to the scheduler. " +
             "You can click Sync Now to perform a manual synchronization.",
           maxSyncDurationExplanation:
-            "During synchronization, SCOW cannot modify account-related information. " +
-            "To prevent extended synchronization times from affecting normal user experience, SCOW provides" +
+            "During synchronization, the platform cannot modify account-related information. " +
+            "To prevent extended synchronization times from affecting normal user experience, the platform provides" +
             ' a " Maximum Processing Time for a Single Synchronization " parameter to control the ' +
             " processing duration. When this time limit is exceeded, the current synchronization will be " +
             "terminated while preserving all information that has already been synchronized.",
@@ -1607,7 +1608,7 @@ export default {
         fetchJobs: {
           jobInfoSync: "Job Information Synchronization",
           alertMessage:
-            "SCOW will periodically synchronize job information from the cluster. " +
+            "The platform will periodically synchronize job information from the cluster. " +
             "You can click 'Sync Now' to manually synchronize immediately.",
           periodicSyncJobInfo: "Periodic Job Info Synchronization",
           turnedOn: "Turned On",

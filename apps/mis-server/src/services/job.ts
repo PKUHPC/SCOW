@@ -189,13 +189,13 @@ export const jobServiceServer = plugin((server) => {
           const detail = jobUserAndAccountOwnerDetailsMap[job.biJobIndex];
           return {
             ...toGrpc(job),
-            userName: detail.userName,
+            userName: detail.userName ?? undefined,
             accountOwnerId: detail.accountOwnerId ?? undefined,
             accountOwnerName: detail.accountOwnerName ?? undefined,
           };
         }),
-        totalAccountPrice: decimalToMoney(new Decimal(total_account_price)),
-        totalTenantPrice: decimalToMoney(new Decimal(total_tenant_price)),
+        totalAccountPrice: decimalToMoney(new Decimal(total_account_price ?? 0)),
+        totalTenantPrice: decimalToMoney(new Decimal(total_tenant_price ?? 0)),
       };
       return [reply];
     },
