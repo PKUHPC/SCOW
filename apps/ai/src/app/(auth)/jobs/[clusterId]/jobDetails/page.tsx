@@ -104,12 +104,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
   const { publicConfig, user, currentAvailableClusterIds } = usePublicConfig();
   const cluster = publicConfig.CLUSTERS.find((x) => x.id === clusterId);
 
-  // ai配置文件的grafana配置
-  const aiConfigGrafanaConfig = publicConfig.GRAFANA_CONFIG;
-  // 集群配置文件的grafana配置
-  const clusterGrafanaConfig = publicConfig.CLUSTERS_GRAFANA_CONFIG?.[clusterId];
-  // 优先使用集群中的配置
-  const grafanaConfig = clusterGrafanaConfig ?? aiConfigGrafanaConfig;
+  const grafanaConfig = publicConfig.CLUSTERS_GRAFANA_CONFIG?.[clusterId];
   const grafanaEnabled = !!grafanaConfig?.enabled;
 
   if (!cluster || !currentAvailableClusterIds.includes(clusterId)) {

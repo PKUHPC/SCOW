@@ -147,7 +147,7 @@ inferConfig:
   # 推理服务代理地址，可选配置，不配置时用scow节点地址转发
   proxyHost: www.example.com
 
-# 选填作业监控配置，优先级比ai/config.yaml中高:注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
+# 选填作业监控配置：注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
 jobMonitor:
   # 必填grafana模版中的 dashboardId 和 dashboardName
   dashboardId: P17D2FB9C9DA87D76
@@ -257,19 +257,6 @@ inferConfig:
   # enabled: true
   # 推理服务代理地址，可选配置，不配置时用scow节点地址转发
   # proxyHost: www.example.com
-
-# 选填作业监控配置，优先使用集群配置文件中的:注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
-jobMonitor:
-  # 必填grafana模版中的 dashboardId 和 dashboardName
-  dashboardId: P17D2FB9C9DA87D76
-  dashboardName: p17d2fb9c9da87d76
-  # 选填作业监控中要展示的panelId,有默认值(值如下所示)，每个字段对应一个面板 ID, 由grafana的规则决定
-  panelIds:
-    gpu: 4
-    gpuMemory: 10
-    cpu: 24
-    memory: 26
-    network: 46
 
 # 选配：清理harbor中不存在的镜像
 imageCleanup:

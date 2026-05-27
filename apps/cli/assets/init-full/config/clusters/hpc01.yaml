@@ -86,7 +86,7 @@ inferConfig:
   # 推理服务代理地址，可选配置，不配置时用scow节点地址转发
   # proxyHost: www.example.com
 
-# 选填作业监控配置，优先级比ai/config.yaml中高:注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
+# 选填作业监控配置：注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
 jobMonitor:
   # 必填grafana模版中的 dashboardId 和 dashboardName
   dashboardId: P17D2FB9C9DA87D76

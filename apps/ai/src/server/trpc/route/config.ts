@@ -135,7 +135,6 @@ const PublicConfigSchema = z.object({
   UI_EXTENSION: UiExtensionConfigSchema.optional(),
   AI_USER_SHARE_ENABLED: z.boolean(),
   INFER_ENABLED: z.boolean(),
-  GRAFANA_CONFIG: grafanaConfigSchema.optional(),
   CLUSTERS_GRAFANA_CONFIG: z.record(z.string(), grafanaConfigSchema).optional(),
 });
 
@@ -325,7 +324,6 @@ export const config = router({
         AI_USER_SHARE_ENABLED: aiConfig.asset?.userShare?.enabled ?? false,
         INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
 
-        GRAFANA_CONFIG: buildGrafanaConfig(aiConfig.jobMonitor),
         CLUSTERS_GRAFANA_CONFIG: clustersGrafanaConfig,
       };
     }),

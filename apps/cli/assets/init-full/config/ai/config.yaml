@@ -20,18 +20,6 @@ harborConfig:
   # Harbor 仓库可登录用户的登录密码
   password: password
 
-jobMonitor:
-  # grafana模版中的 dashboardId 和 dashboardName
-  dashboardId: P17D2FB9C9DA87D76
-  dashboardName: p17d2fb9c9da87d76
-  # 作业监控中要展示的panelId, 每个字段对应一个面板 ID, 由grafana的规则决定
-  panelIds:
-    gpu: 4
-    gpuMemory: 10
-    cpu: 24
-    memory: 26
-    network: 46
-
 # 选配公共的挂载目录
 # publicMountPoints:
   # - /nfs/public
