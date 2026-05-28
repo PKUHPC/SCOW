@@ -5,9 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  next@15.5.15:
-    hash: 1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326
-    path: patches/next@15.5.15.patch
+  next@15.5.16:
+    hash: cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63
+    path: patches/next@15.5.16.patch
 
 importers:
 
@@ -228,7 +228,7 @@ importers:
         version: 11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3)
       '@trpc/next':
         specifier: 11.7.2
-        version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+        version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       '@trpc/react-query':
         specifier: 11.7.2
         version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
@@ -275,14 +275,14 @@ importers:
         specifier: 0.44.0
         version: 0.44.0
       next:
-        specifier: 15.5.15
-        version: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 15.5.16
+        version: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
       nextjs-cors:
         specifier: 2.2.1
-        version: 2.2.1(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.1(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       node-cron:
         specifier: 3.0.3
         version: 3.0.3
@@ -822,7 +822,7 @@ importers:
         version: 2.10.0
       '@ddadaal/next-typed-api-routes-runtime':
         specifier: 0.8.2
-        version: 0.8.2(@sinclair/typebox@0.34.13)(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.1.13)
+        version: 0.8.2(@sinclair/typebox@0.34.13)(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.1.13)
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.9
         version: 0.17.9(@grpc/grpc-js@1.14.3)
@@ -902,8 +902,8 @@ importers:
         specifier: 2.1.35
         version: 2.1.35
       next:
-        specifier: 15.5.15
-        version: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 15.5.16
+        version: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -1006,7 +1006,7 @@ importers:
         version: 2.1.1(@bufbuild/protobuf@2.10.0)
       '@connectrpc/connect-next':
         specifier: 2.1.1
-        version: 2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0)))(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0)))(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@connectrpc/connect-node':
         specifier: 2.1.1
         version: 2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))
@@ -1092,14 +1092,14 @@ importers:
         specifier: 5.2.4
         version: 5.2.4
       next:
-        specifier: 15.5.15
-        version: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 15.5.16
+        version: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
       nextjs-cors:
         specifier: 2.2.1
-        version: 2.2.1(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.1(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       node-cron:
         specifier: 3.0.3
         version: 3.0.3
@@ -1338,7 +1338,7 @@ importers:
         version: 6.36.2
       '@ddadaal/next-typed-api-routes-runtime':
         specifier: 0.8.2
-        version: 0.8.2(@sinclair/typebox@0.34.13)(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.1.13)
+        version: 0.8.2(@sinclair/typebox@0.34.13)(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.1.13)
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.9
         version: 0.17.9(@grpc/grpc-js@1.14.3)
@@ -1445,8 +1445,8 @@ importers:
         specifier: 0.50.0
         version: 0.50.0
       next:
-        specifier: 15.5.15
-        version: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 15.5.16
+        version: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -1663,7 +1663,7 @@ importers:
         version: 11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3)
       '@trpc/next':
         specifier: 11.7.2
-        version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+        version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       '@trpc/react-query':
         specifier: 11.7.2
         version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
@@ -1707,14 +1707,14 @@ importers:
         specifier: 2.1.35
         version: 2.1.35
       next:
-        specifier: 15.5.15
-        version: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 15.5.16
+        version: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
       nextjs-cors:
         specifier: 2.2.1
-        version: 2.2.1(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.1(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       node-ssh:
         specifier: 13.2.0
         version: 13.2.0
@@ -1880,7 +1880,7 @@ importers:
         version: 2.1.1(@bufbuild/protobuf@2.10.0)
       '@connectrpc/connect-next':
         specifier: 2.1.1
-        version: 2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0)))(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0)))(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@connectrpc/connect-node':
         specifier: 2.1.1
         version: 2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))
@@ -1946,7 +1946,7 @@ importers:
         version: 11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3)
       '@trpc/next':
         specifier: 11.7.2
-        version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+        version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       '@trpc/react-query':
         specifier: 11.7.2
         version: 11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
@@ -1969,14 +1969,14 @@ importers:
         specifier: 5.2.4
         version: 5.2.4
       next:
-        specifier: 15.5.15
-        version: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 15.5.16
+        version: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
       nextjs-cors:
         specifier: 2.2.1
-        version: 2.2.1(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.1(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       nookies:
         specifier: 2.5.2
         version: 2.5.2
@@ -2549,7 +2549,7 @@ importers:
         version: 6.36.2
       '@ddadaal/next-typed-api-routes-runtime':
         specifier: 0.8.2
-        version: 0.8.2(@sinclair/typebox@0.34.13)(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)
+        version: 0.8.2(@sinclair/typebox@0.34.13)(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.9
         version: 0.17.9(@grpc/grpc-js@1.14.3)
@@ -2621,8 +2621,8 @@ importers:
         specifier: 1.11.13
         version: 1.11.13
       next:
-        specifier: 15.5.15
-        version: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 15.5.16
+        version: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -4845,53 +4845,53 @@ packages:
   '@next/bundle-analyzer@15.1.4':
     resolution: {integrity: sha512-W8X96jOW0U5VjLVAkFr1P37kH2f/Ma9zzwgX2o3Omft92pI0XHpFG8Xa9YUT3NlhRJCe4ZKznr1VxhSrFNA+BA==}
 
-  '@next/env@15.5.15':
-    resolution: {integrity: sha512-vcmyu5/MyFzN7CdqRHO3uHO44p/QPCZkuTUXroeUmhNP8bL5PHFEhik22JUazt+CDDoD6EpBYRCaS2pISL+/hg==}
+  '@next/env@15.5.16':
+    resolution: {integrity: sha512-9QMKolCl+JnJtaRAQSXy4RQrhgfe8W7/G1+Hl3QSB/HZY7zQMzTwPDdTRwwio8BS96ps1MHpHhbS8qxoNV3JIQ==}
 
-  '@next/swc-darwin-arm64@15.5.15':
-    resolution: {integrity: sha512-6PvFO2Tzt10GFK2Ro9tAVEtacMqRmTarYMFKAnV2vYMdwWc73xzmDQyAV7SwEdMhzmiRoo7+m88DuiXlJlGeaw==}
+  '@next/swc-darwin-arm64@15.5.16':
+    resolution: {integrity: sha512-wzdER4JZj+31vNkhaZ1Ght3IsNI8DMwj7VqadfIOqJB5sh8FiOqNSopYADQn6mgEPomzDd/DHqBcfo2fmVMYtg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@next/swc-darwin-x64@15.5.15':
-    resolution: {integrity: sha512-G+YNV+z6FDZTp/+IdGyIMFqalBTaQSnvAA+X/hrt+eaTRFSznRMz9K7rTmzvM6tDmKegNtyzgufZW0HwVzEqaQ==}
+  '@next/swc-darwin-x64@15.5.16':
+    resolution: {integrity: sha512-PPTo+cvcanxkuDEuDyZGk28ntmu0WjfkxqlG7hw9Mhsiribs4x1C6h2Culn0cJKqsne1gFjjZRK3ax7WYlSxgg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-linux-arm64-gnu@15.5.15':
-    resolution: {integrity: sha512-eVkrMcVIBqGfXB+QUC7jjZ94Z6uX/dNStbQFabewAnk13Uy18Igd1YZ/GtPRzdhtm7QwC0e6o7zOQecul4iC1w==}
+  '@next/swc-linux-arm64-gnu@15.5.16':
+    resolution: {integrity: sha512-Jl0IL9P7S8uNl5oI1TqrQmfmLp7OqjWM58000pVnUVIsHrvPP6m9QDW/uNWYUbmd+8IYvc6MTeZKICstBMBpew==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-arm64-musl@15.5.15':
-    resolution: {integrity: sha512-RwSHKMQ7InLy5GfkY2/n5PcFycKA08qI1VST78n09nN36nUPqCvGSMiLXlfUmzmpQpF6XeBYP2KRWHi0UW3uNg==}
+  '@next/swc-linux-arm64-musl@15.5.16':
+    resolution: {integrity: sha512-Zf0BIqv/o5uOWfyRkzgGhyV2Tky7HLt0bG+w7XWdaU1JpyX0tltM3TrSfa/Y9c597SJG4CzN47+u2InhgZZ4vg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-x64-gnu@15.5.15':
-    resolution: {integrity: sha512-nplqvY86LakS+eeiuWsNWvfmK8pFcOEW7ZtVRt4QH70lL+0x6LG/m1OpJ/tvrbwjmR8HH9/fH2jzW1GlL03TIg==}
+  '@next/swc-linux-x64-gnu@15.5.16':
+    resolution: {integrity: sha512-HCDDU1TRLeUDV180QQTWrs5Oa4lIcI7XH9nF0UVUVmYLN/boZ6LqyFtm3814gc1fv+lOVyKaw5B6bVC9BpXTSQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-linux-x64-musl@15.5.15':
-    resolution: {integrity: sha512-eAgl9NKQ84/sww0v81DQINl/vL2IBxD7sMybd0cWRw6wqgouVI53brVRBrggqBRP/NWeIAE1dm5cbKYoiMlqDQ==}
+  '@next/swc-linux-x64-musl@15.5.16':
+    resolution: {integrity: sha512-kvXUY1dn5wxKuMkXxQRUbPjEnKxW1PR9uKOm0zpIpj3574+cFfaePhYFmBVtrOuwt+w34OdDzNaJr5Iixf+HBQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-win32-arm64-msvc@15.5.15':
-    resolution: {integrity: sha512-GJVZC86lzSquh0MtvZT+L7G8+jMnJcldloOjA8Kf3wXvBrvb6OGe2MzPuALxFshSm/IpwUtD2mIoof39ymf52A==}
+  '@next/swc-win32-arm64-msvc@15.5.16':
+    resolution: {integrity: sha512-zpOQuF+eyENMXRjglp2hZCIrUjTdO37suEBnDn1mX4PXSuetXZDMLpjKOh4dYSw3SiDTnOoOUwBl5i5Elr6nnQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-x64-msvc@15.5.15':
-    resolution: {integrity: sha512-nFucjVdwlFqxh/JG3hWSJ4p8+YJV7Ii8aPDuBQULB6DzUF4UNZETXLfEUk+oI2zEznWWULPt7MeuTE6xtK1HSA==}
+  '@next/swc-win32-x64-msvc@15.5.16':
+    resolution: {integrity: sha512-LnwKYpiSmIzXlTq76hMeeIzZoDcFwu848p6H+QBkGFJIbZphgzNUPdHruJcHM/bFnaFeco0l1Frie5I27VKglA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -10271,8 +10271,8 @@ packages:
   next-compose-plugins@2.2.1:
     resolution: {integrity: sha512-OjJ+fV15FXO2uQXQagLD4C0abYErBjyjE0I0FHpOEIB8upw0hg1ldFP6cqHTJBH1cZqy96OeR3u1dJ+Ez2D4Bg==}
 
-  next@15.5.15:
-    resolution: {integrity: sha512-VSqCrJwtLVGwAVE0Sb/yikrQfkwkZW9p+lL/J4+xe+G3ZA+QnWPqgcfH1tDUEuk9y+pthzzVFp4L/U8JerMfMQ==}
+  next@15.5.16:
+    resolution: {integrity: sha512-aZExBk/V6JCu3NCFc90twdj9L/M3y0+ukeQwUAZbOiqRhAX+h2oMEa0NZFhcpj6HYRYjVS3V2/3xvyOpNnmw7A==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
     hasBin: true
     peerDependencies:
@@ -14971,12 +14971,12 @@ snapshots:
       chalk: 5.6.2
     optional: true
 
-  '@connectrpc/connect-next@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0)))(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+  '@connectrpc/connect-next@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0)))(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@bufbuild/protobuf': 2.10.0
       '@connectrpc/connect': 2.1.1(@bufbuild/protobuf@2.10.0)
       '@connectrpc/connect-node': 2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))
-      next: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   '@connectrpc/connect-node@2.1.1(@bufbuild/protobuf@2.10.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.0))':
     dependencies:
@@ -15333,25 +15333,25 @@ snapshots:
       typescript: 4.9.5
       yargs: 17.7.2
 
-  '@ddadaal/next-typed-api-routes-runtime@0.8.2(@sinclair/typebox@0.34.13)(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)':
+  '@ddadaal/next-typed-api-routes-runtime@0.8.2(@sinclair/typebox@0.34.13)(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)':
     dependencies:
       '@sinclair/typebox': 0.34.13
       ajv: 8.17.1
       ajv-formats: 2.1.1(ajv@8.17.1)
       ajv-formats-draft2019: 1.6.1(ajv@8.17.1)
       fast-json-stringify: 5.8.0
-      next: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tslib: 2.6.1
       zod: 3.24.1
 
-  '@ddadaal/next-typed-api-routes-runtime@0.8.2(@sinclair/typebox@0.34.13)(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.1.13)':
+  '@ddadaal/next-typed-api-routes-runtime@0.8.2(@sinclair/typebox@0.34.13)(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@4.1.13)':
     dependencies:
       '@sinclair/typebox': 0.34.13
       ajv: 8.17.1
       ajv-formats: 2.1.1(ajv@8.17.1)
       ajv-formats-draft2019: 1.6.1(ajv@8.17.1)
       fast-json-stringify: 5.8.0
-      next: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tslib: 2.6.1
       zod: 4.1.13
 
@@ -16996,30 +16996,30 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@next/env@15.5.15': {}
+  '@next/env@15.5.16': {}
 
-  '@next/swc-darwin-arm64@15.5.15':
+  '@next/swc-darwin-arm64@15.5.16':
     optional: true
 
-  '@next/swc-darwin-x64@15.5.15':
+  '@next/swc-darwin-x64@15.5.16':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@15.5.15':
+  '@next/swc-linux-arm64-gnu@15.5.16':
     optional: true
 
-  '@next/swc-linux-arm64-musl@15.5.15':
+  '@next/swc-linux-arm64-musl@15.5.16':
     optional: true
 
-  '@next/swc-linux-x64-gnu@15.5.15':
+  '@next/swc-linux-x64-gnu@15.5.16':
     optional: true
 
-  '@next/swc-linux-x64-musl@15.5.15':
+  '@next/swc-linux-x64-musl@15.5.16':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@15.5.15':
+  '@next/swc-win32-arm64-msvc@15.5.16':
     optional: true
 
-  '@next/swc-win32-x64-msvc@15.5.15':
+  '@next/swc-win32-x64-msvc@15.5.16':
     optional: true
 
   '@node-rs/jieba-android-arm-eabi@1.10.4':
@@ -18346,11 +18346,11 @@ snapshots:
       '@trpc/server': 11.7.2(typescript@5.9.3)
       typescript: 5.9.3
 
-  '@trpc/next@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)':
+  '@trpc/next@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/react-query@11.7.2(@tanstack/react-query@5.90.12(react@18.3.1))(@trpc/client@11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@trpc/server@11.7.2(typescript@5.9.3))(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)':
     dependencies:
       '@trpc/client': 11.7.2(@trpc/server@11.7.2(typescript@5.9.3))(typescript@5.9.3)
       '@trpc/server': 11.7.2(typescript@5.9.3)
-      next: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       typescript: 5.9.3
@@ -23591,9 +23591,9 @@ snapshots:
 
   next-compose-plugins@2.2.1: {}
 
-  next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      '@next/env': 15.5.15
+      '@next/env': 15.5.16
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001760
       postcss: 8.4.31
@@ -23601,23 +23601,23 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       styled-jsx: 5.1.6(@babel/core@7.28.5)(react@18.3.1)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 15.5.15
-      '@next/swc-darwin-x64': 15.5.15
-      '@next/swc-linux-arm64-gnu': 15.5.15
-      '@next/swc-linux-arm64-musl': 15.5.15
-      '@next/swc-linux-x64-gnu': 15.5.15
-      '@next/swc-linux-x64-musl': 15.5.15
-      '@next/swc-win32-arm64-msvc': 15.5.15
-      '@next/swc-win32-x64-msvc': 15.5.15
+      '@next/swc-darwin-arm64': 15.5.16
+      '@next/swc-darwin-x64': 15.5.16
+      '@next/swc-linux-arm64-gnu': 15.5.16
+      '@next/swc-linux-arm64-musl': 15.5.16
+      '@next/swc-linux-x64-gnu': 15.5.16
+      '@next/swc-linux-x64-musl': 15.5.16
+      '@next/swc-win32-arm64-msvc': 15.5.16
+      '@next/swc-win32-x64-msvc': 15.5.16
       sharp: 0.34.5
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
 
-  nextjs-cors@2.2.1(next@15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
+  nextjs-cors@2.2.1(next@15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
     dependencies:
       cors: 2.8.5
-      next: 15.5.15(patch_hash=1e0f1362a98db80f2756c7fe537f04aa5c75d4a9b6cf268404cbb06f77f4a326)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 15.5.16(patch_hash=cf6a5676873f64440cd9294e71d0dff0201ec996e6d1a9ac79114624e4672a63)(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   nextjs-node-loader@1.1.9(webpack@5.97.1):
     dependencies:

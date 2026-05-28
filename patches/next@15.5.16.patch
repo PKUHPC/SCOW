@@ -1,5 +1,5 @@
 diff --git a/dist/server/lib/router-server.js b/dist/server/lib/router-server.js
-index 35ea234431bc5171632c986f75dfbe0491ec0db2..c725ccb519869161eb709768d0fafec51c7215ec 100644
+index a71e5a5da32c237e0b439386bc4c3fd86dc4e845..2df30904b72145ab1805082b76eeba9143cd7662 100644
 --- a/dist/server/lib/router-server.js
 +++ b/dist/server/lib/router-server.js
 @@ -621,9 +621,9 @@ async function initialize(opts) {
@@ -12,6 +12,6 @@ index 35ea234431bc5171632c986f75dfbe0491ec0db2..c725ccb519869161eb709768d0fafec5
 +            // if (matchedOutput) {
 +            //     return socket.end();
 +            // }
-             if (parsedUrl.protocol) {
-                 return await (0, _proxyrequest.proxyRequest)(req, socket, parsedUrl, head);
-             }
+             if (finished && parsedUrl.protocol) {
+                 if (!statusCode) {
+                     return await (0, _proxyrequest.proxyRequest)(req, socket, parsedUrl, head);

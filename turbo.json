@@ -44,6 +44,14 @@
     },
     "lint": {
       "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "**/*.proto", "**/*.tsx", "**/*.ts"]
+    },
+    "@scow/scow-adapters#prepareDev": {
+      "inputs": ["buf.gen.yaml", "buf.genCrane.yaml", "buf.genCrane-ai.yaml"],
+      "outputs": []
+    },
+    "@scow/scow-adapters#lint": {
+      "dependsOn": ["prepareDev"],
+      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "buf.genCrane.yaml", "buf.genCrane-ai.yaml"]
     }
   }
 }
