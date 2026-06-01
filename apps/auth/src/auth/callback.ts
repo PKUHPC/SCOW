@@ -5,6 +5,8 @@ import { authConfig } from "src/config/auth";
 import { config } from "src/config/env";
 
 const allowedCallbackHostnames = new Set<string>([
+  "localhost",
+  "127.0.0.1",
   ...authConfig.allowedCallbackHostnames,
   ...parseArray(config.EXTRA_ALLOWED_CALLBACK_HOSTNAMES),
 ]);

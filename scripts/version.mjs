@@ -24,7 +24,9 @@ const changes = {
   "mis-server": [],
   auth: [],
   cli: [],
+  scowctl: [],
   gateway: [],
+  "meta-server": [],
   "grpc-api": [],
   config: [],
   "scheduler-adapter-protos": [],
@@ -171,7 +173,9 @@ ${
   generateContent("mis-server", "管理系统后端") +
   generateContent("auth", "认证系统") +
   generateContent("cli", "CLI") +
+  generateContent("scowctl", "scowctl") +
   generateContent("gateway", "网关") +
+  generateContent("meta-server", "元数据服务") +
   generateContent("ai", "AI系统") +
   generateContent("resource", "资源管理系统") +
   generateContent("notification", "消息系统")

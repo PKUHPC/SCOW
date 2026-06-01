@@ -25,6 +25,13 @@ server {
 
   proxy_read_timeout {{ PROXY_READ_TIMEOUT }};
 
+  location {{ BASE_PATH }}/meta {
+    set $meta_server {{ META_SERVER_URL }};
+    proxy_pass $meta_server;
+
+    include includes/headers;
+  }
+
   {{#if PORTAL_ENABLED}}
   location {{ BASE_PATH }}{{ PORTAL_PATH }} {
     set $portal_path_url {{ PORTAL_PATH_INTERNAL_URL }};
@@ -130,6 +137,7 @@ server {
   location = /__basic_status__ {
     stub_status;
   }
+
 
   location = /50x.html {
     root   /usr/share/nginx/html;

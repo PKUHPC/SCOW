@@ -42,3 +42,21 @@ it("does not generate VNC proxy location when VNC_ENABLED is false", async () =>
 
   expect(nginxConf.server[`location ${config.VNC_PATH}`]).toBeUndefined();
 });
+
+it("generates meta proxy location", async () => {
+  const nginxConf = parseNginxConfig(config);
+
+  expect(nginxConf.server["location /meta"]).toMatchObject({
+    set: `$meta_server ${config.META_SERVER_URL}`,
+    proxy_pass: "$meta_server",
+  });
+});
+
+it("generates meta proxy location with custom base path", async () => {
+  const nginxConf = parseNginxConfig({ ...config, BASE_PATH: "/scow" });
+
+  expect(nginxConf.server["location /scow/meta"]).toMatchObject({
+    set: `$meta_server ${config.META_SERVER_URL}`,
+    proxy_pass: "$meta_server",
+  });
+});

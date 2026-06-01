@@ -298,6 +298,82 @@ jobs:
 
           echo "✅ Uploaded adapter binaries to ccrepo successfully"
 
+  scowctl-binaries:
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))) ||
+      (github.event_name == 'pull_request')
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to the ccrepo.pku.edu.cn
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ccrepo.pku.edu.cn
+          username: ${{ secrets.CCREPO_USERNAME }}
+          password: ${{ secrets.CCREPO_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ vars.HTTPS_PROXY }}
+            env.https_proxy=${{ vars.HTTPS_PROXY }}
+            image=ccrepo.pku.edu.cn/dockerhub/moby/buildkit:buildx-stable-1
+
+      - name: Determine target directory
+        id: target
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            target="master"
+            ref_type="branch"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            tag_name=${GITHUB_REF#refs/tags/}
+            target="${tag_name}"
+            ref_type="tag"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            target="pr-${{ github.event.number }}"
+            ref_type="pr"
+          fi
+
+          echo "target=${target}" >> $GITHUB_OUTPUT
+          echo "ref_type=${ref_type}" >> $GITHUB_OUTPUT
+          echo "Target directory: ${target}"
+
+      - name: Build scowctl binaries
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: scowctl-target
+          push: false
+          build-args: |
+            HTTPS_PROXY=${{ vars.HTTPS_PROXY }}
+            NO_PROXY=mirrors.pku.edu.cn
+            VERSION=${{ github.ref_name }}
+          file: docker/Dockerfile.scowctl
+          platforms: linux/amd64
+          outputs: type=local,dest=apps/scowctl/build/bin
+
+      - name: Upload scowctl binaries to ccrepo
+        run: |
+          target_url="https://ccrepo.pku.edu.cn/repository/scowbin/scowctl/${{ steps.target.outputs.target }}"
+
+          echo "Uploading scowctl to target url: ${target_url}"
+
+          curl -f --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
+            --upload-file "apps/scowctl/build/bin/scowctl-x64" \
+            "${target_url}/scowctl-x64"
+
+          curl -f --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
+            --upload-file "apps/scowctl/build/bin/scowctl-arm64" \
+            "${target_url}/scowctl-arm64"
+
+          echo "✅ scowctl binaries uploaded successfully"
+          echo "📁 AMD64 Available at: ${target_url}/scowctl-x64"
+          echo "📁 ARM64 Available at: ${target_url}/scowctl-arm64"
+
   build-images:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
 
@@ -382,6 +458,7 @@ jobs:
     needs:
       - scow-cli
       - scow-adapter-binaries
+      - scowctl-binaries
       - build-images
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
@@ -414,6 +491,7 @@ jobs:
     needs:
       - scow-cli
       - scow-adapter-binaries
+      - scowctl-binaries
       - build-images
 
     if: github.ref_type == 'tag'
@@ -464,6 +542,16 @@ jobs:
             curl -f -X DELETE \
               --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
               "${cli_target_url}/scow-cli-${arch}" || echo "File not found or already deleted"
+          done
+
+          scowctl_target_url="https://ccrepo.pku.edu.cn/repository/scowbin/scowctl/${pr_dir}"
+
+          echo "Deleting scowctl from target url: ${scowctl_target_url}"
+
+          for arch in x64 arm64; do
+            curl -f -X DELETE \
+              --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
+              "${scowctl_target_url}/scowctl-${arch}" || echo "File not found or already deleted"
           done
 
           for adapter in scow-ai-adapter scow-crane-adapter scow-slurm-adapter scow-crane-ai-adapter; do

@@ -1,0 +1,13 @@
+{
+  "name": "@scow/scowctl",
+  "version": "1.11.1",
+  "private": true,
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "make build ARCH=amd64 BINARY=scowctl-x64 && make build ARCH=arm64 BINARY=scowctl-arm64 && make build GOOS=windows ARCH=amd64 BINARY=scowctl-windows-x64.exe",
+    "lint": "make lint",
+    "test": "sh -c 'make test'"
+  }
+}

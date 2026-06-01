@@ -8,6 +8,20 @@ FROM base AS builder
 
 RUN apk add libc6-compat python3 make gcc g++ curl git
 
+ARG TARGETARCH
+ARG VERSION=dev
+
+ENV GOVERSION=1.25.10
+
+RUN curl -LO https://mirrors.aliyun.com/golang/go${GOVERSION}.linux-${TARGETARCH}.tar.gz && \
+  tar -C /usr/local -xzf go${GOVERSION}.linux-${TARGETARCH}.tar.gz && \
+  rm go${GOVERSION}.linux-${TARGETARCH}.tar.gz
+
+ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.cn,direct
+
 RUN npm i -g corepack@0.31.0
 
 RUN corepack enable
@@ -60,4 +74,3 @@ ENV NODE_ENV=production
 EXPOSE 3000 80 5000
 
 ENTRYPOINT [ "./entrypoint.sh" ]
-

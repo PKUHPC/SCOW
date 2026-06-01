@@ -43,6 +43,16 @@ it("sets proxy_read_timeout", async () => {
   expect(composeSpec.services.gateway.environment).toInclude(`PROXY_READ_TIMEOUT=${config.gateway.proxyReadTimeout}`);
 });
 
+it("deploys meta-server with install config mounted", async () => {
+  const config = getInstallConfig(configPath);
+
+  const composeSpec = createComposeSpec(config);
+
+  expect(composeSpec.services["meta-server"].environment).toContain("SCOW_LAUNCH_APP=meta-server");
+  expect(composeSpec.services["meta-server"].environment).toContain("INSTALL_CONFIG_PATH=/etc/scow/install.yaml");
+  expect(composeSpec.services["meta-server"].volumes).toContain("./install.yaml:/etc/scow/install.yaml");
+});
+
 describe("sets custom auth environment", () => {
   it("accepts object", async () => {
     const configPath = await createInstallYaml({

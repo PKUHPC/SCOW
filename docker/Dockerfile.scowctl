@@ -1,0 +1,38 @@
+FROM --platform=$BUILDPLATFORM ccrepo.pku.edu.cn/dockerhub/rockylinux/rockylinux:8.9 AS builder
+
+RUN sed -e 's|^mirrorlist=|#mirrorlist=|g' \
+    -e 's|^#baseurl=http://dl.rockylinux.org/$contentdir|baseurl=https://mirrors.pku.edu.cn/rocky|g' \
+    -i.bak \
+    /etc/yum.repos.d/[Rr]ocky*.repo
+
+ARG BUILDARCH
+ARG VERSION=dev
+
+WORKDIR /app
+
+RUN dnf install -y curl tar gzip git make ca-certificates && \
+    dnf clean all
+
+ENV GOVERSION=1.25.10
+
+RUN curl -LO https://mirrors.aliyun.com/golang/go${GOVERSION}.linux-${BUILDARCH}.tar.gz && \
+    tar -C /usr/local -xzf go${GOVERSION}.linux-${BUILDARCH}.tar.gz && \
+    rm go${GOVERSION}.linux-${BUILDARCH}.tar.gz
+
+ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.cn,direct
+
+COPY go.mod go.sum ./
+COPY apps/scowctl/ apps/scowctl/
+
+RUN go mod download
+RUN cd apps/scowctl && \
+    make build VERSION=${VERSION} ARCH=amd64 BINARY=scowctl-x64 && \
+    make build VERSION=${VERSION} ARCH=arm64 BINARY=scowctl-arm64
+
+FROM scratch AS scowctl-target
+
+COPY --from=builder /app/apps/scowctl/build/bin/scowctl-x64 /scowctl-x64
+COPY --from=builder /app/apps/scowctl/build/bin/scowctl-arm64 /scowctl-arm64

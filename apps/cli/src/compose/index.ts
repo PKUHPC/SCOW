@@ -241,6 +241,21 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     },
   });
 
+  addService("meta-server", {
+    image: scowImage,
+    environment: {
+      SCOW_LAUNCH_APP: "meta-server",
+      INSTALL_CONFIG_PATH: "/etc/scow/install.yaml",
+      ...serviceLogEnv,
+      ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
+    },
+    ports: {},
+    volumes: {
+      "/etc/hosts": "/etc/hosts",
+      "./install.yaml": "/etc/scow/install.yaml",
+    },
+  });
+
   // AUTH
 
   addService("redis", {

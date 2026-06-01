@@ -38,6 +38,8 @@ if (appDirs.length === 0) {
     "mis-web",
     "mis-server",
     "gateway",
+    "meta-server",
+    "scowctl",
     "audit-server",
     "ai",
     "notification",
@@ -98,7 +100,7 @@ for (const appDir of appDirs) {
 
   // copy lib depepdencies
   const snapshot = lockFile.importers[appDir];
-  for (const [name, value] of Object.entries(snapshot.dependencies)) {
+  for (const [name, value] of Object.entries(snapshot.dependencies ?? {})) {
     if (name.startsWith("@scow/") && !copiedLibs.has(name)) {
       console.log("Copying lib " + name);
       const libDir = value.substring("link:../../".length);

@@ -676,6 +676,24 @@ importers:
         specifier: 1.6.1
         version: 1.6.1
 
+  apps/meta-server:
+    dependencies:
+      '@scow/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@scow/lib-config':
+        specifier: workspace:*
+        version: link:../../libs/libconfig
+      '@scow/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      fastify:
+        specifier: 4.28.0
+        version: 4.28.0
+      swagger-ui-dist:
+        specifier: 5.32.5
+        version: 5.32.5
+
   apps/mis-server:
     dependencies:
       '@bufbuild/protobuf':
@@ -2076,6 +2094,8 @@ importers:
         version: 1.171.0
 
   apps/scow-adapters: {}
+
+  apps/scowctl: {}
 
   dev/test-adapter:
     dependencies:
@@ -12695,6 +12715,9 @@ packages:
   swagger-client@3.37.4:
     resolution: {integrity: sha512-3xxqc9s99Vsf47ket2j7D4Tw6b6T7ObNvTqSP009yBeoAo0fy0yprqOVxFISTrvRxN7jgfrEi8GXMhsjzb1M0g==}
     engines: {node: '>=22'}
+
+  swagger-ui-dist@5.32.5:
+    resolution: {integrity: sha512-7/FQfWe9A4qoyYFdAwy0chD0uDYidDp/ZT9VQ9LZlgD4AnnHJk8/+ytAA1HkJYOPySmK6helPDdJQMlcumt7HA==}
 
   swagger-ui-react@5.32.5:
     resolution: {integrity: sha512-u86Qx36C5FvmJFVGMF3s62dxR3l0EfUmlylJVqCJ4vL0tvfd38kNdCQan9app6Y+C25uqVAjGLYu2w87UMD35Q==}
@@ -26670,6 +26693,10 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
+
+  swagger-ui-dist@5.32.5:
+    dependencies:
+      '@scarf/scarf': 1.4.0
 
   swagger-ui-react@5.32.5(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:

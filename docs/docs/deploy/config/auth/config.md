@@ -122,9 +122,10 @@ ui:
 
 当登录完成后，认证系统将会回调到登录时传入的`callbackUrl`参数。为了保证安全性，认证系统默认只允许回调到和认证系统相同的主机名下。您可以通过配置`auth.yml`下的`allowedCallbackHostnames`配置项来配置允许回调的主机名。注意，主机名(hostname)不包括端口号。
 
+`localhost`和`127.0.0.1`始终允许作为回调主机名，不需要在`allowedCallbackHostnames`中配置。
+
 ```yaml title="config/auth.yml"
-allowedCallbackHostnames：
-  - localhost
+allowedCallbackHostnames:
   - another.com
 ```
 

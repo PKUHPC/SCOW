@@ -5,7 +5,11 @@ title: 通过API调用SCOW
 
 # 通过API调用SCOW
 
-AI、量子、门户前端（portal-web）、管理前端（mis-web）、消息系统（notification）和资源管理系统（resource）均提供HTTP OpenAPI，所有API均位于`/api`下。各系统部署路径的`/api/openapi.json`下存在一份[OpenAPI](https://www.openapis.org/)的定义文件。您可以通过访问这个URL来获取系统中所有可用的API。
+AI、量子、门户前端（portal-web）、管理前端（mis-web）、消息系统（notification）和资源管理系统（resource）均提供HTTP OpenAPI，所有API均位于`/api`下。各系统部署路径的`/api/openapi.json`下存在一份[OpenAPI](https://www.openapis.org/)的定义文件。您可以通过访问这个URL来获取对应系统中所有可用的API。
+
+SCOW还提供统一的OpenAPI入口。您可以通过`/meta/openapi`查看整个系统已启用组件的全部HTTP API，也可以通过`/meta/api/openapi.json`获取聚合后的OpenAPI定义文件。如果只需要查看某个系统的API，也可以继续访问该系统自己的OpenAPI UI或`openapi.json`。
+
+已部署的 SCOW 实例还会在`/meta/scowctl`下提供与该实例配套的`scowctl`说明页、安装脚本和二进制文件。例如默认部署路径下可以访问`/meta/scowctl`，并下载`/meta/scowctl/bin/scowctl-x64`、`/meta/scowctl/bin/scowctl-arm64`或`/meta/scowctl/bin/scowctl-windows-x64.exe`；如果整个系统`basePath`为`/scow`，则对应路径为`/scow/meta/scowctl`、`/scow/meta/scowctl/bin/scowctl-x64`、`/scow/meta/scowctl/bin/scowctl-arm64`和`/scow/meta/scowctl/bin/scowctl-windows-x64.exe`。统一 OpenAPI 文档的描述中也会提示当前实例的下载地址。
 
 ## OpenAPI路径
 
@@ -13,6 +17,7 @@ AI、量子、门户前端（portal-web）、管理前端（mis-web）、消息�
 
 | 系统 | 默认部署路径 | OpenAPI UI路径 | `openapi.json`路径 |
 | ---- | ------------ | -------------- | ------------------ |
+| 全系统（meta-server） | `/meta` | `/meta/openapi` | `/meta/api/openapi.json` |
 | 门户系统（portal-web） | `/` | `/openapi` | `/api/openapi.json` |
 | 管理系统（mis-web） | `/mis` | `/mis/openapi` | `/mis/api/openapi.json` |
 | AI系统（ai） | `/ai` | `/ai/openapi` | `/ai/api/openapi.json` |
@@ -20,7 +25,7 @@ AI、量子、门户前端（portal-web）、管理前端（mis-web）、消息�
 | 消息系统（notification） | `/notification` | `/notification/openapi` | `/notification/api/openapi.json` |
 | 资源管理系统（resource） | `/resource` | `/resource/openapi` | `/resource/api/openapi.json` |
 
-如果修改了`install.yaml`中的`basePath`或各系统的`basePath`，请将上表中的默认部署路径替换为实际部署路径。例如整个系统`basePath`为`/scow`、管理系统`basePath`为`/mis`时，管理系统的OpenAPI UI路径为`/scow/mis/openapi`，`openapi.json`路径为`/scow/mis/api/openapi.json`。
+如果修改了`install.yaml`中的`basePath`或各系统的`basePath`，请将上表中的默认部署路径替换为实际部署路径。例如整个系统`basePath`为`/scow`时，统一OpenAPI UI路径为`/scow/meta/openapi`，聚合后的`openapi.json`路径为`/scow/meta/api/openapi.json`；管理系统`basePath`为`/mis`时，管理系统的OpenAPI UI路径为`/scow/mis/openapi`，`openapi.json`路径为`/scow/mis/api/openapi.json`。
 
 # API认证
 
