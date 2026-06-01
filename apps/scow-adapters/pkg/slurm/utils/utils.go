@@ -150,39 +150,86 @@ func GetStateId(state string) (int, error) {
 }
 
 func GetTimeLimit(timeLimit string) int64 {
-	var timeLimitMinutes int64
+	logrus.Tracef("[GetTimeLimit] timeLimit: %s", timeLimit)
+	var (
+		timeLimitMinutes int64
+		err              error
+	)
+	//d-HH:MM:SS（包含 -）
 	if strings.Contains(timeLimit, "-") {
 		timeLimitMinutesList := strings.Split(timeLimit, "-")
 		if len(timeLimitMinutesList) != 2 {
+			logrus.Warnf("[GetTimeLimit] timeLimit length: %d", len(timeLimitMinutesList))
 			return 0
 		}
-		day, _ := strconv.Atoi(timeLimitMinutesList[0])
+		day, err := strconv.Atoi(timeLimitMinutesList[0])
+		if err != nil {
+			logrus.Errorf("invalid time limit of day: %v, err: %s", timeLimitMinutesList[0], err)
+			return 0
+		}
 		timeLimitMinutesListNew := strings.Split(timeLimitMinutesList[1], ":")
-		if len(timeLimitMinutesListNew) != 3 {
-			return 0
-		}
-		hours, _ := strconv.Atoi(timeLimitMinutesListNew[0])
-		minutes, _ := strconv.Atoi(timeLimitMinutesListNew[1])
-		seconds, _ := strconv.Atoi(timeLimitMinutesListNew[2])
-		return int64(seconds)*0 + int64(minutes)*1 + int64(hours)*60 + int64(day)*24*60
-	} else {
-		// 没有timeLimitMinutes超过一天的作业
-		timeLimitMinutesList := strings.Split(timeLimit, ":")
-		if len(timeLimitMinutesList) == 2 {
-			minutes, _ := strconv.Atoi(timeLimitMinutesList[0])
-			seconds, _ := strconv.Atoi(timeLimitMinutesList[1])
-			timeLimitMinutes = int64(seconds)*0 + int64(minutes)*1
-		} else {
-			if len(timeLimitMinutesList) != 3 {
+		switch len(timeLimitMinutesListNew) {
+		case 1: // D-HH
+			hours, err := strconv.Atoi(timeLimitMinutesListNew[0])
+			if err != nil {
+				logrus.Errorf("invalid time limit of hours: %v, err: %s", timeLimitMinutesListNew[0], err.Error())
 				return 0
 			}
-			hours, _ := strconv.Atoi(timeLimitMinutesList[0])
-			minutes, _ := strconv.Atoi(timeLimitMinutesList[1])
-			seconds, _ := strconv.Atoi(timeLimitMinutesList[2])
-			timeLimitMinutes = int64(seconds)*0 + int64(minutes)*1 + int64(hours)*60
+			return int64(hours)*60 + int64(day)*24*60
+		case 2, 3: // D-HH:MM or D-HH:MM:SS
+			hours, err := strconv.Atoi(timeLimitMinutesListNew[0])
+			if err != nil {
+				logrus.Errorf("invalid time limit of hours: %v, err: %s", timeLimitMinutesListNew[0], err.Error())
+				return 0
+			}
+			minutes, err := strconv.Atoi(timeLimitMinutesListNew[1])
+			if err != nil {
+				logrus.Errorf("invalid time limit of minutes: %v, err: %s", timeLimitMinutesListNew[1], err.Error())
+				return 0
+			}
+			return int64(minutes) + int64(hours)*60 + int64(day)*24*60
+		default:
+			logrus.Warnf("[GetTimeLimit] timeLimitMinutesListNew length: %d", len(timeLimitMinutesListNew))
+			return 0
+		}
+	} else {
+		// 没有timeLimitMinutes超过一天的作业
+		// HH:MM:SS 或 MM:SS（包含 :）
+		timeLimitMinutesList := strings.Split(timeLimit, ":")
+		switch len(timeLimitMinutesList) {
+		case 1:
+			// 纯分钟数，如 MaxTime=20 时 squeue 输出 "20"
+			timeLimitMinutes, err = strconv.ParseInt(timeLimitMinutesList[0], 10, 64)
+			if err != nil {
+				logrus.Errorf("invalid time limit of hours: %v, err: %s", timeLimitMinutesList[0], err.Error())
+				return 0
+			}
+		case 2:
+			minutes, err := strconv.Atoi(timeLimitMinutesList[0])
+			if err != nil {
+				logrus.Errorf("invalid time limit of minutes: %v, err: %s", timeLimitMinutesList[0], err.Error())
+				return 0
+			}
+			timeLimitMinutes = int64(minutes)
+		case 3:
+			hours, err := strconv.Atoi(timeLimitMinutesList[0])
+			if err != nil {
+				logrus.Errorf("invalid time limit of hours: %v, err: %s", timeLimitMinutesList[0], err.Error())
+				return 0
+			}
+			minutes, err := strconv.Atoi(timeLimitMinutesList[1])
+			if err != nil {
+				logrus.Errorf("invalid time limit of minutes: %v, err: %s", timeLimitMinutesList[1], err.Error())
+				return 0
+			}
+			timeLimitMinutes = int64(minutes) + int64(hours)*60
+		default:
+			logrus.Warnf("[GetTimeLimit] timeLimitMinutesList length: %d", len(timeLimitMinutesList))
+			return 0
 		}
 		return timeLimitMinutes
 	}
+
 }
 
 func GetGpuCountsFromGpuIdList(tresAlloc string, gpuId []int) int32 {
