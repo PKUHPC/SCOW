@@ -5,6 +5,14 @@ import { join } from "path";
 import { getMetadata } from "src/metadata";
 import { createMetaServer, stripBasePath, stripMetaBasePath } from "src/server";
 
+import packageJson from "../package.json";
+
+const metadataVersion = packageJson.version;
+
+jest.mock("@scow/utils/build/version", () => ({
+  readVersionFile: () => ({}),
+}));
+
 it("returns enabled component base paths with system base path", () => {
   const metadata = getMetadata({
     basePath: "/scow",
@@ -18,7 +26,7 @@ it("returns enabled component base paths with system base path", () => {
 
   expect(metadata).toEqual({
     basePath: "/scow",
-    version: "1.11.1",
+    version: metadataVersion,
     components: {
       portal: "/scow",
       mis: "/scow/mis",
@@ -72,7 +80,7 @@ it("serves metadata with fastify", async () => {
   expect(response.statusCode).toBe(200);
   expect(response.json()).toMatchObject({
     basePath: "/scow",
-    version: "1.11.1",
+    version: metadataVersion,
     components: {
       portal: "/scow",
       mis: "/scow/mis",
@@ -88,7 +96,7 @@ it("serves metadata with root base path using fastify route", async () => {
   expect(response.statusCode).toBe(200);
   expect(response.json()).toMatchObject({
     basePath: "/",
-    version: "1.11.1",
+    version: metadataVersion,
     components: {
       portal: "/",
       mis: "/mis",
