@@ -19,7 +19,13 @@ import { DisabledA } from "src/components/DisabledA";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { AccountState, DeleteFailedReason, DisplayedAccountState, EntityType, getDisplayedStateI18nTexts } from "src/models/User";
+import {
+  AccountState,
+  DeleteFailedReason,
+  DisplayedAccountState,
+  EntityType,
+  getDisplayedStateI18nTexts,
+} from "src/models/User";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { UserStore } from "src/stores/UserStore";
@@ -381,7 +387,7 @@ export const AccountTable: React.FC<Props> = ({ data, isLoading, showedTab, relo
         />
         <Table.Column<AdminAccountInfo>
           title={t(pCommon("operation"))}
-          width="27%"
+          width={showedTab === "TENANT" ? "27%" : "14%"}
           fixed="right"
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
