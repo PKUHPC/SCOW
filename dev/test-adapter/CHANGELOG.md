@@ -1,5 +1,16 @@
 # @scow/test-adapter
 
+## 1.1.21
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [e4fc0d7]
+- Updated dependencies [00d1161]
+- Updated dependencies [839c754]
+  - @scow/scheduler-adapter-protos@1.6.0
+  - @scow/lib-config@1.0.9
+
 ## 1.1.20
 
 ### Patch Changes

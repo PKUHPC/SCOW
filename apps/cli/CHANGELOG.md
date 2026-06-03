@@ -1,5 +1,40 @@
 # @scow/cli
 
+## 1.11.2
+
+### Patch Changes
+
+- 25d5dcc: 为 AI 集群的公共数据资产目录增加配置校验、远端创建命令和初始化模板指引。
+
+  - `check-config` 现在会在启用 AI 时校验集群是否配置了 `ai.clusterPublicPath`
+  - 新增 `create-configured-cluster-paths` 命令，可通过登录节点检查并创建已配置的公共数据资产目录
+  - `cli init` 生成的集群配置模板增加了 `ai.clusterPublicPath` 示例和使用说明
+
+- 439e7ed: 添加 scowctl 用户命令行工具 和 meta-server 提供部署元信息以及统一 API 文档。 修改了的文档：API: docs/docs/integration/scow-api-hook/api/api ； scowctl: docs/docs/info/scowctl
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 46c4f2c: **删除 AI config 下的 jobMonitor 配置，仅保留集群下的该配置**
+  修复仅配置 AI config 导致用户角色查看监控数据的报错问题
+- 873a79f: install.yaml 新增`novnc`配置，在顶层指定 novncClientImage, 优先级高于 portal 中所指定的 novncClientImage
+  详细内容参考文档 /docs/deploy/config/novnc/config
+
+  重构 novnc 服务启动逻辑，在 AI 或者 PORTAL 任一服务已配置时启动
+
+  完善关于根路径访问的文档说明 /docs/deploy/config/customization/basepath
+
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+- Updated dependencies [87682ee]
+- Updated dependencies [06ceebd]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [00d1161]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+  - @scow/config@1.15.0
+  - @scow/lib-scowd@1.2.9
+  - @scow/lib-scheduler-adapter@1.1.39
+  - @scow/lib-config@1.0.9
+  - @scow/utils@1.1.4
+
 ## 1.11.1
 
 ### Patch Changes

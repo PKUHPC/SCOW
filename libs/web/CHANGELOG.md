@@ -1,5 +1,22 @@
 # @scow/lib-web
 
+## 1.6.2
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 0b41958: portal-web 和 mis-web 支持和其他系统相同的 OpenAPI 调用方式；所有系统添加/openapi API 文档 UI；相关文档：docs/integration/scow-api-hook/api/api.md
+- c56bdaa: 更新 nextjs 版本至 15.5.16
+- Updated dependencies [87682ee]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [00d1161]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+  - @scow/config@1.15.0
+  - @scow/protos@1.1.1
+  - @scow/utils@1.1.4
+
 ## 1.6.1
 
 ### Patch Changes

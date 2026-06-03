@@ -1,5 +1,25 @@
 # @scow/gateway
 
+## 1.11.2
+
+### Patch Changes
+
+- 7aea021: 修正 gateway nginx 反向代理 forwarded headers 和 WebSocket Connection 头设置
+- 439e7ed: 添加 scowctl 用户命令行工具 和 meta-server 提供部署元信息以及统一 API 文档。 修改了的文档：API: docs/docs/integration/scow-api-hook/api/api ； scowctl: docs/docs/info/scowctl
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 873a79f: install.yaml 新增`novnc`配置，在顶层指定 novncClientImage, 优先级高于 portal 中所指定的 novncClientImage
+  详细内容参考文档 /docs/deploy/config/novnc/config
+
+  重构 novnc 服务启动逻辑，在 AI 或者 PORTAL 任一服务已配置时启动
+
+  完善关于根路径访问的文档说明 /docs/deploy/config/customization/basepath
+
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+- Updated dependencies [00d1161]
+- Updated dependencies [839c754]
+  - @scow/lib-config@1.0.9
+  - @scow/utils@1.1.4
+
 ## 1.11.1
 
 ### Patch Changes

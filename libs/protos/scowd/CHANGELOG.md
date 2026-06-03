@@ -1,5 +1,15 @@
 # @scow/scowd-protos
 
+## 0.7.0
+
+### Minor Changes
+
+- 87682ee: 在 scowd 的 system.proto 中增加获取用户映射信息接口
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+
 ## 0.6.0
 
 ### Minor Changes

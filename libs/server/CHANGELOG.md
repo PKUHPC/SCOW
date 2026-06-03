@@ -1,5 +1,26 @@
 # @scow/lib-server
 
+## 1.5.2
+
+### Patch Changes
+
+- 44cf25f: 删除 scow 中调用适配器 getVersion 相关的代码，在后续版本的代码中 scow 版本与适配器版本维持一致
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+- Updated dependencies [87682ee]
+- Updated dependencies [e4fc0d7]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [00d1161]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+  - @scow/config@1.15.0
+  - @scow/scheduler-adapter-protos@1.6.0
+  - @scow/lib-scheduler-adapter@1.1.39
+  - @scow/rich-error-model@2.0.4
+  - @scow/protos@1.1.1
+  - @scow/utils@1.1.4
+
 ## 1.5.1
 
 ### Patch Changes

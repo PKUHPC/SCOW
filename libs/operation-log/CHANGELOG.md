@@ -1,5 +1,13 @@
 # @scow/lib-operation-log
 
+## 2.2.16
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [00d1161]
+  - @scow/protos@1.1.1
+
 ## 2.2.15
 
 ### Patch Changes

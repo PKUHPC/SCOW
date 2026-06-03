@@ -1,5 +1,38 @@
 # @scow/portal-web
 
+## 1.11.2
+
+### Patch Changes
+
+- 0708d69: SCOW 整体响应式布局优化
+- 3185460: 没有可用集群时隐藏"作业"一级菜单并显示不可用提示页
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 0b41958: portal-web 和 mis-web 支持和其他系统相同的 OpenAPI 调用方式；所有系统添加/openapi API 文档 UI；相关文档：docs/integration/scow-api-hook/api/api.md
+- 96ede62: 交互式应用的自定义表单的输入框增加 password 类型
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+- c56bdaa: 更新 nextjs 版本至 15.5.16
+- Updated dependencies [87682ee]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [00d1161]
+- Updated dependencies [0b41958]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+- Updated dependencies [c56bdaa]
+  - @scow/config@1.15.0
+  - @scow/notification-protos@0.1.11
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-operation-log@2.2.16
+  - @scow/lib-scow-resource@0.2.24
+  - @scow/lib-notification@1.0.25
+  - @scow/protos@1.1.1
+  - @scow/lib-config@1.0.9
+  - @scow/lib-decimal@1.0.1
+  - @scow/utils@1.1.4
+  - @scow/lib-auth@1.0.5
+  - @scow/lib-ssh@1.0.6
+  - @scow/lib-web@1.6.2
+
 ## 1.11.1
 
 ### Patch Changes

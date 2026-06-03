@@ -1,5 +1,12 @@
 # @scow/rich-error-model
 
+## 2.0.4
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+
 ## 2.0.3
 
 ### Patch Changes

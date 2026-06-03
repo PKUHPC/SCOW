@@ -1,5 +1,31 @@
 # @scow/notification
 
+## 0.2.28
+
+### Patch Changes
+
+- 0708d69: SCOW 整体响应式布局优化
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- c56bdaa: 更新 nextjs 版本至 15.5.16
+- Updated dependencies [87682ee]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [44cf25f]
+- Updated dependencies [00d1161]
+- Updated dependencies [0b41958]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+- Updated dependencies [c56bdaa]
+  - @scow/config@1.15.0
+  - @scow/lib-server@1.5.2
+  - @scow/notification-protos@0.1.11
+  - @scow/lib-scheduler-adapter@1.1.39
+  - @scow/lib-notification@1.0.25
+  - @scow/protos@1.1.1
+  - @scow/lib-config@1.0.9
+  - @scow/utils@1.1.4
+  - @scow/lib-web@1.6.2
+
 ## 0.2.27
 
 ### Patch Changes

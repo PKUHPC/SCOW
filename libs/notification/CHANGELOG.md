@@ -1,5 +1,19 @@
 # @scow/lib-notification
 
+## 1.0.25
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [87682ee]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [00d1161]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+  - @scow/config@1.15.0
+  - @scow/notification-protos@0.1.11
+
 ## 1.0.24
 
 ### Patch Changes

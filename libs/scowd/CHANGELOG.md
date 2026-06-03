@@ -1,5 +1,15 @@
 # @scow/lib-scowd
 
+## 1.2.9
+
+### Patch Changes
+
+- 06ceebd: 为 scowd Connect-RPC 传输层添加 HTTP/2 keepalive 防止半开连接导致请求 hang
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [00d1161]
+- Updated dependencies [87682ee]
+  - @scow/scowd-protos@0.7.0
+
 ## 1.2.8
 
 ### Patch Changes

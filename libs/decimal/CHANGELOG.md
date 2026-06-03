@@ -1,5 +1,11 @@
 # @scow/lib-decimal
 
+## 1.0.1
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+
 ## 1.0.0
 
 ### Major Changes

@@ -1,6 +1,6 @@
 {
   "name": "@scow/grpc-api",
-  "version": "1.34.0",
+  "version": "1.34.1",
   "private": false,
   "description": "The gRPC API for SCOW",
   "license": "Mulan PSL v2",

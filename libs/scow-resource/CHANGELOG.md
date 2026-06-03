@@ -1,5 +1,19 @@
 # @scow/lib-scow-resource
 
+## 0.2.24
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [87682ee]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [00d1161]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+  - @scow/config@1.15.0
+  - @scow/scow-resource-protos@0.3.3
+
 ## 0.2.23
 
 ### Patch Changes

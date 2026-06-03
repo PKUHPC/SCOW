@@ -1,5 +1,12 @@
 # @scow/grpc-api
 
+## 1.34.1
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 3fccf34: 未结束作业接口修改 user_name 为可选字段
+
 ## 1.34.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @scow/notification-protos
 
+## 0.1.11
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+
 ## 0.1.10
 
 ### Patch Changes

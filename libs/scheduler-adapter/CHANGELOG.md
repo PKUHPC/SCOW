@@ -1,5 +1,15 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.39
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [e4fc0d7]
+- Updated dependencies [00d1161]
+  - @scow/scheduler-adapter-protos@1.6.0
+  - @scow/protos@1.1.1
+
 ## 1.1.38
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @scow/protos
 
+## 1.1.1
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [00d1161]
+- Updated dependencies [3fccf34]
+  - @scow/grpc-api@1.34.1
+
 ## 1.1.0
 
 ### Minor Changes

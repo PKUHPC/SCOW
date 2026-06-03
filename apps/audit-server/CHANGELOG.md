@@ -1,5 +1,26 @@
 # @scow/audit-server
 
+## 2.3.34
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+- Updated dependencies [87682ee]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [44cf25f]
+- Updated dependencies [00d1161]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+  - @scow/config@1.15.0
+  - @scow/lib-server@1.5.2
+  - @scow/lib-operation-log@2.2.16
+  - @scow/protos@1.1.1
+  - @scow/lib-config@1.0.9
+  - @scow/lib-decimal@1.0.1
+  - @scow/utils@1.1.4
+
 ## 2.3.33
 
 ### Patch Changes

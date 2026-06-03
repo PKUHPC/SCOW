@@ -1,5 +1,11 @@
 # @scow/scow-resource-protos
 
+## 0.3.3
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+
 ## 0.3.2
 
 ### Patch Changes

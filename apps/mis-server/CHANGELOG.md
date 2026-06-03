@@ -1,5 +1,39 @@
 # @scow/mis-server
 
+## 1.11.2
+
+### Patch Changes
+
+- 3fccf34: 获取非 SCOW 用户提交的作业报错修复
+- 44cf25f: 删除 scow 中调用适配器 getVersion 相关的代码，在后续版本的代码中 scow 版本与适配器版本维持一致
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+- Updated dependencies [87682ee]
+- Updated dependencies [06ceebd]
+- Updated dependencies [e4fc0d7]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [44cf25f]
+- Updated dependencies [00d1161]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+  - @scow/config@1.15.0
+  - @scow/lib-scowd@1.2.9
+  - @scow/scheduler-adapter-protos@1.6.0
+  - @scow/lib-server@1.5.2
+  - @scow/scow-resource-protos@0.3.3
+  - @scow/notification-protos@0.1.11
+  - @scow/lib-scheduler-adapter@1.1.39
+  - @scow/lib-scow-resource@0.2.24
+  - @scow/lib-notification@1.0.25
+  - @scow/protos@1.1.1
+  - @scow/lib-config@1.0.9
+  - @scow/lib-decimal@1.0.1
+  - @scow/utils@1.1.4
+  - @scow/lib-auth@1.0.5
+  - @scow/lib-hook@1.0.41
+  - @scow/lib-ssh@1.0.6
+
 ## 1.11.1
 
 ### Patch Changes

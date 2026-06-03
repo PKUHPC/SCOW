@@ -1,5 +1,58 @@
 # @scow/ai
 
+## 0.5.5
+
+### Patch Changes
+
+- 3f2ba62: AI 文件管理添加同名文件是否覆盖提醒
+- 0708d69: SCOW 整体响应式布局优化
+- 44cf25f: 删除 scow 中调用适配器 getVersion 相关的代码，在后续版本的代码中 scow 版本与适配器版本维持一致
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- bab79dc: 修复复制公共资产时修改权限的指定路径为复制的数据文件夹本身
+- 96ede62: 交互式应用的自定义表单的输入框增加 password 类型
+- 46c4f2c: **删除 AI config 下的 jobMonitor 配置，仅保留集群下的该配置**
+  修复仅配置 AI config 导致用户角色查看监控数据的报错问题
+- 873a79f: install.yaml 新增`novnc`配置，在顶层指定 novncClientImage, 优先级高于 portal 中所指定的 novncClientImage
+  详细内容参考文档 /docs/deploy/config/novnc/config
+
+  重构 novnc 服务启动逻辑，在 AI 或者 PORTAL 任一服务已配置时启动
+
+  完善关于根路径访问的文档说明 /docs/deploy/config/customization/basepath
+
+- 03851b5: harbor 不存在旧项目时,直接跳过迁移镜像数据的 Migration
+- c56bdaa: 更新 nextjs 版本至 15.5.16
+- 87682ee: 提交 AI 作业任务时传递 CSI 挂载模式及用户映射信息
+- Updated dependencies [87682ee]
+- Updated dependencies [06ceebd]
+- Updated dependencies [e4fc0d7]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [44cf25f]
+- Updated dependencies [00d1161]
+- Updated dependencies [0b41958]
+- Updated dependencies [87682ee]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+- Updated dependencies [c56bdaa]
+  - @scow/config@1.15.0
+  - @scow/lib-scowd@1.2.9
+  - @scow/scheduler-adapter-protos@1.6.0
+  - @scow/lib-server@1.5.2
+  - @scow/notification-protos@0.1.11
+  - @scow/lib-scheduler-adapter@1.1.39
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-operation-log@2.2.16
+  - @scow/lib-scow-resource@0.2.24
+  - @scow/lib-notification@1.0.25
+  - @scow/scowd-protos@0.7.0
+  - @scow/protos@1.1.1
+  - @scow/lib-config@1.0.9
+  - @scow/lib-decimal@1.0.1
+  - @scow/utils@1.1.4
+  - @scow/lib-auth@1.0.5
+  - @scow/lib-ssh@1.0.6
+  - @scow/lib-web@1.6.2
+
 ## 0.5.4
 
 ### Patch Changes

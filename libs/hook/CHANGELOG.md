@@ -1,5 +1,13 @@
 # @scow/lib-hook
 
+## 1.0.41
+
+### Patch Changes
+
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- Updated dependencies [00d1161]
+  - @scow/protos@1.1.1
+
 ## 1.0.40
 
 ### Patch Changes

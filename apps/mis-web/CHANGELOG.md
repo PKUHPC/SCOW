@@ -1,5 +1,45 @@
 # @scow/mis-web
 
+## 1.11.2
+
+### Patch Changes
+
+- 0708d69: SCOW 整体响应式布局优化
+- 3fccf34: 获取非 SCOW 用户提交的作业报错修复
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 0b41958: portal-web 和 mis-web 支持和其他系统相同的 OpenAPI 调用方式；所有系统添加/openapi API 文档 UI；相关文档：docs/integration/scow-api-hook/api/api.md
+- 016d51c: 平台管理下账户管理表格宽度调整
+- 873a79f: install.yaml 新增`novnc`配置，在顶层指定 novncClientImage, 优先级高于 portal 中所指定的 novncClientImage
+  详细内容参考文档 /docs/deploy/config/novnc/config
+
+  重构 novnc 服务启动逻辑，在 AI 或者 PORTAL 任一服务已配置时启动
+
+  完善关于根路径访问的文档说明 /docs/deploy/config/customization/basepath
+
+- 32fdd5d: 修复账户充值记录页面获取到非本账户数据的问题
+- 0094a29: 仅修改已结束作业集群筛选框，只展示当前已授权集群、默认一开始为空数组即查询所有集群包括过去授权集群。
+- c56bdaa: 更新 nextjs 版本至 15.5.16
+- Updated dependencies [87682ee]
+- Updated dependencies [46c4f2c]
+- Updated dependencies [439e7ed]
+- Updated dependencies [00d1161]
+- Updated dependencies [0b41958]
+- Updated dependencies [96ede62]
+- Updated dependencies [839c754]
+- Updated dependencies [c56bdaa]
+  - @scow/config@1.15.0
+  - @scow/notification-protos@0.1.11
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-operation-log@2.2.16
+  - @scow/lib-scow-resource@0.2.24
+  - @scow/lib-notification@1.0.25
+  - @scow/protos@1.1.1
+  - @scow/lib-config@1.0.9
+  - @scow/lib-decimal@1.0.1
+  - @scow/utils@1.1.4
+  - @scow/lib-auth@1.0.5
+  - @scow/lib-web@1.6.2
+
 ## 1.11.1
 
 ### Patch Changes

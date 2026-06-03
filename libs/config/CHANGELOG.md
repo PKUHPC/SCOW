@@ -1,5 +1,24 @@
 # @scow/config
 
+## 1.15.0
+
+### Minor Changes
+
+- 87682ee: 在集群配置中的 AI 配置中增加 idmap 功能配置参数
+  配置说明参考 docs/deploy/config/ai/intro.md 中 AI 用户信息映射功能
+- 46c4f2c: **删除 AI config 下的 jobMonitor 配置，仅保留集群下的该配置**
+  同步修改相关配置及文档描述，文档参考 docs/deploy/config/ai/intro
+
+### Patch Changes
+
+- 439e7ed: 添加 scowctl 用户命令行工具 和 meta-server 提供部署元信息以及统一 API 文档。 修改了的文档：API: docs/docs/integration/scow-api-hook/api/api ； scowctl: docs/docs/info/scowctl
+- 00d1161: 删除开源许可声明，统一执行 lint format
+- 96ede62: 交互式应用的自定义表单的输入框增加 password 类型
+- 839c754: 修复 tsconfig rootDir 配置导致构建产物路径错误
+- Updated dependencies [00d1161]
+- Updated dependencies [839c754]
+  - @scow/lib-config@1.0.9
+
 ## 1.14.0
 
 ### Minor Changes
