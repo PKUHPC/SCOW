@@ -227,6 +227,7 @@ export const ResourceConfigSection = ({
             name="gpuCores"
             label={<Label>{t(p("gpuLabel"))}</Label>}
             rules={[{ required: true, type: "integer" }]}
+            helpTip={t("app.jobs.appConfigSection.environmentVariables.gpuHelpTip")}
           >
             <RoundedInputNumber
               size="large"

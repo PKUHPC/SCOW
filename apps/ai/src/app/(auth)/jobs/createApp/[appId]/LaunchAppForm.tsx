@@ -12,7 +12,11 @@ import {
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import { RoundedInput, RoundedInputNumber, RoundedPasswordInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import {
+  RoundedInput,
+  RoundedInputNumber,
+  RoundedPasswordInput,
+} from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
@@ -27,7 +31,6 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { HeaderAvatar } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
-import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
 import { formatSize } from "src/utils/format";
@@ -37,16 +40,13 @@ import { trpc } from "src/utils/trpc";
 import type {
   AppFormValues,
   BaseFormValues,
-  CascaderSelection,
   CommandCacheEntry,
   CPUQueueRow,
-  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
   ImageSourceKey,
   MaxTimeUnit,
-  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
@@ -57,14 +57,19 @@ import { AppConfigSection } from "./components/AppConfigSection";
 import { BaseInfoSection } from "./components/BaseInfoSection";
 import { ResourceConfigSection } from "./components/ResourceConfigSection";
 import {
+  buildEnvPayload,
+  buildPrivatePathLookup,
+  buildResubmitResourceSelections,
   buildSelectionPathLookup,
   buildVersionLookup,
   convertDurationToHours,
-  createSelectionLookupKey,
   deriveQueueStats,
   getCommandCacheKey,
+  initBuiltinEnvVariables,
   mapQueuesToRows,
+  mergeResubmitEnvVariables,
   renderCascaderLabels,
+  sanitizeFormMountAndEnvValues,
   toIdPrivateList,
 } from "./LaunchAppForm.utils";
 
@@ -245,6 +250,17 @@ export const LaunchAppForm = ({
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
   const [appForm] = Form.useForm<AppFormValues>();
+
+  const hasInitializedBuiltinEnvVariablesRef = useRef(false);
+  useEffect(() => {
+    if (hasInitializedBuiltinEnvVariablesRef.current) {
+      return;
+    }
+
+    initBuiltinEnvVariables(appForm, Boolean(createAppParams));
+    hasInitializedBuiltinEnvVariablesRef.current = true;
+  }, [appForm, createAppParams]);
+
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -374,28 +390,7 @@ export const LaunchAppForm = ({
     },
   });
 
-  // 提交前去除挂载点、环境变量的多余空白项，避免后端收到空值
-  const sanitizeAppFormValues = () => {
-    const { mountPoints, envVariables } = appForm.getFieldsValue();
-
-    const sanitizedMountPoints = (mountPoints ?? [])
-      .map((item) => ({
-        source: typeof item?.source === "string" ? item.source.trim() : "",
-        target: typeof item?.target === "string" ? item.target.trim() : "",
-      }))
-      .filter((item): item is MountPointField => Boolean(item.source || item.target));
-    const sanitizedEnvVariables = (envVariables ?? [])
-      .map((item) => ({
-        key: typeof item?.key === "string" ? item.key.trim() : "",
-        value: typeof item?.value === "string" ? item.value.trim() : "",
-      }))
-      .filter((item): item is EnvVariableField => Boolean(item.key || item.value));
-
-    appForm.setFieldsValue({
-      mountPoints: sanitizedMountPoints,
-      envVariables: sanitizedEnvVariables,
-    });
-  };
+  const sanitizeAppFormValues = () => sanitizeFormMountAndEnvValues(appForm);
 
   // ----- 在外部状态变化时同步表单值 -----
   // 当用户切换集群、或从预填数据恢复到不同集群时，需要清理依赖于集群的字段，避免旧值残留
@@ -505,6 +500,12 @@ export const LaunchAppForm = ({
   const effectiveAppStartCommand = appInfo?.appStartCommand ?? appStartCommand;
   const appLogoSrc = effectiveAppLogoPath ? join(publicPath, effectiveAppLogoPath) : undefined;
 
+  // 获取用户家目录
+  const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
+    { clusterId: selectedCluster! },
+    { enabled: !!selectedCluster },
+  );
+
   // 应用名称加载完成后自动生成默认作业名，避免初次打开表单时出现空值
   useEffect(() => {
     if (!effectiveAppName) {
@@ -534,55 +535,29 @@ export const LaunchAppForm = ({
       const selectOptions = item.select.filter((x) => !x.requireGpu || (x.requireGpu && activeResourceTab === "gpu"));
       const initialValue = item.type === "SELECT" ? (item.defaultValue ?? selectOptions[0].value) : item.defaultValue;
 
-      let inputItem: JSX.Element;
-
-      // 特殊处理某些应用的工作目录需要使用文件选择器
-      if (item.name === "workingDir") {
-        inputItem = (
-          <RoundedInput
+      const inputItem: JSX.Element =
+        item.type === "NUMBER" ? (
+          <RoundedInputNumber
             placeholder={getI18nConfigCurrentText(placeholder, languageId)}
-            prefix={
-              <FileSelectModal
-                allowedFileType={["DIR"]}
-                onSubmit={(path: string) => {
-                  appForm.setFieldsValue({
-                    customFields: {
-                      [item.name]: path,
-                    },
-                  });
-                  appForm.validateFields([["customFields", item.name]]);
-                }}
-                clusterId={selectedCluster ?? ""}
-              />
-            }
+            style={{ width: "480px" }}
+          />
+        ) : item.type === "TEXT" ? (
+          <RoundedInput placeholder={getI18nConfigCurrentText(placeholder, languageId)} style={{ width: "480px" }} />
+        ) : item.type === "PASSWORD" ? (
+          <RoundedPasswordInput
+            placeholder={getI18nConfigCurrentText(placeholder, languageId)}
+            style={{ width: "480px" }}
+          />
+        ) : (
+          <RoundedSelect
+            options={selectOptions.map((x) => ({
+              label: getI18nConfigCurrentText(x.label, languageId),
+              value: x.value,
+            }))}
+            placeholder={getI18nConfigCurrentText(placeholder, languageId)}
             style={{ width: "480px" }}
           />
         );
-      } else {
-        inputItem =
-          item.type === "NUMBER" ? (
-            <RoundedInputNumber
-              placeholder={getI18nConfigCurrentText(placeholder, languageId)}
-              style={{ width: "480px" }}
-            />
-          ) : item.type === "TEXT" ? (
-            <RoundedInput placeholder={getI18nConfigCurrentText(placeholder, languageId)} style={{ width: "480px" }} />
-          ) : item.type === "PASSWORD" ? (
-            <RoundedPasswordInput
-              placeholder={getI18nConfigCurrentText(placeholder, languageId)}
-              style={{ width: "480px" }}
-            />
-          ) : (
-            <RoundedSelect
-              options={selectOptions.map((x) => ({
-                label: getI18nConfigCurrentText(x.label, languageId),
-                value: x.value,
-              }))}
-              placeholder={getI18nConfigCurrentText(placeholder, languageId)}
-              style={{ width: "480px" }}
-            />
-          );
-      }
 
       // 判断是否配置了requireGpu选项
       if (item.type === "SELECT" && item.select.find((i) => i.requireGpu !== undefined)) {
@@ -602,11 +577,6 @@ export const LaunchAppForm = ({
           name={["customFields", item.name]}
           rules={rules}
           initialValue={initialValue}
-          {...(item.name === "workingDir"
-            ? {
-                helpTip: t(p("workingDirHelpTip")),
-              }
-            : {})}
         >
           {inputItem}
         </InlineFormItem>
@@ -678,6 +648,7 @@ export const LaunchAppForm = ({
           label: version.versionName,
           value: version.id,
           description: version.versionDescription,
+          privatePath: version.privatePath,
           children: [],
         })),
       }))
@@ -730,6 +701,7 @@ export const LaunchAppForm = ({
           label: version.versionName,
           value: version.id,
           description: version.versionDescription,
+          privatePath: version.privatePath,
           children: [],
         })),
       }))
@@ -781,6 +753,7 @@ export const LaunchAppForm = ({
           label: version.versionName,
           value: version.id,
           description: version.versionDescription ?? version.algorithmVersion ?? undefined,
+          privatePath: version.privatePath,
           children: [],
         })),
       }))
@@ -824,18 +797,13 @@ export const LaunchAppForm = ({
 
   // 预构建 id → 路径 的查找表，方便再次提交时把后端记录转回级联路径
   const datasetSelectionLookup = useMemo(() => buildSelectionPathLookup(datasetCategories), [datasetCategories]);
-
   const algorithmSelectionLookup = useMemo(() => buildSelectionPathLookup(algorithmCategories), [algorithmCategories]);
-
   const modelSelectionLookup = useMemo(() => buildSelectionPathLookup(modelCategories), [modelCategories]);
 
-  const resolveSelectionPath = (lookup: Map<string, CascaderSelection>, id: number, isPrivate: boolean) => {
-    const primary = lookup.get(createSelectionLookupKey(id, isPrivate));
-    if (primary) {
-      return primary;
-    }
-    return lookup.get(createSelectionLookupKey(id, !isPrivate));
-  };
+  // 预构建私有资源版本 id → privatePath 的查找表，用于自动填充 target
+  const datasetPrivatePathLookup = useMemo(() => buildPrivatePathLookup(datasetCategories), [datasetCategories]);
+  const algorithmPrivatePathLookup = useMemo(() => buildPrivatePathLookup(algorithmCategories), [algorithmCategories]);
+  const modelPrivatePathLookup = useMemo(() => buildPrivatePathLookup(modelCategories), [modelCategories]);
 
   // 回填数据集选择：等待级联树构造完成后，再把历史选择恢复到表单
   useEffect(() => {
@@ -850,12 +818,7 @@ export const LaunchAppForm = ({
       return;
     }
 
-    const selections = (createAppParams.datasets ?? [])
-      .map((item) => {
-        return resolveSelectionPath(datasetSelectionLookup, item.id, Boolean(item.isPrivate));
-      })
-      .filter((path): path is CascaderSelection => Boolean(path))
-      .map((path) => [...path]);
+    const selections = buildResubmitResourceSelections(createAppParams.datasets, datasetSelectionLookup);
 
     appForm.setFieldsValue({
       datasets: selections.length ? selections : [],
@@ -877,12 +840,7 @@ export const LaunchAppForm = ({
       return;
     }
 
-    const selections = (createAppParams.algorithms ?? [])
-      .map((item) => {
-        return resolveSelectionPath(algorithmSelectionLookup, item.id, Boolean(item.isPrivate));
-      })
-      .filter((path): path is CascaderSelection => Boolean(path))
-      .map((path) => [...path]);
+    const selections = buildResubmitResourceSelections(createAppParams.algorithms, algorithmSelectionLookup);
 
     appForm.setFieldsValue({
       algorithms: selections.length ? selections : [],
@@ -904,12 +862,7 @@ export const LaunchAppForm = ({
       return;
     }
 
-    const selections = (createAppParams.models ?? [])
-      .map((item) => {
-        return resolveSelectionPath(modelSelectionLookup, item.id, Boolean(item.isPrivate));
-      })
-      .filter((path): path is CascaderSelection => Boolean(path))
-      .map((path) => [...path]);
+    const selections = buildResubmitResourceSelections(createAppParams.models, modelSelectionLookup);
 
     appForm.setFieldsValue({
       models: selections.length ? selections : [],
@@ -946,7 +899,7 @@ export const LaunchAppForm = ({
 
     appForm.setFieldsValue({
       mountPoints: mountPointsDraft,
-      envVariables: envVariablesDraft,
+      envVariables: mergeResubmitEnvVariables(envVariablesDraft),
     });
 
     resubmitMountEnvAppliedRef.current = true;
@@ -984,10 +937,6 @@ export const LaunchAppForm = ({
 
       customFields[key] = typeof value === "string" ? value : String(value);
     });
-
-    if (attributeMap.has("workingDir") && createAppParams.workingDirectory) {
-      customFields.workingDir = createAppParams.workingDirectory;
-    }
 
     appForm.setFieldsValue({
       customFields,
@@ -2061,12 +2010,7 @@ export const LaunchAppForm = ({
         })
         .filter((point): point is { path: string; target: string } => Boolean(point));
 
-      const envVariablesPayload = (appValues.envVariables ?? [])
-        .filter((env) => env?.key && env?.value)
-        .map((env) => ({
-          key: env.key.trim(),
-          value: env.value.trim(),
-        }));
+      const envVariablesPayload = buildEnvPayload(appValues.envVariables);
 
       // 仅保留当前应用定义的自定义字段，避免提交多余键
       const attributeNames = appInfo?.attributes?.map((item) => item.name) ?? [];
@@ -2075,14 +2019,6 @@ export const LaunchAppForm = ({
         .map(([key, value]) => [key, value!]);
 
       const customAttributes = Object.fromEntries(customAttributesEntries);
-
-      const workingDirectoryRaw = appValues.customFields?.workingDir;
-      const workingDirectory =
-        typeof workingDirectoryRaw === "string"
-          ? workingDirectoryRaw
-          : workingDirectoryRaw !== undefined && workingDirectoryRaw !== null
-            ? workingDirectoryRaw.toString()
-            : undefined;
 
       let imageId: number | undefined;
       let remoteImageUrl: string | undefined;
@@ -2134,7 +2070,6 @@ export const LaunchAppForm = ({
         gpuCount: isGpuQueue ? requestedGpuCount : undefined,
         memory: memoryMb,
         maxTime: maxTimeMinutes,
-        workingDirectory,
         customAttributes,
         gpuType: queueOption.type === "gpu" ? queueOption.gpuType : undefined,
         envVariables: envVariablesPayload.length ? envVariablesPayload : undefined,
@@ -2214,6 +2149,10 @@ export const LaunchAppForm = ({
           isModelsLoading={isModelsLoading}
           selectedCluster={selectedCluster}
           displayRender={renderCascaderLabels}
+          homeDir={userHomeDir?.path}
+          datasetPrivatePathLookup={datasetPrivatePathLookup}
+          algorithmPrivatePathLookup={algorithmPrivatePathLookup}
+          modelPrivatePathLookup={modelPrivatePathLookup}
         />
       </PageContainer>
 

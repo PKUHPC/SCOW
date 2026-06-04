@@ -128,8 +128,7 @@ export const submitInferJob = procedure
     }
 
     const { clusterId, InferenceJobName, image, models, account, partition, mountPoints } = input;
-
-    const { ids: modelIds, isPrivates: isModelPrivates } = getIdPrivate(models);
+    const { ids: modelIds, isPrivates: isModelPrivates, targets: modelTargets } = getIdPrivate(models);
 
     if (InferenceJobName.length > MAX_JOB_NAME_LENGTH) {
       throw new TRPCError({
@@ -179,6 +178,7 @@ export const submitInferJob = procedure
       image: existImage,
       userId,
     });
+    const modelVersionsWithTarget = modelVersions.map((v, i) => ({ ...v, target: modelTargets[i] ?? "" }));
 
     const jobId = await driver.withJobDriver(
       {
@@ -188,7 +188,7 @@ export const submitInferJob = procedure
       async (jobDriver) => {
         return await jobDriver.submitInferJob(input, {
           isModelPrivates,
-          modelVersions,
+          modelVersions: modelVersionsWithTarget,
           existImage,
         });
       },

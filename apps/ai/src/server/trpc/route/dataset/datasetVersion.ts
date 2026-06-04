@@ -152,6 +152,7 @@ const DatasetVersionItemSchema = z.object({
   id: z.number(),
   versionName: z.string(),
   versionDescription: z.string().optional(),
+  privatePath: z.string().optional(),
 });
 
 const DatasetGroupSchema = z.object({
@@ -234,6 +235,8 @@ export const getAllDatasetVersions = procedure
     const allDatasets = [...personalDatasets, ...publicDatasets];
     const userMap = await buildUserMap(allDatasets.map((d) => d.owner));
 
+    const personalDatasetIds = new Set(personalDatasets.map((d) => d.id));
+
     return mapAssetEntityGroupsWithVersions<Dataset, DatasetVersion, z.infer<typeof DatasetGroupSchema>>({
       personalEntities: personalDatasets,
       publicEntities: publicDatasets,
@@ -251,6 +254,7 @@ export const getAllDatasetVersions = procedure
           id: version.id,
           versionName: version.versionName,
           versionDescription: version.versionDescription,
+          privatePath: personalDatasetIds.has(dataset.id) ? version.privatePath : undefined,
         })),
       }),
     });

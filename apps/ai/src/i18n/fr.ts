@@ -498,6 +498,7 @@ export default {
         mountPoint: "Point de montage",
         mountPath: "Chemin",
         mountTarget: "Chemin cible",
+        resourceName: "Nom de la ressource (version)",
         envVariable: "Variable d'environnement",
         variableName: "Nom de la variable",
         variableValue: "Valeur de la variable",
@@ -1102,6 +1103,8 @@ export default {
       upload: "Téléverser un fichier",
       mkdir: "Créer un nouveau dossier",
       depression: "Décompresser le fichier",
+      pathAccessFailed: "Échec de l'accès au chemin",
+      unknownError: "Erreur inconnue",
     },
     fileTable: {
       name: "Nom du fichier",

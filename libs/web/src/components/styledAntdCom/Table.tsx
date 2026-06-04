@@ -26,15 +26,15 @@ const TableWrapper = ({ className, rowSelection, ...tableProps }: TableProps<any
   const mergedRowSelection: TableProps<any>["rowSelection"] =
     rowSelection?.type === "radio"
       ? {
-          ...rowSelection,
-          renderCell: rowSelection.renderCell ?? defaultRadioSelectionCell,
-        }
+        ...rowSelection,
+        renderCell: rowSelection.renderCell ?? defaultRadioSelectionCell,
+      }
       : rowSelection;
 
   return <Table {...tableProps} className={className} rowSelection={mergedRowSelection} />;
 };
 
-export const StyledTable: StyledTableComponent = styled(TableWrapper)<TableProps<any>>`
+export const StyledTable: StyledTableComponent = styled(TableWrapper) <TableProps<any>>`
   .ant-table-container {
     border-radius: 12px;
     border-top: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
@@ -94,14 +94,18 @@ export const StyledTable: StyledTableComponent = styled(TableWrapper)<TableProps
   }
 `;
 
-export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper)<TableProps<any>>`
-  border-radius: 12px;
+export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper) <TableProps<any>>`
+  border-radius: 4px;
   overflow: hidden;
   border: 1px solid ${({ theme }) => theme.palette.gray[3]};
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
 
   .ant-table {
     border-radius: 0;
+  }
+
+  .ant-table table {
+    table-layout: fixed !important;
   }
 
   .ant-table-container {
@@ -113,7 +117,7 @@ export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper)<Ta
     background-color: ${({ theme }) => theme.palette.gray[0]};
     border-bottom: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
     color: ${({ theme }) => theme.palette.gray[7]};
-    height: 56px;
+    height: 36px;
     padding-top: 0;
     padding-bottom: 0;
   }
@@ -135,9 +139,11 @@ export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper)<Ta
   .ant-table-tbody > tr > td {
     border-bottom: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
     color: ${({ theme }) => theme.palette.gray[7]};
-    height: 56px;
-    padding-top: 0;
-    padding-bottom: 0;
+    min-height: 36px;
+    padding: 6px 8px;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .ant-table-tbody > tr > td:first-child {

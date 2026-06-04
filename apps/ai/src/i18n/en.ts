@@ -461,6 +461,7 @@ export default {
         mountPoint: "Mount point",
         mountPath: "Path",
         mountTarget: "Target path",
+        resourceName: "Resource name (version)",
         envVariable: "Environment variable",
         variableName: "Variable name",
         variableValue: "Variable value",
@@ -549,7 +550,6 @@ export default {
           capacity: "Idle CPUs",
           memoryPerCore: "Memory per CPU Core",
         },
-        workingDirHelpTip: "The working directory path will automatically be added as a mount point",
         algorithmCategories: {
           mine: "My Algorithms",
           public: "Public Algorithms",
@@ -721,7 +721,19 @@ export default {
         },
         environmentVariables: {
           label: "Environment Variables",
-          helpTip: "Add multiple environment variables",
+          extraTip: "{} are platform-preset environment variables; please use a different name for custom variables.",
+          gpuHelpTip:
+            "The platform automatically injects the VC_GPU_NUM environment variable, representing the number of accelerator cards in the container, which you can use directly in your code.",
+          workdirHelpTip:
+            "The WORK_DIR environment variable represents the working directory within the container, which you can use directly in your code. The working directory path will be automatically added as a mount point.",
+          xdlIpHelpTip:
+            "When using Huawei Ascend accelerator cards, the platform automatically injects the XDL_IP environment variable, representing the host IP, which you can use directly in your code.",
+          datasetHelpTip:
+            "The platform automatically injects the SCOW_AI_DATASET_PATH environment variable, representing the dataset path in the container, which you can use directly in your code.",
+          algorithmHelpTip:
+            "The platform automatically injects the SCOW_AI_ALGORITHM_PATH environment variable, representing the algorithm path in the container, which you can use directly in your code.",
+          modelHelpTip:
+            "The platform automatically injects the SCOW_AI_MODEL_PATH environment variable, representing the model path in the container, which you can use directly in your code.",
         },
         servicePortField: {
           requiredMessage: "Please enter the service port",
@@ -747,6 +759,10 @@ export default {
         valuePlaceholder: "Enter variable value",
         removeAriaLabel: "Remove environment variable",
         addButton: "Add Variable",
+        predefinedValidator: "This is a system-defined environment variable. Please use a different name.",
+        xdlIpPlaceholder: "Automatically retrieved",
+        workDirPlaceholder: "Default: User's home directory",
+        clusterRequired: "Please select a cluster first",
       },
       mountPointList: {
         sourceRequired: "Please select a source path",
@@ -757,6 +773,7 @@ export default {
         targetRequired: "Please enter a target path",
         targetRootNotAllowed: "Target path cannot be root (/)",
         targetPlaceholder: "Enter a mount path (e.g. /mnt/data)",
+        duplicateTarget: "Mount target paths must be unique",
         removeAriaLabel: "Remove mount point",
         addButton: "Add Mount Point",
       },
@@ -811,7 +828,8 @@ export default {
         delText2: "Delete successful {0} items, failed {1} items",
         delSuccessful: "Deletion Successful",
         errorText1: "Error encountered while performing delete operation",
-        operationErrorFallback: "Error encountered while performing file operation. Please try again later or contact the administrator.",
+        operationErrorFallback:
+          "Error encountered while performing file operation. Please try again later or contact the administrator.",
         cluster: "Cluster",
         fileManage: "File Management",
         upload: "Upload File",
@@ -1357,6 +1375,8 @@ export default {
       mkdir: "Create New Folder",
       depression: "Unzip File",
       homeDirError: "Failed to retrieve directory",
+      pathAccessFailed: "Failed to access path",
+      unknownError: "Unknown error",
       onlyPublicPath: "Operations are only allowed in the public assets directory",
     },
     fileTable: {

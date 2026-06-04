@@ -49,6 +49,8 @@ export type Image = z.infer<typeof ImageSchema>;
 export const IdPrivateSchema = z.object({
   id: z.number(),
   isPrivate: z.boolean(),
+  // 选择我的/公共数据资产时填写的映射挂载路径
+  target: z.string().optional(),
   // 提交时对应的名称
   // 在展示作业详情时使用
   currentNameVersion: z.string().optional(),
@@ -136,13 +138,22 @@ export const trainJob = procedure
 
     if (res.ok) {
       await callLog(
-        { ...logInfo, operationTypePayload: { clusterId, jobId: (res.data as any).jobId } },
+        {
+          ...logInfo,
+          operationTypePayload: { clusterId, jobId: (res.data as any).jobId },
+        },
         OperationResult.SUCCESS,
       );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload: { clusterId } }, OperationResult.FAIL);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: { clusterId },
+        },
+        OperationResult.FAIL,
+      );
     }
 
     return res;
@@ -151,9 +162,9 @@ export const trainJob = procedure
     const { clusterId, trainJobName, algorithms, image, datasets, models, maxTime, account, partition, mountPoints } =
       input;
 
-    const { ids: algorithmIds, isPrivates: isAlgorithmPrivates } = getIdPrivate(algorithms);
-    const { ids: modelIds, isPrivates: isModelPrivates } = getIdPrivate(models);
-    const { ids: datasetIds, isPrivates: isDatasetPrivates } = getIdPrivate(datasets);
+    const { ids: algorithmIds, isPrivates: isAlgorithmPrivates, targets: algorithmTargets } = getIdPrivate(algorithms);
+    const { ids: modelIds, isPrivates: isModelPrivates, targets: modelTargets } = getIdPrivate(models);
+    const { ids: datasetIds, isPrivates: isDatasetPrivates, targets: datasetTargets } = getIdPrivate(datasets);
 
     if (trainJobName.length > MAX_JOB_NAME_LENGTH) {
       throw new TRPCError({
@@ -226,6 +237,10 @@ export const trainJob = procedure
       userId,
     });
 
+    const algorithmVersionsWithTarget = algorithmVersions.map((v, i) => ({ ...v, target: algorithmTargets[i] ?? "" }));
+    const datasetVersionsWithTarget = datasetVersions.map((v, i) => ({ ...v, target: datasetTargets[i] ?? "" }));
+    const modelVersionsWithTarget = modelVersions.map((v, i) => ({ ...v, target: modelTargets[i] ?? "" }));
+
     const jobId = await driver.withJobDriver(
       {
         clusterId,
@@ -236,9 +251,9 @@ export const trainJob = procedure
           isAlgorithmPrivates,
           isDatasetPrivates,
           isModelPrivates,
-          algorithmVersions,
-          datasetVersions,
-          modelVersions,
+          algorithmVersions: algorithmVersionsWithTarget,
+          datasetVersions: datasetVersionsWithTarget,
+          modelVersions: modelVersionsWithTarget,
           existImage,
         });
       },
@@ -311,11 +326,23 @@ export const cancelJob = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload: { clusterId: cluster, jobId } }, OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: { clusterId: cluster, jobId },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload: { clusterId: cluster, jobId } }, OperationResult.FAIL);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: { clusterId: cluster, jobId },
+        },
+        OperationResult.FAIL,
+      );
     }
 
     return res;

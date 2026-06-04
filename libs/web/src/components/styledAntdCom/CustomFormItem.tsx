@@ -26,13 +26,21 @@ const LabelWithHelp: React.FC<{
   <>
     {label}
     {required && <span style={{ color: "red", marginLeft: 4 }}>*</span>}
-    {help && (
-      <Tooltip title={help} arrow={false} align={{ offset: [0, -12] }}>
-        <QuestionMarkIcon style={{ marginLeft: 6, color: "#999", fontSize: 16 }} />
-      </Tooltip>
-    )}
+    {help && <CommonHelpTipWithQuestionMark title={help} />}
   </>
 );
+
+export const CommonHelpTipWithQuestionMark: React.FC<{
+  title: ReactNode;
+}> = ({ title }) => {
+  if (!title) return null;
+
+  return (
+    <Tooltip title={title} arrow={false} align={{ offset: [0, -12] }}>
+      <QuestionMarkIcon style={{ marginLeft: 6, color: "#999", fontSize: 16 }} />
+    </Tooltip>
+  );
+};
 
 /**
  * CustomFormItem：封装 Form.Item

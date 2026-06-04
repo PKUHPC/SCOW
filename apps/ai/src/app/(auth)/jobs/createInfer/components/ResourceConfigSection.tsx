@@ -370,6 +370,7 @@ export const ResourceConfigSection = ({
           <InlineFormItem
             name="gpuCores"
             label={<Label>{gpuCountLabel}</Label>}
+            helpTip={t("app.jobs.appConfigSection.environmentVariables.gpuHelpTip")}
             dependencies={["nodeCount"]}
             rules={[
               { required: true, message: t(p("unitValidation.required")) },

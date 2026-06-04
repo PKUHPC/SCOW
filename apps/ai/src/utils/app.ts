@@ -7,13 +7,15 @@ export const getIdPrivate = (array?: IdPrivate[]) =>
   (array ?? []).reduce<{
     ids: number[];
     isPrivates: boolean[];
+    targets: (string | undefined)[];
   }>(
     (acc, item) => {
       acc.ids.push(item.id);
       acc.isPrivates.push(item.isPrivate);
+      acc.targets.push(item.target);
       return acc;
     },
-    { ids: [], isPrivates: [] },
+    { ids: [], isPrivates: [], targets: [] },
   );
 
 interface SelectOption {

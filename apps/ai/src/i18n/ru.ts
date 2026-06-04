@@ -496,6 +496,7 @@ export default {
         mountPoint: "Точка монтирования",
         mountPath: "Путь",
         mountTarget: "Целевой путь",
+        resourceName: "Название ресурса (версия)",
         envVariable: "Переменная окружения",
         variableName: "Имя переменной",
         variableValue: "Значение переменной",
@@ -1098,6 +1099,8 @@ export default {
       upload: "Загрузить файл",
       mkdir: "Создать новую папку",
       depression: "Распаковать файл",
+      pathAccessFailed: "Не удалось получить доступ к пути",
+      unknownError: "Неизвестная ошибка",
     },
     fileTable: {
       name: "Имя файла",

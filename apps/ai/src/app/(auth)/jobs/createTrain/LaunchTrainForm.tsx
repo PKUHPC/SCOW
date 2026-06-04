@@ -28,15 +28,12 @@ import { trpc } from "src/utils/trpc";
 
 import type {
   BaseFormValues,
-  CascaderSelection,
   CommandCacheEntry,
   CPUQueueRow,
-  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
   MaxTimeUnit,
-  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
@@ -47,14 +44,19 @@ import type {
 } from "./LaunchTrainForm.types";
 
 import {
+  buildEnvPayload,
+  buildPrivatePathLookup,
+  buildResubmitResourceSelections,
   buildSelectionPathLookup,
   buildVersionLookup,
   convertDurationToHours,
-  createSelectionLookupKey,
   deriveQueueStats,
   getCommandCacheKey,
+  initBuiltinEnvVariables,
   mapQueuesToRows,
+  mergeResubmitEnvVariables,
   renderCascaderLabels,
+  sanitizeFormMountAndEnvValues,
   toIdPrivateList,
 } from "../LaunchJobForm.utils";
 import { PublicImageOption } from "../PublicImageOption";
@@ -219,6 +221,17 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
   const [appForm] = Form.useForm<TrainAppFormValues>();
+
+  const hasInitializedBuiltinEnvVariablesRef = useRef(false);
+  useEffect(() => {
+    if (hasInitializedBuiltinEnvVariablesRef.current) {
+      return;
+    }
+
+    initBuiltinEnvVariables(appForm, Boolean(createTrainParams));
+    hasInitializedBuiltinEnvVariablesRef.current = true;
+  }, [appForm, createTrainParams]);
+
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -339,6 +352,11 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     }
   }, [resourceForm]);
 
+  const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
+    { clusterId: selectedCluster! },
+    { enabled: !!selectedCluster },
+  );
+
   // ----------- 服务请求与变更提示 -----------
   // 提交训练作业的 RPC 请求，集中处理成功跳转和常见错误提示
   const createTrainJobMutation = trpc.jobs.trainJob.useMutation({
@@ -368,28 +386,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     },
   });
 
-  // 提交前去除挂载点、环境变量的多余空白项，避免后端收到空值
-  const sanitizeAppFormValues = () => {
-    const { mountPoints, envVariables } = appForm.getFieldsValue();
-
-    const sanitizedMountPoints = (mountPoints ?? [])
-      .map((item) => ({
-        source: typeof item?.source === "string" ? item.source.trim() : "",
-        target: typeof item?.target === "string" ? item.target.trim() : "",
-      }))
-      .filter((item): item is MountPointField => Boolean(item.source || item.target));
-    const sanitizedEnvVariables = (envVariables ?? [])
-      .map((item) => ({
-        key: typeof item?.key === "string" ? item.key.trim() : "",
-        value: typeof item?.value === "string" ? item.value.trim() : "",
-      }))
-      .filter((item): item is EnvVariableField => Boolean(item.key || item.value));
-
-    appForm.setFieldsValue({
-      mountPoints: sanitizedMountPoints,
-      envVariables: sanitizedEnvVariables,
-    });
-  };
+  const sanitizeAppFormValues = () => sanitizeFormMountAndEnvValues(appForm);
 
   // ----- 在外部状态变化时同步表单值 -----
   // 当用户切换集群、或从预填数据恢复到不同集群时，需要清理依赖于集群的字段，避免旧值残留
@@ -548,6 +545,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
           label: version.versionName,
           value: version.id,
           description: version.versionDescription,
+          privatePath: version.privatePath,
           children: [],
         })),
       }))
@@ -597,6 +595,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
           label: version.versionName,
           value: version.id,
           description: version.versionDescription,
+          privatePath: version.privatePath,
           children: [],
         })),
       }))
@@ -645,6 +644,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
           label: version.versionName,
           value: version.id,
           description: version.versionDescription ?? version.algorithmVersion ?? undefined,
+          privatePath: version.privatePath,
           children: [],
         })),
       }))
@@ -685,18 +685,13 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
   // 预构建 id → 路径 的查找表，方便再次提交时把后端记录转回级联路径
   const datasetSelectionLookup = useMemo(() => buildSelectionPathLookup(datasetCategories), [datasetCategories]);
-
   const algorithmSelectionLookup = useMemo(() => buildSelectionPathLookup(algorithmCategories), [algorithmCategories]);
-
   const modelSelectionLookup = useMemo(() => buildSelectionPathLookup(modelCategories), [modelCategories]);
 
-  const resolveSelectionPath = (lookup: Map<string, CascaderSelection>, id: number, isPrivate: boolean) => {
-    const primary = lookup.get(createSelectionLookupKey(id, isPrivate));
-    if (primary) {
-      return primary;
-    }
-    return lookup.get(createSelectionLookupKey(id, !isPrivate));
-  };
+  // 预构建私有资源版本 id → privatePath 的查找表，用于自动填充 target
+  const datasetPrivatePathLookup = useMemo(() => buildPrivatePathLookup(datasetCategories), [datasetCategories]);
+  const algorithmPrivatePathLookup = useMemo(() => buildPrivatePathLookup(algorithmCategories), [algorithmCategories]);
+  const modelPrivatePathLookup = useMemo(() => buildPrivatePathLookup(modelCategories), [modelCategories]);
 
   // 回填数据集选择：等待级联树构造完成后，再把历史选择恢复到表单
   useEffect(() => {
@@ -711,12 +706,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       return;
     }
 
-    const selections = (createTrainParams.datasets ?? [])
-      .map((item) => {
-        return resolveSelectionPath(datasetSelectionLookup, item.id, Boolean(item.isPrivate));
-      })
-      .filter((path): path is CascaderSelection => Boolean(path))
-      .map((path) => [...path]);
+    const selections = buildResubmitResourceSelections(createTrainParams.datasets, datasetSelectionLookup);
 
     appForm.setFieldsValue({
       datasets: selections.length ? selections : [],
@@ -738,12 +728,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       return;
     }
 
-    const selections = (createTrainParams.algorithms ?? [])
-      .map((item) => {
-        return resolveSelectionPath(algorithmSelectionLookup, item.id, Boolean(item.isPrivate));
-      })
-      .filter((path): path is CascaderSelection => Boolean(path))
-      .map((path) => [...path]);
+    const selections = buildResubmitResourceSelections(createTrainParams.algorithms, algorithmSelectionLookup);
 
     appForm.setFieldsValue({
       algorithms: selections.length ? selections : [],
@@ -765,12 +750,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       return;
     }
 
-    const selections = (createTrainParams.models ?? [])
-      .map((item) => {
-        return resolveSelectionPath(modelSelectionLookup, item.id, Boolean(item.isPrivate));
-      })
-      .filter((path): path is CascaderSelection => Boolean(path))
-      .map((path) => [...path]);
+    const selections = buildResubmitResourceSelections(createTrainParams.models, modelSelectionLookup);
 
     appForm.setFieldsValue({
       models: selections.length ? selections : [],
@@ -808,7 +788,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
     appForm.setFieldsValue({
       mountPoints: mountPointsDraft,
-      envVariables: envVariablesDraft,
+      envVariables: mergeResubmitEnvVariables(envVariablesDraft),
     });
 
     resubmitMountEnvAppliedRef.current = true;
@@ -1832,12 +1812,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
         })
         .filter((point): point is { path: string; target: string } => Boolean(point));
 
-      const envVariablesPayload = (appValues.envVariables ?? [])
-        .filter((env) => env?.key && env?.value)
-        .map((env) => ({
-          key: env.key.trim(),
-          value: env.value.trim(),
-        }));
+      const envVariablesPayload = buildEnvPayload(appValues.envVariables);
 
       let imageId: number | undefined;
       let remoteImageUrl: string | undefined;
@@ -1967,6 +1942,10 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
           isModelsLoading={isModelsLoading}
           selectedCluster={selectedCluster}
           displayRender={renderCascaderLabels}
+          homeDir={userHomeDir?.path}
+          datasetPrivatePathLookup={datasetPrivatePathLookup}
+          algorithmPrivatePathLookup={algorithmPrivatePathLookup}
+          modelPrivatePathLookup={modelPrivatePathLookup}
         />
       </PageContainer>
 

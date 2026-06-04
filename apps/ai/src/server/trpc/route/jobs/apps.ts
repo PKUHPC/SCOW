@@ -2,11 +2,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AppType } from "@scow/config/build/appForAi";
 import { getCommonConfig } from "@scow/config/src/common";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import {
-  libGetAccounts,
-  libGetUserAvailableApps,
-  libGetUserAvailableClusterApps,
-} from "@scow/lib-server";
+import { libGetAccounts, libGetUserAvailableApps, libGetUserAvailableClusterApps } from "@scow/lib-server";
 import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { getI18nTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
@@ -25,11 +21,7 @@ import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
-import {
-  Image as ImageEntity,
-  Source,
-  Status,
-} from "src/server/entities/Image";
+import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -43,10 +35,7 @@ import {
   getClusterAppConfigs,
   hasNonUtf8Segment,
 } from "src/server/utils/app";
-import {
-  checkClusterAvailable,
-  getAdapterClient,
-} from "src/server/utils/clusters";
+import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
 import { getCurrentClusters } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
@@ -67,12 +56,7 @@ import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
 
 import { booleanQueryParam } from "../utils";
-import {
-  EnvVariableSchema,
-  EventSchema,
-  IdPrivateSchema,
-  MAX_JOB_NAME_LENGTH,
-} from "./jobs";
+import { EnvVariableSchema, EventSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
 
 const ImageSchema = z.object({
   name: z.string(),
@@ -120,17 +104,9 @@ export interface SessionMetadata {
   jobType: JobType;
 }
 
-export const SERVER_ENTRY_COMMAND = fs.readFileSync(
-  "assets/app/server_entry.sh",
-  { encoding: "utf-8" }
-);
-export const VNC_ENTRY_COMMAND = fs.readFileSync("assets/app/vnc_entry.sh", {
-  encoding: "utf-8",
-});
-export const TENSORBOARD_ENTRY_COMMAND = fs.readFileSync(
-  "assets/app/tensorboard_entry.sh",
-  { encoding: "utf-8" }
-);
+export const SERVER_ENTRY_COMMAND = fs.readFileSync("assets/app/server_entry.sh", { encoding: "utf-8" });
+export const VNC_ENTRY_COMMAND = fs.readFileSync("assets/app/vnc_entry.sh", { encoding: "utf-8" });
+export const TENSORBOARD_ENTRY_COMMAND = fs.readFileSync("assets/app/tensorboard_entry.sh", { encoding: "utf-8" });
 
 export const SESSION_METADATA_NAME = "session.json";
 export const TOTAL_SESSIONS = "total_sessions.json";
@@ -165,9 +141,7 @@ export const appSchema = z.object({
 
 export type AppSchema = z.infer<typeof appSchema>;
 
-const mapAvailableAppFromMis = (
-  app: GetUserAvailableClusterAppsResponse_App
-): AppSchema => ({
+const mapAvailableAppFromMis = (app: GetUserAvailableClusterAppsResponse_App): AppSchema => ({
   ...app,
   comment: getI18nTypeFormat(app.comment),
 });
@@ -179,12 +153,7 @@ const SelectOptionSchema = z.object({
 });
 
 const AppCustomAttributeSchema = z.object({
-  type: z.union([
-    z.literal("NUMBER"),
-    z.literal("SELECT"),
-    z.literal("TEXT"),
-    z.literal("PASSWORD"),
-  ]),
+  type: z.union([z.literal("NUMBER"), z.literal("SELECT"), z.literal("TEXT"), z.literal("PASSWORD")]),
   label: I18nStringSchema,
   name: z.string(),
   required: z.boolean(),
@@ -215,8 +184,8 @@ export const listAvailableApps = procedure
       z.object({
         clusterId: z.string(),
         apps: z.array(appSchema),
-      })
-    )
+      }),
+    ),
   )
   .query(async ({ input, ctx: { user } }) => {
     const { clusterIds } = input;
@@ -232,7 +201,7 @@ export const listAvailableApps = procedure
       } catch (error) {
         logger.error(
           `failed to get cluster ${clusterId}'s available apps: `,
-          error instanceof Error ? error.message : "Unknown error"
+          error instanceof Error ? error.message : "Unknown error",
         );
       }
     });
@@ -240,17 +209,13 @@ export const listAvailableApps = procedure
     const results = await Promise.allSettled(
       validClusterIds.map(async (clusterId) => {
         // 如果开启了管理系统的授权应用功能
-        if (
-          config.MIS_DEPLOYED &&
-          commonConfig.allowAppAuthorization &&
-          user.identityId
-        ) {
+        if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
           const availableApps = await libGetUserAvailableClusterApps(
             logger,
             clusterId,
             user.identityId,
             config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token
+            commonConfig.scowApi?.auth?.token,
           );
 
           return {
@@ -269,7 +234,7 @@ export const listAvailableApps = procedure
           })),
           clusterId,
         };
-      })
+      }),
     );
 
     // 只返回成功获取到的集群应用信息
@@ -281,11 +246,8 @@ export const listAvailableApps = procedure
         successfulResults.push(result.value);
       } else {
         const reason = result.reason;
-        const errorMessage =
-          reason instanceof Error ? reason.message : String(reason);
-        logger.error(
-          `failed to get cluster ${clusterId}'s available apps: ${errorMessage}`
-        );
+        const errorMessage = reason instanceof Error ? reason.message : String(reason);
+        logger.error(`failed to get cluster ${clusterId}'s available apps: ${errorMessage}`);
       }
     }
 
@@ -307,30 +269,21 @@ export const listAllAvailableAppsFromAllClusters = procedure
   .query(async ({ ctx: { user } }) => {
     const currentClusterIds = await getCurrentClusters(user.identityId);
     const aiClusterSet = new Set(Object.keys(clusters));
-    const availableClusterIds = currentClusterIds.filter((clusterId) =>
-      aiClusterSet.has(clusterId)
-    );
+    const availableClusterIds = currentClusterIds.filter((clusterId) => aiClusterSet.has(clusterId));
 
     if (availableClusterIds.length === 0) {
-      logger.info(
-        "User %s has no authorized clusters when listing all apps.",
-        user.identityId
-      );
+      logger.info("User %s has no authorized clusters when listing all apps.", user.identityId);
       return { apps: [] };
     }
 
     // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
-    if (
-      config.MIS_DEPLOYED &&
-      commonConfig.allowAppAuthorization &&
-      user.identityId
-    ) {
+    if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
       const { apps: availableApps } = await libGetUserAvailableApps(
         logger,
         availableClusterIds,
         user.identityId,
         config.MIS_SERVER_URL,
-        commonConfig.scowApi?.auth?.token
+        commonConfig.scowApi?.auth?.token,
       );
       return {
         apps: availableApps.map(mapAvailableAppFromMis),
@@ -347,9 +300,7 @@ export const listAllAvailableAppsFromAllClusters = procedure
             name: app.name,
             logoPath: app.logoPath || undefined,
             comment: app.appComment,
-            image: app.image
-              ? `${app.image?.name}:${app.image?.tag}`
-              : undefined,
+            image: app.image ? `${app.image?.name}:${app.image?.tag}` : undefined,
             startCommand: app.web?.startCommand ?? app.vnc?.xstartup ?? "",
           });
         }
@@ -374,18 +325,14 @@ export const listAppAvailableAccountsAndClusters = procedure
   .input(
     z.object({
       appId: z.optional(z.string()),
-    })
+    }),
   )
-  .output(
-    z.object({ accountClusters: z.record(z.string(), z.array(z.string())) })
-  )
+  .output(z.object({ accountClusters: z.record(z.string(), z.array(z.string())) }))
   .query(async ({ input, ctx: { user } }) => {
     const commonConfig = getCommonConfig();
     const { appId } = input;
     const currentClusterIds = await getCurrentClusters(user.identityId);
-    const currentAiClusterIds = currentClusterIds.filter((clusterId) =>
-      Boolean(clusters[clusterId])
-    );
+    const currentAiClusterIds = currentClusterIds.filter((clusterId) => Boolean(clusters[clusterId]));
 
     if (currentAiClusterIds.length === 0) {
       return { accountClusters: {} };
@@ -393,7 +340,7 @@ export const listAppAvailableAccountsAndClusters = procedure
 
     const buildAccountClusters = async (
       clusterIds: string[],
-      getClusterAccounts: (clusterId: string) => Promise<string[] | undefined>
+      getClusterAccounts: (clusterId: string) => Promise<string[] | undefined>,
     ): Promise<Record<string, string[]>> => {
       const accountClusterMap = new Map<string, Set<string>>();
 
@@ -404,17 +351,12 @@ export const listAppAvailableAccountsAndClusters = procedure
         }
 
         let appForbiddenAccounts: string[] = [];
-        if (
-          config.MIS_DEPLOYED &&
-          config.MIS_SERVER_URL &&
-          commonConfig.allowAppAuthorization &&
-          appId
-        ) {
+        if (config.MIS_DEPLOYED && config.MIS_SERVER_URL && commonConfig.allowAppAuthorization && appId) {
           appForbiddenAccounts = await libWebGetAppForbiddenAccounts(
             clusterId,
             appId,
             config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token
+            commonConfig.scowApi?.auth?.token,
           );
         }
 
@@ -429,10 +371,7 @@ export const listAppAvailableAccountsAndClusters = procedure
       }
 
       return Object.fromEntries(
-        Array.from(accountClusterMap.entries()).map(([account, clusters]) => [
-          account,
-          Array.from(clusters),
-        ])
+        Array.from(accountClusterMap.entries()).map(([account, clusters]) => [account, Array.from(clusters)]),
       ) as Record<string, string[]>;
     };
 
@@ -444,70 +383,51 @@ export const listAppAvailableAccountsAndClusters = procedure
           user.identityId,
           AccountStatusFilterProtos.UNBLOCKED_ONLY,
           config.MIS_SERVER_URL,
-          commonConfig.scowApi.auth.token
+          commonConfig.scowApi.auth.token,
         );
         misAccounts = accounts;
       }
 
-      const accountClusters = await buildAccountClusters(
-        currentAiClusterIds,
-        async (clusterId) => {
-          if (misAccounts) {
-            return misAccounts;
-          }
-
-          const client = getAdapterClient(clusterId);
-          if (!client) {
-            logger.warn(
-              `Cluster ${clusterId} not found when listing app available accounts.`
-            );
-            return undefined;
-          }
-
-          const response = await asyncClientCall(
-            client.account,
-            "listAccounts",
-            { userId: user.identityId }
-          );
-          return response.accounts ?? [];
+      const accountClusters = await buildAccountClusters(currentAiClusterIds, async (clusterId) => {
+        if (misAccounts) {
+          return misAccounts;
         }
-      );
+
+        const client = getAdapterClient(clusterId);
+        if (!client) {
+          logger.warn(`Cluster ${clusterId} not found when listing app available accounts.`);
+          return undefined;
+        }
+
+        const response = await asyncClientCall(client.account, "listAccounts", { userId: user.identityId });
+        return response.accounts ?? [];
+      });
 
       return { accountClusters };
     }
 
     const assignedResourceDetails =
-      (await getUserAssignedResourceDetails(
-        user.identityId,
-        AccountStatusFilter.UNBLOCKED_ONLY
-      )) ?? [];
+      (await getUserAssignedResourceDetails(user.identityId, AccountStatusFilter.UNBLOCKED_ONLY)) ?? [];
 
     const currentClusterSet = new Set(currentAiClusterIds);
     const clusterAccountMap = new Map<string, Set<string>>();
 
-    assignedResourceDetails.forEach(
-      ({ accountName, assignedClusterPartitions }) => {
-        Object.entries(assignedClusterPartitions ?? {}).forEach(
-          ([clusterId, partitions]) => {
-            if (!currentClusterSet.has(clusterId) || partitions.length === 0) {
-              return;
-            }
+    assignedResourceDetails.forEach(({ accountName, assignedClusterPartitions }) => {
+      Object.entries(assignedClusterPartitions ?? {}).forEach(([clusterId, partitions]) => {
+        if (!currentClusterSet.has(clusterId) || partitions.length === 0) {
+          return;
+        }
 
-            if (!clusterAccountMap.has(clusterId)) {
-              clusterAccountMap.set(clusterId, new Set());
-            }
-            clusterAccountMap.get(clusterId)!.add(accountName);
-          }
-        );
-      }
-    );
+        if (!clusterAccountMap.has(clusterId)) {
+          clusterAccountMap.set(clusterId, new Set());
+        }
+        clusterAccountMap.get(clusterId)!.add(accountName);
+      });
+    });
 
-    const accountClusters = await buildAccountClusters(
-      currentAiClusterIds,
-      async (clusterId) => {
-        return Array.from(clusterAccountMap.get(clusterId) ?? []);
-      }
-    );
+    const accountClusters = await buildAccountClusters(currentAiClusterIds, async (clusterId) => {
+      return Array.from(clusterAccountMap.get(clusterId) ?? []);
+    });
 
     return { accountClusters };
   });
@@ -534,7 +454,7 @@ export const getAppMetadata = procedure
       appComment: I18nStringSchema.optional(),
       appStartCommand: z.string(),
       appLogoPath: z.string().optional(),
-    })
+    }),
   )
   .query(async ({ input, ctx: { user } }) => {
     const { clusterId, appId } = input;
@@ -601,7 +521,7 @@ export const CreateAppInputSchema = z.object({
       z.object({
         path: z.string(),
         target: z.string(),
-      })
+      }),
     )
     .optional(),
   account: z.string(),
@@ -612,12 +532,7 @@ export const CreateAppInputSchema = z.object({
   gpuCount: z.number().optional(),
   memory: z.number().optional(),
   maxTime: z.number(),
-  // APP工作目录
-  workingDirectory: z.string().optional(),
-  customAttributes: z.record(
-    z.string(),
-    z.union([z.number(), z.string(), z.undefined()])
-  ),
+  customAttributes: z.record(z.string(), z.union([z.number(), z.string(), z.undefined()])),
   gpuType: z.string().optional(),
   envVariables: z.array(EnvVariableSchema).optional(),
   privateImageRepositoryCredentials: z
@@ -643,7 +558,7 @@ export const createAppSession = procedure
   .output(
     z.object({
       jobId: z.number(),
-    })
+    }),
   )
   .use(async ({ input: { clusterId, appName }, ctx, next }) => {
     const res = await next({ ctx });
@@ -658,14 +573,9 @@ export const createAppSession = procedure
       await callLog(
         {
           ...logInfo,
-          operationTypePayload: {
-            clusterId,
-            jobId: (res.data as any).jobId,
-            accountName: "",
-            appName,
-          },
+          operationTypePayload: { clusterId, jobId: (res.data as any).jobId, accountName: "", appName },
         },
-        OperationResult.SUCCESS
+        OperationResult.SUCCESS,
       );
     }
 
@@ -675,7 +585,7 @@ export const createAppSession = procedure
           ...logInfo,
           operationTypePayload: { clusterId, accountName: "", appName },
         },
-        OperationResult.FAIL
+        OperationResult.FAIL,
       );
     }
 
@@ -697,11 +607,9 @@ export const createAppSession = procedure
       mountPoints,
     } = input;
 
-    const { ids: algorithmIds, isPrivates: isAlgorithmPrivates } =
-      getIdPrivate(algorithms);
-    const { ids: modelIds, isPrivates: isModelPrivates } = getIdPrivate(models);
-    const { ids: datasetIds, isPrivates: isDatasetPrivates } =
-      getIdPrivate(datasets);
+    const { ids: algorithmIds, isPrivates: isAlgorithmPrivates, targets: algorithmTargets } = getIdPrivate(algorithms);
+    const { ids: modelIds, isPrivates: isModelPrivates, targets: modelTargets } = getIdPrivate(models);
+    const { ids: datasetIds, isPrivates: isDatasetPrivates, targets: datasetTargets } = getIdPrivate(datasets);
 
     if (appJobName.length > MAX_JOB_NAME_LENGTH) {
       throw new TRPCError({
@@ -767,17 +675,10 @@ export const createAppSession = procedure
 
       switch (attribute.type) {
         case "number":
-          if (
-            customAttributes[attribute.name] &&
-            Number.isNaN(Number(customAttributes[attribute.name]))
-          ) {
+          if (customAttributes[attribute.name] && Number.isNaN(Number(customAttributes[attribute.name]))) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `custom form attribute ${
-                attribute.name
-              } should be of type number, but of type ${typeof customAttributes[
-                attribute.name
-              ]}`,
+              message: `custom form attribute ${attribute.name} should be of type number, but of type ${typeof customAttributes[attribute.name]}`,
             });
           }
           break;
@@ -792,10 +693,7 @@ export const createAppSession = procedure
           // check the option selected by user is in select attributes as the config defined
           if (
             customAttributes[attribute.name] &&
-            !attribute.select!.some(
-              (optionItem) =>
-                optionItem.value === customAttributes[attribute.name]
-            )
+            !attribute.select!.some((optionItem) => optionItem.value === customAttributes[attribute.name])
           ) {
             throw new TRPCError({
               code: "BAD_REQUEST",
@@ -840,6 +738,10 @@ export const createAppSession = procedure
       userId,
     });
 
+    const algorithmVersionsWithTarget = algorithmVersions.map((v, i) => ({ ...v, target: algorithmTargets[i] ?? "" }));
+    const datasetVersionsWithTarget = datasetVersions.map((v, i) => ({ ...v, target: datasetTargets[i] ?? "" }));
+    const modelVersionsWithTarget = modelVersions.map((v, i) => ({ ...v, target: modelTargets[i] ?? "" }));
+
     const jobId = await driver.withJobDriver(
       {
         clusterId,
@@ -850,15 +752,15 @@ export const createAppSession = procedure
           isAlgorithmPrivates,
           isDatasetPrivates,
           isModelPrivates,
-          algorithmVersions,
-          datasetVersions,
-          modelVersions,
+          algorithmVersions: algorithmVersionsWithTarget,
+          datasetVersions: datasetVersionsWithTarget,
+          modelVersions: modelVersionsWithTarget,
           app,
           proxyBasePath,
           existImage,
         });
       },
-      logger
+      logger,
     );
 
     return { jobId };
@@ -878,7 +780,7 @@ export const getCreateAppParams = procedure
       clusterId: z.string(),
       jobId: z.number(),
       sessionId: z.string(),
-    })
+    }),
   )
   .output(CreateAppInputSchema)
   .query(async ({ input, ctx: { user } }) => {
@@ -896,7 +798,7 @@ export const getCreateAppParams = procedure
       async (jobDriver) => {
         return await jobDriver.getAppParams(sessionId, jobId);
       },
-      logger
+      logger,
     );
   });
 
@@ -916,42 +818,23 @@ export const saveImage = procedure
       imageName: z.string(),
       imageTag: z.string(),
       imageDesc: z.string().optional(),
-      imageTypes: z.array(
-        z.enum([
-          ImageType.APP,
-          ImageType.TRAIN,
-          ImageType.INFER,
-          ImageType.DEV_HOST,
-        ])
-      ),
+      imageTypes: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
       imageInferServicePort: z.string().optional(),
       imageStartCommand: z.string().optional(),
-    })
+    }),
   )
   .output(z.object({ imageId: z.number() }))
   .mutation(async ({ input, ctx: { user, req } }) => {
     const userId = user.identityId;
-    const {
-      clusterId,
-      jobId,
-      imageName,
-      imageTag,
-      imageDesc,
-      imageTypes,
-      imageInferServicePort,
-      imageStartCommand,
-    } = input;
+    const { clusterId, jobId, imageName, imageTag, imageDesc, imageTypes, imageInferServicePort, imageStartCommand } =
+      input;
 
     // tag的唯一标识符
     const tagPostfix = dayjs().unix().toString();
 
     // 检查镜像在数据库中是否重复
     const em = await forkEntityManager();
-    const existImage = await em.findOne(ImageEntity, {
-      owner: userId,
-      name: imageName,
-      tag: imageTag,
-    });
+    const existImage = await em.findOne(ImageEntity, { owner: userId, name: imageName, tag: imageTag });
     if (existImage) {
       throw new TRPCError({
         code: "CONFLICT",
@@ -987,12 +870,7 @@ export const saveImage = procedure
       });
     }
 
-    const harborImageUrl = await createHarborImageUrl(
-      imageName,
-      imageTag + tagPostfix,
-      user.identityId,
-      logger
-    );
+    const harborImageUrl = await createHarborImageUrl(imageName, imageTag + tagPostfix, user.identityId, logger);
     const localImageUrl = `${userId}/${imageName}:${imageTag + tagPostfix}`;
 
     // 数据库添加image
@@ -1015,16 +893,10 @@ export const saveImage = procedure
 
     const createProcess = async () => {
       const em = await forkEntityManager();
-      const image = await em.findOne(ImageEntity, {
-        name: imageName,
-        tag: imageTag,
-        owner: userId,
-      });
+      const image = await em.findOne(ImageEntity, { name: imageName, tag: imageTag, owner: userId });
 
       if (!image) {
-        throw new Error(
-          `copyImage error: image ${imageName}:${imageTag} not found`
-        );
+        throw new Error(`copyImage error: image ${imageName}:${imageTag} not found`);
       }
 
       const logInfo = {
@@ -1048,7 +920,7 @@ export const saveImage = procedure
               imageId: image.id,
             });
           },
-          logger
+          logger,
         );
 
         // 更新数据库
@@ -1060,7 +932,7 @@ export const saveImage = procedure
             ...logInfo,
             operationTypePayload: { jobId, imageName, tag: imageTag },
           },
-          OperationResult.SUCCESS
+          OperationResult.SUCCESS,
         );
 
         return;
@@ -1074,7 +946,7 @@ export const saveImage = procedure
             ...logInfo,
             operationTypePayload: { jobId, imageName, tag: imageTag },
           },
-          OperationResult.FAIL
+          OperationResult.FAIL,
         );
 
         throw new TRPCError({
@@ -1105,7 +977,7 @@ export const listAppSessions = procedure
       isRunning: booleanQueryParam().optional(),
       jobTypes: z.array(z.enum(JobType)).optional(),
       ...paginationSchema.shape,
-    })
+    }),
   )
   .output(z.object({ sessions: z.array(AppSessionSchema), count: z.number() }))
   .query(async ({ input, ctx: { user } }) => {
@@ -1131,14 +1003,10 @@ export const listAppSessions = procedure
         const protoJobTypes = getProtoJobTypes(jobTypes ?? []);
         return await jobDriver.getAiJobs(clusterId, isRunning, protoJobTypes);
       },
-      logger
+      logger,
     );
 
-    const { paginatedItems: paginatedSessions, totalCount } = paginate(
-      filteredSessions,
-      page,
-      pageSize
-    );
+    const { paginatedItems: paginatedSessions, totalCount } = paginate(filteredSessions, page, pageSize);
 
     return { sessions: paginatedSessions, count: totalCount };
   });
@@ -1156,19 +1024,29 @@ const podInfoSchema = z.object({
   podReason: z.string().optional(),
 });
 
+const ResourceMountSchema = z.object({
+  name: z.string(),
+  target: z.string(),
+});
+
 const ExtraDisplayInputsSchema = z
   .object({
     isDefaultImage: z.boolean().optional(),
     imageNameOrUrl: z.string().optional(),
+    // 旧字段：仅保存名称字符串，保持向后兼容
     datasetNames: z.array(z.string().optional()).optional(),
     algorithmNames: z.array(z.string().optional()).optional(),
     modelNames: z.array(z.string().optional()).optional(),
+    // 新字段：保存名称+挂载路径，用于详情页表格展示
+    datasetMounts: z.array(ResourceMountSchema).optional(),
+    algorithmMounts: z.array(ResourceMountSchema).optional(),
+    modelMounts: z.array(ResourceMountSchema).optional(),
     mountPoints: z
       .array(
         z.object({
           path: z.string(),
           target: z.string(),
-        })
+        }),
       )
       .optional(),
     envVariables: z.array(EnvVariableSchema).optional(),
@@ -1228,7 +1106,7 @@ export const getJobDetails = procedure
       sessionId: z.string(),
       jobType: z.string(),
       appId: z.string().optional(),
-    })
+    }),
   )
   .output(SingleAppSessionSchema)
   .query(async ({ input, ctx: { user } }) => {
@@ -1313,21 +1191,13 @@ export const getJobDetails = procedure
       if (job.state === "RUNNING") {
         try {
           const client = getAdapterClient(clusterId);
-          const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
-            client,
-            jobId,
-            logger
-          );
+          const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
           if (connectionInfo?.response?.$case === "appConnectionInfo") {
             host = connectionInfo.response.appConnectionInfo.host;
             port = connectionInfo.response.appConnectionInfo.port;
           }
         } catch (error: any) {
-          logger.info(
-            "Job(jobId:%s) gets app connection info failed , reason: %o",
-            jobId,
-            error.message
-          );
+          logger.info("Job(jobId:%s) gets app connection info failed , reason: %o", jobId, error.message);
         }
       }
 
@@ -1340,27 +1210,18 @@ export const getJobDetails = procedure
         async (jobDriver) => {
           return await jobDriver.getAppParams(sessionId, jobId);
         },
-        logger
+        logger,
       );
 
-      extraDisplayResult = formatJobDetailsExtraInputs(
-        appJobParams,
-        extraDisplayResult
-      );
+      extraDisplayResult = formatJobDetailsExtraInputs(appJobParams, extraDisplayResult);
     }
     // 推理需要端口
     else if (jobType === JobType.INFER) {
       if (job.state === "RUNNING") {
         const client = getAdapterClient(clusterId);
-        const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
-          client,
-          jobId,
-          logger
-        );
+        const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
         if (connectionInfo?.response?.$case === "appConnectionInfo") {
-          host =
-            clusters[clusterId].inferConfig?.proxyHost ??
-            aiConfig.inferConfig?.proxyHost;
+          host = clusters[clusterId].inferConfig?.proxyHost ?? aiConfig.inferConfig?.proxyHost;
           port = connectionInfo.response.appConnectionInfo.port;
         }
       }
@@ -1374,13 +1235,10 @@ export const getJobDetails = procedure
         async (jobDriver) => {
           return await jobDriver.getInferParams(sessionId, jobId);
         },
-        logger
+        logger,
       );
 
-      extraDisplayResult = formatJobDetailsExtraInputs(
-        inferJobParams,
-        extraDisplayResult
-      );
+      extraDisplayResult = formatJobDetailsExtraInputs(inferJobParams, extraDisplayResult);
     } else {
       // 获取训练作业提交参数
       const trainJobParams = await driver.withJobDriver(
@@ -1391,31 +1249,20 @@ export const getJobDetails = procedure
         async (jobDriver) => {
           return await jobDriver.getTrainParams(sessionId, jobId);
         },
-        logger
+        logger,
       );
 
-      extraDisplayResult = formatJobDetailsExtraInputs(
-        trainJobParams,
-        extraDisplayResult
-      );
+      extraDisplayResult = formatJobDetailsExtraInputs(trainJobParams, extraDisplayResult);
     }
 
-    const podInfo = job.pods.map((pod) => ({
-      ...pod,
-      podStatus: jobInfo_PodStatusToJSON(pod.podStatus),
-    }));
+    const podInfo = job.pods.map((pod) => ({ ...pod, podStatus: jobInfo_PodStatusToJSON(pod.podStatus) }));
 
     return {
       ...job,
       jobId,
       jobName: job.name,
-      runningTime:
-        job.elapsedSeconds !== undefined
-          ? formatTime(job.elapsedSeconds * 1000)
-          : "",
-      timeLimit: job.timeLimitMinutes
-        ? formatTime(job.timeLimitMinutes * 60 * 1000)
-        : "",
+      runningTime: job.elapsedSeconds !== undefined ? formatTime(job.elapsedSeconds * 1000) : "",
+      timeLimit: job.timeLimitMinutes ? formatTime(job.timeLimitMinutes * 60 * 1000) : "",
       memReq: job.memReqMb,
       memAlloc: job.memAllocMb,
       host,
@@ -1442,12 +1289,12 @@ export const checkAppConnectivity = procedure
       clusterId: z.string(),
       jobId: z.number(),
       sessionId: z.string(),
-    })
+    }),
   )
   .output(
     z.object({
       ok: z.boolean(),
-    })
+    }),
   )
   .query(async ({ input, ctx: { req, user } }) => {
     const { jobId, clusterId, sessionId } = input;
@@ -1458,11 +1305,7 @@ export const checkAppConnectivity = procedure
     try {
       const client = getAdapterClient(clusterId);
 
-      const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
-        client,
-        jobId,
-        logger
-      );
+      const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
 
       if (connectionInfo?.response?.$case === "appConnectionInfo") {
         const host = connectionInfo.response.appConnectionInfo.host;
@@ -1478,7 +1321,7 @@ export const checkAppConnectivity = procedure
           async (jobDriver) => {
             return await jobDriver.connectToApp(clusterId, sessionId);
           },
-          logger
+          logger,
         );
 
         const app = apps[reply.appId];
@@ -1497,7 +1340,7 @@ export const checkAppConnectivity = procedure
           host,
           port,
           app.type,
-          app.web?.proxyType
+          app.web?.proxyType,
         );
         return { ok: reachable };
       } else {
@@ -1523,12 +1366,12 @@ export const checkDevHostAppConnectivity = procedure
       jobId: z.number(),
       sessionId: z.string(),
       appName: z.enum(AppName),
-    })
+    }),
   )
   .output(
     z.object({
       ok: z.boolean(),
-    })
+    }),
   )
   .query(async ({ input, ctx: { req, user } }) => {
     const { jobId, clusterId, sessionId, appName } = input;
@@ -1547,12 +1390,7 @@ export const checkDevHostAppConnectivity = procedure
     try {
       const client = getAdapterClient(clusterId);
 
-      const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
-        client,
-        jobId,
-        logger,
-        protoAppType
-      );
+      const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger, protoAppType);
 
       if (connectionInfo?.response?.$case === "appConnectionInfo") {
         const host = connectionInfo.response.appConnectionInfo.host;
@@ -1564,13 +1402,9 @@ export const checkDevHostAppConnectivity = procedure
             user: user.identityId,
           },
           async (jobDriver) => {
-            return await jobDriver.connectToApp(
-              clusterId,
-              sessionId,
-              protoAppType
-            );
+            return await jobDriver.connectToApp(clusterId, sessionId, protoAppType);
           },
-          logger
+          logger,
         );
 
         let proxyType: "relative" | "absolute";
@@ -1584,21 +1418,11 @@ export const checkDevHostAppConnectivity = procedure
           default:
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: `Unknown app name ${appName as string} of app id ${
-                reply.appId
-              }`,
+              message: `Unknown app name ${appName as string} of app id ${reply.appId}`,
             });
         }
 
-        const reachable = await isPortReachableThroughUrl(
-          req,
-          TIMEOUT_MS,
-          clusterId,
-          host,
-          port,
-          "web",
-          proxyType
-        );
+        const reachable = await isPortReachableThroughUrl(req, TIMEOUT_MS, clusterId, host, port, "web", proxyType);
 
         return { ok: reachable };
       } else {
@@ -1630,7 +1454,7 @@ const ConnectToAppResponseSchema = z.intersection(
       customFormData: z.record(z.string(), z.string()).optional(),
     }),
     z.object({ type: z.literal("vnc") }),
-  ])
+  ]),
 );
 
 export const connectToApp = procedure
@@ -1646,7 +1470,7 @@ export const connectToApp = procedure
     z.object({
       cluster: z.string(),
       sessionId: z.string(),
-    })
+    }),
   )
   .output(ConnectToAppResponseSchema)
   .mutation(async ({ input, ctx: { user } }) => {
@@ -1668,7 +1492,7 @@ export const connectToApp = procedure
       async (jobDriver) => {
         return await jobDriver.connectToApp(cluster, sessionId);
       },
-      logger
+      logger,
     );
 
     const app = apps[reply.appId];
@@ -1701,15 +1525,12 @@ export const connectToApp = procedure
             formData: app.web!.connect.formData ?? {},
             path: app.web!.connect.path,
           },
-          proxyType:
-            app.web!.proxyType === "absolute" ? "absolute" : "relative",
+          proxyType: app.web!.proxyType === "absolute" ? "absolute" : "relative",
         };
       default:
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: `Unknown app type ${app.type as string} of app id ${
-            reply.appId
-          }`,
+          message: `Unknown app type ${app.type as string} of app id ${reply.appId}`,
         });
     }
   });
@@ -1728,7 +1549,7 @@ export const connectToDevHostApp = procedure
       cluster: z.string(),
       sessionId: z.string(),
       appName: z.enum(AppName),
-    })
+    }),
   )
   .output(ConnectToAppResponseSchema)
   .mutation(async ({ input, ctx: { user } }) => {
@@ -1757,7 +1578,7 @@ export const connectToDevHostApp = procedure
         const protoAppType = getProtoAppType(appName);
         return await jobDriver.connectToApp(cluster, sessionId, protoAppType);
       },
-      logger
+      logger,
     );
 
     return {
@@ -1788,7 +1609,7 @@ export const listApps = procedure
   .input(
     z.object({
       tags: z.string().optional(),
-    })
+    }),
   )
   .output(z.object({ apps: z.array(appSchema) }))
   .query(async ({ input }) => {
@@ -1801,10 +1622,7 @@ export const listApps = procedure
             .split(",")
             .some(
               (tag) =>
-                config.tags?.includes(tag) ||
-                config.clusterSpecificConfigs?.some((x) =>
-                  x.config.tags?.includes(tag)
-                )
+                config.tags?.includes(tag) || config.clusterSpecificConfigs?.some((x) => x.config.tags?.includes(tag)),
             );
         }
         return true;

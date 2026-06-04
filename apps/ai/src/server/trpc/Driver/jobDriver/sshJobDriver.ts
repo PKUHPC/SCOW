@@ -38,6 +38,8 @@ import {
 } from "src/server/trpc/route/jobs/infer";
 import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
 import {
+  extractAndValidateWorkDir,
+  filterReservedEnvVars,
   genPublicOrPrivateDataJsonString,
   getClusterAppConfigs,
   sshFetchJobInputParams,
@@ -69,7 +71,6 @@ export class SshJobDriver implements JobDriver {
 
   async createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number> {
     const {
-      workingDirectory,
       mountPoints = [],
       clusterId,
       appId,
@@ -109,13 +110,9 @@ export class SshJobDriver implements JobDriver {
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const sftp = await ssh.requestSFTP();
 
-      // 工作目录和挂载点必须在用户的homeDir下
-      if (workingDirectory && !isParentOrSameFolder(homeDir, workingDirectory)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "workingDirectory and mountPoint should be in homeDir",
-        });
-      }
+      const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+      // 确保去除 XDL_IP 与 VC_GPU_NUM
+      const filteredEnvVars = filterReservedEnvVars(envVariables);
 
       normalizedMountPoints.forEach(({ path }) => {
         if (path && !isParentOrSameFolder(homeDir, path)) {
@@ -144,7 +141,7 @@ export class SshJobDriver implements JobDriver {
 
       // 确保所有映射到容器的路径都不重复
       validateUniquePaths([
-        workingDirectory ?? join(homeDir, appJobsDirectory),
+        workingDirectory,
         ...isAlgorithmPrivates.map((isAlgorithmPrivate, idx) =>
           isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path,
         ),
@@ -232,10 +229,9 @@ export class SshJobDriver implements JobDriver {
         gpuCount: gpuCount ?? 0,
         memoryMb: memory,
         timeLimitMinutes: maxTime,
-        // 用户指定应用工作目录，如果不存在，则默认为用户的appJobsDirectory
-        workingDirectory: workingDirectory ?? join(homeDir, appJobsDirectory),
+        workingDirectory,
         script: remoteEntryPath,
-        envVariables,
+        envVariables: filteredEnvVars,
         // 对于AI模块，需要传递的额外参数
         // 第一个参数确定是创建应用or训练任务，
         // 第二个参数为创建应用时的appId
@@ -540,6 +536,10 @@ export class SshJobDriver implements JobDriver {
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const sftp = await ssh.requestSFTP();
 
+      const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+      // 确保去除 XDL_IP 与 VC_GPU_NUM
+      const filteredEnvVars = filterReservedEnvVars(envVariables);
+
       normalizedMountPoints.forEach(({ path }) => {
         if (path && !isParentOrSameFolder(homeDir, path)) {
           throw new TRPCError({
@@ -592,9 +592,9 @@ export class SshJobDriver implements JobDriver {
         gpuCount: gpuCount ?? 0,
         memoryMb: Number(memory),
         timeLimitMinutes: maxTime,
-        workingDirectory: inferJobsDirectory,
+        workingDirectory,
         script: remoteEntryPath,
-        envVariables,
+        envVariables: filteredEnvVars,
         // 对于AI模块，需要传递的额外参数
         // 第一个参数为镜像地址
         // 第二个参数为模型版本地址
@@ -715,6 +715,10 @@ export class SshJobDriver implements JobDriver {
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const sftp = await ssh.requestSFTP();
 
+      const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+      // 确保去除 XDL_IP 与 VC_GPU_NUM
+      const filteredEnvVars = filterReservedEnvVars(envVariables);
+
       normalizedMountPoints.forEach(({ path }) => {
         if (path && !isParentOrSameFolder(homeDir, path)) {
           throw new TRPCError({
@@ -782,9 +786,9 @@ export class SshJobDriver implements JobDriver {
         gpuCount: gpuCount ?? 0,
         memoryMb: Number(memory),
         timeLimitMinutes: maxTime,
-        workingDirectory: trainJobsDirectory,
+        workingDirectory,
         script: remoteEntryPath,
-        envVariables,
+        envVariables: filteredEnvVars,
         // 对于AI模块，需要传递的额外参数
         // 第一个参数确定是创建应用or训练任务，
         // 第二个参数为创建应用时的appId

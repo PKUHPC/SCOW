@@ -18,16 +18,18 @@ import { Logger } from "ts-log";
 import { ScowdJobDriver } from "./scowdJobDriver";
 import { SshJobDriver } from "./sshJobDriver";
 
+type WithMountTarget<T> = T & { target: string };
+
 export interface CreateAppExtraParams {
   isAlgorithmPrivates: boolean[];
   isDatasetPrivates: boolean[];
   isModelPrivates: boolean[];
-  algorithmVersions: AlgorithmVersion[];
-  datasetVersions: DatasetVersion[];
-  modelVersions: ModelVersion[];
+  algorithmVersions: WithMountTarget<AlgorithmVersion>[];
+  datasetVersions: WithMountTarget<DatasetVersion>[];
+  modelVersions: WithMountTarget<ModelVersion>[];
   app: AppConfigSchema;
   proxyBasePath: string;
-  existImage: ImageEntity | undefined;
+  existImage: ImageEntity | undefined
 }
 
 export interface ConnectToAppResponse {
@@ -39,22 +41,22 @@ export interface ConnectToAppResponse {
 
 export interface SubmitInferJobExtraParams {
   isModelPrivates: boolean[];
-  modelVersions: ModelVersion[];
-  existImage: ImageEntity | undefined;
+  modelVersions: WithMountTarget<ModelVersion>[];
+  existImage: ImageEntity | undefined
 }
 
 export interface SubmitTrainJobExtraParams {
   isAlgorithmPrivates: boolean[];
   isDatasetPrivates: boolean[];
   isModelPrivates: boolean[];
-  algorithmVersions: AlgorithmVersion[];
-  datasetVersions: DatasetVersion[];
-  modelVersions: ModelVersion[];
-  existImage: ImageEntity | undefined;
+  algorithmVersions: WithMountTarget<AlgorithmVersion>[];
+  datasetVersions: WithMountTarget<DatasetVersion>[];
+  modelVersions: WithMountTarget<ModelVersion>[];
+  existImage: ImageEntity | undefined
 }
 
 export interface CreateDevHostExtraParams {
-  existImage: ImageEntity | undefined;
+  existImage: ImageEntity | undefined
 }
 
 export interface JobDriver {
@@ -69,7 +71,11 @@ export interface JobDriver {
   createDevHost(inputParams: CreateDevHostInput, extraParams: CreateDevHostExtraParams): Promise<number>;
 }
 
-function createJobDriver(opts: { clusterId: string; userId: string; logger: Logger }): JobDriver {
+function createJobDriver(opts: {
+  clusterId: string;
+  userId: string;
+  logger: Logger;
+}): JobDriver {
   const { clusterId, userId, logger } = opts;
   const cluster = clusters[clusterId];
   const host = getClusterLoginNode(clusterId);
@@ -78,9 +84,7 @@ function createJobDriver(opts: { clusterId: string; userId: string; logger: Logg
     throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
   }
 
-  if (!host) {
-    throw clusterNotFound(clusterId);
-  }
+  if (!host) { throw clusterNotFound(clusterId); }
 
   if (cluster.scowd?.enabled) {
     return new ScowdJobDriver(clusterId, userId, logger);
@@ -88,6 +92,7 @@ function createJobDriver(opts: { clusterId: string; userId: string; logger: Logg
 
   return new SshJobDriver(host, userId, logger);
 }
+
 
 export async function withJobDriver<T>(
   params: {
@@ -97,6 +102,7 @@ export async function withJobDriver<T>(
   handler: (driver: JobDriver) => Promise<T>,
   logger: Logger,
 ) {
+
   const driver = createJobDriver({
     clusterId: params.clusterId,
     userId: params.user,

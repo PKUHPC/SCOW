@@ -1,5 +1,4 @@
 import type { CascaderProps } from "antd";
-import type { FormListFieldData } from "antd/es/form";
 import type { ReactNode } from "react";
 
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
@@ -7,8 +6,12 @@ import { focusedBorderAndShadowStyle } from "@scow/lib-web/build/components/styl
 import { cascaderArrowIcon, selectionArrowIcon } from "@scow/lib-web/build/icons/commonIcons";
 import { Button, Cascader, Form, Tooltip } from "antd";
 import { isValidElement, useRef, useMemo } from "react";
+import { AutoScrollText } from "src/components/AutoScrollText";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { createGlobalStyle, styled, useTheme } from "styled-components";
+import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { createMountTargetRules } from "./common";
+import { CATEGORY_VALUE_PRIVATE } from "./LaunchJobForm.utils";
 
 const RESOURCE_CASCADER_POPUP_CLASS = "resource-cascader-dropdown";
 const RESOURCE_TOOLTIP_CLASS = "resource-selector-tooltip";
@@ -91,6 +94,9 @@ const CascaderWrapper = styled(CascaderContainer)`
     font-size: 14px !important;
     display: flex;
     align-items: center;
+    overflow: hidden !important;
+    min-width: 0 !important;
+    margin-inline-end: 30px !important;
   }
 
   .ant-select-selection-placeholder {
@@ -104,15 +110,13 @@ const CascaderWrapper = styled(CascaderContainer)`
 
   .ant-cascader-menus {
     display: flex;
-    width: 100% !important;
   }
 
   .ant-cascader-menu {
     color: ${({ theme }) => theme.token.colorText} !important;
-    flex: 0 0 14%;
-    width: 14% !important;
-    min-width: 150px !important;
-    max-width: 14% !important;
+    flex: 0 0 auto;
+    width: 140px !important;
+    min-width: 100px !important;
     border-radius: 0 !important;
     overflow-y: auto !important;
     padding: 4px !important;
@@ -120,16 +124,11 @@ const CascaderWrapper = styled(CascaderContainer)`
   }
 
   .ant-cascader-menu:nth-child(2) {
-    flex: 0 0 50%;
-    width: 50% !important;
-    max-width: 50% !important;
+    width: 240px !important;
   }
 
   .ant-cascader-menu:nth-child(3) {
-    flex: 1 1 0 !important;
-    width: auto !important;
-    max-width: none !important;
-    min-width: 0 !important;
+    width: 200px !important;
   }
 
   .ant-cascader-menu-item {
@@ -144,7 +143,9 @@ const CascaderWrapper = styled(CascaderContainer)`
 
   .ant-cascader-menu-item-content {
     flex: 1;
+    min-width: 0;
     line-height: 36px !important;
+    white-space: nowrap !important;
   }
 
   .ant-cascader-menu-item-expand-icon {
@@ -221,6 +222,8 @@ export interface ResourceOptionNode {
   description?: string;
   ownerText?: string;
   children: ResourceOptionNode[];
+  // 私有数据集，默认填充私有路径作为映射的目标地址
+  privatePath?: string;
 }
 
 export type ResourceCategory = ResourceOptionNode;
@@ -229,7 +232,7 @@ const renderWithTooltip = (label: string, description?: string): ReactNode =>
   description ? (
     <Tooltip
       title={description}
-      placement="right"
+      placement="top"
       overlayClassName={RESOURCE_TOOLTIP_CLASS}
       overlayStyle={{ maxWidth: 280 }}
     >
@@ -262,16 +265,18 @@ const defaultDisplayRender = (labels: ReactNode[], selectedOptions?: unknown[]) 
     .filter(Boolean)
     .join(" / ");
 
-  const ownerText = (selectedOptions as Record<string, unknown>[] | undefined)
-    ?.map((opt) => opt.ownerText as string | undefined)
+  const ownerText = (selectedOptions as (Record<string, unknown> | null | undefined)[] | undefined)
+    ?.map((opt) => opt?.ownerText as string | undefined)
     .find(Boolean);
 
-  if (!ownerText) return pathText;
+  const fullText = ownerText ? `${pathText}  ${ownerText}` : pathText;
+
   return (
-    <span>
-      {pathText}
-      <OwnerDisplayText>{ownerText}</OwnerDisplayText>
-    </span>
+    <Tooltip title={fullText} mouseEnterDelay={0.5}>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+        {fullText}
+      </span>
+    </Tooltip>
   );
 };
 
@@ -282,32 +287,39 @@ export const OwnerDisplayText = styled.span`
 `;
 
 const StyledPublicResourceOption = styled.div`
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 20px;
+  gap: 8px;
+  white-space: nowrap;
 
   .resource-name {
     font-weight: 500;
     color: ${({ theme }) => theme.token.colorText};
+    flex-shrink: 0;
   }
 
   .resource-owner {
     color: ${({ theme }) => theme.palette.gray[6]};
     font-size: 13px;
+    flex-shrink: 0;
   }
 `;
 
 const renderOptionLabel = (node: ResourceOptionNode): ReactNode => {
   const nameNode = renderWithTooltip(node.label, node.description);
-  if (!node.ownerText) return nameNode;
+  if (!node.ownerText) {
+    return <AutoScrollText>{nameNode}</AutoScrollText>;
+  }
   return (
-    <StyledPublicResourceOption>
-      <span className="resource-name">{nameNode}</span>
-      <span className="resource-owner" data-display-only="true">
-        {node.ownerText}
-      </span>
-    </StyledPublicResourceOption>
+    <AutoScrollText>
+      <StyledPublicResourceOption>
+        <span className="resource-name">{nameNode}</span>
+        <span className="resource-owner" data-display-only="true">
+          {node.ownerText}
+        </span>
+      </StyledPublicResourceOption>
+    </AutoScrollText>
   );
 };
 
@@ -326,6 +338,7 @@ const generateOptions = (categories: ResourceCategory[]): CascaderProps["options
             value: grandChild.value,
             label: renderOptionLabel(grandChild),
             ownerText: grandChild.ownerText,
+            privatePath: grandChild.privatePath,
           })) ?? [],
       })) ?? [],
   }));
@@ -341,34 +354,6 @@ const RowRemoveButton = styled(RemoveButton)`
   margin-top: 10px;
 `;
 
-const renderListItems = (
-  fields: FormListFieldData[],
-  remove: (index: number | number[]) => void,
-  options: CascaderProps["options"],
-  placeholder: string,
-  displayRender: (labels: ReactNode[]) => ReactNode,
-  requiredMessage: string,
-  removeAriaLabel: string,
-) =>
-  fields.map((field) => (
-    <Row key={field.key}>
-      <Form.Item {...field} style={{ flex: 1, marginBottom: 0 }} rules={[{ required: true, message: requiredMessage }]}>
-        <CascaderWrapper
-          size="large"
-          options={options}
-          placeholder={placeholder}
-          expandTrigger="hover"
-          displayRender={displayRender}
-          dropdownMatchSelectWidth
-          popupClassName={RESOURCE_CASCADER_POPUP_CLASS}
-          allowClear
-        />
-      </Form.Item>
-
-      <RowRemoveButton icon={<MinusOutlined />} onClick={() => remove(field.name)} aria-label={removeAriaLabel} />
-    </Row>
-  ));
-
 export interface ResourceSelectorListProps {
   name: string;
   placeholder: string;
@@ -377,9 +362,11 @@ export interface ResourceSelectorListProps {
   requiredMessage?: string;
   categories: ResourceCategory[];
   displayRender?: (labels: ReactNode[]) => ReactNode;
+  privatePathLookup?: Map<number, string>;
 }
 
 const p = prefix("app.jobs.resourceSelectorList.");
+const pMount = prefix("app.jobs.mountPointList.");
 
 export const ResourceSelectorList = ({
   name,
@@ -389,19 +376,38 @@ export const ResourceSelectorList = ({
   requiredMessage,
   categories,
   displayRender = defaultDisplayRender,
+  privatePathLookup,
 }: ResourceSelectorListProps) => {
   const theme = useTheme();
   const t = useI18nTranslateToString();
+  const form = Form.useFormInstance();
   const options = useMemo(() => generateOptions(categories), [categories]);
   const listRules = emptyMessage
     ? [
-        {
-          validator: async (_: unknown, value: unknown[]) => validateListNotEmpty(_, value, emptyMessage),
-        },
-      ]
+      {
+        validator: async (_: unknown, value: unknown[]) => validateListNotEmpty(_, value, emptyMessage),
+      },
+    ]
     : [];
   const requiredMessageText = requiredMessage ?? t(p("defaultRequiredMessage"));
   const removeAriaLabel = t(p("removeAriaLabel"));
+
+  const handleCascaderChange = (fieldName: number) => (value: (string | number | null)[]) => {
+    const rootCategory = value?.[0];
+    const normalizedRootCategory = typeof rootCategory === "string" ? Number(rootCategory) : rootCategory;
+    const isPrivateCategory = normalizedRootCategory === CATEGORY_VALUE_PRIVATE;
+    const leafId = value?.[value.length - 1];
+    const id = typeof leafId === "string" ? Number(leafId) : (leafId ?? undefined);
+    const privatePath = isPrivateCategory && id !== undefined && !Number.isNaN(id)
+      ? privatePathLookup?.get(id as number)
+      : undefined;
+    if (privatePath) {
+      form.setFieldValue([name, fieldName, "target"], privatePath);
+    } else {
+      form.setFieldValue([name, fieldName, "target"], "");
+    }
+    form.validateFields([[name, fieldName, "target"]]);
+  };
 
   return (
     <>
@@ -409,7 +415,54 @@ export const ResourceSelectorList = ({
       <Form.List name={name} rules={listRules}>
         {(fields, { add, remove }, { errors }) => (
           <ListContainer>
-            {renderListItems(fields, remove, options, placeholder, displayRender, requiredMessageText, removeAriaLabel)}
+            {fields.map((field) => (
+              <Row key={field.key}>
+                <Form.Item
+                  {...field}
+                  name={[field.name, "selection"]}
+                  style={{ flex: 1, minWidth: 0, marginBottom: 0 }}
+                  rules={[{ required: true, message: requiredMessageText }]}
+                >
+                  <CascaderWrapper
+                    size="large"
+                    options={options}
+                    placeholder={placeholder}
+                    expandTrigger="hover"
+                    displayRender={displayRender}
+                    dropdownMatchSelectWidth={false}
+                    popupClassName={RESOURCE_CASCADER_POPUP_CLASS}
+                    allowClear
+                    onChange={handleCascaderChange(field.name)}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name={[field.name, "target"]}
+                  style={{ flex: 1, minWidth: 0, marginBottom: 0 }}
+                  rules={[
+                    { required: true, message: t(pMount("targetRequired")) },
+                    ...createMountTargetRules(
+                      ["datasets", "algorithms", "models", "mountPoints"],
+                      name,
+                      field.name,
+                      t(pMount("targetRootNotAllowed")),
+                      t(pMount("duplicateTarget")),
+                    ),
+                  ]}
+                >
+                  <RoundedInput
+                    size="large"
+                    placeholder={t(pMount("targetPlaceholder"))}
+                  />
+                </Form.Item>
+
+                <RowRemoveButton
+                  icon={<MinusOutlined />}
+                  onClick={() => remove(field.name)}
+                  aria-label={removeAriaLabel}
+                />
+              </Row>
+            ))}
 
             <AddButton
               icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />}

@@ -494,6 +494,7 @@ export default {
         mountPoint: "마운트 지점",
         mountPath: "경로",
         mountTarget: "대상 경로",
+        resourceName: "리소스 이름 (버전)",
         envVariable: "환경 변수",
         variableName: "변수 이름",
         variableValue: "변수 값",
@@ -1093,6 +1094,8 @@ export default {
       upload: "파일 업로드",
       mkdir: "새 폴더 생성",
       depression: "파일 압축 해제",
+      pathAccessFailed: "경로 접근 실패",
+      unknownError: "알 수 없는 오류",
     },
     fileTable: {
       name: "파일 이름",

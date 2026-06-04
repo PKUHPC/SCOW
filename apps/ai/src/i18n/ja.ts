@@ -495,6 +495,7 @@ export default {
         mountPoint: "マウントポイント",
         mountPath: "パス",
         mountTarget: "ターゲットパス",
+        resourceName: "リソース名（バージョン）",
         envVariable: "環境変数",
         variableName: "変数名",
         variableValue: "変数値",
@@ -1096,6 +1097,8 @@ export default {
       upload: "ファイルをアップロード",
       mkdir: "新しいフォルダーを作成",
       depression: "ファイルを展開",
+      pathAccessFailed: "パスへのアクセスに失敗しました",
+      unknownError: "不明なエラー",
     },
     fileTable: {
       name: "ファイル名",

@@ -222,13 +222,21 @@ export const FileSelectModal: React.FC<Props> = ({
     data: curDirContent,
     refetch,
     isLoading: isDirContentLoading,
+    isError: isDirError,
+    error: dirError,
   } = trpc.file.listDirectory.useQuery(
     {
       clusterId: clusterId,
       path,
     },
-    { enabled: !!clusterId && path !== "~" },
+    { enabled: !!clusterId && path !== "~", retry: false },
   );
+
+  useEffect(() => {
+    if (!isDirError || !visible) return;
+    message.error(`${t(p("pathAccessFailed"))}：${dirError?.message ?? t(p("unknownError"))}`);
+    setPath(boundaryPath);
+  }, [boundaryPath, dirError?.message, isDirError, message, t, p, visible]);
 
   // 路径边界验证
   useEffect(() => {

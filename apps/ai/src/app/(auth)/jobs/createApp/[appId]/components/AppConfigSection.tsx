@@ -12,7 +12,7 @@ import {
 import { Form, type FormInstance, Space } from "antd";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
-import { EnvironmentVariableList } from "src/app/(auth)/jobs/EnvironmentVariableList";
+import { EnvVariableFormSection } from "src/app/(auth)/jobs/EnvVariableFormSection";
 import {
   ImageDescriptionBox,
   ImageSegmentedControl,
@@ -50,6 +50,10 @@ interface AppConfigSectionProps {
   isModelsLoading: boolean;
   selectedCluster?: string;
   displayRender?: (labels: ReactNode[]) => ReactNode;
+  homeDir?: string;
+  datasetPrivatePathLookup?: Map<number, string>;
+  algorithmPrivatePathLookup?: Map<number, string>;
+  modelPrivatePathLookup?: Map<number, string>;
 }
 
 const p = prefix("app.jobs.appConfigSection.");
@@ -74,6 +78,10 @@ export const AppConfigSection = ({
   isModelsLoading,
   selectedCluster,
   displayRender,
+  homeDir,
+  datasetPrivatePathLookup,
+  algorithmPrivatePathLookup,
+  modelPrivatePathLookup,
 }: AppConfigSectionProps) => {
   const t = useI18nTranslateToString();
   const datasetsPlaceholder = isDatasetsLoading ? t(p("datasets.loading")) : t(p("datasets.placeholder"));
@@ -187,7 +195,10 @@ export const AppConfigSection = ({
 
         {customFormItems}
 
-        <InlineFormItem label={<Label>{t(p("datasets.label"))}</Label>}>
+        <InlineFormItem
+          label={<Label>{t(p("datasets.label"))}</Label>}
+          helpTip={t("app.jobs.appConfigSection.environmentVariables.datasetHelpTip")}
+        >
           <ResourceSelectorList
             name="datasets"
             placeholder={datasetsPlaceholder}
@@ -195,10 +206,14 @@ export const AppConfigSection = ({
             requiredMessage={t(p("datasets.requiredMessage"))}
             categories={datasetCategories}
             displayRender={displayRender}
+            privatePathLookup={datasetPrivatePathLookup}
           />
         </InlineFormItem>
 
-        <InlineFormItem label={<Label>{t(p("algorithms.label"))}</Label>}>
+        <InlineFormItem
+          label={<Label>{t(p("algorithms.label"))}</Label>}
+          helpTip={t("app.jobs.appConfigSection.environmentVariables.algorithmHelpTip")}
+        >
           <ResourceSelectorList
             name="algorithms"
             placeholder={algorithmsPlaceholder}
@@ -206,10 +221,14 @@ export const AppConfigSection = ({
             requiredMessage={t(p("algorithms.requiredMessage"))}
             categories={algorithmCategories}
             displayRender={displayRender}
+            privatePathLookup={algorithmPrivatePathLookup}
           />
         </InlineFormItem>
 
-        <InlineFormItem label={<Label>{t(p("models.label"))}</Label>}>
+        <InlineFormItem
+          label={<Label>{t(p("models.label"))}</Label>}
+          helpTip={t("app.jobs.appConfigSection.environmentVariables.modelHelpTip")}
+        >
           <ResourceSelectorList
             name="models"
             placeholder={modelsPlaceholder}
@@ -217,6 +236,7 @@ export const AppConfigSection = ({
             requiredMessage={t(p("models.requiredMessage"))}
             categories={modelCategories}
             displayRender={displayRender}
+            privatePathLookup={modelPrivatePathLookup}
           />
         </InlineFormItem>
 
@@ -227,12 +247,7 @@ export const AppConfigSection = ({
           <MountPointList clusterId={selectedCluster ?? ""} />
         </InlineFormItem>
 
-        <InlineFormItem
-          label={<Label>{t(p("environmentVariables.label"))}</Label>}
-          helpTip={t(p("environmentVariables.helpTip"))}
-        >
-          <EnvironmentVariableList />
-        </InlineFormItem>
+        <EnvVariableFormSection clusterId={selectedCluster} homeDir={homeDir} />
       </Form>
     </SectionCard>
   );

@@ -30,6 +30,7 @@ import type {
 } from "../LaunchTrainForm.types";
 
 import { FrameworkSegmentedControl, InlineAddonInputGroup } from "../LaunchTrainForm.styles";
+import { CommonHelpTipWithQuestionMark } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 
 const p = prefix("app.jobs.resourceConfigSection.");
 const DISTRIBUTED_FRAMEWORKS: TrainFramework[] = ["pytorch", "mpi", "mindspore"];
@@ -482,7 +483,14 @@ export const ResourceConfigSection = ({
           style={{ marginBottom: 24 }}
         >
           <AddonNumberInput
-            addonLabel={unitLabel}
+            addonLabel={
+              activeResourceTab === "gpu" ?
+                <span>
+                  {unitLabel}
+                  <CommonHelpTipWithQuestionMark title={t("app.jobs.appConfigSection.environmentVariables.gpuHelpTip")} />
+                </span> :
+                unitLabel
+            }
             min={1}
             step={1}
             precision={0}

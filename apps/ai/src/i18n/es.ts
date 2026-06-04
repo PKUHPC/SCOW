@@ -499,6 +499,7 @@ export default {
         mountPoint: "Punto de montaje",
         mountPath: "Ruta",
         mountTarget: "Ruta de destino",
+        resourceName: "Nombre del recurso (versión)",
         envVariable: "Variable de entorno",
         variableName: "Nombre de variable",
         variableValue: "Valor de variable",
@@ -1103,6 +1104,8 @@ export default {
       upload: "Subir Archivo",
       mkdir: "Crear Nueva Carpeta",
       depression: "Descomprimir Archivo",
+      pathAccessFailed: "Error al acceder a la ruta",
+      unknownError: "Error desconocido",
     },
     fileTable: {
       name: "Nombre de Archivo",

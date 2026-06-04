@@ -99,6 +99,11 @@ export interface MountPointField {
   target: string;
 }
 
+export interface ResourceSelectionField {
+  selection: CascaderSelection;
+  target: string;
+}
+
 export interface EnvVariableField {
   key: string;
   value: string;
@@ -111,9 +116,9 @@ export interface AppFormValues {
   remotePassword?: string;
   command?: string;
   containerServicePort?: number;
-  datasets?: CascaderSelection[];
-  algorithms?: CascaderSelection[];
-  models?: CascaderSelection[];
+  datasets?: ResourceSelectionField[];
+  algorithms?: ResourceSelectionField[];
+  models?: ResourceSelectionField[];
   mountPoints?: MountPointField[];
   envVariables?: EnvVariableField[];
   customFields?: CustomFieldsMap;

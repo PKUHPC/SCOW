@@ -6,11 +6,13 @@ import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { sftpExists, sftpReadFile } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
+import { PREDEFINED_ENV_VAR, shouldOmitEnvFromPayload } from "src/models/envVars";
 import { getAiAppConfigs } from "src/server/config/apps";
 import { AlgorithmVersion, SharedStatus } from "src/server/entities/AlgorithmVersion";
 import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { Image as ImageEntity } from "src/server/entities/Image";
 import { ModelVersion } from "src/server/entities/ModelVersion";
+import { isParentOrSameFolder } from "src/utils/file";
 import { SFTPWrapper } from "ssh2";
 import { Logger } from "ts-log";
 import { z } from "zod";
@@ -294,8 +296,8 @@ export const validateUniquePaths = (paths: (string | undefined)[]) => {
   }
 };
 
-export const genPublicOrPrivateDataJsonString = (path: string | undefined, isPublic: boolean) =>
-  JSON.stringify({ path, isPublic });
+export const genPublicOrPrivateDataJsonString = (path: string | undefined, isPublic: boolean, target?: string) =>
+  JSON.stringify({ path, isPublic, target });
 
 const checkEntityAccess = ({
   entity,
@@ -369,14 +371,28 @@ export function formatJobDetailsExtraInputs(
   inputParams: CreateAppInput | TrainJobInput | InferenceJobInput,
   extraDisplayInputs: ExtraDisplayInputs,
 ): ExtraDisplayInputs {
+  const hasTarget = (target: string | undefined) => Boolean(target?.trim());
+
+  const getResourceNames = (items: { currentNameVersion?: string; target?: string }[] | undefined) =>
+    items
+      ?.filter((item) => item.currentNameVersion !== undefined && !hasTarget(item.target))
+      .map((item) => item.currentNameVersion) ?? [];
+
+  const getResourceMounts = (items: { currentNameVersion?: string; target?: string }[] | undefined) =>
+    items
+      ?.filter(
+        (item): item is { currentNameVersion: string; target: string } =>
+          item.currentNameVersion !== undefined && hasTarget(item.target),
+      )
+      .map((item) => ({ name: item.currentNameVersion, target: item.target })) ?? [];
+
   const result = {
     ...extraDisplayInputs,
     ...inputParams,
     isDefaultImage: !inputParams.remoteImageUrl && !inputParams.image,
     imageNameOrUrl: inputParams.image ? inputParams.localImageName : inputParams.remoteImageUrl,
-    modelNames: inputParams.models
-      ? inputParams.models.filter((x) => x.currentNameVersion !== undefined).map((m) => m.currentNameVersion)
-      : [],
+    modelNames: getResourceNames(inputParams.models),
+    modelMounts: getResourceMounts(inputParams.models),
     startCommand:
       "startCommand" in inputParams
         ? inputParams.startCommand
@@ -399,12 +415,10 @@ export function formatJobDetailsExtraInputs(
   if ("datasets" in inputParams && "algorithms" in inputParams) {
     return {
       ...result,
-      datasetNames: inputParams.datasets
-        ? inputParams.datasets.filter((x) => x.currentNameVersion !== undefined).map((d) => d.currentNameVersion)
-        : [],
-      algorithmNames: inputParams.algorithms
-        ? inputParams.algorithms.filter((x) => x.currentNameVersion !== undefined).map((a) => a.currentNameVersion)
-        : [],
+      datasetNames: getResourceNames(inputParams.datasets),
+      datasetMounts: getResourceMounts(inputParams.datasets),
+      algorithmNames: getResourceNames(inputParams.algorithms),
+      algorithmMounts: getResourceMounts(inputParams.algorithms),
     };
   }
 
@@ -418,3 +432,30 @@ export const hasNonUtf8Segment = (targetPath: string) =>
     .split("/")
     .filter(Boolean)
     .some((segment) => segment.startsWith(NON_UTF8_PREFIX));
+
+/**
+ * 从 envVariables 中提取 WORK_DIR，并校验其必须存在且位于 homeDir 下。
+ * 不满足条件时直接抛出 TRPCError，调用方无需额外处理。
+ */
+export const extractAndValidateWorkDir = (envVariables: { key: string; value: string }[], homeDir: string): string => {
+  const workingDirectory = envVariables.find((e) => e.key === PREDEFINED_ENV_VAR.WORK_DIR)?.value;
+
+  if (!workingDirectory) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "WORK_DIR is required",
+    });
+  }
+
+  if (!isParentOrSameFolder(homeDir, workingDirectory)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "WORK_DIR should be in homeDir",
+    });
+  }
+
+  return workingDirectory;
+};
+
+export const filterReservedEnvVars = (envVariables: { key: string; value: string }[]) =>
+  envVariables.filter((e) => !shouldOmitEnvFromPayload(e.key));

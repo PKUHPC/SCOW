@@ -7,7 +7,7 @@ import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { styled, useTheme } from "styled-components";
 
-import { validateMountPoints } from "./common";
+import { createMountTargetRules, validateMountPoints } from "./common";
 import { AddButton, RemoveButton } from "./ResourceSelectorList";
 
 const MountListContainer = styled.div`
@@ -83,14 +83,13 @@ export const MountPointList = ({ clusterId }: Props) => {
                   style={{ flex: 1, marginBottom: 0 }}
                   rules={[
                     { required: true, message: t(p("targetRequired")) },
-                    {
-                      validator: (_, value) => {
-                        if (typeof value === "string" && value.trim() === "/") {
-                          return Promise.reject(new Error(t(p("targetRootNotAllowed"))));
-                        }
-                        return Promise.resolve();
-                      },
-                    },
+                    ...createMountTargetRules(
+                      ["datasets", "algorithms", "models", "mountPoints"],
+                      "mountPoints",
+                      name,
+                      t(p("targetRootNotAllowed")),
+                      t(p("duplicateTarget")),
+                    ),
                   ]}
                 >
                   <RoundedInput size="large" placeholder={t(p("targetPlaceholder"))} />

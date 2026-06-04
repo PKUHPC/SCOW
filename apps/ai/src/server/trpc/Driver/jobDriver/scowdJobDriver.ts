@@ -41,6 +41,8 @@ import { InferenceJobInput, InferenceJobInputSchema } from "src/server/trpc/rout
 import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
 import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
 import {
+  extractAndValidateWorkDir,
+  filterReservedEnvVars,
   genPublicOrPrivateDataJsonString,
   getClusterAppConfigs,
   scowdFetchJobInputParams,
@@ -484,7 +486,6 @@ export class ScowdJobDriver implements JobDriver {
 
   async createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number> {
     const {
-      workingDirectory,
       mountPoints = [],
       clusterId,
       appId,
@@ -528,13 +529,9 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    // 工作目录和挂载点必须在用户的homeDir下
-    if (workingDirectory && !isParentOrSameFolder(homeDir, workingDirectory)) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "workingDirectory and mountPoint should be in homeDir",
-      });
-    }
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    // 确保去除 XDL_IP 与 VC_GPU_NUM
+    const filteredEnvVars = filterReservedEnvVars(envVariables);
 
     normalizedMountPoints.forEach(({ path }) => {
       if (path && !isParentOrSameFolder(homeDir, path)) {
@@ -566,7 +563,7 @@ export class ScowdJobDriver implements JobDriver {
 
     // 确保所有映射到容器的路径都不重复
     validateUniquePaths([
-      workingDirectory ?? join(homeDir, appJobsDirectory),
+      workingDirectory,
       ...isAlgorithmPrivates.map((isAlgorithmPrivate, idx) =>
         isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path,
       ),
@@ -668,10 +665,10 @@ export class ScowdJobDriver implements JobDriver {
       gpuCount: gpuCount ?? 0,
       memoryMb: memory,
       timeLimitMinutes: maxTime,
-      // 用户指定应用工作目录，如果不存在，则默认为用户的appJobsDirectory
-      workingDirectory: workingDirectory ?? join(homeDir, appJobsDirectory),
+      // 用户指定应用工作目录
+      workingDirectory,
       script: remoteEntryPath,
-      envVariables,
+      envVariables: filteredEnvVars,
       privateImageRepositoryCredentials,
       userIdmapInfo,
       // 对于AI模块，需要传递的额外参数
@@ -692,24 +689,24 @@ export class ScowdJobDriver implements JobDriver {
         JSON.stringify(
           algorithmVersions.map((algorithmVersion, idx) =>
             isAlgorithmPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false)
-              : genPublicOrPrivateDataJsonString(algorithmVersion.path, true),
+              ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false, algorithmVersion.target)
+              : genPublicOrPrivateDataJsonString(algorithmVersion.path, true, algorithmVersion.target),
           ),
         ),
 
         JSON.stringify(
           datasetVersions.map((datasetVersion, idx) =>
             isDatasetPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false)
-              : genPublicOrPrivateDataJsonString(datasetVersion.path, true),
+              ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false, datasetVersion.target)
+              : genPublicOrPrivateDataJsonString(datasetVersion.path, true, datasetVersion.target),
           ),
         ),
 
         JSON.stringify(
           modelVersions.map((modelVersion, idx) =>
             isModelPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
-              : genPublicOrPrivateDataJsonString(modelVersion.path, true),
+              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false, modelVersion.target)
+              : genPublicOrPrivateDataJsonString(modelVersion.path, true, modelVersion.target),
           ),
         ),
         JSON.stringify(normalizedMountPoints),
@@ -1080,6 +1077,10 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    // 确保去除 XDL_IP 与 VC_GPU_NUM
+    const filteredEnvVars = filterReservedEnvVars(envVariables);
+
     normalizedMountPoints.forEach(({ path }) => {
       if (path && !isParentOrSameFolder(homeDir, path)) {
         throw new TRPCError({
@@ -1151,10 +1152,10 @@ export class ScowdJobDriver implements JobDriver {
       gpuCount: gpuCount ?? 0,
       memoryMb: Number(memory),
       timeLimitMinutes: maxTime,
-      workingDirectory: join(homeDir, inferJobsDirectory),
+      workingDirectory,
       // 当运行命令为空时，直接传""，不传脚本路径
       script: entryScript ? remoteEntryPath : "",
-      envVariables,
+      envVariables: filteredEnvVars,
       privateImageRepositoryCredentials,
       userIdmapInfo,
       // 对于AI模块，需要传递的额外参数
@@ -1168,8 +1169,8 @@ export class ScowdJobDriver implements JobDriver {
         JSON.stringify(
           modelVersions.map((modelVersion, idx) =>
             isModelPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
-              : genPublicOrPrivateDataJsonString(modelVersion.path, true),
+              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false, modelVersion.target)
+              : genPublicOrPrivateDataJsonString(modelVersion.path, true, modelVersion.target),
           ),
         ),
         JSON.stringify(normalizedMountPoints),
@@ -1320,6 +1321,10 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    // 确保去除 XDL_IP 与 VC_GPU_NUM
+    const filteredEnvVars = filterReservedEnvVars(envVariables);
+
     normalizedMountPoints.forEach(({ path }) => {
       if (path && !isParentOrSameFolder(homeDir, path)) {
         throw new TRPCError({
@@ -1413,10 +1418,10 @@ export class ScowdJobDriver implements JobDriver {
       gpuCount: gpuCount ?? 0,
       memoryMb: Number(memory),
       timeLimitMinutes: maxTime,
-      workingDirectory: join(homeDir, trainJobsDirectory),
+      workingDirectory,
       // 当运行命令为空时，直接传""，不传脚本路径
       script: entryScript ? remoteEntryPath : "",
-      envVariables,
+      envVariables: filteredEnvVars,
       privateImageRepositoryCredentials,
       userIdmapInfo,
       // 对于AI模块，需要传递的额外参数
@@ -1437,22 +1442,22 @@ export class ScowdJobDriver implements JobDriver {
         JSON.stringify(
           algorithmVersions.map((algorithmVersion, idx) =>
             isAlgorithmPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false)
-              : genPublicOrPrivateDataJsonString(algorithmVersion.path, true),
+              ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false, algorithmVersion.target)
+              : genPublicOrPrivateDataJsonString(algorithmVersion.path, true, algorithmVersion.target),
           ),
         ),
         JSON.stringify(
           datasetVersions.map((datasetVersion, idx) =>
             isDatasetPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false)
-              : genPublicOrPrivateDataJsonString(datasetVersion.path, true),
+              ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false, datasetVersion.target)
+              : genPublicOrPrivateDataJsonString(datasetVersion.path, true, datasetVersion.target),
           ),
         ),
         JSON.stringify(
           modelVersions.map((modelVersion, idx) =>
             isModelPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
-              : genPublicOrPrivateDataJsonString(modelVersion.path, true),
+              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false, modelVersion.target)
+              : genPublicOrPrivateDataJsonString(modelVersion.path, true, modelVersion.target),
           ),
         ),
         JSON.stringify(normalizedMountPoints),
@@ -1576,6 +1581,7 @@ export class ScowdJobDriver implements JobDriver {
       remoteImageUrl,
       qos,
       privateImageRepositoryCredentials,
+      envVariables = [],
     } = inputParams;
 
     const normalizedMountPoints = mountPoints.filter((item): item is { path: string; target: string } =>
@@ -1598,6 +1604,10 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
+
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    // 确保去除 XDL_IP 与 VC_GPU_NUM
+    const filteredEnvVars = filterReservedEnvVars(envVariables);
 
     normalizedMountPoints.forEach(({ path }) => {
       if (path && !isParentOrSameFolder(homeDir, path)) {
@@ -1650,7 +1660,7 @@ export class ScowdJobDriver implements JobDriver {
       gpuCount: gpuCount ?? 0,
       memoryMb: Number(memory),
       timeLimitMinutes: maxTimeMinutes,
-      workingDirectory: join(homeDir, devHostDir),
+      workingDirectory,
       image: remoteImageUrl || existImage?.path || "",
       privateImageRepositoryCredentials,
       userIdmapInfo,
@@ -1662,6 +1672,7 @@ export class ScowdJobDriver implements JobDriver {
       jupyterLabInfo: {
         proxyBasePath: join(BASE_PATH, "api/proxy", clusterId, "absolute"),
       },
+      envVariables: filteredEnvVars,
     }).catch((e) => {
       const ex = e as ServiceError;
       throw new TRPCError({

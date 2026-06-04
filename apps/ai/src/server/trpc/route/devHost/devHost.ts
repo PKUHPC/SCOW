@@ -11,6 +11,8 @@ import { logger } from "src/server/utils/logger";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
+import { EnvVariableSchema } from "../jobs/jobs";
+
 export const CreateDevHostInputSchema = z.object({
   clusterId: z.string(),
   devHostName: z.string(),
@@ -38,6 +40,7 @@ export const CreateDevHostInputSchema = z.object({
       password: z.string(),
     })
     .optional(),
+  envVariables: z.array(EnvVariableSchema).optional(),
 });
 
 export type CreateDevHostInput = z.infer<typeof CreateDevHostInputSchema>;

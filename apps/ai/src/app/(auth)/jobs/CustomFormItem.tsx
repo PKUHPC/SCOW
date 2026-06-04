@@ -7,6 +7,11 @@ export const InlineFormItem = styled(BaseInlineFormItem).attrs<{ $labelWidth?: n
   $labelWidth: props.$labelWidth ?? 121,
 }))``;
 
+// 调整 label 与 gap的宽度，使文字多的行添加 question mark 时能够一行展示不进行换行
 export const InferInlineFormItem = styled(BaseInlineFormItem).attrs<{ $labelWidth?: number }>((props) => ({
-  $labelWidth: props.$labelWidth ?? 131,
-}))``;
+  $labelWidth: props.$labelWidth ?? 147,
+}))`
+  .ant-form-item-row {
+    gap: 8px;
+  }
+`;

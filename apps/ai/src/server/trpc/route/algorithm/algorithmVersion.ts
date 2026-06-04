@@ -180,6 +180,7 @@ const AlgorithmVersionItemSchema = z.object({
   id: z.number(),
   versionName: z.string(),
   versionDescription: z.string().optional(),
+  privatePath: z.string().optional(),
 });
 
 const AlgorithmGroupSchema = z.object({
@@ -262,6 +263,8 @@ export const getAllAlgorithmVersions = procedure
     const allAlgorithms = [...personalAlgorithms, ...publicAlgorithms];
     const userMap = await buildUserMap(allAlgorithms.map((a) => a.owner));
 
+    const personalAlgorithmIds = new Set(personalAlgorithms.map((a) => a.id));
+
     return mapAssetEntityGroupsWithVersions<Algorithm, AlgorithmVersion, z.infer<typeof AlgorithmGroupSchema>>({
       personalEntities: personalAlgorithms,
       publicEntities: publicAlgorithms,
@@ -279,6 +282,7 @@ export const getAllAlgorithmVersions = procedure
           id: version.id,
           versionName: version.versionName,
           versionDescription: version.versionDescription,
+          privatePath: personalAlgorithmIds.has(algorithm.id) ? version.privatePath : undefined,
         })),
       }),
     });

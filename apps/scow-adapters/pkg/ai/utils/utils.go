@@ -62,6 +62,7 @@ type ServerSessionContent struct {
 type MountModel struct {
 	Path     string `json:"path"`
 	IsPublic bool   `json:"isPublic"`
+	Target   string `json:"target"`
 }
 
 type PathMap struct {
@@ -970,7 +971,7 @@ func setMountPointByAddition(algorithm, dataSet, model []MountModel, uid, gid ui
 		}
 		v = append(v, volume)
 		vm = append(vm, map[string]interface{}{
-			"mountPath": al.Path,
+			"mountPath": al.Target,
 			"name":      name,
 			"readOnly":  al.IsPublic,
 		})
@@ -983,7 +984,7 @@ func setMountPointByAddition(algorithm, dataSet, model []MountModel, uid, gid ui
 		}
 		v = append(v, volume)
 		vm = append(vm, map[string]interface{}{
-			"mountPath": ds.Path,
+			"mountPath": ds.Target,
 			"name":      name,
 			"readOnly":  ds.IsPublic,
 		})
@@ -996,7 +997,7 @@ func setMountPointByAddition(algorithm, dataSet, model []MountModel, uid, gid ui
 		}
 		v = append(v, volume)
 		vm = append(vm, map[string]interface{}{
-			"mountPath": m.Path,
+			"mountPath": m.Target,
 			"name":      name,
 			"readOnly":  m.IsPublic,
 		})
@@ -1007,10 +1008,6 @@ func setMountPointByAddition(algorithm, dataSet, model []MountModel, uid, gid ui
 func SetContainerEnv(workDir string, in *pb.SubmitJobRequest) ([]interface{}, error) {
 	// 定义 Container 的env对象
 	env := []interface{}{
-		map[string]interface{}{
-			"name":  "WORK_DIR",
-			"value": workDir,
-		},
 		// 环境变量注入容器ip地址
 		map[string]interface{}{
 			"name": "SCOW_CONTAINER_IP",
@@ -1035,10 +1032,6 @@ func SetContainerEnv(workDir string, in *pb.SubmitJobRequest) ([]interface{}, er
 func SetAscendContainerEnv(workDir string, in *pb.SubmitJobRequest) ([]interface{}, error) {
 	// 定义 Container 的env对象
 	env := []interface{}{
-		map[string]interface{}{
-			"name":  "WORK_DIR",
-			"value": workDir,
-		},
 		// 环境变量注入容器ip地址
 		map[string]interface{}{
 			"name": "SCOW_CONTAINER_IP",
@@ -1173,6 +1166,9 @@ func ParseMountModel(mount string) ([]MountModel, error) {
 		if err != nil {
 			logrus.Errorf("Unmarshal error: %v", err)
 			return info, err
+		}
+		if mm.Target == "" {
+			mm.Target = mm.Path
 		}
 		info = append(info, mm)
 	}

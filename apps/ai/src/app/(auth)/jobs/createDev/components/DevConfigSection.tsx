@@ -8,6 +8,7 @@ import {
 } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Form, type FormInstance, Space } from "antd";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
+import { EnvVariableFormSection } from "src/app/(auth)/jobs/EnvVariableFormSection";
 import {
   ImageDescriptionBox,
   ImageSegmentedControl,
@@ -35,6 +36,7 @@ interface AppConfigSectionProps {
   selectedImageOption?: ImageOption;
   usePrivateRemoteImage?: boolean;
   selectedCluster?: string;
+  homeDir?: string;
 }
 
 const p = prefix("app.jobs.appConfigSection.");
@@ -50,6 +52,7 @@ export const DevConfigSection = ({
   selectedImageOption,
   usePrivateRemoteImage,
   selectedCluster,
+  homeDir,
 }: AppConfigSectionProps) => {
   const t = useI18nTranslateToString();
 
@@ -160,6 +163,8 @@ export const DevConfigSection = ({
         >
           <MountPointList clusterId={selectedCluster ?? ""} />
         </InlineFormItem>
+
+        <EnvVariableFormSection clusterId={selectedCluster} homeDir={homeDir} />
       </Form>
     </SectionCard>
   );

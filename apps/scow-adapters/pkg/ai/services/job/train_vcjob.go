@@ -164,6 +164,7 @@ func DevHostVCJob(dh *pb.CreateDevHostRequest, jobName, workDir string) error {
 		ExtraOptions:                      ExtraOptions,
 		PrivateImageRepositoryCredentials: dh.PrivateImageRepositoryCredentials,
 		UserIdmapInfo:                     dh.UserIdmapInfo,
+		EnvVariables:                      dh.EnvVariables,
 	}
 	mountPoints := make(map[bool][]string, 2)
 	if len(dh.Mounts) != 0 {

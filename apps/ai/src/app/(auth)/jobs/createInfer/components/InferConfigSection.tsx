@@ -16,7 +16,7 @@ import { Form, type FormInstance, Space } from "antd";
 import { type ReactNode, useEffect, useRef } from "react";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
 import { InferInlineFormItem as InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
-import { EnvironmentVariableList } from "src/app/(auth)/jobs/EnvironmentVariableList";
+import { EnvVariableFormSection } from "src/app/(auth)/jobs/EnvVariableFormSection";
 import {
   ImageDescriptionBox,
   ImageSegmentedControl,
@@ -51,6 +51,8 @@ interface InferConfigSectionProps {
   isModelsLoading: boolean;
   selectedCluster?: string;
   displayRender?: (labels: ReactNode[]) => ReactNode;
+  homeDir?: string;
+  modelPrivatePathLookup?: Map<number, string>;
 }
 
 const pAppConfig = prefix("app.jobs.appConfigSection.");
@@ -70,6 +72,8 @@ export const InferConfigSection = ({
   isModelsLoading,
   selectedCluster,
   displayRender,
+  homeDir,
+  modelPrivatePathLookup,
 }: InferConfigSectionProps) => {
   const t = useI18nTranslateToString();
   const modelsPlaceholder = isModelsLoading ? t(pAppConfig("models.loading")) : t(pAppConfig("models.placeholder"));
@@ -249,7 +253,10 @@ export const InferConfigSection = ({
           <RoundedInputNumber size="large" min={0} max={65535} precision={0} style={{ width: 152 }} />
         </InlineFormItem>
 
-        <InlineFormItem label={<Label>{t(pAppConfig("models.label"))}</Label>}>
+        <InlineFormItem
+          label={<Label>{t(pAppConfig("models.label"))}</Label>}
+          helpTip={t("app.jobs.appConfigSection.environmentVariables.modelHelpTip")}
+        >
           <ResourceSelectorList
             name="models"
             placeholder={modelsPlaceholder}
@@ -257,6 +264,7 @@ export const InferConfigSection = ({
             requiredMessage={t(pAppConfig("models.requiredMessage"))}
             categories={modelCategories}
             displayRender={displayRender}
+            privatePathLookup={modelPrivatePathLookup}
           />
         </InlineFormItem>
 
@@ -267,12 +275,10 @@ export const InferConfigSection = ({
           <MountPointList clusterId={selectedCluster ?? ""} />
         </InlineFormItem>
 
-        <InlineFormItem
-          label={<Label>{t(pAppConfig("environmentVariables.label"))}</Label>}
-          helpTip={t(pAppConfig("environmentVariables.helpTip"))}
-        >
-          <EnvironmentVariableList />
-        </InlineFormItem>
+        <EnvVariableFormSection
+          clusterId={selectedCluster}
+          homeDir={homeDir}
+        />
       </Form>
     </SectionCard>
   );

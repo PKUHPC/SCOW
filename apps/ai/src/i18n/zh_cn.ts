@@ -461,6 +461,7 @@ export default {
         mountPoint: "挂载点",
         mountPath: "路径",
         mountTarget: "目标路径",
+        resourceName: "资源名称（版本）",
         envVariable: "环境变量",
         variableName: "变量名",
         variableValue: "变量值",
@@ -549,7 +550,6 @@ export default {
           capacity: "空闲CPU",
           memoryPerCore: "每CPU核分配",
         },
-        workingDirHelpTip: "工作目录的路径会自动添加为挂载点",
         algorithmCategories: {
           mine: "我的算法",
           public: "公共算法",
@@ -720,7 +720,13 @@ export default {
         },
         environmentVariables: {
           label: "环境变量",
-          helpTip: "支持添加多个环境变量",
+          extraTip: "{} 为平台预置环境变量，自定义变量请使用其他名称",
+          gpuHelpTip: "平台自动注入 VC_GPU_NUM 环境变量，表示容器中的加速卡卡数，您可在代码中直接使用",
+          workdirHelpTip: "环境变量WORK_DIR表示容器内工作目录，您可在代码中直接使用, 工作目录的路径会自动添加为挂载点",
+          xdlIpHelpTip: "使用华为昇腾加速卡时，平台自动注入 XDL_IP 环境变量，表示宿主机IP，您可在代码中直接使用",
+          datasetHelpTip: "平台自动注入 SCOW_AI_DATASET_PATH 环境变量，表示容器中的数据集路径，您可在代码中直接使用",
+          algorithmHelpTip: "平台自动注入 SCOW_AI_ALGORITHM_PATH 环境变量，表示容器中的算法路径，您可在代码中直接使用",
+          modelHelpTip: "平台自动注入 SCOW_AI_MODEL_PATH 环境变量，表示容器中的模型路径，您可在代码中直接使用",
         },
         servicePortField: {
           requiredMessage: "请输入服务端口",
@@ -746,6 +752,10 @@ export default {
         valuePlaceholder: "请输入变量值",
         removeAriaLabel: "删除环境变量",
         addButton: "添加变量",
+        predefinedValidator: "系统内置环境变量，请使用其他变量名",
+        xdlIpPlaceholder: "自动获取",
+        workDirPlaceholder: "默认：用户家目录",
+        clusterRequired: "请先选择集群",
       },
       mountPointList: {
         sourceRequired: "请选择挂载源路径",
@@ -756,6 +766,7 @@ export default {
         targetRequired: "请输入挂载目标路径",
         targetRootNotAllowed: "挂载目标路径不能为根目录 (/)",
         targetPlaceholder: "请输入挂载路径 (例如 /mnt/data)",
+        duplicateTarget: "填写的挂载路径不能重复",
         removeAriaLabel: "删除挂载点",
         addButton: "添加挂载点",
       },
@@ -1350,6 +1361,8 @@ export default {
       mkdir: "新建文件夹",
       depression: "解压文件",
       homeDirError: "目录获取失败",
+      pathAccessFailed: "路径访问失败",
+      unknownError: "未知错误",
       onlyPublicPath: "仅可在公共资产目录下操作",
     },
     fileTable: {

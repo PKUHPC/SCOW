@@ -29,15 +29,12 @@ import { trpc } from "src/utils/trpc";
 import type {
   AppFormValues,
   BaseFormValues,
-  CascaderSelection,
   CommandCacheEntry,
   CPUQueueRow,
-  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
   MaxTimeUnit,
-  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
@@ -46,14 +43,19 @@ import type {
 } from "./LaunchInferForm.types";
 
 import {
+  buildEnvPayload,
+  buildPrivatePathLookup,
+  buildResubmitResourceSelections,
   buildSelectionPathLookup,
   buildVersionLookup,
   convertDurationToHours,
-  createSelectionLookupKey,
   deriveQueueStats,
   getCommandCacheKey,
+  initBuiltinEnvVariables,
   mapQueuesToRows,
+  mergeResubmitEnvVariables,
   renderCascaderLabels,
+  sanitizeFormMountAndEnvValues,
   toIdPrivateList,
 } from "../LaunchJobForm.utils";
 import { PublicImageOption } from "../PublicImageOption";
@@ -221,6 +223,17 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
   const [appForm] = Form.useForm<AppFormValues>();
+
+  const hasInitializedBuiltinEnvVariablesRef = useRef(false);
+  useEffect(() => {
+    if (hasInitializedBuiltinEnvVariablesRef.current) {
+      return;
+    }
+
+    initBuiltinEnvVariables(appForm, Boolean(createInferParams));
+    hasInitializedBuiltinEnvVariablesRef.current = true;
+  }, [appForm, createInferParams]);
+
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -312,6 +325,12 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const selectedNodeCount = Form.useWatch("nodeCount", resourceForm) ?? 1;
   const isMaxTimeUnlimited = Form.useWatch("maxTimeUnlimited", resourceForm) ?? false;
 
+  // 获取用户家目录
+  const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
+    { clusterId: selectedCluster! },
+    { enabled: !!selectedCluster },
+  );
+
   // ----------- 服务请求与变更提示 -----------
   // 提交训练作业的 RPC 请求，集中处理成功跳转和常见错误提示
   const createInferJobMutation = trpc.jobs.submitInferJob.useMutation({
@@ -345,28 +364,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     },
   });
 
-  // 提交前去除挂载点、环境变量的多余空白项，避免后端收到空值
-  const sanitizeAppFormValues = () => {
-    const { mountPoints, envVariables } = appForm.getFieldsValue();
-
-    const sanitizedMountPoints = (mountPoints ?? [])
-      .map((item) => ({
-        source: typeof item?.source === "string" ? item.source.trim() : "",
-        target: typeof item?.target === "string" ? item.target.trim() : "",
-      }))
-      .filter((item): item is MountPointField => Boolean(item.source || item.target));
-    const sanitizedEnvVariables = (envVariables ?? [])
-      .map((item) => ({
-        key: typeof item?.key === "string" ? item.key.trim() : "",
-        value: typeof item?.value === "string" ? item.value.trim() : "",
-      }))
-      .filter((item): item is EnvVariableField => Boolean(item.key || item.value));
-
-    appForm.setFieldsValue({
-      mountPoints: sanitizedMountPoints,
-      envVariables: sanitizedEnvVariables,
-    });
-  };
+  const sanitizeAppFormValues = () => sanitizeFormMountAndEnvValues(appForm);
 
   // ----- 在外部状态变化时同步表单值 -----
   // 当用户切换集群、或从预填数据恢复到不同集群时，需要清理依赖于集群的字段，避免旧值残留
@@ -501,6 +499,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
             label: version.versionName,
             value: version.id,
             description: version.versionDescription ?? version.algorithmVersion ?? undefined,
+            privatePath: version.privatePath,
             children: [],
           })),
       }))
@@ -543,14 +542,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
   // 预构建 id → 路径 的查找表，方便再次提交时把后端记录转回级联路径
   const modelSelectionLookup = useMemo(() => buildSelectionPathLookup(modelCategories), [modelCategories]);
-
-  const resolveSelectionPath = (lookup: Map<string, CascaderSelection>, id: number, isPrivate: boolean) => {
-    const primary = lookup.get(createSelectionLookupKey(id, isPrivate));
-    if (primary) {
-      return primary;
-    }
-    return lookup.get(createSelectionLookupKey(id, !isPrivate));
-  };
+  const modelPrivatePathLookup = useMemo(() => buildPrivatePathLookup(modelCategories), [modelCategories]);
 
   // 回填模型选择，同上
   useEffect(() => {
@@ -565,12 +557,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       return;
     }
 
-    const selections = (createInferParams.models ?? [])
-      .map((item) => {
-        return resolveSelectionPath(modelSelectionLookup, item.id, Boolean(item.isPrivate));
-      })
-      .filter((path): path is CascaderSelection => Boolean(path))
-      .map((path) => [...path]);
+    const selections = buildResubmitResourceSelections(createInferParams.models, modelSelectionLookup);
 
     appForm.setFieldsValue({
       models: selections.length ? selections : [],
@@ -608,7 +595,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
     appForm.setFieldsValue({
       mountPoints: mountPointsDraft,
-      envVariables: envVariablesDraft,
+      envVariables: mergeResubmitEnvVariables(envVariablesDraft),
     });
 
     if (!resubmitServicePortAppliedRef.current) {
@@ -1555,12 +1542,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
         })
         .filter((point): point is { path: string; target: string } => Boolean(point));
 
-      const envVariablesPayload = (appValues.envVariables ?? [])
-        .filter((env) => env?.key && env?.value)
-        .map((env) => ({
-          key: env.key.trim(),
-          value: env.value.trim(),
-        }));
+      const envVariablesPayload = buildEnvPayload(appValues.envVariables);
 
       let imageId: number | undefined;
       let remoteImageUrl: string | undefined;
@@ -1680,6 +1662,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           isModelsLoading={isModelsLoading}
           selectedCluster={selectedCluster}
           displayRender={renderCascaderLabels}
+          homeDir={userHomeDir?.path}
+          modelPrivatePathLookup={modelPrivatePathLookup}
         />
       </PageContainer>
 

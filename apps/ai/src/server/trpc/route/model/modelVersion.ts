@@ -163,6 +163,7 @@ const ModelVersionItemSchema = z.object({
   versionName: z.string(),
   versionDescription: z.string().optional(),
   algorithmVersion: z.string().optional(),
+  privatePath: z.string().optional(),
 });
 
 const ModelGroupSchema = z.object({
@@ -244,6 +245,8 @@ export const getAllModelVersions = procedure
     const allModels = [...personalModels, ...publicModels];
     const userMap = await buildUserMap(allModels.map((m) => m.owner));
 
+    const personalModelIds = new Set(personalModels.map((m) => m.id));
+
     return mapAssetEntityGroupsWithVersions<Model, ModelVersion, z.infer<typeof ModelGroupSchema>>({
       personalEntities: personalModels,
       publicEntities: publicModels,
@@ -264,6 +267,7 @@ export const getAllModelVersions = procedure
           versionName: version.versionName,
           versionDescription: version.versionDescription,
           algorithmVersion: version.algorithmVersion,
+          privatePath: personalModelIds.has(model.id) ? version.privatePath : undefined,
         })),
       }),
     });

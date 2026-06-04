@@ -1,3 +1,9 @@
 {
-  "recommendations": ["editorconfig.editorconfig", "hediet.vscode-drawio", "drblury.protobuf-vsc", "oxc.oxc-vscode"]
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "golang.go",
+    "hediet.vscode-drawio",
+    "drblury.protobuf-vsc",
+    "oxc.oxc-vscode"
+  ]
 }

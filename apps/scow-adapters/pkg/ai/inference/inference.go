@@ -502,7 +502,7 @@ func setInferenceMountPoints(mountPoints map[bool][]string, workDir string, in *
 				name := "model" + strconv.Itoa(i)
 				volumes = append(volumes, utils.GetMountPathVolume(uid, gid, m.Path, name, mountMode))
 				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					MountPath: m.Path,
+					MountPath: m.Target,
 					Name:      name,
 					ReadOnly:  m.IsPublic,
 				})

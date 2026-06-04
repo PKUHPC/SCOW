@@ -500,6 +500,7 @@ export default {
         mountPoint: "Mount-Punkt",
         mountPath: "Pfad",
         mountTarget: "Zielpfad",
+        resourceName: "Ressourcenname (Version)",
         envVariable: "Umgebungsvariable",
         variableName: "Variablenname",
         variableValue: "Variablenwert",
@@ -1104,6 +1105,8 @@ export default {
       upload: "Datei hochladen",
       mkdir: "Neuen Ordner erstellen",
       depression: "Datei entpacken",
+      pathAccessFailed: "Pfadzugriff fehlgeschlagen",
+      unknownError: "Unbekannter Fehler",
     },
     fileTable: {
       name: "Dateiname",

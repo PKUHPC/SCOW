@@ -34,13 +34,20 @@ import type {
   ImageOption,
   ImageSourceDraft,
   MaxTimeUnit,
-  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
 } from "./LaunchDevForm.types";
 
-import { convertDurationToHours, deriveQueueStats, mapQueuesToRows } from "../LaunchJobForm.utils";
+import {
+  buildEnvPayload,
+  convertDurationToHours,
+  deriveQueueStats,
+  initBuiltinEnvVariables,
+  mapQueuesToRows,
+  mergeResubmitEnvVariables,
+  sanitizeFormMountAndEnvValues,
+} from "../LaunchJobForm.utils";
 import { PublicImageOption } from "../PublicImageOption";
 import { BaseInfoSection } from "./components/BaseInfoSection";
 import { DevConfigSection } from "./components/DevConfigSection";
@@ -253,6 +260,17 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
   const [appForm] = Form.useForm<AppFormValues>();
+
+  const hasInitializedBuiltinEnvVariablesRef = useRef(false);
+  useEffect(() => {
+    if (hasInitializedBuiltinEnvVariablesRef.current) {
+      return;
+    }
+
+    initBuiltinEnvVariables(appForm, Boolean(createDevParams));
+    hasInitializedBuiltinEnvVariablesRef.current = true;
+  }, [appForm, createDevParams]);
+
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -325,6 +343,11 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     { enabled: Boolean(selectedCluster) },
   );
 
+  const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
+    { clusterId: selectedCluster! },
+    { enabled: !!selectedCluster },
+  );
+
   const accountOptions = useMemo(
     () =>
       (accountListData?.accounts ?? []).map((account) => ({
@@ -363,21 +386,8 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     },
   });
 
-  // 提交前去除挂载点的多余空白项，避免后端收到空值
-  const sanitizeAppFormValues = () => {
-    const { mountPoints } = appForm.getFieldsValue();
-
-    const sanitizedMountPoints = (mountPoints ?? [])
-      .map((item) => ({
-        source: typeof item?.source === "string" ? item.source.trim() : "",
-        target: typeof item?.target === "string" ? item.target.trim() : "",
-      }))
-      .filter((item): item is MountPointField => Boolean(item.source || item.target));
-
-    appForm.setFieldsValue({
-      mountPoints: sanitizedMountPoints,
-    });
-  };
+  // 提交前去除挂载点和环境变量的多余空白项，避免后端收到空值
+  const sanitizeAppFormValues = () => sanitizeFormMountAndEnvValues(appForm);
 
   // ----- 在外部状态变化时同步表单值 -----
   // 当用户切换集群、或从预填数据恢复到不同集群时，需要清理依赖于集群的字段，避免旧值残留
@@ -415,6 +425,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         remoteUsername: undefined,
         remotePassword: undefined,
         mountPoints: [],
+        envVariables: [],
       });
       imageSourceDraftsRef.current = {
         mine: {},
@@ -498,8 +509,13 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       })
       .filter((item) => item.source || item.target);
 
+    const envVariablesDraft = (createDevParams.envVariables ?? [])
+      .filter((env): env is { key: string; value: string } => Boolean(env?.key) && Boolean(env?.value))
+      .map((env) => ({ key: env.key, value: env.value }));
+
     appForm.setFieldsValue({
       mountPoints: mountPointsDraft,
+      envVariables: mergeResubmitEnvVariables(envVariablesDraft),
     });
 
     resubmitMountEnvAppliedRef.current = true;
@@ -1222,6 +1238,8 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         })
         .filter((point): point is { path: string; target: string } => Boolean(point));
 
+      const envVariablesPayload = buildEnvPayload(appValues.envVariables);
+
       let imageId: number | undefined;
       let remoteImageUrl: string | undefined;
       let isImagePrivate: boolean | undefined;
@@ -1257,6 +1275,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         memory: memoryMb ?? 0,
         maxTimeMinutes,
         ...(mountPointsPayload.length ? { mountPoints: mountPointsPayload } : {}),
+        ...(envVariablesPayload.length ? { envVariables: envVariablesPayload } : {}),
         ...(appValues.usePrivateImage
           ? {
               privateImageRepositoryCredentials: {
@@ -1323,6 +1342,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
           selectedImageOption={selectedImageOption}
           usePrivateRemoteImage={usePrivateRemoteImage}
           selectedCluster={selectedCluster}
+          homeDir={userHomeDir?.path}
         />
       </PageContainer>
 
