@@ -178,7 +178,7 @@
                 <div class="w-72 mb-6">
                   <div class="flex items-center">
                     <input name="otpCode" placeholder="{{ authTexts.login.otpVCode }}" type="text" required
-                      class="px-8 w-full py-2 border rounded text-gray-700 focus:outline-none"/>
+                      class="px-4 w-full py-2 border rounded text-gray-700 focus:outline-none"/>
                   </div>
                 </div>
               {% endif %}
@@ -186,7 +186,7 @@
                 <div class="w-72 mb-6">
                   <div class="flex items-center">
                     <input name="code" placeholder="{{ authTexts.login.inputVCode }}" type="text" required
-                        class=" px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
+                        class=" px-4 w-full border rounded py-2 text-gray-700 focus:outline-none" />
                     <div id="captcha" onclick="refreshCaptcha()" class="cursor-pointer">{{ code }}</div>
                     <script>
                       function refreshCaptcha(){
@@ -207,10 +207,6 @@
                   </div>
                 </div>
 
-                {% if verifyCaptchaFail %}
-                  <p class="my-4 text-center text-red-600">{{ authTexts.login.invalidVCode }}</p>
-                {% endif %}
-
               {% else %}
                 <input type="hidden" name="code" value="" />
               {% endif %}
@@ -218,21 +214,26 @@
               <input type="hidden" name="token" value="{{ token }}" />
               <input type="hidden" name="callbackUrl" value="{{ callbackUrl | escape }}" />
 
-              {% if errParamrs.err %}
-                {% if errParamrs.lockedMinutes %}
-                  <p class="my-4 text-center text-red-600">
-                    {{ authTexts.login[errParamrs.errMessage]}} {{errParamrs.lockedMinutes}} {{ authTexts.login[errParamrs.dynamicsErrMessage]}}
-                  </p>
-                {% else %}
-                  <p class="my-4 text-center text-red-600">
-                    {{ authTexts.login[errParamrs.errMessage] | append:remainCount | default:authTexts.login.invalidInput }}
-                  </p>
+              <div class="min-h-4 w-72 flex items-center justify-center text-center text-red-600 text-sm">
+                {% if verifyCaptchaFail %}
+                  {{ authTexts.login.invalidVCode }}
+                {% elsif errParamrs.err %}
+                  {% if authTexts.login[errParamrs.errMessage] %}
+                    {% if errParamrs.lockedMinutes %}
+                      {{ authTexts.login[errParamrs.errMessage] }} {{ errParamrs.lockedMinutes }} {{ authTexts.login[errParamrs.dynamicsErrMessage] }}
+                    {% elsif remainCount %}
+                      {{ authTexts.login[errParamrs.errMessage] }}{{ remainCount }}{{ authTexts.login.invalidPasswordRemainSuffix }}
+                    {% else %}
+                      {{ authTexts.login[errParamrs.errMessage] }}
+                    {% endif %}
+                  {% else %}
+                    {{ authTexts.login.invalidInput }}
+                  {% endif %}
+                {% elsif verifyOtpFail %}
+                  {{ authTexts.login.invalidOtp }}
                 {% endif %}
-              {% endif %}
-              {% if verifyOtpFail %}
-                <p class="my-4 text-center text-red-600">{{ authTexts.login.invalidOtp }}</p>
-              {% endif %}
-              <button type="submit" class="w-72 py-2 mb-14 mt-6 rounded-lg button-primary text-gray-100 focus:outline-none">
+              </div>
+              <button type="submit" class="w-72 py-2 mb-14 mt-4 rounded-lg button-primary text-gray-100 focus:outline-none">
                   {{ authTexts.login.login }}
               </button>
             </div>
