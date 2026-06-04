@@ -20,7 +20,7 @@ var showCmd = &cobra.Command{
 		accountName, _ := cmd.Flags().GetString("account")
 
 		client.InitDB()
-		log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level))
+		log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level), config.Value.LogConfig.FilePath)
 
 		// 查询账户信息
 		accounts, err := quota_cli.GetAccounts(accountName)

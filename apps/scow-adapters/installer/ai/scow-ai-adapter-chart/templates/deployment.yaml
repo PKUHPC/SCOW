@@ -44,7 +44,7 @@ spec:
             - mountPath: /etc/localtime
               name: localtime
               readOnly: true
-            - mountPath: /adapter/server.log
+            - mountPath: {{ .Values.hostPathMounts.containerLogFile | dir }}
               name: log-data
 {{- end }}
             - name: scow-ai-adapter-config
@@ -83,7 +83,7 @@ spec:
         - name: log-data
           hostPath:
             path: {{.Values.hostPathMounts.logPath}}
-            type: FileOrCreate
+            type: DirectoryOrCreate
 {{- end }}
         - name: scow-ai-adapter-config
           configMap:

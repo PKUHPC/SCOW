@@ -16,7 +16,7 @@ spec:
       name: {{ .Values.service.name }}
     - port: {{ .Values.monitor.port }}
       targetPort: {{ .Values.monitor.targetPort }}
-{{- if eq .Values.monitor.type "NodePort" }}
+{{- if eq .Values.service.type "NodePort" }}
       nodePort: {{ .Values.monitor.nodePort }}
 {{- end }}
       name: {{ .Values.monitor.name }}

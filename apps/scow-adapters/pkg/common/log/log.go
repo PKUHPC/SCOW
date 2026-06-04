@@ -47,22 +47,25 @@ func ParseLogLevel(level string) logrus.Level {
 	return lvl
 }
 
-func InitLogger(level logrus.Level) {
+func InitLogger(level logrus.Level, filePath string) {
 	logrus.SetReportCaller(true)
 	// 设置日志输出格式为JSON
 	logrus.SetFormatter(&Formatter{})
 	// 设置日志级别
 	logrus.SetLevel(level)
 
+	if filePath == "" {
+		filePath = "server.log"
+	}
+
 	// 创建一个 lumberjack.Logger，用于日志轮转配置
 	logFile := &lumberjack.Logger{
-		Filename:   "server.log", // 日志文件路径
-		MaxSize:    100,          // 日志文件的最大大小（以MB为单位）
-		MaxBackups: 5,            // 保留的旧日志文件数量
-		MaxAge:     50,           // 保留的旧日志文件的最大天数
-		LocalTime:  true,         // 使用本地时间戳
-		Compress:   true,         // 是否压缩旧日志文件
+		Filename:   filePath, // 日志文件路径
+		MaxSize:    100,      // 日志文件的最大大小（以MB为单位）
+		MaxBackups: 5,        // 保留的旧日志文件数量
+		MaxAge:     50,       // 保留的旧日志文件的最大天数
+		LocalTime:  true,     // 使用本地时间戳
+		Compress:   true,     // 是否压缩旧日志文件
 	}
 	logrus.SetOutput(io.MultiWriter(os.Stdout, logFile))
-	defer logFile.Close()
 }

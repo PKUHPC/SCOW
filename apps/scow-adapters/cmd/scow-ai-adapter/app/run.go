@@ -50,7 +50,7 @@ func runApp() {
 	fmt.Printf("config: %v\n", config.Value)
 	// 初始化 日志及数据库
 	aiclient.InitDB()
-	log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level))
+	log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level), config.Value.LogConfig.FilePath)
 	// 创建一个通道用于程序退出信号
 	shutdown := make(chan struct{})
 

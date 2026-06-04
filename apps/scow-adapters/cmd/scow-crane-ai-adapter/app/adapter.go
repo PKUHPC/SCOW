@@ -65,7 +65,7 @@ func NewAdapterCommand() *cobra.Command {
 		// Read and parse config file
 		viper.ReadInConfig()
 		// Initialize logger
-		log.InitLogger(log.ParseLogLevel(viper.GetString("log-level")))
+		log.InitLogger(log.ParseLogLevel(viper.GetString("log-level")), viper.GetString("log-file"))
 		if err := unmarshalWithYamlTag(viper.AllSettings(), &GConfig); err != nil {
 			logrus.Fatalf("Error parsing config file: %s", err)
 		}
@@ -83,6 +83,9 @@ func NewAdapterCommand() *cobra.Command {
 
 	rootCmd.PersistentFlags().StringP("log-level", "l", "info", "Log level")
 	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+
+	rootCmd.PersistentFlags().StringP("log-file", "", "", "Log file path (default: server.log in working directory)")
+	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
 
 	return rootCmd
 }

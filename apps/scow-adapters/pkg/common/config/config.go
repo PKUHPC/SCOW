@@ -21,7 +21,8 @@ type MonitorConfig struct {
 }
 
 type LogConfig struct {
-	Level string `yaml:"level"`
+	Level    string `yaml:"level"`
+	FilePath string `yaml:"filePath"`
 }
 
 func GetCertPath(sc SslConfig) (string, string, string) {

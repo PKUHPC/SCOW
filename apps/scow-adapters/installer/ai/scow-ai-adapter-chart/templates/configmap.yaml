@@ -5,5 +5,9 @@ metadata:
   namespace: {{ .Values.namespace.name }}
 data:
   config.yaml: |
-    {{- toYaml .Values.configMap.config | nindent 4 }}
+    {{- $config := deepCopy .Values.configMap.config }}
+    {{- if .Values.hostPathMounts.enabled }}
+    {{- $_ := set (index $config "log") "filePath" .Values.hostPathMounts.containerLogFile }}
+    {{- end }}
+    {{- toYaml $config | nindent 4 }}
 

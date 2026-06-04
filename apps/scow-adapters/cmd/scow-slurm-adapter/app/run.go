@@ -42,7 +42,7 @@ var (
 func run() {
 	fmt.Printf("config: %v\n", config.SlurmValue)
 	// 初始化 日志及数据库和slurm命令
-	log.InitLogger(log.ParseLogLevel(config.SlurmValue.LogConfig.Level))
+	log.InitLogger(log.ParseLogLevel(config.SlurmValue.LogConfig.Level), config.SlurmValue.LogConfig.FilePath)
 	client.InitSlurmClient()
 	// 创建一个通道用于程序退出信号
 	shutdown := make(chan struct{})

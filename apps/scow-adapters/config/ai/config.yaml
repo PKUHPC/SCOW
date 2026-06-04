@@ -1,5 +1,6 @@
 log:
   level: "info"
+  # filePath: "/adapter/logs/server.log"  # 不填默认使用工作目录下的 server.log
 
 dbconfig:
   host: 127.0.0.1              # 数据库服务器地址

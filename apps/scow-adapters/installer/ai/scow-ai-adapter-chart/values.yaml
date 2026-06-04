@@ -53,8 +53,8 @@ probes:
 # 是否挂 hostPath（模版挂了 /etc/hosts, /etc/localtime ）
 hostPathMounts:
   enabled: true
-  logPath: /data/server.log  # 用于适配器日志映射到宿主机，优先填写共享存储路径
-  type: FileOrCreate
+  logPath: /data/logs                          # 宿主机映射的日志目录，优先填写共享存储路径
+  containerLogFile: /adapter/logs/server.log   # 容器内日志文件路径，挂载目录由此自动推导
 
 service:
   type: NodePort
@@ -72,10 +72,11 @@ monitor:
 configMap:
   name: scow-ai-adapter-config
 
-  # 这里把 config.yaml 做成“结构化 values 渲染成 YAML”
+  # 这里把 config.yaml 做成”结构化 values 渲染成 YAML”
   config:
     log:
       level: "info"
+      # filePath 由 hostPathMounts.containerLogFile 自动注入，无需在此配置
 
     dbconfig:
       host: 127.0.0.1
@@ -118,25 +119,25 @@ configMap:
   partitionInfo:
     cpu: |
       cpu: 7
-        memory: 14Gi
-        nodes: "k8s-master"
-        # cpu 型号
-        cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
+      memory: 14Gi
+      nodes: "k8s-master"
+      # cpu 型号
+      cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
     nvidia: |
-        card-type: nvidia.com/gpu:1
-        cpu: 6
-        memory: 28Gi
-        nodes: "k8s-node[01-02]"
-        # 加速卡描述，驱动和cuda信息，用逗号分隔
-        accelerator_descriptions: "driver version  470.239.06, cuda version 11.4"
-        # cpu 型号
-        cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
-        # 显存大小,MB为单位
-        vram_mb: 11441
-        # 加速卡型号
-        gpu_model: "Tesla K80"
-        # 单pod最大加速卡卡数
-        max_accelerators_per_pod: 1
+      card-type: nvidia.com/gpu:1
+      cpu: 6
+      memory: 28Gi
+      nodes: "k8s-node[01-02]"
+      # 加速卡描述，驱动和cuda信息，用逗号分隔
+      accelerator_descriptions: "driver version  470.239.06, cuda version 11.4"
+      # cpu 型号
+      cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
+      # 显存大小,MB为单位
+      vram_mb: 11441
+      # 加速卡型号
+      gpu_model: "Tesla K80"
+      # 单pod最大加速卡卡数
+      max_accelerators_per_pod: 1
 
 registrySecret:
   create: true

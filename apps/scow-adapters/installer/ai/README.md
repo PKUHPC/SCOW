@@ -63,7 +63,8 @@ probes:
 # 是否挂载 hostPath（模版挂了宿主机的 /etc/hosts和/etc/localtime ）
 hostPathMounts:
   enabled: true
-  logPath: /data/server.log  # 用于适配器日志映射到宿主机，优先填写共享存储路径
+  logPath: /data/logs                          # 宿主机日志目录，优先填写共享存储路径
+  containerLogFile: /adapter/logs/server.log   # 容器内日志文件路径，挂载目录由此自动推导
   
 # ai适配器的service配置 
 service:
@@ -87,6 +88,7 @@ configMap:
   config:
     log:
       level: "info"
+      # filePath 由 hostPathMounts.containerLogFile 自动注入，无需在此配置
 
     dbconfig:
       host: 127.0.0.1
