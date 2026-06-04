@@ -14,6 +14,7 @@ it("creates scowctl page paths with base path", () => {
 it("creates scowctl binary paths with base path", () => {
   expect(getScowctlBinaryPath("/scow", "scowctl-x64")).toBe("/scow/meta/scowctl/bin/scowctl-x64");
   expect(getScowctlBinaryPath("/", "scowctl-arm64")).toBe("/meta/scowctl/bin/scowctl-arm64");
+  expect(getScowctlBinaryPath("/", "scowctl-macos-arm64")).toBe("/meta/scowctl/bin/scowctl-macos-arm64");
   expect(getScowctlBinaryPath("/scow", "scowctl-windows-x64.exe")).toBe(
     "/scow/meta/scowctl/bin/scowctl-windows-x64.exe",
   );
@@ -38,7 +39,9 @@ it("renders scowctl page with install command and binary links", () => {
   expect(html).toContain('class="download-link" href="/scow/meta/scowctl/bin/scowctl-x64"');
   expect(html).toContain("/scow/meta/scowctl/bin/scowctl-x64");
   expect(html).toContain("/scow/meta/scowctl/bin/scowctl-arm64");
+  expect(html).toContain("/scow/meta/scowctl/bin/scowctl-macos-arm64");
   expect(html).toContain("/scow/meta/scowctl/bin/scowctl-windows-x64.exe");
+  expect(html).toContain("macOS arm64");
   expect(html).toContain("scowctl api list");
 });
 
@@ -47,6 +50,9 @@ it("creates install script using metadata scowctl binary paths", () => {
 
   expect(script).toContain("https://scow.example.com/scow/meta/scowctl/bin/scowctl-x64");
   expect(script).toContain("https://scow.example.com/scow/meta/scowctl/bin/scowctl-arm64");
+  expect(script).toContain("https://scow.example.com/scow/meta/scowctl/bin/scowctl-macos-arm64");
+  expect(script).toContain("Darwin:arm64");
+  expect(script).toContain("Unsupported platform");
   expect(script).not.toContain("BASE_URL=");
   expect(script).toContain('SCOWCTL_INSTALL_DIR:-${HOME}/.local/bin');
 });

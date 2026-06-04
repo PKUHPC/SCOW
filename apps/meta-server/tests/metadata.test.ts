@@ -129,6 +129,7 @@ it("embeds request host in scowctl install script", async () => {
 
   expect(response.statusCode).toBe(200);
   expect(response.body).toContain("https://scow.example.com/scow/meta/scowctl/bin/scowctl-x64");
+  expect(response.body).toContain("https://scow.example.com/scow/meta/scowctl/bin/scowctl-macos-arm64");
   expect(response.body).not.toContain("BASE_URL=");
 });
 

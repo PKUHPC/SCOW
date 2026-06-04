@@ -370,9 +370,19 @@ jobs:
             --upload-file "apps/scowctl/build/bin/scowctl-arm64" \
             "${target_url}/scowctl-arm64"
 
+          curl -f --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
+            --upload-file "apps/scowctl/build/bin/scowctl-macos-arm64" \
+            "${target_url}/scowctl-macos-arm64"
+
+          curl -f --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
+            --upload-file "apps/scowctl/build/bin/scowctl-windows-x64.exe" \
+            "${target_url}/scowctl-windows-x64.exe"
+
           echo "✅ scowctl binaries uploaded successfully"
           echo "📁 AMD64 Available at: ${target_url}/scowctl-x64"
           echo "📁 ARM64 Available at: ${target_url}/scowctl-arm64"
+          echo "📁 macOS ARM64 Available at: ${target_url}/scowctl-macos-arm64"
+          echo "📁 Windows x64 Available at: ${target_url}/scowctl-windows-x64.exe"
 
   build-images:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
@@ -548,7 +558,7 @@ jobs:
 
           echo "Deleting scowctl from target url: ${scowctl_target_url}"
 
-          for arch in x64 arm64; do
+          for arch in x64 arm64 macos-arm64 windows-x64.exe; do
             curl -f -X DELETE \
               --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
               "${scowctl_target_url}/scowctl-${arch}" || echo "File not found or already deleted"

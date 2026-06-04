@@ -29,10 +29,11 @@ COPY apps/scowctl/ apps/scowctl/
 
 RUN go mod download
 RUN cd apps/scowctl && \
-    make build VERSION=${VERSION} ARCH=amd64 BINARY=scowctl-x64 && \
-    make build VERSION=${VERSION} ARCH=arm64 BINARY=scowctl-arm64
+    make build-all VERSION=${VERSION}
 
 FROM scratch AS scowctl-target
 
 COPY --from=builder /app/apps/scowctl/build/bin/scowctl-x64 /scowctl-x64
 COPY --from=builder /app/apps/scowctl/build/bin/scowctl-arm64 /scowctl-arm64
+COPY --from=builder /app/apps/scowctl/build/bin/scowctl-macos-arm64 /scowctl-macos-arm64
+COPY --from=builder /app/apps/scowctl/build/bin/scowctl-windows-x64.exe /scowctl-windows-x64.exe

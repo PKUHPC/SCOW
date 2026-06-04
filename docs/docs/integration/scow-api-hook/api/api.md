@@ -9,7 +9,7 @@ AI、量子、门户前端（portal-web）、管理前端（mis-web）、消息�
 
 SCOW还提供统一的OpenAPI入口。您可以通过`/meta/openapi`查看整个系统已启用组件的全部HTTP API，也可以通过`/meta/api/openapi.json`获取聚合后的OpenAPI定义文件。如果只需要查看某个系统的API，也可以继续访问该系统自己的OpenAPI UI或`openapi.json`。
 
-已部署的 SCOW 实例还会在`/meta/scowctl`下提供与该实例配套的`scowctl`说明页、安装脚本和二进制文件。例如默认部署路径下可以访问`/meta/scowctl`，并下载`/meta/scowctl/bin/scowctl-x64`、`/meta/scowctl/bin/scowctl-arm64`或`/meta/scowctl/bin/scowctl-windows-x64.exe`；如果整个系统`basePath`为`/scow`，则对应路径为`/scow/meta/scowctl`、`/scow/meta/scowctl/bin/scowctl-x64`、`/scow/meta/scowctl/bin/scowctl-arm64`和`/scow/meta/scowctl/bin/scowctl-windows-x64.exe`。统一 OpenAPI 文档的描述中也会提示当前实例的下载地址。
+已部署的 SCOW 实例还会在`/meta/scowctl`下提供与该实例配套的`scowctl`说明页、安装脚本和二进制文件。例如默认部署路径下可以访问`/meta/scowctl`，并下载`/meta/scowctl/bin/scowctl-x64`、`/meta/scowctl/bin/scowctl-arm64`、`/meta/scowctl/bin/scowctl-macos-arm64`或`/meta/scowctl/bin/scowctl-windows-x64.exe`；如果整个系统`basePath`为`/scow`，则对应路径为`/scow/meta/scowctl`、`/scow/meta/scowctl/bin/scowctl-x64`、`/scow/meta/scowctl/bin/scowctl-arm64`、`/scow/meta/scowctl/bin/scowctl-macos-arm64`和`/scow/meta/scowctl/bin/scowctl-windows-x64.exe`。统一 OpenAPI 文档的描述中也会提示当前实例的下载地址。
 
 ## OpenAPI路径
 

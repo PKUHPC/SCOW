@@ -32,6 +32,7 @@ export function createScowctlHtml(basePath: string, scowBaseUrl?: string) {
   const powershellInstallScriptPath = `${scowctlBasePath(basePath)}/install.ps1`;
   const x64Path = getScowctlBinaryPath(basePath, "scowctl-x64");
   const arm64Path = getScowctlBinaryPath(basePath, "scowctl-arm64");
+  const macosArm64Path = getScowctlBinaryPath(basePath, "scowctl-macos-arm64");
   const windowsX64Path = getScowctlBinaryPath(basePath, "scowctl-windows-x64.exe");
   const displayBaseUrl = scowBaseUrl ?? "<scow base url>";
   const shellInstallCommand = `curl ${displayBaseUrl}${installScriptPath} | sh`;
@@ -166,7 +167,7 @@ export function createScowctlHtml(basePath: string, scowBaseUrl?: string) {
       a:hover { text-decoration: underline; }
       .downloads {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 10px;
         margin: 12px 0 0;
       }
@@ -264,7 +265,7 @@ export function createScowctlHtml(basePath: string, scowBaseUrl?: string) {
 
         <section class="section">
           <h2>安装</h2>
-          <h3>Linux</h3>
+          <h3>Linux / macOS</h3>
           <div class="command-row">
             <pre><code>${escapeHtml(shellInstallCommand)}</code></pre>
             <button class="copy-button" type="button">复制</button>
@@ -291,6 +292,7 @@ export function createScowctlHtml(basePath: string, scowBaseUrl?: string) {
           <div class="downloads">
             <a class="download-link" href="${x64Path}">Linux x64</a>
             <a class="download-link" href="${arm64Path}">Linux arm64</a>
+            <a class="download-link" href="${macosArm64Path}">macOS arm64</a>
             <a class="download-link" href="${windowsX64Path}">Windows x64</a>
           </div>
         </section>
@@ -365,21 +367,26 @@ export function createScowctlHtml(basePath: string, scowBaseUrl?: string) {
 export function createScowctlInstallScript(basePath: string, scowBaseUrl: string) {
   const x64Url = `${scowBaseUrl}${getScowctlBinaryPath(basePath, "scowctl-x64")}`;
   const arm64Url = `${scowBaseUrl}${getScowctlBinaryPath(basePath, "scowctl-arm64")}`;
+  const macosArm64Url = `${scowBaseUrl}${getScowctlBinaryPath(basePath, "scowctl-macos-arm64")}`;
 
   return `#!/bin/sh
 set -eu
 
+OS="$(uname -s)"
 ARCH="$(uname -m)"
 
-case "\${ARCH}" in
-  x86_64|amd64)
+case "\${OS}:\${ARCH}" in
+  Linux:x86_64|Linux:amd64)
     BINARY_URL="${x64Url}"
     ;;
-  aarch64|arm64)
+  Linux:aarch64|Linux:arm64)
     BINARY_URL="${arm64Url}"
     ;;
+  Darwin:arm64|Darwin:aarch64)
+    BINARY_URL="${macosArm64Url}"
+    ;;
   *)
-    echo "Unsupported architecture: \${ARCH}" >&2
+    echo "Unsupported platform: \${OS}/\${ARCH}" >&2
     exit 1
     ;;
 esac
@@ -446,7 +453,12 @@ Install-Scowctl
 }
 
 export function sendScowctlBinary(reply: FastifyReply, binaryName: string) {
-  if (binaryName !== "scowctl-x64" && binaryName !== "scowctl-arm64" && binaryName !== "scowctl-windows-x64.exe") {
+  if (
+    binaryName !== "scowctl-x64" &&
+    binaryName !== "scowctl-arm64" &&
+    binaryName !== "scowctl-macos-arm64" &&
+    binaryName !== "scowctl-windows-x64.exe"
+  ) {
     return reply.code(404).send();
   }
 

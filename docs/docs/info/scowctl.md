@@ -16,6 +16,7 @@ description: 使用 scowctl 登录 SCOW 并调用 HTTP API
 https://scow.example.com/meta/scowctl
 https://scow.example.com/meta/scowctl/bin/scowctl-x64
 https://scow.example.com/meta/scowctl/bin/scowctl-arm64
+https://scow.example.com/meta/scowctl/bin/scowctl-macos-arm64
 https://scow.example.com/meta/scowctl/bin/scowctl-windows-x64.exe
 ```
 
@@ -25,6 +26,7 @@ https://scow.example.com/meta/scowctl/bin/scowctl-windows-x64.exe
 https://scow.example.com/scow/meta/scowctl
 https://scow.example.com/scow/meta/scowctl/bin/scowctl-x64
 https://scow.example.com/scow/meta/scowctl/bin/scowctl-arm64
+https://scow.example.com/scow/meta/scowctl/bin/scowctl-macos-arm64
 https://scow.example.com/scow/meta/scowctl/bin/scowctl-windows-x64.exe
 ```
 

@@ -89,6 +89,7 @@ it("merges openapi specs and prefixes component refs", async () => {
   expect(doc.info.description).toContain("[scowctl](/scow/meta/scowctl)");
   expect(doc.info.description).not.toContain("/scow/meta/scowctl/bin/scowctl-x64");
   expect(doc.info.description).not.toContain("/scow/meta/scowctl/bin/scowctl-arm64");
+  expect(doc.info.description).not.toContain("/scow/meta/scowctl/bin/scowctl-macos-arm64");
   expect(doc.info.description).not.toContain("/scow/meta/scowctl/bin/scowctl-windows-x64.exe");
 
   fetchMock.mockRestore();
