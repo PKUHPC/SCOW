@@ -50,6 +50,7 @@ import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { logger } from "src/utils/logger";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
+import { getSchedulerAdapterJobsByClusterFeatures } from "src/utils/schedulerAdapterJobTypes";
 import { setNewUserStorageQuota } from "src/utils/storageQuota";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
@@ -372,15 +373,18 @@ export const userServiceServer = plugin((server) => {
           if (!userAccount) continue;
 
           // 查询用户是否有RUNNING、PENDING的作业，如果有，抛出异常
-          const jobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-            const fields = ["job_id", "user", "state", "account"];
-
-            return await asyncClientCall(client.job, "getJobs", {
-              jobTypes: [],
-              fields,
-              filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"] },
-            });
-          });
+          const fields = ["job_id", "user", "state", "account"];
+          const jobs = await Promise.all(
+            Object.entries(currentActivatedClusters).map(async ([cluster, clusterConfig]) => ({
+              cluster,
+              result: await server.ext.clusters.callOnOne(cluster, logger, async (client) =>
+                await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+                  fields,
+                  filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"] },
+                }),
+              ),
+            })),
+          );
 
           if (jobs.filter((i) => i.result.jobs.length > 0).length > 0) {
             results.push({
@@ -950,15 +954,18 @@ export const userServiceServer = plugin((server) => {
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       // 查询用户是否有RUNNING、PENDING的作业与交互式应用，有则抛出异常
-      const runningJobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-        const fields = ["job_id", "user", "state", "account"];
-
-        return await asyncClientCall(client.job, "getJobs", {
-          jobTypes: [],
-          fields,
-          filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"] },
-        });
-      });
+      const fields = ["job_id", "user", "state", "account"];
+      const runningJobs = await Promise.all(
+        Object.entries(currentActivatedClusters).map(async ([cluster, clusterConfig]) => ({
+          cluster,
+          result: await server.ext.clusters.callOnOne(cluster, logger, async (client) =>
+            await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+              fields,
+              filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"] },
+            }),
+          ),
+        })),
+      );
 
       if (runningJobs.filter((i) => i.result.jobs.length > 0).length > 0) {
         const a = runningJobs.filter((i) => i.result.jobs.length > 0);

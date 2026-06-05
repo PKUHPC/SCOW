@@ -317,6 +317,10 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 	logrus.Tracef("Received getJobs request: %v", in)
 
+	if len(in.JobTypes) > 0 {
+		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "Slurm adapter does not support AI job types.")
+	}
+
 	// 查询未结束作业，使用命令行查询时效性更高
 	if utils.IsGetUnfinishedJobs(in) {
 		response, err := utils.GetUnfinishedJobs(in)

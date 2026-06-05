@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,6 +12,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
+
+var ErrJobInfoNotFound = errors.New("job info not found")
 
 type SubmitJobInfo struct {
 	JobName        string  `json:"new_job_name"`
@@ -197,7 +200,7 @@ func (jm *JobManager) QueryJobInfo(jobId uint32) (*SubmitJobInfo, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("job not found: jobId=%d", jobId)
+	return nil, fmt.Errorf("%w: jobId=%d", ErrJobInfoNotFound, jobId)
 }
 
 // SaveJobSubmitInfoToFile 将请求序列化为 JSON 并写入 /adapter/jobs/<jobName>

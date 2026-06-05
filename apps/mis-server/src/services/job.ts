@@ -28,6 +28,7 @@ import { getAccountNamesMatchedByOwner, getUserIdsMatchedByUserIdOrName } from "
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 import { generateGetJobsOptions } from "src/utils/queryOptions";
+import { getSchedulerAdapterJobsByClusterFeatures } from "src/utils/schedulerAdapterJobTypes";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 function filterJobs(
@@ -393,8 +394,6 @@ export const jobServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
-      const isAiCluster = configClusters[cluster].ai?.enabled;
-
       const reply = await server.ext.clusters.callOnOne(cluster, logger, async (client) => {
         const fields = [
           "job_id",
@@ -422,14 +421,13 @@ export const jobServiceServer = plugin((server) => {
           "end_time",
         ];
 
-        const runningJobs = await asyncClientCall(client.job, "getJobs", {
+        const runningJobs = await getSchedulerAdapterJobsByClusterFeatures(client, configClusters[cluster], {
           fields,
-          jobTypes: [],
           filter: {
             users: userId ? [userId] : [],
             accounts: accountNames,
             // ai集群中才有 QUEUED 状态的作业
-            states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])],
+            states: ["RUNNING", "PENDING", ...(configClusters[cluster].ai.enabled ? ["QUEUED"] : [])],
           },
         }).then((x) => x.jobs);
 

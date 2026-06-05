@@ -3,6 +3,7 @@ package job
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -279,9 +280,16 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 	)
 	logrus.Tracef("Received request GetJobs: %v", in)
 
+	if len(in.JobTypes) > 0 && hasUnsupportedJobTypes(in.JobTypes) {
+		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "Crane AI adapter does not support requested job types.")
+	}
+	if len(in.JobTypes) > 0 && s.JM == nil {
+		return nil, ce.RichError(codes.Internal, "JOB_MANAGER_NOT_INITIALIZED", "Job manager is not initialized.")
+	}
+
 	if in.Filter != nil {
 		base := &craneProtos.QueryJobsInfoRequest{
-			FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
+			FilterJobTypes:             getCraneJobTypesForGetJobs(in.JobTypes),
 			FilterStates:               utils.GetCraneStatesList(in.Filter.States),
 			FilterUsers:                in.Filter.Users,
 			FilterAccounts:             in.Filter.Accounts,
@@ -319,7 +327,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 	} else {
 		// 没有筛选条件的请求体
 		request = &craneProtos.QueryJobsInfoRequest{
-			FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
+			FilterJobTypes:             getCraneJobTypesForGetJobs(in.JobTypes),
 			OptionIncludeCompletedJobs: true,
 			NumLimit:                   99999999,
 		}
@@ -338,16 +346,29 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "Crane service internal error.")
 	}
 	if len(response.GetJobInfoList()) == 0 {
-		logrus.Errorf("GetJobs failed: %v", fmt.Errorf("no Task found"))
+		logrus.Infof("GetJobs: no Task found")
 		totalNum = uint32(len(response.GetJobInfoList()))
 		return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 	}
-	totalNum = uint32(len(response.GetJobInfoList()))
 	for _, job := range response.GetJobInfoList() {
 		if len(in.JobTypes) > 0 {
 			savedInfo, err := s.JM.QueryJobInfo(job.GetJobId())
-			if err != nil || !isJobTypeMatch(savedInfo.JobType, in.JobTypes) {
+			if errors.Is(err, utils.ErrJobInfoNotFound) {
 				continue
+			}
+			if err != nil {
+				logrus.Errorf("GetJobs failed to query job metadata: %v", err)
+				return nil, ce.RichError(codes.Internal, "JOB_METADATA_ERROR", "Job metadata is unavailable.")
+			}
+			if !isJobTypeMatch(savedInfo.JobType, in.JobTypes) {
+				continue
+			}
+		} else if s.JM != nil {
+			if _, err := s.JM.QueryJobInfo(job.GetJobId()); err == nil {
+				continue
+			} else if !errors.Is(err, utils.ErrJobInfoNotFound) {
+				logrus.Errorf("GetJobs failed to query job metadata: %v", err)
+				return nil, ce.RichError(codes.Internal, "JOB_METADATA_ERROR", "Job metadata is unavailable.")
 			}
 		}
 		var elapsedSeconds, timeLimitMinutes int64
@@ -503,6 +524,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		}
 	}
 	if in.Sort != nil && len(jobsInfo) != 0 {
+		totalNum = uint32(len(jobsInfo))
 		var sortKey string
 		if in.Sort.GetField() == "" {
 			sortKey = "JobId" // 默认jobid进行排序
@@ -519,8 +541,118 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		sortJobinfo := utils.SortJobInfo(sortKey, sortOrder, jobsInfo)
 		return &protos.GetJobsResponse{Jobs: sortJobinfo, TotalCount: &totalNum}, nil
 	}
+	totalNum = uint32(len(jobsInfo))
 	logrus.Tracef("GetJobs jobs: %v", jobsInfo)
 	return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
+}
+
+func isAiSubmitJob(in *protos.SubmitJobRequest) bool {
+	return len(in.ExtraOptions) > 0 && (in.ExtraOptions[0] == "app" || in.ExtraOptions[0] == "train")
+}
+
+func getCraneJobTypesForGetJobs(jobTypes []protos.JobType) []craneProtos.JobType {
+	if len(jobTypes) > 0 {
+		return []craneProtos.JobType{craneProtos.JobType_Container}
+	}
+	return []craneProtos.JobType{craneProtos.JobType_Batch}
+}
+
+func (s *ServerJob) submitHpcJob(in *protos.SubmitJobRequest) (*protos.SubmitJobResponse, error) {
+	var (
+		stdout, timeLimitString string
+		scriptString            = "#!/bin/bash\n"
+	)
+
+	if in.Stdout != nil {
+		stdout = *in.Stdout
+	} else {
+		stdout = "job.%j.out"
+	}
+
+	workdir := in.WorkingDirectory
+	if !filepath.IsAbs(workdir) {
+		homedirTemp, _ := utils.GetUserHomedir(in.UserId)
+		workdir = homedirTemp + "/" + in.WorkingDirectory
+	}
+
+	scriptString += "#CBATCH " + "-A " + in.Account + "\n"
+	scriptString += "#CBATCH " + "-p " + in.Partition + "\n"
+	if in.Qos != nil {
+		scriptString += "#CBATCH " + "--qos " + *in.Qos + "\n"
+	}
+	scriptString += "#CBATCH " + "-J " + in.JobName + "\n"
+	scriptString += "#CBATCH " + "-N " + strconv.Itoa(int(in.NodeCount)) + "\n"
+	scriptString += "#CBATCH " + "--ntasks-per-node " + strconv.Itoa(1) + "\n"
+	if in.GpuCount != 0 {
+		deviceType, err := utils.GetPartitionDeviceType(in.Partition)
+		if err != nil {
+			logrus.Errorf("[SubmitJob] get partition device type failed: %v", err)
+			return nil, ce.RichError(codes.Aborted, "CREATE_SCRIPT_FAILED", "Create submit script failed.")
+		}
+		scriptString += "#CBATCH " + "--gres " + deviceType + ":" + strconv.Itoa(int(in.GpuCount)) + "\n"
+	}
+	scriptString += "#CBATCH " + "-c " + strconv.Itoa(int(in.CoreCount)) + "\n"
+	if in.TimeLimitMinutes != nil {
+		if *in.TimeLimitMinutes < 60 {
+			timeLimitString = fmt.Sprintf("00:%s:00", strconv.Itoa(int(*in.TimeLimitMinutes)))
+		} else if *in.TimeLimitMinutes == 60 {
+			timeLimitString = "1:00:00"
+		} else {
+			hours, minutes := *in.TimeLimitMinutes/60, *in.TimeLimitMinutes%60
+			timeLimitString = fmt.Sprintf("%s:%s:00", strconv.Itoa(int(hours)), strconv.Itoa(int(minutes)))
+		}
+		scriptString += "#CBATCH " + "--time " + timeLimitString + "\n"
+	}
+	scriptString += "#CBATCH " + "--chdir " + workdir + "\n"
+	if in.Stdout != nil {
+		scriptString += "#CBATCH " + "--output " + stdout + "\n"
+	}
+
+	if in.MemoryMb != nil && in.NodeCount != 0 {
+		scriptString += "#CBATCH " + "--mem " + strconv.Itoa(int(*in.MemoryMb/uint64(in.NodeCount))) + "M" + "\n"
+	}
+	for _, extraValue := range in.ExtraOptions {
+		scriptString += "#CBATCH " + extraValue + "\n"
+	}
+	scriptString += "#CBATCH " + "--export ALL" + "\n"
+	scriptString += "#CBATCH " + "--get-user-env" + "\n"
+	scriptString += in.Script
+
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, 10)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	filePath := "/tmp" + "/" + string(b) + ".sh"
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0777)
+	if err != nil {
+		logrus.Errorf("[SubmitJob] generate job script file failed: %v", err)
+		return nil, ce.RichError(codes.Aborted, "CREATE_SCRIPT_FAILED", "Create submit script failed.")
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+	writer.WriteString(scriptString)
+	writer.Flush()
+
+	os.Chmod(filePath, 0777)
+	submitResult, err := utils.LocalSubmitJob(filePath, in.UserId)
+	os.Remove(filePath)
+	if err != nil {
+		logrus.Errorf("[SubmitJob] submit HPC job failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", submitResult)
+	}
+
+	responseList := strings.Split(strings.TrimSpace(submitResult), " ")
+	if len(responseList) == 0 {
+		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "unexpected submit result format")
+	}
+	jobIdString := strings.TrimRight(responseList[len(responseList)-1], "\n\r.")
+	jobId, err := strconv.Atoi(jobIdString)
+	if err != nil {
+		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "failed to parse job id from submit result")
+	}
+
+	return &protos.SubmitJobResponse{JobId: uint32(jobId), GeneratedScript: scriptString}, nil
 }
 
 // SubmitJob 命令 ccon run --userns=false -itd alpine:latest /bin/sh
@@ -530,6 +662,10 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 	err := s.checkJob(in.Account, in.UserId, in.WorkingDirectory)
 	if err != nil {
 		return nil, ce.RichError(codes.Internal, "SUBMIT_JOB_FAILED", err.Error())
+	}
+
+	if !isAiSubmitJob(in) {
+		return s.submitHpcJob(in)
 	}
 
 	// todo 目前只支持pytorch
@@ -1105,6 +1241,20 @@ func isJobTypeMatch(savedType string, jobTypes []protos.JobType) bool {
 			if savedType == utils.APP {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func hasUnsupportedJobTypes(jobTypes []protos.JobType) bool {
+	for _, jt := range jobTypes {
+		switch jt {
+		case protos.JobType_JOB_TYPE_APP,
+			protos.JobType_JOB_TYPE_TRAIN,
+			protos.JobType_JOB_TYPE_INFER,
+			protos.JobType_JOB_TYPE_DEV_HOST:
+		default:
+			return true
 		}
 	}
 	return false

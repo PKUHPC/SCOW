@@ -40,7 +40,7 @@ import { getCurrentClusters } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { getProtoAppType } from "src/server/utils/getProtoAppType";
-import { getProtoJobTypes } from "src/server/utils/getProtoJobType";
+import { allProtoAiJobTypes, getProtoJobTypes } from "src/server/utils/getProtoJobType";
 import { createHarborImageUrl } from "src/server/utils/image";
 import { isPortReachableThroughUrl } from "src/server/utils/isPortReachable";
 import { logger } from "src/server/utils/logger";
@@ -1000,7 +1000,7 @@ export const listAppSessions = procedure
         user: userId,
       },
       async (jobDriver) => {
-        const protoJobTypes = getProtoJobTypes(jobTypes ?? []);
+        const protoJobTypes = jobTypes?.length ? getProtoJobTypes(jobTypes) : allProtoAiJobTypes;
         return await jobDriver.getAiJobs(clusterId, isRunning, protoJobTypes);
       },
       logger,

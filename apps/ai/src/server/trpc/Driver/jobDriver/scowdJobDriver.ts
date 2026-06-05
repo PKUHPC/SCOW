@@ -49,6 +49,7 @@ import {
   validateUniquePaths,
 } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
+import { allProtoAiJobTypes } from "src/server/utils/getProtoJobType";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { formatTime } from "src/utils/datetime";
 import { isParentOrSameFolder } from "src/utils/file";
@@ -855,7 +856,7 @@ export class ScowdJobDriver implements JobDriver {
               ? runningStates
               : terminatedStates,
       },
-      jobTypes: jobTypes ?? [],
+      jobTypes: jobTypes?.length ? jobTypes : allProtoAiJobTypes,
     }).then((resp) => resp.jobs);
 
     const runningJobInfoMap = jobsInfo.reduce(

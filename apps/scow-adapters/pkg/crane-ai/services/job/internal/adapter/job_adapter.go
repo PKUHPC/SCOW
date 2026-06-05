@@ -20,6 +20,10 @@ func NewJobAdapter(req *protos.SubmitJobRequest) *JobAdapter {
 }
 
 func (a *JobAdapter) GetJobType() types.ContainerJobType {
+	if len(a.req.ExtraOptions) == 0 {
+		return types.JobTypeUnknown
+	}
+
 	switch a.req.ExtraOptions[0] {
 	case "app":
 		return types.JobTypeApp

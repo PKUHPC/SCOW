@@ -1,4 +1,3 @@
-import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { LockMode, QueryOrder } from "@mikro-orm/core";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
@@ -12,7 +11,6 @@ import { addJobCharge, charge } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { emptyJobPriceInfo } from "src/bl/jobPrice";
 import { createPriceMap, PriceMap } from "src/bl/PriceMap";
-import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { Account } from "src/entities/Account";
 import { AccountUserSyncRecord, SyncStatus } from "src/entities/AccountUserSyncRecord";
@@ -23,6 +21,7 @@ import { InternalMessageType } from "src/models/messageType";
 import { ClusterPlugin } from "src/plugins/clusters";
 import { callHook } from "src/plugins/hookClient";
 import { toGrpc } from "src/utils/job";
+import { getSchedulerAdapterJobsByClusterFeatures } from "src/utils/schedulerAdapterJobTypes";
 import { batchSendMessages, Message } from "src/utils/sendMessage";
 
 async function getClusterLatestDate(em: SqlEntityManager, cluster: string, logger: Logger) {
@@ -285,37 +284,29 @@ export async function fetchJobs(em: SqlEntityManager<MySqlDriver>, logger: Logge
       const endFetchDate = new Date(Date.now() - misConfig.fetchJobs.endTimeDelaySeconds * 1000);
 
       // 1、同步正在进行中的作业及在当期时间点之后结束的作业
-      const isAiCluster = configClusters[cluster].ai?.enabled;
-      const runningJobsResponse = await clusterPlugin.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) =>
-          await asyncClientCall(client.job, "getJobs", {
-            fields,
-            jobTypes: [],
-            filter: {
-              users: [],
-              accounts: [],
-              states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])],
-            },
-          }),
+      const clusterConfig = clusters[cluster];
+      const runningJobsResponse = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
+        await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+          fields,
+          filter: {
+            users: [],
+            accounts: [],
+            states: ["RUNNING", "PENDING", ...(clusterConfig.ai.enabled ? ["QUEUED"] : [])],
+          },
+        }),
       );
 
-      const endedJobsAfterEndFetchDate = await clusterPlugin.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) =>
-          await asyncClientCall(client.job, "getJobs", {
-            fields,
-            jobTypes: [],
-            filter: {
-              users: [],
-              accounts: [],
-              states: [],
-              // 结束时间在当前时间节点之后
-              endTime: { startTime: new Date(endFetchDate.getTime() + 1000).toISOString() },
-            },
-          }),
+      const endedJobsAfterEndFetchDate = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
+        await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+          fields,
+          filter: {
+            users: [],
+            accounts: [],
+            states: [],
+            // 结束时间在当前时间节点之后
+            endTime: { startTime: new Date(endFetchDate.getTime() + 1000).toISOString() },
+          },
+        }),
       );
 
       // 对每个正在进行中的作业及在当期时间点之后结束的作业进行计费处理
@@ -360,39 +351,32 @@ export async function fetchJobs(em: SqlEntityManager<MySqlDriver>, logger: Logge
 
       const fetchEndedJobWithinTimeRange = async (startDate: Date, endDate: Date, batchSize: number) => {
         // calculate totalCount between startDate and endDate
-        const totalCount = await clusterPlugin.clusters
-          .callOnOne(cluster, logger, async (client) => {
-            return await asyncClientCall(client.job, "getJobs", {
+        const totalCount = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
+          await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+            fields,
+            filter: {
+              users: [],
+              accounts: [],
+              states: [],
+              endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },
+            },
+            pageInfo: { page: 1, pageSize: 1 },
+          }),
+        )
+          .then((result) => result.totalCount!);
+
+        if (totalCount <= batchSize) {
+          const jobsInfo = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
+            await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
               fields,
-              jobTypes: [],
               filter: {
                 users: [],
                 accounts: [],
                 states: [],
                 endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },
               },
-              pageInfo: { page: 1, pageSize: 1 },
-            });
-          })
-          .then((result) => result.totalCount!);
-
-        if (totalCount <= batchSize) {
-          const jobsInfo = await clusterPlugin.clusters
-            .callOnOne(
-              cluster,
-              logger,
-              async (client) =>
-                await asyncClientCall(client.job, "getJobs", {
-                  fields,
-                  jobTypes: [],
-                  filter: {
-                    users: [],
-                    accounts: [],
-                    states: [],
-                    endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },
-                  },
-                }),
-            )
+            }),
+          )
             .then((result) => processGetJobsResult(cluster, result));
 
           let currentJobsGroup: ({ cluster: string } & ClusterJobInfo)[] = [];

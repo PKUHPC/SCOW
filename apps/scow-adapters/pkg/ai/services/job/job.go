@@ -53,6 +53,9 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 		err     error
 	)
 	logrus.Infof("Received request SubmitJob: %v", in)
+	if len(in.ExtraOptions) == 0 || (in.ExtraOptions[0] != utils.APP && in.ExtraOptions[0] != utils.Train) {
+		return nil, ce.RichError(codes.Unimplemented, "HPC_JOBS_UNSUPPORTED", "AI adapter does not support HPC jobs.")
+	}
 	checkJobName := utils.IsValidString(in.JobName)
 	if !checkJobName {
 		err := fmt.Errorf("regex used for validation is '[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?'")
@@ -197,6 +200,13 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 		queryJobs       *gorm.DB
 	)
 	logrus.Infof("Received request GetJobs: %v", in)
+
+	if len(in.JobTypes) == 0 {
+		return nil, ce.RichError(codes.Unimplemented, "HPC_JOBS_UNSUPPORTED", "AI adapter does not support HPC jobs.")
+	}
+	if len(GetJobTypes(in.JobTypes)) != len(in.JobTypes) {
+		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "AI adapter does not support requested job types.")
+	}
 
 	// 状态筛选、用户筛选、时间筛选、分页
 	var jobs []models.JobTable

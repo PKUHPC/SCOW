@@ -38,6 +38,7 @@ import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { getAccountOwnerAndAdmin } from "src/utils/getAccountOwnerAndAdmin";
 import { toRef } from "src/utils/orm";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
+import { getSchedulerAdapterJobsByClusterFeatures } from "src/utils/schedulerAdapterJobTypes";
 import { sendMessage } from "src/utils/sendMessage";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
@@ -82,15 +83,18 @@ export const accountServiceServer = plugin((server) => {
         ensureAccountNotDeleted(account);
 
         const currentActivatedClusters = await getActivatedClusters(em, logger);
-        const jobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-          const fields = ["job_id", "user", "state", "account"];
-
-          return await asyncClientCall(client.job, "getJobs", {
-            jobTypes: [],
-            fields,
-            filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
-          });
-        });
+        const fields = ["job_id", "user", "state", "account"];
+        const jobs = await Promise.all(
+          Object.entries(currentActivatedClusters).map(async ([cluster, clusterConfig]) => ({
+            cluster,
+            result: await server.ext.clusters.callOnOne(cluster, logger, async (client) =>
+              await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+                fields,
+                filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
+              }),
+            ),
+          })),
+        );
 
         if (jobs.filter((i) => i.result.jobs.length > 0).length > 0) {
           logger.warn("Account %s has running jobs, cannot be blocked", accountName);
@@ -909,15 +913,18 @@ export const accountServiceServer = plugin((server) => {
       const userAccounts = account.users.getItems();
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       // 查询账户是否有RUNNING、PENDING的作业与交互式应用，有则抛出异常
-      const runningJobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-        const fields = ["job_id", "user", "state", "account"];
-
-        return await asyncClientCall(client.job, "getJobs", {
-          fields,
-          jobTypes: [],
-          filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
-        });
-      });
+      const fields = ["job_id", "user", "state", "account"];
+      const runningJobs = await Promise.all(
+        Object.entries(currentActivatedClusters).map(async ([cluster, clusterConfig]) => ({
+          cluster,
+          result: await server.ext.clusters.callOnOne(cluster, logger, async (client) =>
+            await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+              fields,
+              filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
+            }),
+          ),
+        })),
+      );
 
       const runningJobsObj = {
         accountName,

@@ -1,6 +1,13 @@
 import { JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
 import { JobType } from "src/models/Job";
 
+export const allProtoAiJobTypes = [
+  ProtoJobType.JOB_TYPE_APP,
+  ProtoJobType.JOB_TYPE_TRAIN,
+  ProtoJobType.JOB_TYPE_INFER,
+  ProtoJobType.JOB_TYPE_DEV_HOST,
+];
+
 export function getProtoJobType(jobType: JobType | undefined) {
   switch (jobType) {
     case JobType.APP:

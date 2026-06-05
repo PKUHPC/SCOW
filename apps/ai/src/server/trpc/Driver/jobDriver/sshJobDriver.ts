@@ -46,6 +46,7 @@ import {
   validateUniquePaths,
 } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
+import { allProtoAiJobTypes } from "src/server/utils/getProtoJobType";
 import { logger } from "src/server/utils/logger";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { sshConnect } from "src/server/utils/ssh";
@@ -369,7 +370,7 @@ export class SshJobDriver implements JobDriver {
           accounts: [],
           states: isRunning ? runningStates : terminatedStates,
         },
-        jobTypes: jobTypes ?? [],
+        jobTypes: jobTypes?.length ? jobTypes : allProtoAiJobTypes,
       }).then((resp) => resp.jobs);
 
       const runningJobInfoMap = runningJobsInfo.reduce(

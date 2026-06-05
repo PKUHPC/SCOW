@@ -268,6 +268,10 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 	)
 	logrus.Infof("Received request GetJobs: %v", in)
 
+	if len(in.JobTypes) > 0 {
+		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "Crane adapter does not support AI job types.")
+	}
+
 	if in.Filter != nil {
 		base := &craneProtos.QueryTasksInfoRequest{
 			FilterTaskStates:            utils.GetCraneStatesList(in.Filter.States),
@@ -319,7 +323,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "Crane service internal error.")
 	}
 	if len(response.GetTaskInfoList()) == 0 {
-		logrus.Errorf("GetJobs failed: %v", fmt.Errorf("no Task found"))
+		logrus.Infof("GetJobs: no Task found")
 		totalNum = uint32(len(response.GetTaskInfoList()))
 		return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 	}

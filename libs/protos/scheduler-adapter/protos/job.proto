@@ -190,8 +190,10 @@ message GetJobsRequest {
   // returned jobs should be sorted if set
   optional SortInfo sort = 4;
 
-  // AI job types. Not used for HPC
-  // an empty array returns jobs of all types
+  // Job types select the job family to query.
+  // If empty, the adapter returns HPC jobs.
+  // If not empty, the adapter returns AI jobs matching these types.
+  // If the adapter does not support the requested job family or type, it returns UNIMPLEMENTED.
   repeated JobType job_types = 5;
 
 }
@@ -282,9 +284,10 @@ message SubmitJobRequest {
   // relative to working directory
   optional string stderr = 14;
   // extra options when submitting job
-  // 当提交HPC作业时，这个字段可被作为传给调度器的参数
-  // 当提交AI作业时，参数解释如下：
-  // [0]: "app"或者"train"，分别表示是应用任务还是训练任务
+  // [0] 为 "app" 或者 "train" 时提交 AI 应用或训练作业，其他情况提交 HPC 作业。
+  // 当提交 HPC 作业时，这个字段可被作为传给调度器的参数。
+  // 当提交 AI 作业时，参数解释如下：
+  // [0]: "app" 或者 "train"，分别表示是应用任务还是训练任务
   // [1]: 如果[0]是"app"，则[1]是应用类型，为"web"或者"vnc"；如果[0]是"train"，则无意义
   // [2]: 镜像地址
   // [3]: 算法版本地址
