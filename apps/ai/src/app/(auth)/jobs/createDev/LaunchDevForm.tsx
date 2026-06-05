@@ -73,10 +73,10 @@ const IMAGE_SOURCE_TAB_CONFIG: readonly {
   labelKey: ImageSourceLabelKey;
   placeholderKey: ImagePlaceholderKey;
 }[] = [
-  { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
-  { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
-  { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
-];
+    { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
+    { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
+    { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
+  ];
 
 const IMAGE_PLACEHOLDER_KEYS: Record<DevImageSourceKey, ImagePlaceholderKey> = {
   mine: "imagePlaceholders.mine",
@@ -462,11 +462,11 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
   // ----------- 表单校验边界 -----------
   const maxJobRunningTimeHours = useMemo(() => {
-    if (selectedCluster && scowClusterConfigs[selectedCluster]?.ai?.devHost?.maxRunningTimeHours) {
+    if (selectedCluster && scowClusterConfigs[selectedCluster]?.ai?.devHost?.maxRunningTimeHours !== undefined) {
       return scowClusterConfigs[selectedCluster].ai.devHost.maxRunningTimeHours;
     }
-    return publicConfig.MAX_JOB_RUNNING_TIME_HOURS;
-  }, [publicConfig.MAX_JOB_RUNNING_TIME_HOURS, scowClusterConfigs, selectedCluster]);
+    return undefined;
+  }, [scowClusterConfigs, selectedCluster]);
 
   // 根据选中的账户与集群拉取对应的队列与资源详情
   // ----- 数据拉取：根据选中账户/集群实时刷新依赖数据 -----
@@ -810,6 +810,9 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         cpuCores: undefined,
         ...(maxTimeValue !== undefined ? { maxTime: maxTimeValue } : {}),
       });
+      if (maxTimeValue !== undefined) {
+        resourceForm.validateFields(["maxTime"]).catch(() => undefined);
+      }
       resubmitQueueAppliedRef.current = true;
       return;
     }
@@ -846,6 +849,9 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
     if (Object.keys(updates).length > 0) {
       resourceForm.setFieldsValue(updates);
+    }
+    if (maxTimeValue !== undefined) {
+      resourceForm.validateFields(["maxTime"]).catch(() => undefined);
     }
 
     resubmitQueueAppliedRef.current = true;
@@ -1278,11 +1284,11 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         ...(envVariablesPayload.length ? { envVariables: envVariablesPayload } : {}),
         ...(appValues.usePrivateImage
           ? {
-              privateImageRepositoryCredentials: {
-                userName: appValues.remoteUsername ?? "",
-                password: appValues.remotePassword ?? "",
-              },
-            }
+            privateImageRepositoryCredentials: {
+              userName: appValues.remoteUsername ?? "",
+              password: appValues.remotePassword ?? "",
+            },
+          }
           : {}),
       };
 
@@ -1327,7 +1333,6 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
           maxTimeUnit={maxTimeUnit}
           onMaxTimeUnitChange={handleMaxTimeUnitChange}
           maxJobRunningTimeHours={maxJobRunningTimeHours}
-          convertDurationToHours={convertDurationToHours}
           gpuUnitLimit={gpuUnitLimit}
         />
 

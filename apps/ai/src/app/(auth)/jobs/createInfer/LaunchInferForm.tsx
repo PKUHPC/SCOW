@@ -213,8 +213,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
-  // const i18n = useI18n();
-  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+  const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
 
@@ -325,6 +324,10 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const selectedNodeCount = Form.useWatch("nodeCount", resourceForm) ?? 1;
   const isMaxTimeUnlimited = Form.useWatch("maxTimeUnlimited", resourceForm) ?? false;
 
+  const maxJobRunningTimeHours = selectedCluster
+    ? scowClusterConfigs[selectedCluster]?.ai?.infer?.maxRunningTimeHours
+    : undefined;
+  const hasInferMaxTimeLimit = maxJobRunningTimeHours !== undefined;
   // 获取用户家目录
   const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
     { clusterId: selectedCluster! },
@@ -1059,6 +1062,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
         maxTime: maxTimeValue,
         maxTimeUnlimited: isSavedMaxTimeUnlimited,
       });
+      if (maxTimeValue !== undefined) {
+        resourceForm.validateFields(["maxTime"]).catch(() => undefined);
+      }
       resubmitQueueAppliedRef.current = true;
       return;
     }
@@ -1102,6 +1108,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (Object.keys(updates).length > 0) {
       resourceForm.setFieldsValue(updates);
     }
+    if (maxTimeValue !== undefined) {
+      resourceForm.validateFields(["maxTime"]).catch(() => undefined);
+    }
 
     resubmitQueueAppliedRef.current = true;
     resubmitQueueEverAppliedRef.current = true;
@@ -1127,7 +1136,27 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [isMaxTimeUnlimited, maxTimeUnit, resourceForm]);
+  }, [isMaxTimeUnlimited, maxJobRunningTimeHours, maxTimeUnit, resourceForm]);
+
+  // 当前集群配置了推理最长运行时间时，不允许历史不限时配置继续停留在不限时状态。
+  useEffect(() => {
+    if (!hasInferMaxTimeLimit) {
+      return;
+    }
+
+    const currentUnlimited = resourceForm.getFieldValue("maxTimeUnlimited");
+    if (!currentUnlimited) {
+      return;
+    }
+
+    const nextMaxTime = maxJobRunningTimeHours;
+    resourceForm.setFieldsValue({
+      maxTimeUnlimited: false,
+      maxTime: nextMaxTime,
+    });
+    setMaxTimeUnit("hour");
+    resourceForm.validateFields(["maxTime"]).catch(() => undefined);
+  }, [hasInferMaxTimeLimit, maxJobRunningTimeHours, resourceForm]);
 
   // 将生成的作业名称与表单字段保持一致，便于 Form 校验
   useEffect(() => {
@@ -1570,6 +1599,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       const trimmedCommand = appValues.command?.trim();
       const startCommandValue = trimmedCommand ? trimmedCommand : undefined;
 
+      // 不限时作业以 maxTime=0 提交，限时时不允许这个值为 0
       const normalizedMaxTime = submitUnlimited ? 0 : (maxTimeMinutes ?? 0);
       const containerServicePortValue = Number(appValues.containerServicePort ?? 0);
 
@@ -1643,6 +1673,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           qosOptions={qosOptions}
           maxTimeUnit={maxTimeUnit}
           onMaxTimeUnitChange={handleMaxTimeUnitChange}
+          maxJobRunningTimeHours={maxJobRunningTimeHours}
           gpuUnitLimit={gpuUnitLimit}
           isResubmit={Boolean(createInferParams)}
         />

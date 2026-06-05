@@ -110,16 +110,23 @@ message ClusterConfigSchemaProto {
     optional string transfer_node = 2;
   }
   message Hpc {
+    message JobConfig {
+      optional double max_running_time_hours = 1;
+    }
+    message AppConfig {
+      optional double max_running_time_hours = 1;
+    }
     // 集群在HPC中是否启用, 默认启用
     // default value = true
     bool enabled = 1;
+    optional JobConfig job = 2;
+    optional AppConfig app = 3;
   }
   message Ai {
     // 集群在AI中是否启用, 默认不启用
     // default value = false
     bool enabled = 1;
   }
-
 
   message ScowdConfigs {
     bool enabled = 1;

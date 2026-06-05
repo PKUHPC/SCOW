@@ -8,6 +8,7 @@ import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/se
 import { checkClusterAvailable, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
+import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
@@ -97,26 +98,11 @@ export const createDevHost = procedure
     if (devHostName.length > 42) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: "The length of trainJobName should not exceed 42",
+        message: "The length of devHostName should not exceed 42",
       });
     }
 
-    if (devHostConfig.maxRunningTimeHours) {
-      if (maxTimeMinutes > devHostConfig.maxRunningTimeHours * 60) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            `The dev host running time cannot exceed ${devHostConfig.maxRunningTimeHours}` +
-            ` hour${devHostConfig.maxRunningTimeHours > 1 ? "s" : ""}`,
-        });
-      }
-      if (maxTimeMinutes === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "The dev host running time cannot be 0",
-        });
-      }
-    }
+    validateMaxRunningTimeMinutes(maxTimeMinutes, devHostConfig.maxRunningTimeHours, AIJobLabelType.devHost);
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
       throw new TRPCError({

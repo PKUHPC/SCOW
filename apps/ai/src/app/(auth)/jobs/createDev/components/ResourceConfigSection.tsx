@@ -11,6 +11,7 @@ import {
   SectionTitle,
   TitledSectionCard as SectionCard,
 } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance, Select, Space, Tooltip } from "antd";
 import { useEffect, useRef } from "react";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
@@ -58,7 +59,6 @@ interface ResourceConfigSectionProps {
   maxTimeUnit: MaxTimeUnit;
   onMaxTimeUnitChange: (unit: MaxTimeUnit) => void;
   maxJobRunningTimeHours?: number;
-  convertDurationToHours: (value: number, unit: MaxTimeUnit) => number;
   gpuUnitLimit?: number;
 }
 
@@ -81,7 +81,6 @@ export const ResourceConfigSection = ({
   maxTimeUnit,
   onMaxTimeUnitChange,
   maxJobRunningTimeHours,
-  convertDurationToHours,
   gpuUnitLimit,
 }: ResourceConfigSectionProps) => {
   const t = useI18nTranslateToString();
@@ -331,18 +330,12 @@ export const ResourceConfigSection = ({
           rules={[
             { required: true, message: t(p("maxRunTimeRequired")) },
             {
-              validator: (_, value) => {
-                if (value <= 0) {
-                  return Promise.reject(new Error(t(p("maxRunTimePositive"))));
-                }
-                if (maxJobRunningTimeHours !== undefined) {
-                  const timeInHours = convertDurationToHours(value, maxTimeUnit);
-                  if (timeInHours > maxJobRunningTimeHours) {
-                    return Promise.reject(new Error(t(p("maxRunTimeExceed"), [maxJobRunningTimeHours.toString()])));
-                  }
-                }
-                return Promise.resolve();
-              },
+              validator: validateConfigMaxJobRunningHours(
+                t(p("maxRunTimeExceed"), [maxJobRunningTimeHours?.toString() ?? ""]),
+                t(p("maxRunTimePositive")),
+                maxTimeUnit,
+                maxJobRunningTimeHours,
+              ),
             },
           ]}
         >

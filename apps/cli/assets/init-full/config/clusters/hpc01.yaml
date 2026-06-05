@@ -27,10 +27,35 @@ adapterUrl: localhost:8972
 # 集群在HPC或是否启用，默认为true
 hpc:
   enabled: true
+  # 选配：HPC 普通作业个性化配置
+  # job:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交普通作业
+  #   maxRunningTimeHours: 24
+  # 选配：HPC 交互式应用个性化配置
+  # app:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交交互式应用
+  #   maxRunningTimeHours: 24
 
 # 集群在AI或是否启用，默认为false
 ai:
   enabled: false
+  # 选配：AI 应用作业个性化配置
+  # app:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交 AI 应用作业
+  #   maxRunningTimeHours: 24
+  # 选配：AI 训练作业个性化配置
+  # train:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交 AI 训练作业
+  #   maxRunningTimeHours: 24
+  # 选配：AI 推理作业个性化配置
+  # infer:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交 AI 推理作业
+  #   maxRunningTimeHours: 24
   # 开发及相关配置，可选
   # devHost:
   #   # 是否开启，默认为 false，可选
@@ -39,7 +64,7 @@ ai:
   #   vscodeInfo:
   #     # vscode 二进制路径
   #     binPath: "/demo_path/vscode/bin/code-server"
-  #   # 最大运行时间，可选，不填写表示不限制运行时间
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
   #   # maxRunningTimeHours: 10
   # # 选配：分享数据资产的文件夹所在的目录
   # 计算共享目录顶层路径：

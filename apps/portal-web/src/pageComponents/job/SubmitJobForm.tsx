@@ -52,8 +52,7 @@ const initialValues = {
   nodeCount: 1,
   cpuCores: 1,
   gpuCores: 1,
-  maxTime: 30,
-  maxTimeUnit: TimeUnit.MINUTES,
+  maxTimeUnit: TimeUnit.HOURS,
   activePartitionTab: "cpu" as PartitionTabKey,
   output: "job.%j.out",
   scriptOutput: "job.%j.sh",
@@ -76,7 +75,7 @@ interface UnavailableParamRow {
 }
 
 export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
-  const { currentClusters, setDefaultCluster, defaultCluster } = useStore(ClusterInfoStore);
+  const { currentClusters, setDefaultCluster, defaultCluster, fullClusterConfigs } = useStore(ClusterInfoStore);
 
   if (!defaultCluster && currentClusters.length === 0) {
     return <ClusterNotAvailablePage />;
@@ -160,8 +159,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
   const selectedNodeCount = Form.useWatch<number | undefined>("nodeCount", resourceForm);
   const selectedCpuCores = Form.useWatch<number | undefined>("cpuCores", resourceForm);
   const selectedGpuCores = Form.useWatch<number | undefined>("gpuCores", resourceForm);
-  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
-  const [maxTimeUnit, setMaxTimeUnit] = useState<TimeUnit>(initialValues.maxTimeUnit ?? TimeUnit.MINUTES);
+  const [maxTimeUnit, setMaxTimeUnit] = useState<TimeUnit>(initialValues.maxTimeUnit ?? TimeUnit.HOURS);
 
   const clusterOptions = useMemo(() => {
     const allowedClusters = new Set<string>(selectedAccount ? (accountClusterMap[selectedAccount] ?? []) : []);
@@ -176,6 +174,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     () => currentClusters.find((cluster) => cluster.id === selectedCluster),
     [currentClusters, selectedCluster],
   );
+  const maxRunningTimeHours = selectedCluster ? fullClusterConfigs[selectedCluster]?.hpc?.job?.maxRunningTimeHours : undefined;
 
   // 保留之前的逻辑：提交作业时选择集群，将该集群设置默认集群
   useEffect(() => {
@@ -534,7 +533,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     const submitCoreCount =
       activePartitionTab === "gpu"
         ? (resourceValues.gpuCores ?? 0) *
-          Math.floor((selectedPartitionInfo?.cores ?? 0) / (selectedPartitionInfo?.gpus ?? 1))
+        Math.floor((selectedPartitionInfo?.cores ?? 0) / (selectedPartitionInfo?.gpus ?? 1))
         : (resourceValues.cpuCores ?? 0);
 
     const submitGpuCount = activePartitionTab === "gpu" ? (resourceValues.gpuCores ?? 0) : undefined;
@@ -835,7 +834,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
 
     const applyFn = () => {
       resourceForm.setFieldsValue(nextResourceValues);
-      setMaxTimeUnit(template.maxTimeUnit ?? TimeUnit.MINUTES);
+      setMaxTimeUnit(template.maxTimeUnit ?? TimeUnit.HOURS);
       jobForm.setFieldValue("command", template.command);
       setTemplateListOpen(false);
     };
@@ -888,13 +887,6 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
       }
     }
   }, [activePartitionTab, resourceForm, selectedCpuCores, selectedGpuCores, selectedNodeCount, selectedPartitionInfo]);
-
-  useEffect(() => {
-    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
-    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
-      resourceForm.setFieldValue("maxTime", initialValues.maxTime ?? 30);
-    }
-  }, [resourceForm, selectedMaxTime]);
 
   useEffect(() => {
     if (!jobForm.isFieldTouched("output")) {
@@ -950,6 +942,14 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     }
   }, [clusterOptions, defaultCluster?.id, resourceForm, selectedAccount]);
 
+  // 单位或配置上限变化时触发校验，让用户看到最新提示
+  useEffect(() => {
+    const currentValue = resourceForm.getFieldValue("maxTime");
+    if (currentValue !== undefined && currentValue !== null) {
+      resourceForm.validateFields(["maxTime"]);
+    }
+  }, [maxTimeUnit, maxRunningTimeHours, resourceForm]);
+
   return (
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
@@ -985,6 +985,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
           inputsDisabled={inputsDisabled}
           maxTimeUnit={maxTimeUnit}
           onMaxTimeUnitChange={setMaxTimeUnit}
+          maxRunningTimeHours={maxRunningTimeHours}
         />
 
         <JobConfigSection

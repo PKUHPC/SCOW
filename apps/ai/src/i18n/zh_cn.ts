@@ -589,7 +589,7 @@ export default {
       launchInferForm: {
         title: "提交推理",
         submitInferSuccessfully: "提交推理成功",
-        submitInferFailed: "提交推理失败: {0}",
+        submitInferFailed: "提交推理失败: ",
         createInferTitle: "创建推理",
       },
       launchDevForm: {
@@ -662,13 +662,14 @@ export default {
         cpuCountLabel: "单节点CPU核数",
         gpuLabel: "加速卡数",
         cpuLabel: "CPU核数",
-        maxRunTimeLabel: "最大运行时间",
-        maxRunTimeRequired: "请输入最大运行时间",
+        maxRunTimeLabel: "最长运行时间",
+        maxRunTimeRequired: "请输入最长运行时间",
         maxRunTimePositive: "时间需为正数",
-        maxRunTimeExceed: "最大运行时间不能超过 {0} 小时",
+        maxRunTimeExceed: "最长运行时间不能超过 {0} 小时",
         maxRunTimeHelp: "开启后表示作业不限制运行时间",
         maxRunTimeLimitedLabel: "限时",
         maxRunTimeUnlimitedLabel: "不限时",
+        maxRunTimeUnlimitedDisabledTooltip: "当前集群已设置了推理作业最长运行时间不超过 {0} 小时",
         durationUnits: {
           minute: "分钟",
           hour: "小时",

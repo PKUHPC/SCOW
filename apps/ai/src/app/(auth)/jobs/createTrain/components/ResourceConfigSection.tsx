@@ -12,6 +12,7 @@ import {
   SectionTitle,
   TitledSectionCard as SectionCard,
 } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance, Select, Space, Tooltip } from "antd";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { type ClusterNodesInfo, getMaxPodsByNodes, getQueueNodes } from "src/app/(auth)/jobs/common";
@@ -66,7 +67,6 @@ interface ResourceConfigSectionProps {
   maxTimeUnit: MaxTimeUnit;
   onMaxTimeUnitChange: (unit: MaxTimeUnit) => void;
   maxJobRunningTimeHours?: number;
-  convertDurationToHours: (value: number, unit: MaxTimeUnit) => number;
   frameworkOptions: TrainFramework[];
   gpuUnitLimit?: number;
   isResubmit?: boolean;
@@ -105,7 +105,6 @@ export const ResourceConfigSection = ({
   maxTimeUnit,
   onMaxTimeUnitChange,
   maxJobRunningTimeHours,
-  convertDurationToHours,
   frameworkOptions,
   gpuUnitLimit,
   isResubmit,
@@ -513,18 +512,12 @@ export const ResourceConfigSection = ({
           rules={[
             { required: true, message: t(p("maxRunTimeRequired")) },
             {
-              validator: (_, value) => {
-                if (value <= 0) {
-                  return Promise.reject(new Error(t(p("maxRunTimePositive"))));
-                }
-                if (maxJobRunningTimeHours !== undefined) {
-                  const valueInHours = convertDurationToHours(value, maxTimeUnit);
-                  if (valueInHours > maxJobRunningTimeHours) {
-                    return Promise.reject(new Error(t(p("maxRunTimeExceed"), [maxJobRunningTimeHours.toString()])));
-                  }
-                }
-                return Promise.resolve();
-              },
+              validator: validateConfigMaxJobRunningHours(
+                t(p("maxRunTimeExceed"), [maxJobRunningTimeHours?.toString() ?? ""]),
+                t(p("maxRunTimePositive")),
+                maxTimeUnit,
+                maxJobRunningTimeHours,
+              ),
             },
           ]}
         >

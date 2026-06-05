@@ -28,6 +28,7 @@ import { AccountStatusFilter } from "@scow/protos/build/portal/job";
 import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
 import { camelToSnakeCase } from "@scow/utils";
 import { getClusterOps } from "src/clusterops";
+import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { convertAttributesFixedValue, convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
@@ -35,6 +36,7 @@ import { filterAccountsByStatus } from "src/utils/app";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { logger } from "src/utils/logger";
+import { HPCJobLabelType, validateMaxRunningTimeMinutes } from "src/utils/maxRunningTime";
 import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
 
 const errorInfo = (reason: string) => encodeMessage(ErrorInfo, { domain: "", reason: reason, metadata: {} });
@@ -161,6 +163,12 @@ export const appServiceServer = plugin((server) => {
           appId,
         });
       }
+
+      validateMaxRunningTimeMinutes(
+        maxTime,
+        configClusters[cluster]?.hpc.app?.maxRunningTimeHours,
+        HPCJobLabelType.app,
+      );
 
       const attributesConfig = app.attributes;
       attributesConfig?.forEach((attribute) => {

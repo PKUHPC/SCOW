@@ -117,3 +117,44 @@ export const createK8sNameValidator = (message?: string) => () => ({
     return Promise.resolve();
   },
 });
+
+export type MaxRunningTimeUnit = "MINUTE" | "HOUR" | "DAY" | "min" | "hour" | "day" | 0 | 1 | 2;
+
+export function convertDurationToHours(value: number, unit: MaxRunningTimeUnit): number {
+  switch (unit) {
+    case "DAY":
+    case "day":
+    case 2:
+      return value * 24;
+    case "HOUR":
+    case "hour":
+    case 1:
+      return value;
+    case "MINUTE":
+    case "min":
+    case 0:
+    default:
+      return value / 60;
+  }
+}
+
+// 前端校验是否超出已配置的最长运行时间
+export function validateConfigMaxJobRunningHours(
+  exceedMessage: string,
+  positiveMessage: string,
+  maxTimeUnit: MaxRunningTimeUnit,
+  maxRunningTimeHours: number | undefined,
+) {
+  return (_: unknown, value: number) => {
+    if (value <= 0) {
+      return Promise.reject(new Error(positiveMessage));
+    }
+    if (maxRunningTimeHours !== undefined) {
+      const valueInHours = convertDurationToHours(value, maxTimeUnit);
+      if (valueInHours > maxRunningTimeHours) {
+        return Promise.reject(new Error(exceedMessage));
+      }
+    }
+    return Promise.resolve();
+  };
+}

@@ -7,11 +7,13 @@ import { RoundedInputNumber } from "@scow/lib-web/build/components/styledAntdCom
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
+import { Tooltip } from "@scow/lib-web/build/components/styledAntdCom/Tooltip";
 import {
   SectionTitle,
   TitledSectionCard as SectionCard,
 } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { Form, type FormInstance, Select, Space, Switch, Tooltip } from "antd";
+import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
+import { Form, type FormInstance, Select, Space, Switch } from "antd";
 import { useEffect, useMemo, useRef } from "react";
 import { type ClusterNodesInfo, getMaxPodsByNodes, getQueueNodes } from "src/app/(auth)/jobs/common";
 import { InferInlineFormItem as InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
@@ -60,6 +62,7 @@ interface ResourceConfigSectionProps {
   qosOptions: string[];
   maxTimeUnit: MaxTimeUnit;
   onMaxTimeUnitChange: (unit: MaxTimeUnit) => void;
+  maxJobRunningTimeHours?: number;
   gpuUnitLimit?: number;
   isResubmit?: boolean;
 }
@@ -83,6 +86,7 @@ export const ResourceConfigSection = ({
   qosOptions,
   maxTimeUnit,
   onMaxTimeUnitChange,
+  maxJobRunningTimeHours,
   gpuUnitLimit,
   isResubmit,
 }: ResourceConfigSectionProps) => {
@@ -152,7 +156,8 @@ export const ResourceConfigSection = ({
   const perNodeFieldName = activeResourceTab === "gpu" ? "gpuCores" : "cpuCores";
   const inputsDisabled = !selectedQueueOption;
   const isMaxTimeUnlimited = Form.useWatch<boolean>("maxTimeUnlimited", form) ?? false;
-  const isMaxTimeLimited = !isMaxTimeUnlimited;
+  const hasInferMaxTimeLimit = maxJobRunningTimeHours !== undefined;
+  const isMaxTimeLimited = hasInferMaxTimeLimit || !isMaxTimeUnlimited;
   const queueTotalUnits = selectedQueueOption?.totalUnits ?? 0;
   const queueTotalNodes = selectedQueueOption?.totalNodes ?? 1;
   const perNodeUnitLimit = queueTotalUnits > 0 && queueTotalNodes > 0 ? queueTotalUnits / queueTotalNodes : undefined;
@@ -198,6 +203,11 @@ export const ResourceConfigSection = ({
   const perNodeLabel = activeResourceTab === "gpu" ? gpuCountLabel : cpuCountLabel;
   const controlHeightLg = theme.token.controlHeightLG ?? 40;
   const handleMaxTimeUnlimitedChange = (checked: boolean) => {
+    if (hasInferMaxTimeLimit) {
+      form.setFieldValue("maxTimeUnlimited", false);
+      form.validateFields(["maxTime"]).catch(() => undefined);
+      return;
+    }
     if (!checked) {
       form.setFieldValue("maxTime", undefined);
     }
@@ -429,25 +439,51 @@ export const ResourceConfigSection = ({
           helpTip={t(p("maxRunTimeHelp"))}
         >
           <div style={{ width: "408px", minHeight: controlHeightLg, display: "flex", alignItems: "center", gap: 12 }}>
-            <Form.Item
-              name="maxTimeUnlimited"
-              valuePropName="checked"
-              getValueProps={(value: boolean | undefined) => ({ checked: !value })}
-              getValueFromEvent={(checked: boolean) => !checked}
-              noStyle
+            <Tooltip
+              title={
+                hasInferMaxTimeLimit
+                  ? t(p("maxRunTimeUnlimitedDisabledTooltip"), [maxJobRunningTimeHours.toString()])
+                  : undefined
+              }
+              arrow={false}
+              align={{ offset: [0, -12] }}
+              color={theme.palette.gray[7]}
             >
-              <Switch
-                onChange={handleMaxTimeUnlimitedChange}
-                aria-label={t(p("maxRunTimeLimitedLabel"))}
-                checkedChildren={t(p("maxRunTimeLimitedLabel"))}
-                unCheckedChildren={t(p("maxRunTimeUnlimitedLabel"))}
-              />
-            </Form.Item>
+              <span>
+                <Form.Item
+                  name="maxTimeUnlimited"
+                  valuePropName="checked"
+                  getValueProps={(value: boolean | undefined) => ({
+                    checked: hasInferMaxTimeLimit ? true : !value,
+                  })}
+                  getValueFromEvent={(checked: boolean) => !checked}
+                  noStyle
+                >
+                  <Switch
+                    disabled={hasInferMaxTimeLimit}
+                    onChange={handleMaxTimeUnlimitedChange}
+                    aria-label={t(p("maxRunTimeLimitedLabel"))}
+                    checkedChildren={t(p("maxRunTimeLimitedLabel"))}
+                    unCheckedChildren={t(p("maxRunTimeUnlimitedLabel"))}
+                  />
+                </Form.Item>
+              </span>
+            </Tooltip>
             {isMaxTimeLimited ? (
               <Form.Item
                 name="maxTime"
                 style={{ flex: 1, marginBottom: 0 }}
-                rules={[{ required: true, message: t(p("maxRunTimeRequired")) }]}
+                rules={[
+                  { required: true, message: t(p("maxRunTimeRequired")) },
+                  {
+                    validator: validateConfigMaxJobRunningHours(
+                      t(p("maxRunTimeExceed"), [maxJobRunningTimeHours?.toString() ?? ""]),
+                      t(p("maxRunTimePositive")),
+                      maxTimeUnit,
+                      maxJobRunningTimeHours,
+                    ),
+                  },
+                ]}
               >
                 <RoundedInputNumberWithAddonAfter
                   size="large"

@@ -107,8 +107,14 @@ export const convertClusterConfigsToServerProtoType = (
             transferNode: item.crossClusterFileTransfer?.transferNode ?? undefined,
           }
         : undefined,
-      hpc: { enabled: item.hpc.enabled },
-      ai: { enabled: item.ai.enabled },
+      hpc: {
+        enabled: item.hpc.enabled,
+        job: item.hpc.job ? { maxRunningTimeHours: item.hpc.job.maxRunningTimeHours } : undefined,
+        app: item.hpc.app ? { maxRunningTimeHours: item.hpc.app.maxRunningTimeHours } : undefined,
+      },
+      ai: {
+        enabled: item.ai.enabled,
+      },
       storage: item.storage,
       description: item.description ? getI18nSeverTypeFormat(item.description) : undefined,
     };

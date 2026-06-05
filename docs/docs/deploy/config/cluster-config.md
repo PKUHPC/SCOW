@@ -76,6 +76,16 @@ crossClusterFileTransfer:
 # 集群在HPC或是否启用，默认为true
 hpc:
   enabled: true
+  # 普通作业个性化配置，可选
+  # job:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交普通作业
+  #   maxRunningTimeHours: 24
+  # 交互式应用个性化配置，可选
+  # app:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交交互式应用
+  #   maxRunningTimeHours: 24
 
 # 集群在AI或是否启用，默认为false
 ai:
@@ -95,6 +105,8 @@ ai:
 # 集群描述信息，可选
 description: 集群描述
 ```
+
+其中，`hpc.job.maxRunningTimeHours` 用于限制 HPC 普通作业的最长运行时间，`hpc.app.maxRunningTimeHours` 用于限制 HPC 交互式应用的最长运行时间；两者都以小时为单位，不配置时表示不限制。
 
 ## 注意
 集群配置里的登录节点桌面功能和TurboVNC的安装路径配置为该集群特有，如不需要特殊配置该集群的这些功能，可在[门户系统](./portal/intro.md)进行统一配置；若在集群下配置以上功能，在该集群内将会覆盖门户系统下的配置。

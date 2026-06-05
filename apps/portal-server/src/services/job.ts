@@ -7,11 +7,13 @@ import { libGetAccounts, libGetUserInfo } from "@scow/lib-server";
 import { libCalculateJobPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
 import { AccountStatusFilter, JobServiceServer, JobServiceService } from "@scow/protos/build/portal/job";
 import { getClusterOps } from "src/clusterops";
+import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { filterAccountsByStatus } from "src/utils/app";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
+import { convertMaxTimeToMinutes, validateMaxRunningTimeMinutes, HPCJobLabelType } from "src/utils/maxRunningTime";
 import { getClusterLoginNode } from "src/utils/ssh";
 import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
 
@@ -289,7 +291,7 @@ export const jobServiceServer = plugin((server) => {
     },
 
     submitJob: async ({ request, logger }) => {
-      const { cluster, userId, account, partition } = request;
+      const { cluster, userId, account, partition, maxTime, maxTimeUnit } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       // 管理系统存在时，增加用户账户封锁状态, 授权集群分区等鉴权
@@ -303,6 +305,12 @@ export const jobServiceServer = plugin((server) => {
           checkAccountApp: false,
         });
       }
+
+      validateMaxRunningTimeMinutes(
+        convertMaxTimeToMinutes(maxTime, maxTimeUnit),
+        configClusters[cluster]?.hpc.job?.maxRunningTimeHours,
+        HPCJobLabelType.job,
+      );
 
       const clusterOps = getClusterOps(cluster);
       if (!clusterOps) {

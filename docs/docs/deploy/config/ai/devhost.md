@@ -29,7 +29,7 @@ ai:
     vscodeInfo:
       # vscode 二进制路径
       binPath: "/nfs/public/vscode/code-server-4.96.2-linux-amd64/bin/code-server"
-    # 最大运行时间，可选，不填写表示不限制运行时间
+    # 最长运行时间，可选，不填写表示不限制运行时间
     maxRunningTimeHours: 10
 ```
 
@@ -48,7 +48,7 @@ VSCode 开发环境的配置信息：
 #### maxRunningTimeHours
 
 - 类型：数字（可选）
-- 描述：开发机最大运行时间，单位为小时
+- 描述：开发机最长运行时间，单位为小时
 - 作用：超过此时间则不能成功创建开发机
 - 默认：不填写表示不限制运行时间
 - 示例：`24` 表示最大运行 24 小时

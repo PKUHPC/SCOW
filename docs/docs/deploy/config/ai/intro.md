@@ -97,6 +97,30 @@ hpc:
 ai:
   enabled: false
 
+  # 选配：AI 应用作业个性化配置
+  # app:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交 AI 应用作业
+  #   maxRunningTimeHours: 24
+
+  # 选配：AI 训练作业个性化配置
+  # train:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交 AI 训练作业
+  #   maxRunningTimeHours: 24
+
+  # 选配：AI 推理作业个性化配置
+  # infer:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功提交 AI 推理作业
+  #   maxRunningTimeHours: 24
+
+  # 开发机相关配置，可选，详细说明见开发机文档
+  # devHost:
+  #   # 最长运行时间，可选，不填写表示不限制运行时间
+  #   # 单位：小时。超过此时间则不能成功创建开发机
+  #   maxRunningTimeHours: 24
+
   # 选配：分享数据资产的文件夹所在的目录
   # 计算共享目录顶层路径：
   #  1) 优先使用集群级 `sharedTopDir` 配置；
@@ -106,6 +130,8 @@ ai:
   # 配置后，不可修改
   # sharedTopDir: "/nfs"
 ```
+
+其中，`ai.app.maxRunningTimeHours`、`ai.train.maxRunningTimeHours`、`ai.infer.maxRunningTimeHours` 用于分别限制 AI 应用、训练、推理作业的最长运行时间；不配置时表示不限制。`ai.devHost.maxRunningTimeHours` 用于限制开发机最长运行时间，详细配置方式请参见[开发机功能介绍和配置](./devhost.md)。
 
 在智算平台，为了方便平台管理员管理和发布所有平台级别的公共数据，我们提供了公共数据资产功能，下设4个子菜单：数据集、镜像、算法、模型。
 
@@ -247,9 +273,6 @@ harborConfig:
 # 选配公共的挂载目录，优先使用集群配置文件中的
 # publicMountPoints:
   # - /nfs/public
-
-# 选配作业最大运行时间
-# maxJobRunningTimeHours: 24
 
 # 选配推理的配置，优先使用集群配置文件中的
 inferConfig:

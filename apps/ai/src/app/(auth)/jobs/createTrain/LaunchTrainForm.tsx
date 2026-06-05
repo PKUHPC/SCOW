@@ -84,10 +84,10 @@ const IMAGE_SOURCE_TAB_CONFIG: readonly {
   labelKey: ImageSourceLabelKey;
   placeholderKey: ImagePlaceholderKey;
 }[] = [
-  { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
-  { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
-  { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
-];
+    { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
+    { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
+    { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
+  ];
 
 const IMAGE_PLACEHOLDER_KEYS: Record<TrainImageSourceKey, ImagePlaceholderKey> = {
   mine: "imagePlaceholders.mine",
@@ -211,8 +211,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
-  // const i18n = useI18n();
-  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+  const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
 
@@ -475,7 +474,9 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
   // ----------- 表单校验边界 -----------
   // 集群配置可能限制最大运行时长，这里提前取出供校验和提示使用
-  const maxJobRunningTimeHours = publicConfig.MAX_JOB_RUNNING_TIME_HOURS;
+  const maxJobRunningTimeHours = selectedCluster
+    ? scowClusterConfigs[selectedCluster]?.ai?.train?.maxRunningTimeHours
+    : undefined;
 
   // 根据选中的账户与集群拉取对应的队列与资源详情
   // ----- 数据拉取：根据选中账户/集群实时刷新依赖数据 -----
@@ -1309,6 +1310,9 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
         cpuCores: undefined,
         ...(maxTimeValue !== undefined ? { maxTime: maxTimeValue } : {}),
       });
+      if (maxTimeValue !== undefined) {
+        resourceForm.validateFields(["maxTime"]).catch(() => undefined);
+      }
       resubmitQueueAppliedRef.current = true;
       return;
     }
@@ -1363,6 +1367,9 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
     if (Object.keys(updates).length > 0) {
       resourceForm.setFieldsValue(updates);
+    }
+    if (maxTimeValue !== undefined) {
+      resourceForm.validateFields(["maxTime"]).catch(() => undefined);
     }
 
     resubmitQueueAppliedRef.current = true;
@@ -1754,15 +1761,15 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       const perNodeGpuCount = isGpuQueue ? perNodeUnits : 0;
       const perNodeCpuCount = isGpuQueue
         ? (() => {
-            if (cpuPerUnit && cpuPerUnit > 0) {
-              return Math.max(1, Math.round(cpuPerUnit * perNodeGpuCount));
-            }
-            const totalCpuFromForm = typeof cpuCores === "number" ? cpuCores : undefined;
-            if (totalCpuFromForm && totalCpuFromForm > 0) {
-              return Math.max(1, Math.round(totalCpuFromForm / Math.max(1, nodeCount)));
-            }
-            return 1;
-          })()
+          if (cpuPerUnit && cpuPerUnit > 0) {
+            return Math.max(1, Math.round(cpuPerUnit * perNodeGpuCount));
+          }
+          const totalCpuFromForm = typeof cpuCores === "number" ? cpuCores : undefined;
+          if (totalCpuFromForm && totalCpuFromForm > 0) {
+            return Math.max(1, Math.round(totalCpuFromForm / Math.max(1, nodeCount)));
+          }
+          return 1;
+        })()
         : perNodeUnits;
 
       const totalGpuUnits = perNodeGpuCount * nodeCount;
@@ -1869,11 +1876,11 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
         tensorBoardDataPath: appValues.needTensorBoard ? appValues.tensorBoardDataPath : undefined,
         ...(appValues.usePrivateImage
           ? {
-              privateImageRepositoryCredentials: {
-                userName: appValues.remoteUsername ?? "",
-                password: appValues.remotePassword ?? "",
-              },
-            }
+            privateImageRepositoryCredentials: {
+              userName: appValues.remoteUsername ?? "",
+              password: appValues.remotePassword ?? "",
+            },
+          }
           : {}),
       });
     } catch (error) {
@@ -1917,7 +1924,6 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
           maxTimeUnit={maxTimeUnit}
           onMaxTimeUnitChange={handleMaxTimeUnitChange}
           maxJobRunningTimeHours={maxJobRunningTimeHours}
-          convertDurationToHours={convertDurationToHours}
           frameworkOptions={frameworkOptions}
           gpuUnitLimit={gpuUnitLimit}
           isResubmit={Boolean(createTrainParams)}

@@ -127,7 +127,6 @@ const PublicConfigSchema = z.object({
   LOGIN_NODES: z.record(z.string(), z.string()),
   NOVNC_CLIENT_URL: z.string(),
   SCOW_RESOURCE: ScowResourceConfigSchema.optional(),
-  MAX_JOB_RUNNING_TIME_HOURS: z.number().optional(),
   DASHBOARD_USER_DISPLAY_MODE: z.union([z.literal("full"), z.literal("simplified")]).default("full"),
   NOTIF_ENABLED: z.boolean().optional(),
   NOTIF_NAME: z.string().optional(),
@@ -204,6 +203,15 @@ const StorageConfigSchema = z.object({
 });
 
 const ClusterAiConfigSchema = z.object({
+  app: z.object({
+    maxRunningTimeHours: z.number().optional(),
+  }).optional(),
+  train: z.object({
+    maxRunningTimeHours: z.number().optional(),
+  }).optional(),
+  infer: z.object({
+    maxRunningTimeHours: z.number().optional(),
+  }).optional(),
   devHost: z.object({
     enabled: z.boolean(),
     vscodeInfo: z.object({
@@ -309,8 +317,6 @@ export const config = router({
         NON_EDITABLE_FILENAME_POSTFIXES: aiConfig.file?.edit.nonEditableFilenamePostfixes,
         FILE_PREVIEW_SIZE: aiConfig.file?.preview.limitSize,
 
-        MAX_JOB_RUNNING_TIME_HOURS: aiConfig.maxJobRunningTimeHours,
-
         UI_EXTENSION: aiConfig.uiExtension,
 
         DASHBOARD_USER_DISPLAY_MODE: commonConfig.dashboard?.userDisplayMode ?? "full",
@@ -361,6 +367,15 @@ export const config = router({
             },
             loginNodes: cluster?.loginNodes,
             ai: {
+              app: {
+                maxRunningTimeHours: cluster.ai?.app?.maxRunningTimeHours,
+              },
+              train: {
+                maxRunningTimeHours: cluster.ai?.train?.maxRunningTimeHours,
+              },
+              infer: {
+                maxRunningTimeHours: cluster.ai?.infer?.maxRunningTimeHours,
+              },
               devHost: {
                 enabled: cluster.ai.devHost?.enabled ?? false,
                 vscodeInfo: cluster.ai?.devHost?.vscodeInfo ?? { binPath: "" },
@@ -378,6 +393,9 @@ export const config = router({
             storage: { enabled: boolean; paths: string[]; replicaExist: boolean };
             loginNodes: LoginNodeConfig;
             ai: {
+              app: { maxRunningTimeHours?: number };
+              train: { maxRunningTimeHours?: number };
+              infer: { maxRunningTimeHours?: number };
               devHost: { enabled: boolean; vscodeInfo: { binPath: string }; maxRunningTimeHours?: number };
               clusterPublicPath: string;
             };

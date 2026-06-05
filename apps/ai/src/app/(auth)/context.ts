@@ -10,6 +10,9 @@ export type ScowClusterConfigs = Record<
     scowdEnabled: boolean;
     storage: { enabled: boolean; replicaExist: boolean; paths: string[] };
     ai: {
+      app?: { maxRunningTimeHours?: number };
+      train?: { maxRunningTimeHours?: number };
+      infer?: { maxRunningTimeHours?: number };
       devHost: { enabled: boolean; vscodeInfo: { binPath: string }; maxRunningTimeHours?: number };
       clusterPublicPath: string;
     };

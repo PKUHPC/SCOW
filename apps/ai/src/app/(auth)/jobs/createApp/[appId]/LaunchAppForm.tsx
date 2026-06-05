@@ -238,8 +238,7 @@ export const LaunchAppForm = ({
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
-  // const i18n = useI18n();
-  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+  const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
 
   // 配置文件中所有的AI集群
   const { CLUSTERS } = publicConfig;
@@ -485,7 +484,9 @@ export const LaunchAppForm = ({
 
   // ----------- 表单校验边界 -----------
   // 集群配置可能限制最大运行时长，这里提前取出供校验和提示使用
-  const maxJobRunningTimeHours = publicConfig.MAX_JOB_RUNNING_TIME_HOURS;
+  const maxJobRunningTimeHours = selectedCluster
+    ? scowClusterConfigs[selectedCluster]?.ai?.app?.maxRunningTimeHours
+    : undefined;
 
   // 拉取所选集群下该应用的元信息（展示名、Logo、默认镜像/命令等）
   const { data: appInfo } = trpc.jobs.getAppMetadata.useQuery(
@@ -1463,6 +1464,9 @@ export const LaunchAppForm = ({
         cpuCores: undefined,
         ...(maxTimeValue !== undefined ? { maxTime: maxTimeValue } : {}),
       });
+      if (maxTimeValue !== undefined) {
+        resourceForm.validateFields(["maxTime"]).catch(() => undefined);
+      }
       resubmitQueueAppliedRef.current = true;
       return;
     }
@@ -1517,6 +1521,9 @@ export const LaunchAppForm = ({
 
     if (Object.keys(updates).length > 0) {
       resourceForm.setFieldsValue(updates);
+    }
+    if (maxTimeValue !== undefined) {
+      resourceForm.validateFields(["maxTime"]).catch(() => undefined);
     }
 
     resubmitQueueAppliedRef.current = true;
@@ -2125,7 +2132,6 @@ export const LaunchAppForm = ({
           maxTimeUnit={maxTimeUnit}
           onMaxTimeUnitChange={handleMaxTimeUnitChange}
           maxJobRunningTimeHours={maxJobRunningTimeHours}
-          convertDurationToHours={convertDurationToHours}
           isResubmit={Boolean(createAppParams)}
         />
 

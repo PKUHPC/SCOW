@@ -13,6 +13,7 @@ import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table"
 import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Tooltip } from "@scow/lib-web/build/components/styledAntdCom/Tooltip";
+import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance, Select, Space } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { ReservedAppAttributeName } from "src/models/job";
@@ -65,6 +66,7 @@ interface ResourceConfigSectionProps {
   clusterId: string;
   reservedAppAttributes?: ReservedAppAttribute[];
   currentPartitionInfo: Partition | undefined;
+  maxRunningTimeHours?: number;
 }
 
 const p = prefix("pageComp.app.launchAppForm.");
@@ -88,8 +90,11 @@ export const ResourceConfigSection = ({
   clusterId,
   reservedAppAttributes,
   currentPartitionInfo,
+  maxRunningTimeHours,
 }: ResourceConfigSectionProps) => {
   const t = useI18nTranslateToString();
+  const maxTimeReservedConfig = getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME);
+  const maxTimeValidatorUnit = maxTimeReservedConfig ? "min" : maxTimeUnit;
 
   const inputNumberFloorConfig = {
     formatter: (value: number) => `${Math.floor(value)}`,
@@ -388,8 +393,18 @@ export const ResourceConfigSection = ({
           t={t}
           name="maxTime"
           label={<FormLabel>{t(p("maxTime"))}</FormLabel>}
-          rules={[{ required: true, message: t(p("maxTimeRequired")) }]}
-          reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME)}
+          rules={[
+            { required: true, message: t(p("maxTimeRequired")) },
+            {
+              validator: validateConfigMaxJobRunningHours(
+                t(p("maxRunTimeExceed"), [maxRunningTimeHours?.toString() ?? ""]),
+                t(p("maxTimePositive")),
+                maxTimeValidatorUnit,
+                maxRunningTimeHours,
+              ),
+            },
+          ]}
+          reservedConfig={maxTimeReservedConfig}
           children={
             <RoundedInputNumberWithAddonAfter
               size="large"

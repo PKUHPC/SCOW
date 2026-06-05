@@ -92,8 +92,6 @@ export const AiConfigSchema = Type.Object({
     ),
   ),
 
-  maxJobRunningTimeHours: Type.Optional(Type.Number({ description: "任务最大运行时间，超过此时间则不能成功提交作业" })),
-
   uiExtension: Type.Optional(
     Type.Union([
       Type.Object({ url: Type.String({ description: "扩展的URL" }) }),

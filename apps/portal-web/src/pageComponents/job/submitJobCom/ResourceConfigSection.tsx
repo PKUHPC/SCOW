@@ -13,6 +13,7 @@ import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table"
 import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Tooltip } from "@scow/lib-web/build/components/styledAntdCom/Tooltip";
+import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance, Select, Space } from "antd";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -65,6 +66,7 @@ interface ResourceConfigSectionProps {
   inputsDisabled?: boolean;
   maxTimeUnit: TimeUnit;
   onMaxTimeUnitChange: (unit: TimeUnit) => void;
+  maxRunningTimeHours?: number;
 }
 
 const p = prefix("pageComp.submitJobCom.ResourceConfigSection.");
@@ -86,6 +88,7 @@ export const ResourceConfigSection = ({
   inputsDisabled,
   maxTimeUnit,
   onMaxTimeUnitChange,
+  maxRunningTimeHours,
 }: ResourceConfigSectionProps) => {
   const t = useI18nTranslateToString();
 
@@ -419,12 +422,12 @@ export const ResourceConfigSection = ({
           rules={[
             { required: true, message: t(p("maxTimeRequired")) },
             {
-              validator: (_, value) => {
-                if (value <= 0) {
-                  return Promise.reject(new Error(t(p("maxTimePositive"))));
-                }
-                return Promise.resolve();
-              },
+              validator: validateConfigMaxJobRunningHours(
+                t(p("maxRunTimeExceed"), [maxRunningTimeHours?.toString() ?? ""]),
+                t(p("maxTimePositive")),
+                maxTimeUnit,
+                maxRunningTimeHours,
+              ),
             },
           ]}
         >

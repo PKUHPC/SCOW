@@ -44,6 +44,7 @@ import { allProtoAiJobTypes, getProtoJobTypes } from "src/server/utils/getProtoJ
 import { createHarborImageUrl } from "src/server/utils/image";
 import { isPortReachableThroughUrl } from "src/server/utils/isPortReachable";
 import { logger } from "src/server/utils/logger";
+import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
 import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getUserAssignedResourceDetails } from "src/server/utils/resource";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
@@ -618,22 +619,7 @@ export const createAppSession = procedure
       });
     }
 
-    if (aiConfig.maxJobRunningTimeHours) {
-      if (maxTime > aiConfig.maxJobRunningTimeHours * 60) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            `The app running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
-            ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
-        });
-      }
-      if (maxTime === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "The app running time cannot be 0",
-        });
-      }
-    }
+    validateMaxRunningTimeMinutes(maxTime, clusters[clusterId]?.ai.app?.maxRunningTimeHours, AIJobLabelType.app);
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
       throw new TRPCError({

@@ -112,7 +112,7 @@ export const LaunchAppForm: React.FC<Props> = ({
   setSelectedCluster,
 }) => {
   const { id: appId, name: appName, logoPath: appLogoPath } = appInfo || { id: "", name: "" };
-  const { currentClusters } = useStore(ClusterInfoStore);
+  const { currentClusters, fullClusterConfigs } = useStore(ClusterInfoStore);
 
   const { message, modal } = App.useApp();
   const { user } = useStore(UserStore);
@@ -130,7 +130,7 @@ export const LaunchAppForm: React.FC<Props> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activePartitionTab, setActivePartitionTab] = useState<PartitionTabKey>("cpu");
 
-  const [maxTimeUnitValue, setMaxTimeUnitValue] = useState<TimeUnit>("min");
+  const [maxTimeUnitValue, setMaxTimeUnitValue] = useState<TimeUnit>("hour");
 
   const selectedAccount = Form.useWatch("account", resourceForm);
   const selectedCluster = Form.useWatch<string>("cluster", resourceForm);
@@ -139,7 +139,7 @@ export const LaunchAppForm: React.FC<Props> = ({
   const nodeCount = Form.useWatch("nodeCount", resourceForm);
   const coreCount = Form.useWatch("coreCount", resourceForm);
   const gpuCount = Form.useWatch("gpuCount", resourceForm);
-  const maxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
+  const maxRunningTimeHours = selectedCluster ? fullClusterConfigs[selectedCluster]?.hpc?.app?.maxRunningTimeHours : undefined;
 
   const router = useRouter();
 
@@ -174,7 +174,6 @@ export const LaunchAppForm: React.FC<Props> = ({
   const appCommentI18nText = appComment ? getI18nConfigCurrentText(appComment, languageId) : undefined;
 
   // 判断系统保留APP字段:账户及分区或qos 是否已配置为固定值字段
-  const fixedAccountName = getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT);
   const fixedPartitionName = getInitialFixedValueByAttributeName(
     reservedAppAttributes,
     ReservedAppAttributeName.PARTITION,
@@ -193,11 +192,6 @@ export const LaunchAppForm: React.FC<Props> = ({
     reservedAppAttributes,
     ReservedAppAttributeName.GPU_COUNT,
   );
-  const fixedMaxTimeValue = getInitialFixedValueByAttributeName(
-    reservedAppAttributes,
-    ReservedAppAttributeName.MAX_TIME,
-  );
-
   // 判断系统保留APP字段是否配置为了固定值选项
   const fixedAccountList = getFixedValueListByAttributeName(
     reservedAppAttributes,
@@ -212,7 +206,6 @@ export const LaunchAppForm: React.FC<Props> = ({
     nodeCount: fixedNodeCountValue ? parseInt(fixedNodeCountValue, 10) : 1,
     coreCount: fixedCoreCountValue ? parseInt(fixedCoreCountValue, 10) : 1,
     gpuCount: fixedGpuCountValue ? parseInt(fixedGpuCountValue, 10) : 1,
-    maxTime: fixedMaxTimeValue ? parseInt(fixedMaxTimeValue, 10) : 60,
   } as Partial<FormFields>;
 
   // 获取集群信息
@@ -703,13 +696,6 @@ export const LaunchAppForm: React.FC<Props> = ({
   }, [activePartitionTab, resourceForm, selectedPartitionInfo]);
 
   useEffect(() => {
-    const maxTimeNotSet = maxTime === undefined || maxTime === null;
-    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
-      resourceForm.setFieldValue("maxTime", initialValues.maxTime ?? 60);
-    }
-  }, [resourceForm, maxTime]);
-
-  useEffect(() => {
     if (!accountOptions.length) return;
     if (selectedAccount && fixedAccountList) return;
     const currentAccount = resourceForm.getFieldValue("account");
@@ -770,6 +756,14 @@ export const LaunchAppForm: React.FC<Props> = ({
     }
   }, [clusterOptions, resourceForm, selectedAccount]);
 
+  // 单位或配置上限变化时触发校验，让用户看到最新提示
+  useEffect(() => {
+    const currentValue = resourceForm.getFieldValue("maxTime");
+    if (currentValue !== undefined && currentValue !== null) {
+      resourceForm.validateFields(["maxTime"]);
+    }
+  }, [maxTimeUnitValue, maxRunningTimeHours, resourceForm]);
+
   return (
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
@@ -824,6 +818,7 @@ export const LaunchAppForm: React.FC<Props> = ({
           clusterId={selectedCluster}
           reservedAppAttributes={reservedAppAttributes}
           currentPartitionInfo={selectedPartitionInfo}
+          maxRunningTimeHours={maxRunningTimeHours}
         />
 
         <AppConfigSection

@@ -9,6 +9,7 @@ import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/se
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
+import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { parseIp } from "src/utils/parse";
@@ -16,6 +17,7 @@ import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
+import { clusters } from "../config";
 import { EnvVariableSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
 
 // 分布式训练框架
@@ -127,7 +129,7 @@ export const submitInferJob = procedure
       });
     }
 
-    const { clusterId, InferenceJobName, image, models, account, partition, mountPoints } = input;
+    const { clusterId, InferenceJobName, image, models, account, partition, mountPoints, maxTime } = input;
     const { ids: modelIds, isPrivates: isModelPrivates, targets: modelTargets } = getIdPrivate(models);
 
     if (InferenceJobName.length > MAX_JOB_NAME_LENGTH) {
@@ -135,6 +137,21 @@ export const submitInferJob = procedure
         code: "BAD_REQUEST",
         message: `The length of InferenceJobName should not exceed ${MAX_JOB_NAME_LENGTH}`,
       });
+    }
+
+    const inferMaxRunningTimeHours = clusters[clusterId]?.ai.infer?.maxRunningTimeHours;
+    if (maxTime === 0 && inferMaxRunningTimeHours !== undefined) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          `The infer running time cannot be unlimited because the current cluster has configured a max running time ` +
+          `of ${inferMaxRunningTimeHours} hour${inferMaxRunningTimeHours > 1 ? "s" : ""}`,
+      });
+    }
+
+    // 推理时间不限制时，maxTime 为 0, 不进行已配置的最长运行时间校验
+    if (maxTime !== 0) {
+      validateMaxRunningTimeMinutes(maxTime, inferMaxRunningTimeHours, AIJobLabelType.infer);
     }
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {

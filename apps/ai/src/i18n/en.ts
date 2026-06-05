@@ -589,7 +589,7 @@ export default {
       launchInferForm: {
         title: "Launch Infer",
         submitInferSuccessfully: "Submit Inference successfully",
-        submitInferFailed: "Submit Inference failed: {0}",
+        submitInferFailed: "Submit Inference failed: ",
         createInferTitle: "Create Inference",
       },
       launchDevForm: {
@@ -670,6 +670,8 @@ export default {
         maxRunTimeHelp: "Turn on to submit jobs without a time limit",
         maxRunTimeUnlimitedLabel: "No time limit",
         maxRunTimeLimitedLabel: "Time limit",
+        maxRunTimeUnlimitedDisabledTooltip:
+          "The current cluster has configured the inference job max run time to no more than {0} hours",
         durationUnits: {
           minute: "Minutes",
           hour: "Hours",

@@ -157,6 +157,30 @@ export const ClusterConfigSchema = Type.Object({
   hpc: Type.Object(
     {
       enabled: Type.Boolean({ description: "是否在HPC中启用" }),
+      job: Type.Optional(
+        Type.Object(
+          {
+            maxRunningTimeHours: Type.Optional(
+              Type.Number({
+                description: "HPC作业最长运行时间，单位小时。超过此时间则不能成功提交作业。不填为不限制",
+              }),
+            ),
+          },
+          { description: "HPC作业集群个性化配置" },
+        ),
+      ),
+      app: Type.Optional(
+        Type.Object(
+          {
+            maxRunningTimeHours: Type.Optional(
+              Type.Number({
+                description: "HPC应用最长运行时间，单位小时。超过此时间则不能成功提交作业。不填为不限制",
+              }),
+            ),
+          },
+          { description: "HPC应用集群个性化配置" },
+        ),
+      ),
     },
     { description: "集群在HPC中是否启用, 默认启用", default: { enabled: true } },
   ),
@@ -164,6 +188,42 @@ export const ClusterConfigSchema = Type.Object({
   ai: Type.Object(
     {
       enabled: Type.Boolean({ description: "是否在AI中启用" }),
+      app: Type.Optional(
+        Type.Object(
+          {
+            maxRunningTimeHours: Type.Optional(
+              Type.Number({
+                description: "AI应用最长运行时间，单位小时。超过此时间则不能成功提交作业。不填为不限制",
+              }),
+            ),
+          },
+          { description: "AI应用作业集群个性化配置" },
+        ),
+      ),
+      train: Type.Optional(
+        Type.Object(
+          {
+            maxRunningTimeHours: Type.Optional(
+              Type.Number({
+                description: "AI训练最长运行时间，单位小时。超过此时间则不能成功提交作业。不填为不限制",
+              }),
+            ),
+          },
+          { description: "AI训练作业集群个性化配置" },
+        ),
+      ),
+      infer: Type.Optional(
+        Type.Object(
+          {
+            maxRunningTimeHours: Type.Optional(
+              Type.Number({
+                description: "AI推理最长运行时间，单位小时。超过此时间则不能成功提交作业。不填为不限制",
+              }),
+            ),
+          },
+          { description: "AI推理作业集群个性化配置" },
+        ),
+      ),
       devHost: Type.Optional(
         Type.Object(
           {
@@ -173,7 +233,7 @@ export const ClusterConfigSchema = Type.Object({
             }),
             maxRunningTimeHours: Type.Optional(
               Type.Number({
-                description: "开发机最大运行时间，单位小时。超过此时间则不能成功创建开发机。不填为不限制",
+                description: "开发机最长运行时间，单位小时。超过此时间则不能成功创建开发机。不填为不限制",
               }),
             ),
           },

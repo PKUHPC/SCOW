@@ -24,9 +24,6 @@ harborConfig:
 # publicMountPoints:
   # - /nfs/public
 
-# 选配作业最大运行时间
-# maxJobRunningTimeHours: 24
-
 # 数据资产相关配置
 # asset:
 #   userShare:

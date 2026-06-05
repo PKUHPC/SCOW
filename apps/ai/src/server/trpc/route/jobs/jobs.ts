@@ -5,7 +5,6 @@ import { moneyToNumber } from "@scow/lib-decimal";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { libCalculateJobPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
 import { TRPCError } from "@trpc/server";
-import { aiConfig } from "src/server/config/ai";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
@@ -15,10 +14,13 @@ import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/se
 import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
+import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
+
+import { clusters } from "../config";
 
 interface ServerResponseWithFlush extends ServerResponse {
   flush: () => void;
@@ -173,22 +175,7 @@ export const trainJob = procedure
       });
     }
 
-    if (aiConfig.maxJobRunningTimeHours) {
-      if (maxTime > aiConfig.maxJobRunningTimeHours * 60) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            `The job running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
-            ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
-        });
-      }
-      if (maxTime === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "The job running time cannot be 0",
-        });
-      }
-    }
+    validateMaxRunningTimeMinutes(maxTime, clusters[clusterId]?.ai.train?.maxRunningTimeHours, AIJobLabelType.train);
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
       throw new TRPCError({
