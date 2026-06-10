@@ -16,6 +16,7 @@ dist
 version.json
 .pnpm-store
 .DS_Store
+*.local*
 
 .next.backup
 .idea
