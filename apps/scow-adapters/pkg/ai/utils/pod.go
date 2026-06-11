@@ -169,6 +169,16 @@ func UpdatePodStatusByPodName(PodName, status string) (err error) {
 	return nil
 }
 
+func UpdatePodStatusByJobName(jobName, status string) error {
+	logrus.Tracef("[UpdatePodStatusByJobName] job: %s, status: %s", jobName, status)
+	updates := map[string]interface{}{"status": status}
+	err := client.DB.Model(&models.PodTable{}).Where("job_name = ?", jobName).Updates(updates).Error
+	if err != nil {
+		logrus.Errorf("[UpdatePodStatusByJobName] update pods for job %s status %s error: %v", jobName, status, err)
+	}
+	return err
+}
+
 func GetPodsByJobName(jobName string) (podTables []*models.PodTable) {
 	err := client.DB.Where("job_name = ? ", jobName).Find(&podTables).Error // 通过作业名查pod
 	if err != nil {

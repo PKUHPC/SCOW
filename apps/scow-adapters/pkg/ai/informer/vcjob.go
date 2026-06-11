@@ -32,8 +32,8 @@ func (i *K8sInformer) handleVcJobUpdate(obj interface{}) {
 	// todo 判断job状态是否真的发生变化，避免重复更新数据库
 
 	curTime := uint64(time.Now().Unix())
-	modelJob := models.JobTable{
-		ModTime: curTime,
+	updates := map[string]interface{}{
+		"mod_time": curTime,
 	}
 	switch jobStatus {
 	case v1alpha1.Pending:
@@ -41,16 +41,16 @@ func (i *K8sInformer) handleVcJobUpdate(obj interface{}) {
 	case v1alpha1.Running:
 		var remaining int64
 		status = utils.RunningStatus
-		//1. 首次进入Runing 的任务，需要设置任务开始时间
-		//   被抢占的作业还没有Running，TimeStart 还是 0
+		// 1. 首次进入 Running 的任务，需要设置任务开始时间
+		//    被抢占的作业还没有 Running，TimeStart 还是 0
 		if job.TimeStart == 0 {
 			if volcanoJob.Status.State.LastTransitionTime.Time.Unix() > 0 {
-				modelJob.TimeStart = uint64(volcanoJob.Status.State.LastTransitionTime.Time.Unix())
+				updates["time_start"] = uint64(volcanoJob.Status.State.LastTransitionTime.Time.Unix())
 			} else {
-				modelJob.TimeStart = curTime
+				updates["time_start"] = curTime
 			}
 		}
-		// 2. 任务被抢占并且当前状态是Pending，才需要重启定时器，剩余时间=原始时长-已运行时长；其他情况按照正常的timelimit设置定时器
+		// 2. 任务被抢占并且当前状态是 Pending，才需要重启定时器；其他情况按照正常的 timelimit 设置定时器
 		if job.Timelimit > 0 && job.State == utils.PendingStatus {
 			if job.IsPreempt == 1 {
 				jobDuration := utils.GetPreemptJobDurationByJobName(jobName)
@@ -75,24 +75,27 @@ func (i *K8sInformer) handleVcJobUpdate(obj interface{}) {
 		status = utils.FailedStatus
 	case v1alpha1.Terminated, v1alpha1.Terminating:
 		status = utils.CanceledStatus
+	default:
+		logrus.Warnf("jobName %s has unknown status: %s", jobName, jobStatus)
+		return
 	}
 
-	modelJob.State = status
+	updates["state"] = status
 	if status == utils.CompletedStatus || status == utils.FailedStatus || status == utils.CanceledStatus {
+		endTime := curTime
+		if volcanoJob.Status.State.LastTransitionTime.Time.Unix() > 0 {
+			endTime = uint64(volcanoJob.Status.State.LastTransitionTime.Time.Unix())
+		}
 		if job.TimeStart == 0 {
-			modelJob.TimeStart = curTime
-			modelJob.TimeEnd = curTime
-			logrus.Warnf("jobName %s job TimeStart is 0, set TimeStart and TimeEnd to current time: %d", jobName, curTime)
+			updates["time_start"] = endTime
+			updates["time_end"] = endTime
+			logrus.Warnf("jobName %s job TimeStart is 0 (Running state was skipped), set TimeStart and TimeEnd to LastTransitionTime: %d", jobName, endTime)
 		} else {
-			if volcanoJob.Status.State.LastTransitionTime.Time.Unix() > 0 {
-				modelJob.TimeEnd = uint64(volcanoJob.Status.State.LastTransitionTime.Time.Unix())
-			} else {
-				modelJob.TimeEnd = curTime
-			}
+			updates["time_end"] = endTime
 		}
 		go qw.TryResubmitJob(job.Account)
 	}
-	err = client.DB.Model(&job).Updates(modelJob).Error
+	err = client.DB.Model(&job).Updates(updates).Error
 	if err != nil {
 		logrus.Errorf("jobName %s DB update failed due to: %s", jobName, err)
 		return
@@ -144,21 +147,21 @@ func (i *K8sInformer) handleVcJobDelete(obj interface{}) {
 		}
 	}()
 	currentTime := uint64(time.Now().Unix())
-	modelJob := models.JobTable{
-		ModTime: currentTime,
+	updates := map[string]interface{}{
+		"mod_time": currentTime,
 	}
 
 	// 未启动的任务，开始时间和结束时间应保持一致
 	if (job.State == utils.PendingStatus || job.State == utils.FailedStatus) && job.TimeStart == 0 {
-		modelJob.TimeStart = currentTime
+		updates["time_start"] = currentTime
 	}
-	// 作业Pending或Running时，用户取消作业，状态会变成Canceled，作业结束时间为当前时间；
+	// 作业 Pending 或 Running 时，用户取消作业，状态变成 Canceled，结束时间为当前时间
 	if job.State == utils.PendingStatus || job.State == utils.RunningStatus {
-		modelJob.TimeEnd = currentTime
-		modelJob.State = utils.CanceledStatus
+		updates["time_end"] = currentTime
+		updates["state"] = utils.CanceledStatus
 	}
 	wg.Wait()
-	if err := client.DB.Model(&job).Updates(modelJob).Error; err != nil {
+	if err := client.DB.Model(&job).Updates(updates).Error; err != nil {
 		logrus.Errorf("jobName %s DB update failed due to: %s", jobName, err)
 		return
 	}

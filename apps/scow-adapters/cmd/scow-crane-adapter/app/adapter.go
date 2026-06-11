@@ -3,10 +3,14 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -17,6 +21,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	protos "scow-adapters/gen/go"
+	"scow-adapters/pkg/common/binary"
 	cc "scow-adapters/pkg/common/config"
 	"scow-adapters/pkg/common/log"
 	"scow-adapters/pkg/common/monitor"
@@ -90,6 +95,16 @@ func NewAdapterCommand() *cobra.Command {
 func Run() {
 	// 初始化客户端
 	client.InitClient()
+	// 创建一个通道用于程序退出信号
+	shutdown := make(chan struct{})
+
+	// 检查过期时间
+	if err := binary.CheckExpireTime(); err != nil {
+		logrus.Fatalf("Binary expiration check failed: %v", err)
+	}
+
+	// 启动过期检查协程
+	binary.StartExpirationCheck(shutdown)
 
 	// 启动系统指标采集（进程级）
 	monitor.StartSystemMetricsCollector()
@@ -164,9 +179,29 @@ func Run() {
 		return
 	}
 
-	if err := s.Serve(listener); err != nil {
-		logrus.Fatalf("gRPC server quitting: %s", err)
+	// 启动服务（非阻塞模式）
+	go func() {
+		if err := s.Serve(listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			logrus.Fatalf("gRPC server quitting: %s", err)
+		}
+	}()
+
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// 等待关闭信号
+	select {
+	case <-stopChan:
+		logrus.Info("Received shutdown signal. Initiating graceful shutdown...")
+	case <-shutdown:
+		logrus.Info("Received expiration shutdown signal. Initiating graceful shutdown...")
 	}
+
+	// 关闭服务器和监听器
+	s.GracefulStop()
+	listener.Close()
+
+	logrus.Info("gRPC server shutdown completed")
 }
 
 // 自定义 Unmarshal 函数，强制使用 yaml 标签

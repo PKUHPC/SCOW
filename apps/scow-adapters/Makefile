@@ -1,12 +1,12 @@
 ARCH ?= amd64
 
-.PHONY: protos build build-ai build-slurm build-crane build-crane-ai build-ai-expire build-slurm-expire lint test cranesched clean build-ci
+.PHONY: protos build build-ai build-slurm build-crane build-crane-ai build-ai-expire build-slurm-expire build-crane-expire build-crane-ai-expire build-expire lint test cranesched clean build-ci
 
 # VERSION 可由外部传入（CI 通过 --build-arg 传递 tag 或分支名），
 # 本地构建时自动从 git describe 获取，无 tag 时降级为 dev。
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 
-EXPIRE_TIME ?= 2025-03-20T09:48:00+08:00
+EXPIRE_TIME ?=
 COMMIT_ID := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date +'%a, %d %b %Y %H:%M:%S %z')
 LDFLAGS := -ldflags \
@@ -70,16 +70,36 @@ build-crane-ai:
 	@echo "    - Binaries are in ./$(BIN_DIR)/"
 
 build-ai-expire:
-	@echo "- Building scow-ai-adapter with $(GO_VERSION)..."
-	@cd cmd/scow-ai-adapter/ && GOARCH=${ARCH} go build $(EXPIRE_LDFLAGS) \
-					-o ../../scow-ai-adapter || exit 1;
-	@echo "    - Binaries are in ./"
+	@echo "- Building scow-ai-adapter with expire time $(EXPIRE_TIME)..."
+	@mkdir -p $(BIN_DIR)
+	@cd cmd/scow-ai-adapter/ && GOOS=linux GOARCH=${ARCH} go build $(EXPIRE_LDFLAGS) \
+					-o ../../$(BIN_DIR)/scow-ai-adapter || exit 1;
+	@echo "    - Binaries are in ./$(BIN_DIR)/"
 
 build-slurm-expire:
-	@echo "- Building scow-slurm-adapter with $(GO_VERSION)..."
+	@echo "- Building scow-slurm-adapter with expire time $(EXPIRE_TIME)..."
+	@mkdir -p $(BIN_DIR)
 	@cd cmd/scow-slurm-adapter/ && CGO_ENABLED=1 GOARCH=${ARCH} go build $(EXPIRE_LDFLAGS) \
-					-o ../../scow-slurm-adapter || exit 1;
-	@echo "    - Binaries are in ./"
+					-o ../../$(BIN_DIR)/scow-slurm-adapter || exit 1;
+	@echo "    - Binaries are in ./$(BIN_DIR)/"
+
+build-crane-expire:
+	@echo "- Building scow-crane-adapter with expire time $(EXPIRE_TIME)..."
+	@mkdir -p $(BIN_DIR)
+	@cd cmd/scow-crane-adapter/ && CGO_ENABLED=1 GOARCH=${ARCH} go build $(EXPIRE_LDFLAGS) \
+					-o ../../$(BIN_DIR)/scow-crane-adapter || exit 1;
+	@echo "    - Binaries are in ./$(BIN_DIR)/"
+
+build-crane-ai-expire:
+	@echo "- Building scow-crane-ai-adapter with expire time $(EXPIRE_TIME)..."
+	@mkdir -p $(BIN_DIR)
+	@cd cmd/scow-crane-ai-adapter/ && CGO_ENABLED=1 GOARCH=${ARCH} go build $(EXPIRE_LDFLAGS) \
+					-o ../../$(BIN_DIR)/scow-crane-ai-adapter || exit 1;
+	@echo "    - Binaries are in ./$(BIN_DIR)/"
+
+build-expire: build-ai-expire build-slurm-expire build-crane-expire build-crane-ai-expire
+	@echo "- Building executables with expire time $(EXPIRE_TIME)..."
+	@echo "    - Binaries are in ./$(BIN_DIR)/"
 
 lint:
 	go vet $(LINT_PACKAGES)

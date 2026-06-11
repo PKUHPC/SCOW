@@ -3,14 +3,14 @@ package informer
 import (
 	"context"
 	"errors"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"strconv"
-	"strings"
-	"sync"
 
 	"scow-adapters/pkg/ai/client"
 	"scow-adapters/pkg/ai/db/models"
@@ -185,30 +185,14 @@ func (i *K8sInformer) DeleteResource(podName, namespace string) {
 		logrus.Errorf("[DeleteResource] get job info by pod name %s error: %v", podName, err)
 		return
 	}
-	// 删除关联的pod
-	go func() {
-		labelSelector := labels.Set{"volcano.sh/job-name": job.NewJobName}.AsSelector()
-		pods, err := i.PodLister.List(labelSelector)
-		if err != nil {
-			logrus.Errorf("[DeleteResource] get pod list error: %v", err)
-			return
-		}
-		for _, pod := range pods {
-			err := i.clientSet.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
-			if err != nil {
-				logrus.Errorf("[DeleteResource] delete pod %s Failed", pod.Name)
-				continue
-			}
-			logrus.Tracef("[DeleteResource] delete pod %s success", pod.Name)
-		}
-	}()
-	// 更新job和pod状态为Failed
+  // 更新 job 及其所有关联 pod 状态为 Failed
 	if err := utils.UpdateJobStatusByJobName(job.NewJobName, utils.FailedStatus); err != nil {
 		logrus.Errorf("[DeleteResource] update job %s status error: %v", job.NewJobName, err)
 	}
-	if err := utils.UpdatePodStatusByPodName(podName, utils.FailedStatus); err != nil {
-		logrus.Errorf("[DeleteResource] update pod %s status error: %v", podName, err)
+	if err := utils.UpdatePodStatusByJobName(job.NewJobName, utils.FailedStatus); err != nil {
+		logrus.Errorf("[DeleteResource] update pods for job %s status error: %v", job.NewJobName, err)
 	}
+  // 删除k8s相关资源
 	if job.JobType == utils.Inference {
 		err = utils.LocalCancelInferenceJob(job.NewJobName, job.GpuType, namespace, i.clientSet)
 	} else {

@@ -6,9 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"scow-adapters/pkg/ai/db/models"
 	"scow-adapters/pkg/ai/utils"
+
+	"github.com/sirupsen/logrus"
 
 	k8sclient "k8s.io/client-go/kubernetes"
 	volcanoclientset "volcano.sh/apis/pkg/client/clientset/versioned"
@@ -180,6 +181,11 @@ func (tm *Timer) UpdateStatus(jobName string) {
 	var err error
 	pods := utils.GetPodsByJobName(jobName)
 	for _, podInfo := range pods {
+		// 取消或失败的pod不需要修改状态状态为timeout
+		logrus.Tracef("[UpdateStatus] pod %s status is %s", podInfo.Name, podInfo.Status)
+		if podInfo.Status == utils.CanceledStatus || podInfo.Status == utils.FailedStatus {
+			continue
+		}
 		err = utils.UpdatePodStatusByPodName(podInfo.Name, utils.TimeOutStatus)
 		if err != nil {
 			logrus.Errorf("update pod %s status timeout  failed, err: %v", podInfo.Name, err)

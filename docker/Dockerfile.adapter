@@ -7,6 +7,7 @@ RUN sed -e 's|^mirrorlist=|#mirrorlist=|g' \
 
 ARG TARGETARCH
 ARG VERSION=dev
+ARG EXPIRE_TIME=
 
 WORKDIR /app
 
@@ -28,7 +29,11 @@ COPY apps/scow-adapters/ .
 COPY libs/protos/scheduler-adapter /libs/protos/scheduler-adapter
 
 RUN make protos && go mod tidy
-RUN make build ARCH=${TARGETARCH} VERSION=${VERSION}
+RUN if [ -n "${EXPIRE_TIME}" ]; then \
+        make build-expire ARCH=${TARGETARCH} VERSION=${VERSION} EXPIRE_TIME=${EXPIRE_TIME}; \
+    else \
+        make build ARCH=${TARGETARCH} VERSION=${VERSION}; \
+    fi
 
 FROM scratch AS adapter-target
 

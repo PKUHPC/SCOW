@@ -31,7 +31,7 @@ type ServerJob struct {
 
 func OrderByStatusAndCreatedAt(db *gorm.DB) *gorm.DB {
 	return db.Order(`
-        CASE State 
+        CASE State
             WHEN 'Running' THEN 1
             WHEN 'Pending' THEN 2
             ELSE 3
@@ -357,16 +357,17 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 // GetJobById 获取单个作业接口
 func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*pb.GetJobByIdResponse, error) {
 	var (
-		elapsedSeconds  int64
-		nodeList        string
-		cpusAlloc       int32
-		memAllocMb      int64
-		nodesAlloc      int32
-		stdoutPath      string
-		stderrPath      string
-		gpusAlloc       int32
-		podInfo         []*pb.JobInfo_PodInfo
-		TensorBoardInfo *pb.JobInfo_TensorboardInfo
+		elapsedSeconds     int64
+		nodeList           string
+		cpusAlloc          int32
+		memAllocMb         int64
+		nodesAlloc         int32
+		stdoutPath         string
+		stderrPath         string
+		gpusAlloc          int32
+		podInfo            []*pb.JobInfo_PodInfo
+		TensorBoardInfo    *pb.JobInfo_TensorboardInfo
+		startTimeTimestamp *timestamppb.Timestamp
 	)
 	TensorBoardInfo = &pb.JobInfo_TensorboardInfo{}
 	jobId := strconv.Itoa(int(in.JobId))
@@ -393,7 +394,11 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 	}
 	// 类型转换
 	submitTimeTimestamp := &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(jobInfo.TimeSubmit), 0).Unix())}
-	startTimeTimestamp := &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(jobInfo.TimeStart), 0).Unix())}
+	if jobInfo.TimeStart == 0 {
+		startTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(jobInfo.TimeEnd), 0).Unix())}
+	} else {
+		startTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(jobInfo.TimeStart), 0).Unix())}
+	}
 	endTimeTimestamp := &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(jobInfo.TimeEnd), 0).Unix())}
 	if jobInfo.IsPreempt == 1 {
 		elapsedSeconds = utils.GetPreemptJobDurationByJobName(jobInfo.NewJobName)

@@ -231,7 +231,11 @@ func GetJobInfo(jobs []models.JobTable, fields []string) (jobDetail []*pb.JobInf
 			reason = job.Reason
 		}
 		submitTimeTimestamp := &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(job.TimeSubmit), 0).Unix())}
-		startTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(job.TimeStart), 0).Unix())}
+		if job.TimeStart == 0 {
+			startTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(job.TimeEnd), 0).Unix())}
+		} else {
+			startTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(job.TimeStart), 0).Unix())}
+		}
 		endTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(job.TimeEnd), 0).Unix())}
 		if job.IsPreempt == 1 { //抢占任务单独计算
 			elapsedSeconds = GetPreemptJobDurationByJobName(job.NewJobName)

@@ -555,7 +555,7 @@ func setInferenceLabels(jobName string, acceleratorType string) map[string]strin
 	labels := map[string]string{
 		"type":                "inference",
 		"app":                 jobName,
-		"volcano.sh/job-name": jobName,
+		utils.JobNameLabelKey: jobName,
 	}
 
 	if utils.AcceleratorIsAscend(acceleratorType) {

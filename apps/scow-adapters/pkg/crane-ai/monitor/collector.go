@@ -145,8 +145,8 @@ func (c *CraneAICollector) collectOnePartition(partName string) (*monitor.Partit
 func (c *CraneAICollector) countClusterJobUsers(allPartitions []string) (total, running, pending int64) {
 	queryUsers := func(states []craneProtos.JobStatus) map[string]struct{} {
 		req := &craneProtos.QueryJobsInfoRequest{
-			FilterPartitions:            allPartitions,
-			FilterStates:                states,
+			FilterPartitions:           allPartitions,
+			FilterStates:               states,
 			OptionIncludeCompletedJobs: false,
 		}
 		resp, err := client.CraneCtld.QueryJobsInfo(context.Background(), req)

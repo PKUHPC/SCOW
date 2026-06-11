@@ -62,4 +62,6 @@ const (
 
 	// DefaultNamespace 默认命名空间
 	DefaultNamespace = "default"
+	// labels
+	JobNameLabelKey = "volcano.sh/job-name"
 )

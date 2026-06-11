@@ -372,7 +372,7 @@ func UnblockUserInAccount(userId, accountName string) error {
 
 func HasUnfinishedJobsByUserName(userName string) (bool, error) {
 	request := &craneProtos.QueryJobsInfoRequest{
-		FilterUsers:                 []string{userName},
+		FilterUsers:                []string{userName},
 		OptionIncludeCompletedJobs: false,
 	}
 	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)

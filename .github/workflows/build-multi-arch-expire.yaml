@@ -1,0 +1,181 @@
+name: Build Multi-Arch and Expiring Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_arm64:
+        description: "Build arm64 binaries/images"
+        type: boolean
+        default: false
+      expire_time:
+        description: "Adapter binary expire time (e.g. 2026-12-31T00:00:00+08:00), leave empty to disable"
+        type: string
+        default: ""
+      target:
+        description: "ccrepo target directory for adapter binaries"
+        type: string
+        default: "manual"
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
+
+env:
+  GOPROXY: https://goproxy.cn,direct
+
+jobs:
+  scow-adapter-binaries:
+    name: Build adapter binaries
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+
+    if: inputs.expire_time != '' || inputs.build_arm64 == true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to the ccrepo.pku.edu.cn
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ccrepo.pku.edu.cn
+          username: ${{ secrets.CCREPO_USERNAME }}
+          password: ${{ secrets.CCREPO_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: ccrepo.pku.edu.cn/dockerhub/tonistiigi/binfmt:latest
+          platforms: linux/amd64,linux/arm64
+          cache-image: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ vars.HTTPS_PROXY }}
+            env.https_proxy=${{ vars.HTTPS_PROXY }}
+            image=ccrepo.pku.edu.cn/dockerhub/moby/buildkit:buildx-stable-1
+
+      - name: Build amd64 adapter binaries
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: adapter-target
+          push: false
+          build-args: |
+            HTTPS_PROXY=${{ vars.HTTPS_PROXY }}
+            NO_PROXY=mirrors.pku.edu.cn
+            VERSION=${{ github.ref_name }}
+            EXPIRE_TIME=${{ inputs.expire_time }}
+          file: docker/Dockerfile.adapter
+          platforms: linux/amd64
+          outputs: type=local,dest=apps/scow-adapters/build/bin
+
+      - name: Build arm64 adapter binaries
+        if: inputs.build_arm64 == true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: adapter-target
+          push: false
+          build-args: |
+            HTTPS_PROXY=${{ vars.HTTPS_PROXY }}
+            NO_PROXY=mirrors.pku.edu.cn
+            VERSION=${{ github.ref_name }}
+            EXPIRE_TIME=${{ inputs.expire_time }}
+          file: docker/Dockerfile.adapter
+          platforms: linux/arm64
+          outputs: type=local,dest=apps/scow-adapters/build/bin
+
+      - name: Upload adapter binaries to ccrepo
+        run: |
+          archs="amd64"
+          if [[ "${{ inputs.build_arm64 }}" == "true" ]]; then
+            archs="${archs} arm64"
+          fi
+
+          for arch in ${archs}; do
+            for binary_name in scow-ai-adapter scow-crane-adapter scow-slurm-adapter scow-crane-ai-adapter; do
+              target_url="https://ccrepo.pku.edu.cn/repository/scowbin/$binary_name/${{ inputs.target }}/${arch}/$binary_name"
+
+              echo "Uploading to: $target_url"
+              curl -f --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
+                --upload-file "apps/scow-adapters/build/bin/${arch}/$binary_name" \
+                "$target_url"
+            done
+          done
+
+          echo "✅ Uploaded adapter binaries to ccrepo successfully"
+
+  build-arm64-images:
+    name: Build multi-arch images
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+
+    if: inputs.build_arm64 == true
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - name: scow
+            file: scow
+            target: runner
+            build_args: ""
+
+          - name: docs
+            file: docs
+            target: ""
+            build_args: BASE_PATH=/SCOW/
+
+          - name: scow-ai-adapter
+            file: adapter
+            target: runtime
+            build_args: ""
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to the ccrepo.pku.edu.cn
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ccrepo.pku.edu.cn
+          username: ${{ secrets.CCREPO_USERNAME }}
+          password: ${{ secrets.CCREPO_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: ccrepo.pku.edu.cn/dockerhub/tonistiigi/binfmt:latest
+          platforms: linux/amd64,linux/arm64
+          cache-image: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ vars.HTTPS_PROXY }}
+            env.https_proxy=${{ vars.HTTPS_PROXY }}
+            image=ccrepo.pku.edu.cn/dockerhub/moby/buildkit:buildx-stable-1
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ccrepo.pku.edu.cn/scow/${{ matrix.name }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          push: true
+          build-args: |
+            HTTPS_PROXY=${{ vars.HTTPS_PROXY }}
+            NO_PROXY=mirrors.pku.edu.cn
+            VERSION=${{ github.ref_name }}
+            ${{ matrix.build_args }}
+          tags: ${{ steps.meta.outputs.tags }}
+          file: docker/Dockerfile.${{ matrix.file }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64

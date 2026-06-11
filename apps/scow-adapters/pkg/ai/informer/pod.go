@@ -82,20 +82,24 @@ func (i *K8sInformer) handlePodUpdate(obj interface{}) {
 	} else {
 		status = utils.TimeOutStatus
 	}
-	modelPod := models.PodTable{
-		Status:    status,
-		NodeName:  pod.Spec.NodeName,
-		Namespace: pod.Namespace,
-		Updated:   time.Now().Unix(),
-		IP:        pod.Status.PodIP,
-		JobName:   jobName,
-		EndTime:   GetPodEndTime(pod),
-		StartTime: GetPodStartTime(pod),
+	updates := map[string]interface{}{
+		"status":    status,
+		"node_name": pod.Spec.NodeName,
+		"namespace": pod.Namespace,
+		"updated":   time.Now().Unix(),
+		"ip":        pod.Status.PodIP,
+		"job_name":  jobName,
 	}
 	if len(pod.Status.ContainerStatuses) > 0 {
-		modelPod.ContainerID = pod.Status.ContainerStatuses[0].ContainerID
+		updates["container_id"] = pod.Status.ContainerStatuses[0].ContainerID
 	}
-	logrus.Infof("[handlePodUpdate] pod info: %v", modelPod)
+	if endTime := GetPodEndTime(pod); endTime != 0 {
+		updates["end_time"] = endTime
+	}
+	if startTime := GetPodStartTime(pod); startTime != 0 {
+		updates["start_time"] = startTime
+	}
+	logrus.Infof("[handlePodUpdate] pod updates: %v", updates)
 	// 当一个pod Failed之后，同一个job下的其他pod 也需要Failed
 	go func() {
 		if status != string(v1.PodFailed) {
@@ -103,7 +107,7 @@ func (i *K8sInformer) handlePodUpdate(obj interface{}) {
 		}
 		// 查询job关联的pod
 		time.Sleep(time.Second * 5)
-		labelSelector := labels.Set{"volcano.sh/job-name": jobName}.AsSelector()
+		labelSelector := labels.Set{utils.JobNameLabelKey: jobName}.AsSelector()
 		pods, err := i.PodLister.List(labelSelector)
 		if err != nil {
 			logrus.Errorf("[handlePodUpdate] get pod list error: %v", err)
@@ -127,7 +131,7 @@ func (i *K8sInformer) handlePodUpdate(obj interface{}) {
 			logrus.Infof("[handlePodUpdate] pod %s exec cmd %s success", pd.Name, cmd)
 		}
 	}()
-	err = client.DB.Model(PodTable).Updates(modelPod).Error
+	err = client.DB.Model(PodTable).Updates(updates).Error
 	if err != nil {
 		logrus.Errorf("pod name %s DB update failed due to: %s", pod.Name, err)
 		return
@@ -141,7 +145,6 @@ func (i *K8sInformer) handlePodDelete(obj interface{}) {
 		err      error
 		pod      *v1.Pod
 		podTable *models.PodTable
-		status   string
 		endTime  int64
 	)
 	pod = obj.(*v1.Pod)
@@ -157,21 +160,21 @@ func (i *K8sInformer) handlePodDelete(obj interface{}) {
 	if endTime == 0 {
 		endTime = curTime
 	}
+	updates := map[string]interface{}{
+		"updated":  curTime,
+		"end_time": endTime,
+	}
+	logrus.Tracef("[handlePodDelete] pod %s status is %s", podTable.Name, podTable.Status)
 	if podTable.Status != utils.TimeOutStatus {
-		status = utils.CanceledStatus
+		updates["status"] = utils.CanceledStatus
 	}
-	modelPod := models.PodTable{
-		Updated: curTime,
-		EndTime: endTime,
-		Status:  status,
-	}
-	logrus.Infof("[handlePodDelete] pod info: %v", modelPod)
-	err = client.DB.Model(&podTable).Updates(modelPod).Error
+	logrus.Infof("[handlePodDelete] pod info: %v", updates)
+	err = client.DB.Model(&podTable).Updates(updates).Error
 	if err != nil {
 		logrus.Errorf("[handlePodDelete] pod name %s DB update failed due to: %s", pod.Name, err)
 		return
 	}
-	logrus.Infof("[handlePodDelete] delete pod %s status successful", pod.Name)
+	logrus.Infof("[handlePodDelete] delete pod %s successful", pod.Name)
 	return
 }
 
