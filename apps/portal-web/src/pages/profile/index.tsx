@@ -10,7 +10,7 @@ import { getRuntimeI18nConfigText } from "src/utils/config";
 
 export const ProfilePage: NextPage = requireAuth(() => true)(({ userStore: { user } }) => {
   const { data } = useAsync({
-    promiseFn: useCallback(async () => api.getUserInfo({ query: { token: user.token, userId: user.identityId } }), []),
+    promiseFn: useCallback(async () => api.getUserInfo({ query: {} }), []),
   });
 
   const userInfo = data?.userInfo;

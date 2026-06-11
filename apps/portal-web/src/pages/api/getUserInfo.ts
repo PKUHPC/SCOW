@@ -2,7 +2,6 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { validateToken } from "src/auth/token";
 import { publicConfig, runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 
@@ -34,10 +33,7 @@ export type UserInfo = Static<typeof UserInfo>;
 
 export const GetUserInfoSchema = typeboxRouteSchema({
   method: "GET",
-  query: Type.Object({
-    userId: Type.String(),
-    token: Type.Optional(Type.String()),
-  }),
+  query: Type.Object({}),
 
   responses: {
     200: Type.Object({
@@ -50,14 +46,12 @@ export const GetUserInfoSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 export default route(GetUserInfoSchema, async (req, res) => {
-  const { userId, token } = req.query;
-
-  const info = token ? await validateToken(token) : await auth(req, res);
+  const info = await auth(req, res);
   if (!info) {
     return;
   }
 
-  const reply = await libWebGetUserInfo(userId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+  const reply = await libWebGetUserInfo(info.identityId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
   const accountNames = reply?.affiliations.map((a) => a.accountName);
   const tenantName = reply?.tenantName;
 
