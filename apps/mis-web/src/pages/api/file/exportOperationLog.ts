@@ -15,7 +15,7 @@ import {
   OperationLogQueryType,
   OperationResult,
 } from "src/models/operationLog";
-import { PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/User";
+import { PlatformRole, TenantRole, UserInfo } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
@@ -40,7 +40,6 @@ export const GetOperationLogFilter = Type.Object({
   operationType: Type.Optional(Type.Enum(OperationType)),
   operationResult: Type.Optional(Type.Enum(OperationResult)),
   operationDetail: Type.Optional(Type.String()),
-  operationTargetAccountName: Type.Optional(Type.String()),
   customEventType: Type.Optional(Type.String()),
   publicConfigClusters: Type.String(),
 });
@@ -75,11 +74,7 @@ export const ExportOperationLogSchema = typeboxRouteSchema({
   },
 });
 
-const getExportSource = (
-  type: OperationLogQueryType,
-  info: UserInfo,
-  accountName: string | undefined,
-): ExportOperationLog["source"] => {
+const getExportSource = (type: OperationLogQueryType, info: UserInfo): ExportOperationLog["source"] => {
   switch (type) {
     case OperationLogQueryType.USER:
       return {
@@ -88,15 +83,6 @@ const getExportSource = (
           userId: info.identityId,
         },
       };
-    case OperationLogQueryType.ACCOUNT:
-      return accountName
-        ? {
-            $case: "account",
-            account: {
-              accountName,
-            },
-          }
-        : undefined;
     case OperationLogQueryType.TENANT:
       return {
         $case: "tenant",
@@ -132,14 +118,13 @@ export default route(ExportOperationLogSchema, async (req, res) => {
     operationType,
     operationResult,
     operationDetail,
-    operationTargetAccountName,
     customEventType,
     encoding,
     timeZone,
     publicConfigClusters,
   } = req.query;
 
-  const logSource = getExportSource(type, info, operationTargetAccountName);
+  const logSource = getExportSource(type, info);
 
   const logInfo = {
     operatorUserId: info.identityId,
@@ -162,31 +147,12 @@ export default route(ExportOperationLogSchema, async (req, res) => {
       endTime,
       operationType,
       operationResult,
-      operationTargetAccountName,
       operationDetail,
       customEventType,
     };
 
     if (type === OperationLogQueryType.USER) {
       filter.operatorUserIds = [info.identityId];
-    }
-
-    if (type === OperationLogQueryType.ACCOUNT) {
-      if (!filter.operationTargetAccountName) {
-        await callLog(logInfo, OperationResult.FAIL);
-        return { 400: null };
-      }
-
-      if (
-        !info.accountAffiliations.find(
-          (au) =>
-            au.accountName === filter.operationTargetAccountName &&
-            (au.role === UserRole.ADMIN || au.role === UserRole.OWNER),
-        )
-      ) {
-        await callLog(logInfo, OperationResult.FAIL);
-        return { 403: null };
-      }
     }
 
     if (type === OperationLogQueryType.TENANT) {

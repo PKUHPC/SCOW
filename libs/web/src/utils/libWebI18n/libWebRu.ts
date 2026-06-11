@@ -4,6 +4,7 @@ export default {
   userIndicatorName: "Имя пользователя: ",
   userIndicatorId: "ID пользователя: ",
   userIndicatorInfo: "Личная информация",
+  userIndicatorOperationLog: "Журнал операций",
   userIndicatorLogout: "Выйти",
   userIndicatorLogin: "Войти",
   darkModeSystem: "Следовать системе",

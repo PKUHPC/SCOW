@@ -49,7 +49,6 @@ interface PageInfo {
 interface Props {
   user: User;
   queryType: OperationLogQueryType;
-  accountName?: string;
   tenantName?: string;
 }
 
@@ -63,7 +62,7 @@ const today = dayjs().endOf("day");
 const p = prefix("component.others.");
 const pCommon = prefix("common.");
 
-export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountName, tenantName }) => {
+export const OperationLogTable: React.FC<Props> = ({ user, queryType, tenantName }) => {
   const t = useI18nTranslateToString();
   const tArgs = useI18nTranslate();
   const languageId = useI18n().currentLanguage.id;
@@ -110,7 +109,6 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
         operationResult: query.operationResult,
         startTime: query.operationTime?.[0].toISOString(),
         endTime: query.operationTime?.[1].toISOString(),
-        operationTargetAccountName: accountName,
         operationDetail: query.operationDetail,
         customEventType: query.customEventType,
         page: pageInfo.page,
@@ -120,7 +118,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
         sortOrder: sorter.order,
       },
     });
-  }, [query, pageInfo, queryType, accountName, tenantName, sorter]);
+  }, [query, pageInfo, queryType, tenantName, sorter]);
 
   const { data, isLoading } = useAsync({ promiseFn });
 
@@ -198,7 +196,6 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           operationResult: query.operationResult,
           startTime: query.operationTime?.[0].toISOString(),
           endTime: query.operationTime?.[1].toISOString(),
-          operationTargetAccountName: accountName,
           operationDetail: query.operationDetail,
           page: pageInfo.page,
           pageSize: pageInfo.pageSize,

@@ -3,6 +3,7 @@ export default {
   userIndicatorName: "用户姓名: ",
   userIndicatorId: "用户ID: ",
   userIndicatorInfo: "个人信息",
+  userIndicatorOperationLog: "操作日志",
   userIndicatorLogout: "退出登录",
   userIndicatorLogin: "登录",
   darkModeSystem: "跟随系统",

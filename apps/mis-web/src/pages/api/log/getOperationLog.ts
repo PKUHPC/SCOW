@@ -13,7 +13,7 @@ import {
   OperationSortBy,
   OperationSortOrder,
 } from "src/models/operationLog";
-import { PlatformRole, TenantRole, UserRole } from "src/models/User";
+import { PlatformRole, TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
@@ -41,7 +41,6 @@ export const GetOperationLogFilter = Type.Object({
   operationType: Type.Optional(Type.Enum(OperationType)),
   operationResult: Type.Optional(Type.Enum(OperationResult)),
   operationDetail: Type.Optional(Type.String()),
-  operationTargetAccountName: Type.Optional(Type.String()),
   customEventType: Type.Optional(Type.String()),
 });
 
@@ -91,7 +90,6 @@ export default route(GetOperationLogsSchema, async (req, res) => {
     operationType,
     operationResult,
     operationDetail,
-    operationTargetAccountName,
     customEventType,
     page,
     pageSize,
@@ -105,30 +103,12 @@ export default route(GetOperationLogsSchema, async (req, res) => {
     endTime,
     operationType,
     operationResult,
-    operationTargetAccountName,
     operationDetail,
     customEventType,
   };
   // 用户请求
   if (type === OperationLogQueryType.USER) {
     filter.operatorUserIds = [info.identityId];
-  }
-
-  if (type === OperationLogQueryType.ACCOUNT) {
-    if (!filter.operationTargetAccountName) {
-      return { 400: null };
-    }
-
-    // 确认用户是账户管理员或者拥有者
-    if (
-      !info.accountAffiliations.find(
-        (au) =>
-          au.accountName === filter.operationTargetAccountName &&
-          (au.role === UserRole.ADMIN || au.role === UserRole.OWNER),
-      )
-    ) {
-      return { 403: null };
-    }
   }
 
   if (type === OperationLogQueryType.TENANT) {

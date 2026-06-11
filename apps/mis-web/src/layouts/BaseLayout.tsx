@@ -86,6 +86,7 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
       versionTag={versionTag}
       basePath={publicConfig.BASE_PATH}
       userLinks={publicConfig.USER_LINKS}
+      showOperationLog={publicConfig.AUDIT_DEPLOYED}
       from="mis"
       extensionStoreData={uiExtensionStore.data}
       languageId={languageId}

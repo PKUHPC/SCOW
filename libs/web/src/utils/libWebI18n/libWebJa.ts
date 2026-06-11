@@ -3,6 +3,7 @@ export default {
   userIndicatorName: "ユーザー名: ",
   userIndicatorId: "ユーザーID: ",
   userIndicatorInfo: "個人情報",
+  userIndicatorOperationLog: "操作ログ",
   userIndicatorLogout: "ログアウト",
   userIndicatorLogin: "ログイン",
   darkModeSystem: "システムに従う",

@@ -3,6 +3,7 @@ export default {
   userIndicatorName: "사용자 이름: ",
   userIndicatorId: "사용자 ID: ",
   userIndicatorInfo: "개인 정보",
+  userIndicatorOperationLog: "작업 로그",
   userIndicatorLogout: "로그아웃",
   userIndicatorLogin: "로그인",
   darkModeSystem: "시스템 따르기",

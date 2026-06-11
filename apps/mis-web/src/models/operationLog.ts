@@ -41,6 +41,7 @@ export type OperationLog = Static<typeof OperationLog>;
 
 export enum OperationLogQueryType {
   USER = 0,
+  // ACCOUNT前端相关逻辑已删除
   ACCOUNT = 1,
   TENANT = 2,
   PLATFORM = 3,

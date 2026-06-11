@@ -16,6 +16,7 @@ interface Props {
   logout: (() => void) | undefined;
   userLinks?: UserLink[];
   languageId: string;
+  showOperationLog?: boolean;
 }
 
 const Container = styled.div`
@@ -41,7 +42,7 @@ const HiddenOnSmallScreen = styled.span`
   }
 `;
 
-export const UserIndicator: React.FC<Props> = ({ user, logout, userLinks, languageId }) => {
+export const UserIndicator: React.FC<Props> = ({ user, logout, userLinks, languageId, showOperationLog }) => {
   const { token } = useToken();
 
   return (
@@ -56,6 +57,18 @@ export const UserIndicator: React.FC<Props> = ({ user, logout, userLinks, langua
                 key: "profileLink",
                 label: <Link href="/profile">{getCurrentLangLibWebText(languageId, "userIndicatorInfo")}</Link>,
               },
+              ...(showOperationLog
+                ? [
+                    {
+                      key: "operationLogLink",
+                      label: (
+                        <Link href="/operationLog">
+                          {getCurrentLangLibWebText(languageId, "userIndicatorOperationLog")}
+                        </Link>
+                      ),
+                    },
+                  ]
+                : []),
               ...(userLinks
                 ? userLinks.map((link) => {
                     return {

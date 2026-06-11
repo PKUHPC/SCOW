@@ -3,6 +3,7 @@ export default {
   userIndicatorName: "User Name: ",
   userIndicatorId: "User ID: ",
   userIndicatorInfo: "Personal Information",
+  userIndicatorOperationLog: "Operation Log",
   userIndicatorLogout: "Logout",
   userIndicatorLogin: "Login",
   darkModeSystem: "Follow the system",

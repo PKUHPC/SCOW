@@ -33,7 +33,6 @@ import {
   MessageConfigIcon,
   MonitorIcon,
   NodeMigrationIcon,
-  OperationLogIcon,
   PartitionsIcon,
   PayAccountIcon,
   PaymentsIcon,
@@ -267,15 +266,6 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
             },
           ]
         : []),
-      ...(publicConfig.AUDIT_DEPLOYED && platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
-        ? [
-            {
-              Icon: OperationLogIcon,
-              text: t("layouts.route.common.operationLog"),
-              path: "/admin/operationLogs",
-            },
-          ]
-        : []),
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
         ? [
             {
@@ -480,15 +470,6 @@ export const tenantRoutes: (
             },
           ]
         : []),
-      ...(publicConfig.AUDIT_DEPLOYED && tenantRoles.includes(TenantRole.TENANT_ADMIN)
-        ? [
-            {
-              Icon: OperationLogIcon,
-              text: t("layouts.route.common.operationLog"),
-              path: "/tenant/operationLogs",
-            },
-          ]
-        : []),
     ],
   },
 ];
@@ -524,15 +505,6 @@ export const userRoutes: (accounts: AccountAffiliation[], t: TransType) => NavIt
         text: t(pUserSpace("clusterPartitions")),
         path: "/user/partitions",
       },
-      ...(publicConfig.AUDIT_DEPLOYED
-        ? [
-            {
-              Icon: OperationLogIcon,
-              text: t("layouts.route.common.operationLog"),
-              path: "/user/operationLogs",
-            },
-          ]
-        : []),
     ],
   },
 ];
@@ -589,15 +561,6 @@ export const accountAdminRoutes: (adminAccounts: AccountAffiliation[], t: TransT
                   Icon: TenantBillsIcon,
                   text: t(pAccount("bill")),
                   path: `/accounts/${x.accountName}/bills`,
-                },
-              ]
-            : []),
-          ...(publicConfig.AUDIT_DEPLOYED
-            ? [
-                {
-                  Icon: OperationLogIcon,
-                  text: t("layouts.route.common.operationLog"),
-                  path: `/accounts/${x.accountName}/operationLogs`,
                 },
               ]
             : []),
