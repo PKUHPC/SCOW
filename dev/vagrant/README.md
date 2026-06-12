@@ -1,43 +1,12 @@
-# 在开发环境下连接本地的vagrant集群
+# 在开发环境下连接SDP集群
 
-使用vagrant集群的slurm、LDAP、job table、SCOW的数据库和redis，但是在本地开发。
+在SDP上启动集群，并将SDP集群的配置同步到本地`config.local`目录。这个目录被ignored掉了，不会被提交到仓库中。
 
-1. 启动`deploy/vagrant`下的vagrant集群
-2. 给vagrant的每个机器(slurm, login, cn01, scow)配置root的公钥登录
-
-```bash
-# 集群各个机器的root用户的密码为vagrant
-
-# 通过ssh-copy-id命令可以自动给节点配置公钥登录
-# 运行后会要求输入root密码，输入vagrant即可
-
-ssh-copy-id root@192.168.88.100
-ssh-copy-id root@192.168.88.101
-ssh-copy-id root@192.168.88.102
-ssh-copy-id root@192.168.88.103
+```
+rsync -avz --delete root@${scowIP}:/root/scow/config/ dev/vagrant/config.local/
 ```
 
-3. 打开redis和两个数据库的端口映射，使得本机可以访问这三个服务
-
-给vagrant集群的`install.yaml`中增加以下部分，并运行`./cli compose up -d`重启服务。
-
-```yaml title="install.yaml"
-
-mis:
-  portMappings:
-    db: 3308
-
-auth:
-  portMappings:
-    redis: 6379
-
-audit:
-  portMappings:
-    db: 3306
-```
-
-4. 在仓库根目录下，运行`npx pm2 start dev/vagrant/pm2.config.js`启动各个服务
-5. 访问以下URL以访问各个组件
+访问以下URL以访问各个组件
 
 | URL                   | 组件                             | 类型 |
 | --------------------- | -------------------------------- | ---- |
@@ -49,7 +18,13 @@ audit:
 | http://localhost:5005 | 审计系统                         | gRPC |
 | http://localhost:3890 | 一个phpLDAPadmin，可用于管理LDAP | HTTP |
 
-使用[pm2](https://pm2.keymetrics.io/)在本地启动多个开发用进程，可直接像`pnpm dev`一样，在本地修改文件后，对应系统自动更新。
+使用[pm2](https://pm2.keymetrics.io/)在本地启动多个开发用进程。
+
+自动更新行为：
+
+- 修改libs下的项目，项目会自动重新重新编译
+- 对于Next.js项目，修改项目本身或者它依赖的项目，都会更新next.js项目，无需手动重启
+- 对于非Next.js项目（即纯node.js项目），修改项目本身会自动更新，但是修改它依赖的其他项目不会自动更新，需手动重启服务
 
 常用命令（和docker compose差不多）
 
@@ -63,10 +38,3 @@ npx pm2 logs portal-web
 # 停止所有服务
 npx pm2 stop dev/vagrant/pm2.config.js
 ```
-
-WSL2和Dev Container用户注意
-
-- 目前Vagrant集群必须在Windows下启动，但是从WSL2和Dev Container下可以连接在Windows下的Virtualbox中启动的机器
-- 请确保配置免密登录时，是把WSL2或者Dev Container下的公钥添加到集群的机器中
-
-理论上来说，只要修改本目录中的配置文件，可以连接到任何SCOW集群上开发测试。

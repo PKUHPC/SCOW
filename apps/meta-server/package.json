@@ -9,7 +9,7 @@
   "main": "build/index.js",
   "scripts": {
     "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "dev": "node -r ts-node/register -r tsconfig-paths/register --watch src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "serve": "node build/index.js",
     "test": "jest"
   },

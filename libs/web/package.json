@@ -14,7 +14,7 @@
   "sideEffects": false,
   "main": "index.js",
   "scripts": {
-    "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
+    "dev": "concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\"",
     "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json"
   },
   "dependencies": {
@@ -28,9 +28,9 @@
     "@dnd-kit/utilities": "3.2.2",
     "@grpc/grpc-js": "1.14.3",
     "@scow/config": "workspace:*",
-    "@sinclair/typebox": "0.34.13",
     "@scow/protos": "workspace:*",
     "@scow/utils": "workspace:*",
+    "@sinclair/typebox": "0.34.13",
     "@uiw/codemirror-theme-github": "4.23.7",
     "@uiw/react-codemirror": "4.23.7",
     "mime-types": "2.1.35",

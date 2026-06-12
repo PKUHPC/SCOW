@@ -1,12 +1,12 @@
-const interpreter = "node";
-const interpreter_args = ["-r ts-node/register", "-r tsconfig-paths/register", "--watch"].join(" ");
+const tsNodeInterpreter = "node";
+const tsNodeInterpreterArgs = ["-r ts-node/register", "-r tsconfig-paths/register", "--watch"].join(" ");
 
 const PRODUCTION_ENV = {
   NODE_ENV: "production",
 };
 
 const SCOW_CONFIG_PATH_ENV = {
-  SCOW_CONFIG_PATH: "../../dev/vagrant/config",
+  SCOW_CONFIG_PATH: "../../dev/vagrant/config.local",
 };
 
 module.exports = {
@@ -15,9 +15,8 @@ module.exports = {
       name: "auth",
       script: "src/index.ts",
       cwd: "./apps/auth",
-      watch: "./apps/auth",
-      interpreter,
-      interpreter_args,
+      watch: ".",
+      interpreter: "tsx",
       env: {
         PORT: "5000",
         AUTH_BASE_PATH: "/",
@@ -51,9 +50,8 @@ module.exports = {
       name: "portal-server",
       script: "src/index.ts",
       cwd: "./apps/portal-server",
-      watch: "./apps/portal-server",
-      interpreter,
-      interpreter_args,
+      watch: ".",
+      interpreter: "tsx",
       env: {
         PORT: "5002",
         MIS_DEPLOYED: 1,
@@ -88,9 +86,9 @@ module.exports = {
       name: "mis-server",
       script: "src/index.ts",
       cwd: "./apps/mis-server",
-      watch: "./apps/mis-server",
-      interpreter,
-      interpreter_args,
+      watch: ".",
+      interpreter: tsNodeInterpreter,
+      interpreter_args: tsNodeInterpreterArgs,
       env: {
         PORT: "5004",
         AUTH_URL: "http://localhost:5000",
@@ -104,9 +102,9 @@ module.exports = {
       name: "audit-server",
       script: "src/index.ts",
       cwd: "./apps/audit-server",
-      watch: "./apps/audit-server",
-      interpreter,
-      interpreter_args,
+      watch: ".",
+      interpreter: tsNodeInterpreter,
+      interpreter_args: tsNodeInterpreterArgs,
       env: {
         PORT: "5005",
         ...PRODUCTION_ENV,
