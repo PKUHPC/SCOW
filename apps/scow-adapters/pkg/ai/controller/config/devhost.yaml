@@ -15,6 +15,26 @@ data:
       echo $password
     }
 
+    function get_jupyter_password_hash {
+      local password=$1
+      local python_cmd=$2
+
+      PASSWORD="$password" "$python_cmd" - <<'PY'
+    from __future__ import print_function
+    import os
+
+    try:
+        from jupyter_server.auth import passwd
+    except ImportError:
+        try:
+            from notebook.auth import passwd
+        except ImportError:
+            from IPython.lib.security import passwd
+
+    print(passwd(os.environ["PASSWORD"], algorithm="sha1"))
+    PY
+    }
+
     function start_jupyterlab {
       local PORT=$1
       local HOST=$2
@@ -22,8 +42,17 @@ data:
       local PROXY_BASE_PATH=$4
       local SERVER_SESSION_INFO=/tmp/server_session_jupyterlab.json
       local PASSWORD=$(get_password 12)
-      local SALT=123
-      local PASSWORD_SHA1="$(echo -n "${PASSWORD}${SALT}" | openssl dgst -sha1 | awk '{print $NF}')"
+      local PYTHON_CMD
+      local PY_VERSION
+
+      if command -v python3 >/dev/null 2>&1; then
+        PYTHON_CMD=python3
+      elif command -v python >/dev/null 2>&1; then
+        PYTHON_CMD=python
+      else
+        echo "[ERROR] python3 和 python 均不存在，请检查 Python 环境" >>/tmp/jupyterlab.log
+        exit 1
+      fi
 
       # -------------------------------
       # 自动检测并安装 jupyter-lab
@@ -32,10 +61,10 @@ data:
         echo "[INFO] jupyter-lab 未安装，开始安装..." >>/tmp/jupyterlab.log
 
         # 判断 Python 版本
-        PY_VERSION=$(python3 -c "import sys; print(sys.version_info[0])" 2>/dev/null)
+        PY_VERSION=$($PYTHON_CMD -c "import sys; print(sys.version_info[0])" 2>/dev/null)
 
         if [ "$PY_VERSION" = "3" ]; then
-          echo "[INFO] 检测到 Python3，使用 pip3 安装" >>/tmp/jupyterlab.log 
+          echo "[INFO] 检测到 Python3, 使用 pip3 安装" >>/tmp/jupyterlab.log
           if command -v pip3 >/dev/null 2>&1; then
             pip3 install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/
             pip3 install --break-system-packages ipykernel jupyterlab -i https://mirrors.aliyun.com/pypi/simple/
@@ -45,7 +74,7 @@ data:
             exit 1
           fi
         else
-          echo "[INFO] 检测到 Python2/默认Python，使用 pip 安装" >>/tmp/jupyterlab.log
+          echo "[INFO] 检测到 Python2/默认Python, 使用 pip 安装" >>/tmp/jupyterlab.log
           if command -v pip >/dev/null 2>&1; then
             pip install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/
             pip install ipykernel jupyterlab -i https://mirrors.aliyun.com/pypi/simple/
@@ -59,6 +88,12 @@ data:
         echo "[INFO] jupyter-lab 已安装" >>/tmp/jupyterlab.log
       fi
 
+      local HASHED_PASSWORD
+      if ! HASHED_PASSWORD="$(get_jupyter_password_hash "$PASSWORD" "$PYTHON_CMD")" || [ -z "$HASHED_PASSWORD" ]; then
+        echo "[ERROR] JupyterLab 密码 hash 生成失败，请检查 jupyter_server/notebook/IPython 是否已安装" >>/tmp/jupyterlab.log
+        exit 1
+      fi
+
       # -------------------------------
       # 启动 jupyter-lab
       # -------------------------------
@@ -68,7 +103,7 @@ data:
         --ServerApp.ip='0.0.0.0' \
         --ServerApp.port=${PORT} \
         --ServerApp.port_retries=0 \
-        --ServerApp.password="sha1:${SALT}:${PASSWORD_SHA1}" \
+        --ServerApp.password="${HASHED_PASSWORD}" \
         --ServerApp.open_browser=False \
         --ServerApp.base_url="${PROXY_BASE_PATH}/${HOST}/${SVCPORT}/" \
         --ServerApp.allow_origin='*' \
