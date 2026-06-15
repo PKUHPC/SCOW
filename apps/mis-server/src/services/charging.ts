@@ -237,7 +237,7 @@ export const chargingServiceServer = plugin((server) => {
       const { endTime, startTime, target, types, ownerIdOrName, operatorIdOrName, page, pageSize, sortBy, sortOrder } =
         ensureNotUndefined(request, ["startTime", "endTime", "target", "types"]);
 
-      // 账户拥有者模糊查询时，先查询所有的账户。再用账户名去查询消费记录
+      // 账户主管理员模糊查询时，先查询所有的账户。再用账户名去查询消费记录
       const { accountNames } = target[target.$case];
       let combineAccountNames: string[] | undefined = accountNames;
 
@@ -248,7 +248,7 @@ export const chargingServiceServer = plugin((server) => {
           accountNames,
         );
 
-        // 当accountNames和拥有者对应的账户名交集为空时，直接返回空
+        // 当accountNames和主管理员对应的账户名交集为空时，直接返回空
         if (ownerAccountNames.length === 0) {
           return [
             {
@@ -326,7 +326,7 @@ export const chargingServiceServer = plugin((server) => {
       const operatorIds = [...new Set(payRecords.map((r) => r.operatorId).filter(Boolean))];
       const operatorMap = await getUserNameMap(em, operatorIds);
 
-      // 提取需要查询账户拥有者的账户标识
+      // 提取需要查询账户主管理员的账户标识
       const accountIdentifiers = payRecords
         .filter((record) => record.accountName && record.tenantName)
         .map((record) => ({
@@ -334,7 +334,7 @@ export const chargingServiceServer = plugin((server) => {
           accountName: record.accountName || "",
         }));
 
-      // 获取账户的拥有者映射以便快速查找
+      // 获取账户主管理员映射以便快速查找
       const accountMap = await getAccountOwnerMap(em, accountIdentifiers);
 
       // 组装最终结果

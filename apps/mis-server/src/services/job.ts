@@ -167,7 +167,7 @@ export const jobServiceServer = plugin((server) => {
       // 获取jobIds用于关联查询
       const jobIds = jobs.map((job) => job.biJobIndex);
 
-      // 获取用户姓名、账户拥有者ID和姓名的map
+      // 获取用户姓名、账户主管理员ID和姓名的map
       let jobUserAndAccountOwnerDetailsMap: JobUserAndAccountOwnerDetailsMap = {};
 
       if (jobIds.length > 0) {

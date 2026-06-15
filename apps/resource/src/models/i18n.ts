@@ -4,8 +4,8 @@ export const languageDic = {
     common: {
       tenant: "租户",
       account: "账户",
-      accountOwner: "账户拥有者",
-      searchOwnerText: "拥有者ID或姓名",
+      accountOwner: "账户主管理员",
+      searchOwnerText: "主管理员ID或姓名",
       search: "搜索",
       refresh: "刷新",
       add: "添加",
@@ -65,7 +65,7 @@ export const languageDic = {
       details: {
         tenantName: "租户名",
         accountName: "账户名",
-        accountOwner: "账户拥有者",
+        accountOwner: "账户主管理员",
         assignedClustersCount: "已授权集群数",
         assignedClusters: "已授权集群",
         assignedPartitionsCount: "已授权分区数",
@@ -134,8 +134,8 @@ export const languageDic = {
     common: {
       tenant: "Tenant",
       account: "Account",
-      accountOwner: "Account Owner",
-      searchOwnerText: "Owner id or name",
+      accountOwner: "Account Primary Admin",
+      searchOwnerText: "Primary Admin ID or Name",
       search: "Search",
       refresh: "Refresh",
       add: "Add",
@@ -208,7 +208,7 @@ export const languageDic = {
       details: {
         tenantName: "Tenant Name",
         accountName: "Account Name",
-        accountOwner: "Account Owner",
+        accountOwner: "Account Primary Admin",
         assignedClustersCount: "Assigned Clusters Count",
         assignedClusters: "Assigned Clusters",
         assignedPartitionsCount: "Assigned Partitions Count",

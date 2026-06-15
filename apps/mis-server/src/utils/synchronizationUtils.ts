@@ -236,7 +236,7 @@ export async function processSynchronization(
             exceptions.push(accountsPartitionsException);
           }
 
-          // 如果有没有拥有者的账户, 只在日志中做出提示
+          // 如果有没有主管理员的账户, 只在日志中做出提示
           if (syncAccountsResult.abnormalAccountsWithoutOwner?.length) {
             subLogger.warn(
               "Abnormal accounts without owner were found: %s, " +
@@ -608,7 +608,7 @@ interface GetSyncExecAccountsResponse {
   syncAccounts: SyncAccountInfo[];
   // 资源管理下获取已授权分区失败的账户无法进行同步操作
   partitionsFetchFailedAccounts?: string[];
-  // 没有拥有者的异常账户
+  // 没有主管理员的异常账户
   abnormalAccountsWithoutOwner?: string[];
 }
 
@@ -671,7 +671,7 @@ export async function getSyncAccountsWithPartitions(
     .filter((account) => {
       const owner = account.users.find((x) => x.role === UserRole.OWNER)?.user.getProperty("userId");
 
-      // 如果不存在拥有者，保留该账户进行同步，只返回不存在拥有者的数组方便后端留存特殊日志
+      // 如果不存在主管理员，保留该账户进行同步，只返回不存在主管理员的数组方便后端留存特殊日志
       if (!owner) {
         abnormalAccountsWithoutOwner.push(account.accountName);
       }

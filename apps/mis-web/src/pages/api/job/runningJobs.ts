@@ -60,7 +60,7 @@ export const GetRunningJobsSchema = typeboxRouteSchema({
   query: Type.Object({
     /**
       如果是租户管理员，只看当前租户的
-      如果userId是自己，或者（设置了accountName，而且当前用户是accountName账户的管理员或者拥有者），那么
+      如果userId是自己，或者（设置了accountName，而且当前用户是accountName账户的管理员或者主管理员），那么
         显示userId用户在accountName中的作业
       否则：403
      */

@@ -149,7 +149,7 @@ async function generateAnAccountBill(
     const payRecord = accountPayRecord.map((x) => ensureNotUndefined(x, ["time", "amount"]));
 
     if (chargesRecord.length || payRecord.length) {
-      // 将账单信息按照userId分成多个数组，没有id的消费记在账户拥有者上
+      // 将账单信息按照userId分成多个数组，没有id的消费记在账户主管理员上
       const userChagresRecordObj: Record<string, typeof chargesRecord> = chargesRecord.reduce(
         (userChagresRecord: Record<string, typeof chargesRecord>, record) => {
           const userId = record.userId || ownerId;
@@ -177,7 +177,7 @@ async function generateAnAccountBill(
         return userChagresRecordType;
       }, {});
 
-      // 计算有多少个用户有消费，分别消费多少，如果有userId，视为当前userId，没有的话视为账户拥有者的支出
+      // 计算有多少个用户有消费，分别消费多少，如果有userId，视为当前userId，没有的话视为账户主管理员的支出
       const userIdAmountObj: Record<string, Decimal> = chargesRecord.reduce(
         (userIdObj: Record<string, Decimal>, record) => {
           userIdObj[record.userId || ownerId] = (userIdObj[record.userId || ownerId] || Decimal(0)).plus(record.amount);
@@ -201,7 +201,7 @@ async function generateAnAccountBill(
 
       let accountAmount = Object.values(userIdAmountObj).reduce((sum, amount) => sum.plus(amount), Decimal(0));
 
-      // 如果有充值记录，那么就要记录退费，充值记录中部分数据未记录用户id，这部分记在账户拥有者上，
+      // 如果有充值记录，那么就要记录退费，充值记录中部分数据未记录用户id，这部分记在账户主管理员上，
       // 需要加默认赋值0，因为本月可能没有一分钱消费，但是调整了作业费用并进行了充值，
       // 临时使用属性名：jobRefundText
       if (payRecord.length) {
@@ -209,7 +209,7 @@ async function generateAnAccountBill(
 
         const userIdPayAmountObj: Record<string, Decimal> = payRecord.reduce(
           (userIdObj: Record<string, Decimal>, record) => {
-            // 提取存在充值记录中的userId，如果没有，就计在账户拥有者上
+            // 提取存在充值记录中的userId，如果没有，就计在账户主管理员上
             const jobUserId = record.comment?.split("job user ")[1] || ownerId;
             userIdObj[jobUserId] = (userIdObj[jobUserId] || Decimal(0)).plus(record.amount);
             return userIdObj;
@@ -255,7 +255,7 @@ async function generateAnAccountBill(
       });
       em.persist(newAccountBill);
 
-      // 插入每个用户的支出情况，如果有userId，视为当前userId，没有的话视为账户拥有者的支出
+      // 插入每个用户的支出情况，如果有userId，视为当前userId，没有的话视为账户主管理员的支出
       const userBills = Object.keys(userIdAmountObj).map((user) => {
         // 将退费金额合并到作业费用更改中
         if (userChargesRecordTypeObj[user].jobRefund) {

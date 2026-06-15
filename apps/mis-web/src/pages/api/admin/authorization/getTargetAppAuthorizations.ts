@@ -50,7 +50,7 @@ export const GetTargetAppAuthorizationsSchema = typeboxRouteSchema({
     // 按名称搜索时的搜索参数
     filterTargetName: Type.Optional(Type.String()),
 
-    // 当搜索类型为账户时搜索的拥有者ID或姓名
+    // 当搜索类型为账户时搜索的主管理员ID或姓名
     filterAccountOwnerIdOrName: Type.Optional(Type.String()),
   }),
 

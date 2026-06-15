@@ -302,7 +302,7 @@ export const accountServiceServer = plugin((server) => {
       const accountIds = accounts.map((a) => a.id);
       if (accounts.length === 0) return [{ results: [] }];
 
-      // 2. 使用 QueryBuilder 批量获取拥有者信息
+      // 2. 使用 QueryBuilder 批量获取主管理员信息
       const ownersResult = await em
         .createQueryBuilder(UserAccount, "ua")
         .leftJoin("ua.user", "u")
@@ -361,7 +361,7 @@ export const accountServiceServer = plugin((server) => {
         };
       });
 
-      // 对于没有拥有者的数据保留日志
+      // 对于没有主管理员的数据保留日志
       if (abnormalAccountsWithoutOwner.length > 0) {
         logger.warn("Accounts without owner is found: " + `${[abnormalAccountsWithoutOwner].join(",")}`);
       }

@@ -118,11 +118,11 @@ interface JobUserAndAccountOwnerDetails {
 
 export type JobUserAndAccountOwnerDetailsMap = Record<number, JobUserAndAccountOwnerDetails>;
 /**
- * 使用knex进行关联查询，获取作业ID对应的用户姓名、账户拥有者ID和姓名
+ * 使用knex进行关联查询，获取作业ID对应的用户姓名、账户主管理员ID和姓名
  *
  * @param em EntityManager实例
  * @param jobIds 作业ID列表
- * @returns 以作业id为key，属性中包含用户名、账户拥有者ID、账户拥有者姓名的对象
+ * @returns 以作业id为key，属性中包含用户名、账户主管理员ID、账户主管理员姓名的对象
  */
 export async function getJobUserAndAccountOwnerDetailsMap(
   em: SqlEntityManager<MySqlDriver>,

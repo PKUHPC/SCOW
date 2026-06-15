@@ -141,7 +141,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
     },
   ];
 
-  // 如果是账户管理员，去掉账户名和账户拥有者两个列
+  // 如果是账户管理员，去掉账户名和账户主管理员两个列
   if (searchType === SearchType.selfAccount) {
     columns.splice(1, 2);
   }

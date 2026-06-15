@@ -56,9 +56,9 @@ message GetAccountUsersRequest {
 
 message AccountUserInfo {
   enum UserStateInAccount {
-    // 用户未被账户管理员或拥有者手动封锁，或用户被手动解封
+    // 用户未被账户管理员或主管理员手动封锁，或用户被手动解封
     NORMAL = 0;
-    // 用户被账户管理员或拥有者手动封锁
+    // 用户被账户管理员或主管理员手动封锁
     BLOCKED_BY_ADMIN = 1;
   }
   // 页面展示的用户在账户中的状态
@@ -67,7 +67,7 @@ message AccountUserInfo {
     DISPLAYED_NORMAL = 0;
     // 限额：用户未被封锁，但用户已用额度>=用户限额，在集群中状态为封锁
     DISPLAYED_QUOTA_EXCEEDED = 1;
-    // 封锁：用户已被账户管理员或账户拥有者封锁，在集群中状态为封锁
+    // 封锁：用户已被账户管理员或账户主管理员封锁，在集群中状态为封锁
     DISPLAYED_BLOCKED = 2;
   }
   string user_id = 1;
@@ -145,7 +145,7 @@ message RemoveUserFromAccountRequest {
 }
 
 // NOT_FOUND: user_id is not found.
-// OUT_OF_RANGE: user is the owner of the account
+// OUT_OF_RANGE: user is the primary admin of the account
 message RemoveUserFromAccountResponse {
   bool success = 1;
   repeated UserOperationResult results = 2;
@@ -221,7 +221,7 @@ message DeleteUserRequest {
   optional string deletion_comment = 3;
 }
 
-// FAILED_PRECONDITION: the user is an owner of an account.
+// FAILED_PRECONDITION: the user is a primary admin of an account.
 // NOT_FOUND: user is not found
 message DeleteUserResponse {
 }

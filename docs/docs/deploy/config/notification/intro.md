@@ -204,6 +204,6 @@ groups:
 | `TENANT_ADMIN` | 租户管理员（所有租户） |
 | `TENANT_FINANCE` | 租户财务（所有租户） |
 | `ACCOUNT_ADMIN` | 账户管理员（所有账户） |
-| `ACCOUNT_OWNER` | 账户拥有者（所有账户） |
+| `ACCOUNT_OWNER` | 账户主管理员（所有账户） |
 
 `users` 与 `roles` 可同时配置，系统会合并去重后统一推送。

@@ -83,7 +83,7 @@ it("account does not have an owner", async () => {
 
   const reply = await asyncClientCall(client, "getAccounts", {});
 
-  // 兼容不存在拥有者的情况
+  // 兼容不存在主管理员的情况
   expect(reply.results).toIncludeSameMembers([
     {
       accountName: "hpca",

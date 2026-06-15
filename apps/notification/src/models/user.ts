@@ -33,7 +33,7 @@ export const TenantRoleTexts = {
 
 export const UserRoleTexts = {
   [UserRole.USER]: "用户",
-  [UserRole.OWNER]: "拥有者",
+  [UserRole.OWNER]: "主管理员",
   [UserRole.ADMIN]: "管理员",
 };
 

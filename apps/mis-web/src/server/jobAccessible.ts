@@ -68,7 +68,7 @@ export async function checkJobAccessible({
     return result;
   }
 
-  // 用户是这个作业的账户的管理员或者拥有者
+  // 用户是这个作业的账户的管理员或者主管理员
   // changeJobLimit 时 allowUserAndAccountAdminChangeJobTimeLimit 为true时返回"OK"
   if (
     info.accountAffiliations.some((x) => x.accountName === job.account && x.role !== UserRole.USER) &&

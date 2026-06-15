@@ -22,7 +22,7 @@ export const UsersPage: NextPage = requireAuth((i) => i.accountAffiliations.some
 
   const account = userStore.user.accountAffiliations.find((x) => x.accountName === accountName);
   // 如果因为管理员自己取消了自己的管理权限或者在账户下移出了自己
-  // 当前账户已不在登录用户的账户关联关系下，或者权限已不是拥有者或管理员
+  // 当前账户已不在登录用户的账户关联关系下，或者权限已不是主管理员或管理员
   // 则返回错误页面
   if (!account || account.role === UserRole.USER) {
     return <NotFoundPage />;

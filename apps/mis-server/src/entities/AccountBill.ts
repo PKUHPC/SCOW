@@ -22,10 +22,10 @@ export class AccountBill {
   @Property({ comment: "所属账户" })
   accountName: string;
 
-  @Property({ nullable: true, comment: "账户拥有者id" })
+  @Property({ nullable: true, comment: "账户主管理员id" })
   accountOwnerId?: string;
 
-  @Property({ nullable: true, comment: "账户拥有者姓名" })
+  @Property({ nullable: true, comment: "账户主管理员姓名" })
   accountOwnerName?: string;
 
   @Property({ comment: "账期，如202407、2024" })

@@ -35,7 +35,7 @@ export const formatTargetAppInfoList = (
   totalCount: number,
   // 类型是账户时：所属租户被禁用的app列表数据
   associatedTenantBlacklist?: Loaded<TenantAppBlacklist, "tenant" | "cluster", PopulatePath.ALL, never>[],
-  // 类型是账户时: 返回账户的拥有者信息
+  // 类型是账户时: 返回账户主管理员信息
   accountOwnerMap?: Map<
     string,
     {
@@ -92,7 +92,7 @@ export const formatTargetAppInfoList = (
       targetName,
       appsInfo: appsInfo,
       availableAppsCount: appsInfo.filter((a) => !a.isDisabled).length,
-      // 类型是账户时返回对应拥有者信息
+      // 类型是账户时返回对应主管理员信息
       accountOwnerId:
         targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ? (owner?.ownerId ?? "-") : undefined,
       accountOwnerName:

@@ -300,7 +300,7 @@ SCOW中使用`identityId`标识一个用户，并同时使用此`identityId`作�
 | 参数          | 位置 | 类型   | 是否必须 | 解释         |
 | ------------- | ---- | ------ | -------- | ------------ |
 | `accountName` | body | 字符串 | 是       | 账户名       |
-| `ownerUserId` | body | 字符串 | 是       | 拥有者用户ID |
+| `ownerUserId` | body | 字符串 | 是       | 主管理员用户ID |
 
 #### 期望的响应
 

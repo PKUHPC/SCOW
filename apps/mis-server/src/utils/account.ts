@@ -2,12 +2,12 @@ import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { Account } from "src/entities/Account";
 import { UserRole as EntityUserRole } from "src/entities/UserAccount";
 
-// 根据拥有者id或name模糊查询对应账户名
+// 根据主管理员id或name模糊查询对应账户名
 export async function getAccountNamesByUserIdOrName(
   em: SqlEntityManager<MySqlDriver>,
   ownerIdOrName: string,
-  // 搜索条件中的账户名，用于和拥有者对应的账户名取交集
-  // 当accountNames为空时，代表查所有。直接取拥有者对应的账户名
+  // 搜索条件中的账户名，用于和主管理员对应的账户名取交集
+  // 当accountNames为空时，代表查所有。直接取主管理员对应的账户名
   accountNames?: string[],
 ): Promise<{ accountNames: string[] }> {
   const qbAccount = em
@@ -34,7 +34,7 @@ export async function getAccountNamesByUserIdOrName(
   };
 }
 
-// 查询账户拥有者映射
+// 查询账户主管理员映射
 export async function getAccountOwnerMap(
   em: SqlEntityManager<MySqlDriver>,
   accountIdentifiers: { tenantName: string; accountName: string }[],

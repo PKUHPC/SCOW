@@ -162,7 +162,7 @@ message ExportJobRecordRequest {
   }
   // 模糊匹配用户ID或姓名
   optional string user_id_or_name = 13;
-  // 模糊匹配账户拥有者ID或姓名
+  // 模糊匹配账户主管理员ID或姓名
   optional string owner_id_or_name = 14;
 }
 

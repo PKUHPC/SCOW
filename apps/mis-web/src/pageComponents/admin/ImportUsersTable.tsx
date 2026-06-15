@@ -61,8 +61,8 @@ export const ImportUsersTable: React.FC = () => {
       })
       .then((data) => ({
         accounts: data?.accounts?.map((account) => ({
-          // 如果账户未导入，维持指定一个拥有者的逻辑确保导入用户时选择默认拥有者提交有效
-          // 如果账户已导入，则获取数据库中的拥有者数据，如因特殊原因导致已没有拥有者，则显示“-”
+          // 如果账户未导入，维持指定一个主管理员的逻辑确保导入用户时选择默认主管理员提交有效
+          // 如果账户已导入，则获取数据库中的主管理员数据，如因特殊原因导致已没有主管理员，则显示“-”
           owner:
             account.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING
               ? account.users[0]?.userId
@@ -204,7 +204,7 @@ export const ImportUsersTable: React.FC = () => {
             render={(_, r) => {
               return r.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING ? (
                 selectedAccounts?.includes(r) ? (
-                  // 管理系统导入账户时, 在没有拥有者的情况下账户拥有者默认选择账户的第一个用户
+                  // 管理系统导入账户时, 在没有主管理员的情况下账户主管理员默认选择账户的第一个用户
                   <Select
                     defaultValue={r.owner || r.users[0]?.userId}
                     options={r.users.map((user) => ({ value: user.userId, label: user.userId }))}

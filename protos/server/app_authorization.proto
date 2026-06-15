@@ -18,7 +18,7 @@ message GetTargetAppAuthorizationsRequest {
   optional string tenant_name = 5;
   // 查询的名称，租户名或账户名
   optional string filter_target_name = 6;
-  // 当 target_type 为 ACCOUNT 时，查询的账户拥有者ID或姓名
+  // 当 target_type 为 ACCOUNT 时，查询的账户主管理员ID或姓名
   optional string filter_account_owner_id_or_name = 7;
 }
 
@@ -36,9 +36,9 @@ message TargetAppList {
   repeated AppAuthorizationInfo apps_info = 2;
   // 已被授权的应用总数
   uint32 available_apps_count = 3;
-  // 当请求对象为 AccountsTarget时，才返回账户的拥有者ID
+  // 当请求对象为 AccountsTarget时，才返回账户主管理员ID
   optional string account_owner_id = 4;
-  // 当请求对象为 AccountsTarget时，才返回账户的拥有者姓名
+  // 当请求对象为 AccountsTarget时，才返回账户主管理员姓名
   optional string account_owner_name = 5;
 }
 

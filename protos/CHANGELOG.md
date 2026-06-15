@@ -36,7 +36,7 @@
 ### Patch Changes
 
 - 5ff48b7: 账户充值记录查询优化。调整查询条件、列表字段、更改分页为后端分页。
-- 7f7a095: 在 app_authorization.proto 中的 GetTargetAppAuthorizations 接口中增加账户拥有者 id 和 name 的查询与返回参数
+- 7f7a095: 在 app_authorization.proto 中的 GetTargetAppAuthorizations 接口中增加账户主管理员 id 和 name 的查询与返回参数
 - 0c326bc: 修复账户消费记录导出时无法根据用户 id 和 name 模糊搜索的问题
 
 ## 1.31.0

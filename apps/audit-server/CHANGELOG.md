@@ -370,7 +370,7 @@
 ### Patch Changes
 
 - 6c6f8c6: 新增删除用户账户功能以及用户账户的删除状态带来的其他相关接口与测试文件完善
-- 6c6f8c6: 账户列表导出时增加拥有者 ID 和姓名筛选，操作日志修正为导出账户
+- 6c6f8c6: 账户列表导出时增加主管理员 ID 和姓名筛选，操作日志修正为导出账户
 - Updated dependencies [bec8a37]
 - Updated dependencies [9880cd0]
 - Updated dependencies [6c6f8c6]

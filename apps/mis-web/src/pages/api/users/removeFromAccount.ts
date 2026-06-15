@@ -38,7 +38,7 @@ export const RemoveUserFromAccountSchema = typeboxRouteSchema({
     // 操作集群失败
     400: Type.Object({ message: Type.String() }),
 
-    // 不能移出账户拥有者
+    // 不能移出账户主管理员
     406: Type.Null(),
 
     // 不能移出有正在运行作业的用户，只能先封锁

@@ -409,7 +409,7 @@ export const exportServiceServer = plugin((server) => {
         ["target"],
       );
 
-      // 账户拥有者模糊查询处理
+      // 账户主管理员模糊查询处理
       const { accountNames } = target[target.$case];
       let combineAccountNames: string[] | undefined = accountNames;
 
@@ -420,7 +420,7 @@ export const exportServiceServer = plugin((server) => {
           accountNames,
         );
 
-        // 当accountNames和拥有者对应的账户名交集为空时，直接返回空数据
+        // 当accountNames和主管理员对应的账户名交集为空时，直接返回空数据
         if (ownerAccountNames.length === 0) {
           return; // 导出空结果
         }
@@ -456,7 +456,7 @@ export const exportServiceServer = plugin((server) => {
 
       // 记录格式化函数
       const recordFormat = (x: Loaded<PayRecord, never>) => ({
-        // 这里会先返回基础字段，账户拥有者和操作员会在后续添加
+        // 这里会先返回基础字段，账户主管理员和操作员会在后续添加
         tenantName: x.tenantName,
         accountName: x.accountName,
         amount: decimalToMoney(x.amount),
@@ -498,7 +498,7 @@ export const exportServiceServer = plugin((server) => {
         const operatorIds = [...new Set(payRecords.map((r) => r.operatorId).filter(Boolean))];
         const operatorMap = await getUserNameMap(em, operatorIds);
 
-        // 提取需要查询账户拥有者的账户标识
+        // 提取需要查询账户主管理员的账户标识
         const accountIdentifiers = payRecords
           .filter((record) => record.accountName && record.tenantName)
           .map((record) => ({
@@ -508,7 +508,7 @@ export const exportServiceServer = plugin((server) => {
 
         const accountMap = await getAccountOwnerMap(em, accountIdentifiers);
 
-        // 处理记录并添加账户拥有者和操作员信息
+        // 处理记录并添加账户主管理员和操作员信息
         const records: RecordFormatReturnType[] = payRecords.map((record) => {
           const formattedRecord = recordFormat(record);
 
@@ -516,7 +516,7 @@ export const exportServiceServer = plugin((server) => {
           formattedRecord.operatorId = record.operatorId;
           formattedRecord.operatorName = operatorMap.get(record.operatorId) || "";
 
-          // 添加账户拥有者信息
+          // 添加账户主管理员信息
           if (record.accountName && record.tenantName) {
             const key = `${record.tenantName}-${record.accountName}`;
             const accountInfo = accountMap.get(key);
@@ -798,7 +798,7 @@ export const exportServiceServer = plugin((server) => {
         const records = await em.find(JobInfo, query, { limit, offset });
         const jobIds = records.map((job) => job.biJobIndex);
 
-        // 获取用户姓名、账户拥有者ID和姓名的map
+        // 获取用户姓名、账户主管理员ID和姓名的map
         let jobUserAndAccountOwnerDetailsMap: JobUserAndAccountOwnerDetailsMap = {};
 
         if (jobIds.length > 0) {

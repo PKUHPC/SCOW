@@ -517,7 +517,7 @@ export const userServiceServer = plugin((server) => {
               return;
             }
 
-            // 如果已经在集群下为封锁，且状态值为被账户管理员或拥有者手动封锁
+            // 如果已经在集群下为封锁，且状态值为被账户管理员或主管理员手动封锁
             if (user.blockedInCluster === UserStatus.BLOCKED && user.state === UserStateInAccount.BLOCKED_BY_ADMIN) {
               results.push({
                 userId,
@@ -921,7 +921,7 @@ export const userServiceServer = plugin((server) => {
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "delete user who has affiliated accounts task");
 
-      // 如果用户为账户拥有者且该用户没有被删除，提示管理员需要先删除拥有的账户再删除用户
+      // 如果用户为账户主管理员且该用户没有被删除，提示管理员需要先删除拥有的账户再删除用户
       const countAccountOwner = async () => {
         const ownedAccounts = userAccounts
           .filter((userAccount) => PFUserRole[userAccount.role] === PFUserRole.OWNER)

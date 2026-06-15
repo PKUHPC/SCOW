@@ -31,7 +31,7 @@ interface Props {
 interface FilterForm {
   // 账户名或租户名
   name: string | undefined;
-  // 账户拥有者ID或姓名
+  // 账户主管理员ID或姓名
   ownerIdOrName: string | undefined;
 }
 
