@@ -93,14 +93,20 @@ export const DevHostList = () => {
   };
 
   // 确认取消/停止操作
-  const handleCancelConfirm = async () => {
+  const handleCancelConfirm = () => {
     if (currentRecord) {
-      await cancelJobMutation.mutateAsync({
-        cluster: selectedCluster,
-        jobId: currentRecord.jobId,
-      });
-      setCancelModalVisible(false);
-      setCurrentRecord(null);
+      cancelJobMutation.mutate(
+        {
+          cluster: selectedCluster,
+          jobId: currentRecord.jobId,
+        },
+        {
+          onSettled: () => {
+            setCancelModalVisible(false);
+            setCurrentRecord(null);
+          },
+        },
+      );
     }
   };
 
@@ -128,7 +134,7 @@ export const DevHostList = () => {
     onError: (e) => {
       message.error(t(p("operationFailed"), [e.message]));
     },
-    onSuccess: () => {
+    onSettled: () => {
       refetch();
     },
   });

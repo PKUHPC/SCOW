@@ -529,12 +529,6 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb.CancelJobResponse, error) {
 	logrus.Infof("Received request CancelJob: %v", in)
 	var NewState string
-	k8sClient, err := utils.GetK8sClient()
-	if err != nil {
-		logrus.Errorf("failed to build k8s client: %v", err)
-		return nil, ce.RichError(codes.Internal, "NEW_K8S_CLIENT_FAILED", err.Error())
-	}
-
 	jobInfo, err := utils.GetJobsByUserAndId(in.UserId, in.JobId)
 	if err != nil {
 		logrus.Errorf("CancelJob failed %v", err)
@@ -556,6 +550,19 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb
 			return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 		}
 		logrus.Infof("Cancel job %s success！", jobName)
+		return &pb.CancelJobResponse{}, nil
+	}
+	if state == utils.CanceledStatus {
+		logrus.Infof("Cancel job %s ignored because it is already canceled", jobName)
+		return &pb.CancelJobResponse{}, nil
+	}
+	if state == utils.FailedStatus {
+		// 失败状态保留在数据库中；取消请求只作为幂等资源清理入口。
+		if errCode, err := cleanupJobResource(jobInfo); err != nil {
+			logrus.Errorf("CancelJob cleanup failed job %s: %v", jobName, err)
+			return nil, ce.RichError(codes.Internal, errCode, err.Error())
+		}
+		logrus.Infof("Cancel failed job %s cleanup success", jobName)
 		return &pb.CancelJobResponse{}, nil
 	}
 	NewState = utils.CanceledStatus
@@ -586,20 +593,9 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb
 		}
 
 		// 取消任务
-		if jobInfo.JobType == utils.InferJob {
-			namespace := jobInfo.Partition
-			logrus.Infof("CancelJob: JobType： %v, job name: %v", jobInfo.JobType, jobName)
-			err := utils.LocalCancelInferenceJob(jobName, jobInfo.GpuType, namespace, k8sClient)
-			if err != nil {
-				logrus.Errorf("CancelJob failed %v", err)
-				return nil, ce.RichError(codes.Internal, "CANCEL_INFERENCE_JOB_FAILED", err.Error())
-			}
-		} else {
-			err = CancelVCJob(jobName, jobInfo.UserName)
-			if err != nil {
-				logrus.Errorf("CancelJob failed %v", err)
-				return nil, ce.RichError(codes.Internal, "CANCEL_JOB_FAILED", err.Error())
-			}
+		if errCode, err := cleanupJobResource(jobInfo); err != nil {
+			logrus.Errorf("CancelJob failed %v", err)
+			return nil, ce.RichError(codes.Internal, errCode, err.Error())
 		}
 
 		// 取消作业成功后更新数据库
@@ -623,6 +619,19 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb
 	err = fmt.Errorf("the job %v state %s", jobName, state)
 	logrus.Errorf("CancelJob failed %v", err)
 	return nil, ce.RichError(codes.Internal, "JOB_COMPLETED", err.Error())
+}
+
+func cleanupJobResource(jobInfo *models.JobTable) (string, error) {
+	if jobInfo.JobType == utils.InferJob {
+		k8sClient, err := utils.GetK8sClient()
+		if err != nil {
+			logrus.Errorf("failed to build k8s client: %v", err)
+			return "NEW_K8S_CLIENT_FAILED", err
+		}
+		logrus.Infof("CancelJob: JobType： %v, job name: %v", jobInfo.JobType, jobInfo.NewJobName)
+		return "CANCEL_INFERENCE_JOB_FAILED", utils.LocalCancelInferenceJob(jobInfo.NewJobName, jobInfo.GpuType, jobInfo.Partition, k8sClient)
+	}
+	return "CANCEL_JOB_FAILED", CancelVCJob(jobInfo.NewJobName, jobInfo.UserName)
 }
 
 func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *pb.ChangeJobTimeLimitRequest) (*pb.ChangeJobTimeLimitResponse, error) {
