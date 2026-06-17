@@ -50,6 +50,7 @@ export interface Desktop {
   displayId: number;
   desktopName: string;
   wm: string;
+  iconPath?: string;
   isActive?: boolean;
   createTime?: string;
   type?: RemoteControlTool;

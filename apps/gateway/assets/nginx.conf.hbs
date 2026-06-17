@@ -104,8 +104,7 @@ server {
 
   {{#if VNC_ENABLED}}
   location {{ BASE_PATH }}{{ VNC_PATH }} {
-    set $novnc_url {{ NOVNC_INTERNAL_URL }};
-    proxy_pass $novnc_url;
+    proxy_pass {{ NOVNC_INTERNAL_URL }};
 
     include includes/headers;
     include includes/websocket;

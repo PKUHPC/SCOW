@@ -15,7 +15,10 @@ export function encryptAES(data: string, appSecretEnc: string): string {
   let encrypted: string = cipher.update(data, "utf8", "binary");
   encrypted += cipher.final("binary");
 
-  const encryptedWithIV: Buffer = Buffer.concat([iv, Buffer.from(encrypted, "binary")]);
+  const encryptedWithIV: Buffer = Buffer.concat([
+    iv,
+    Buffer.from(encrypted, "binary"),
+  ]);
   return encryptedWithIV.toString("base64");
 }
 
@@ -24,7 +27,7 @@ export function sign(
   requestId: string,
   appId: string,
   appSecret: string,
-  uriArgs: UriArgs = {},
+  uriArgs: UriArgs = {}
 ): string {
   const combinedMap: UriArgs = { ...uriArgs };
 
@@ -43,21 +46,32 @@ export function sign(
   }
 
   const keys: string[] = Object.keys(combinedMap).sort();
-  let signStr: string = keys.map((key) => `${key}=${combinedMap[key]}`).join("&");
+  let signStr: string = keys
+    .map((key) => `${key}=${combinedMap[key]}`)
+    .join("&");
   signStr += `&appSecret=${appSecret}`;
 
   return encryptAES(signStr, appSecret);
 }
 
-export async function getShadowDeskList(cluster: string) {
+export async function getShadowDeskList(
+  cluster: string,
+  shadowDeskConfig: ReturnType<
+    typeof getDesktopConfig
+  >["shadowDesk"] = getDesktopConfig(cluster).shadowDesk
+) {
   const timestamp = Math.floor(Date.now() / 1000);
   const requestId = uuidv4();
-  const { appId = "", appSecret = "", proxyServer = "" } = getDesktopConfig(cluster).shadowDesk || {};
+  const {
+    appId = "",
+    appSecret = "",
+    proxyServer = "",
+  } = shadowDeskConfig || {};
   const shadowDeskSign = sign(timestamp, requestId, appId, appSecret, {
     page: "1",
     size: "100",
   });
-  return await fetch(`http://${proxyServer}/shadowdesk/desk/list`, {
+  const response = await fetch(`http://${proxyServer}/shadowdesk/desk/list`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -71,12 +85,20 @@ export async function getShadowDeskList(cluster: string) {
       size: 100,
     }),
   });
+  return response;
 }
 
-export async function deleteShadowDesk(cluster: string, desktopName: string): Promise<Response> {
+export async function deleteShadowDesk(
+  cluster: string,
+  desktopName: string
+): Promise<Response> {
   const timestamp = Math.floor(Date.now() / 1000);
   const requestId = uuidv4();
-  const { appId = "", appSecret = "", proxyServer = "" } = getDesktopConfig(cluster).shadowDesk || {};
+  const {
+    appId = "",
+    appSecret = "",
+    proxyServer = "",
+  } = getDesktopConfig(cluster).shadowDesk || {};
   const shadowDeskSign = sign(timestamp, requestId, appId, appSecret, {
     desktop_name: desktopName,
   });
@@ -109,11 +131,15 @@ export async function createShadowDesk(
   node: string,
   username: string,
   desktopName: string,
-  wm?: string,
+  wm?: string
 ): Promise<Response> {
   const timestamp = Math.floor(Date.now() / 1000);
   const requestId = uuidv4();
-  const { appId = "", appSecret = "", proxyServer = "" } = getDesktopConfig(cluster).shadowDesk || {};
+  const {
+    appId = "",
+    appSecret = "",
+    proxyServer = "",
+  } = getDesktopConfig(cluster).shadowDesk || {};
   const shadowDeskSign = sign(timestamp, requestId, appId, appSecret, {
     desktop_name: desktopName,
     desktop_settings: JSON.stringify({ desktop_type: wm }),
@@ -138,10 +164,17 @@ export async function createShadowDesk(
   });
 }
 
-export async function connectToShadowDesk(cluster: string, desktopName: string): Promise<Response> {
+export async function connectToShadowDesk(
+  cluster: string,
+  desktopName: string
+): Promise<Response> {
   const timestamp = Math.floor(Date.now() / 1000);
   const requestId = uuidv4();
-  const { appId = "", appSecret = "", proxyServer = "" } = getDesktopConfig(cluster).shadowDesk || {};
+  const {
+    appId = "",
+    appSecret = "",
+    proxyServer = "",
+  } = getDesktopConfig(cluster).shadowDesk || {};
   const shadowDeskSign = sign(timestamp, requestId, appId, appSecret, {
     desktop_name: desktopName,
   });
@@ -160,10 +193,17 @@ export async function connectToShadowDesk(cluster: string, desktopName: string):
   });
 }
 
-export async function getShadowDeskStatus(cluster: string, desktopName: string): Promise<Response> {
+export async function getShadowDeskStatus(
+  cluster: string,
+  desktopName: string
+): Promise<Response> {
   const timestamp = Math.floor(Date.now() / 1000);
   const requestId = uuidv4();
-  const { appId = "", appSecret = "", proxyServer = "" } = getDesktopConfig(cluster).shadowDesk || {};
+  const {
+    appId = "",
+    appSecret = "",
+    proxyServer = "",
+  } = getDesktopConfig(cluster).shadowDesk || {};
   const shadowDeskSign = sign(timestamp, requestId, appId, appSecret, {
     desktop_name: desktopName,
   });

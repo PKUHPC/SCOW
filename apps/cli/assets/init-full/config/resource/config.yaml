@@ -1,13 +1,13 @@
 # 必填
 db:
-  host: localhost
+  host: db
   port: 3306
   user: root
   password: xxxxxxxxxx
   dbName: scow_resource
 # 必填
 scow:
-  misServerUrl: localhost:5004
+  misServerUrl: mis-server:5000
 # 必填
 log:
   level: debug

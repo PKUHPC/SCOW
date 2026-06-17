@@ -121,17 +121,19 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
             },
           };
 
-    await api.killDesktop({
-      body: {
-        id: data.id,
-        cluster: data.clusterId,
-        loginNode: data.addr,
-        displayId: data.desktopId,
-        desktopInfo: { desktop: extraProps },
-      },
-    });
-
-    reload();
+    try {
+      await api.killDesktop({
+        body: {
+          id: data.id,
+          cluster: data.clusterId,
+          loginNode: data.addr,
+          displayId: data.desktopId,
+          desktopInfo: { desktop: extraProps },
+        },
+      });
+    } finally {
+      reload();
+    }
   };
 
   const showDeleteConfirm = () => {
@@ -219,4 +221,5 @@ const StyledDeleteIcon = styled(DeleteIcon)`
   color:  #888FA3;
   &:hover {
     color: ${(props) => props.theme.token.colorPrimary};
+  }
 `;

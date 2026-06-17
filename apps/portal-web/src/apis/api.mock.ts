@@ -119,7 +119,12 @@ export const mockApi: MockApi<typeof api> = {
       {
         clusterId: "hpc01",
         apps: [
-          { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: [] },
+          {
+            id: "vscode",
+            name: "VSCode",
+            logoPath: "/apps/VSCode.svg",
+            availableAccounts: [],
+          },
           { id: "emacs", name: "Emacs", availableAccounts: [] },
           { id: "jupyter", name: "jupyter", availableAccounts: [] },
         ],
@@ -128,7 +133,12 @@ export const mockApi: MockApi<typeof api> = {
   }),
   listAvailableApps: async () => ({
     apps: [
-      { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: [] },
+      {
+        id: "vscode",
+        name: "VSCode",
+        logoPath: "/apps/VSCode.svg",
+        availableAccounts: [],
+      },
       { id: "emacs", name: "Emacs", availableAccounts: [] },
       { id: "jupyter", name: "jupyter", availableAccounts: [] },
     ],
@@ -311,16 +321,59 @@ export const mockApi: MockApi<typeof api> = {
 
   getAccounts: async () => ({ accounts: ["hpc01", "hpc02"] }),
 
-  launchDesktop: async () => ({ type: "vnc", host: "login01", password: "123", port: 1234 }),
+  launchDesktop: async () => ({
+    type: "vnc",
+    host: "login01",
+    password: "123",
+    port: 1234,
+  }),
 
   listDesktops: async () => ({
-    userDesktops: [
+    results: [
       {
-        host: "login01",
-        desktops: [
-          { type: "vnc", vnc: { displayId: 1, desktopName: "111", wm: "", createTime: "" } },
-          { type: "vnc", vnc: { displayId: 222, desktopName: "222", wm: "", createTime: "" } },
-          { type: "vnc", vnc: { displayId: 1, desktopName: "333", wm: "", createTime: "" } },
+        clusterId: "hpc01",
+        userDesktops: [
+          {
+            host: "login01",
+            desktops: [
+              {
+                type: "vnc",
+                data: {
+                  id: 1,
+                  displayId: 1,
+                  desktopName: "111",
+                  wm: "cinnamon",
+                  iconPath: undefined,
+                  createTime: "",
+                  isActive: true,
+                },
+              },
+              {
+                type: "vnc",
+                data: {
+                  id: 222,
+                  displayId: 222,
+                  desktopName: "222",
+                  wm: "gnome",
+                  iconPath: undefined,
+                  createTime: "",
+                  isActive: true,
+                },
+              },
+              {
+                type: "vnc",
+                data: {
+                  id: 3,
+                  displayId: 3,
+                  desktopName: "333",
+                  wm: "xfce",
+                  iconPath: undefined,
+                  createTime: "",
+                  isActive: true,
+                },
+              },
+            ],
+          },
         ],
       },
     ],
@@ -366,7 +419,10 @@ export const mockApi: MockApi<typeof api> = {
       coreCount: 2,
       maxTime: 10,
       submitTime: "2021-12-22T16:16:02",
-      customAttributes: { selectVersion: "code-server/4.9.0", sbatchOptions: "--time 10" },
+      customAttributes: {
+        selectVersion: "code-server/4.9.0",
+        sbatchOptions: "--time 10",
+      },
     },
   }),
 

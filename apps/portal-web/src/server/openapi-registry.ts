@@ -109,7 +109,7 @@ export const openapiRoutes: RouteEntry[] = [
   { schema: KillDesktopSchema, method: "POST", url: "/api/desktop/killDesktop" },
   { schema: LaunchDesktopSchema, method: "POST", url: "/api/desktop/launchDesktop" },
   { schema: ListAvailableWmsSchema, method: "GET", url: "/api/desktop/listAvailableWms" },
-  { schema: ListDesktopsSchema, method: "GET", url: "/api/desktop/listDesktops" },
+  { schema: ListDesktopsSchema, method: "POST", url: "/api/desktop/listDesktops" },
   { schema: CheckTransferKeySchema, method: "POST", url: "/api/file/checkTransferKey" },
   { schema: CompleteMultipartUploadSchema, method: "POST", url: "/api/file/completeMultipartUpload" },
   { schema: CompressAndDownloadFileSchema, method: "GET", url: "/api/file/compressAndDownload" },

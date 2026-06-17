@@ -1,4 +1,5 @@
 import { PlusOutlined } from "@ant-design/icons";
+import { AvailableWm } from "@scow/protos/build/portal/desktop";
 import { Button } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
@@ -45,6 +46,7 @@ interface APIDerivedDesktop {
   desktopId: number;
   desktopName: string;
   wm: string;
+  iconPath?: string;
   createTime?: string;
   addr: string;
   remoteControlTool: RemoteControlTool;
@@ -55,7 +57,6 @@ interface APIDerivedDesktop {
 export interface DesktopItem extends APIDerivedDesktop {
   id: number;
   isActive?: boolean;
-  wmName: string;
   iconPath?: string;
   clusterName: string;
   loginNodeName: string;
@@ -69,14 +70,89 @@ interface DesktopCardListProps {
   clusters: Cluster[];
 }
 
-export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) => {
+interface WmsItem {
+  clusterId: string;
+  wms: AvailableWm[];
+}
+
+export const DesktopCardList: React.FC<DesktopCardListProps> = ({
+  clusters,
+}) => {
   const t = useI18nTranslateToString();
   const [openNewDesktopModal, setOpenNewDesktopModal] = useState(false);
+  const [allAvailableWms, setAllAvailableWms] = useState<WmsItem[]>([]);
+  const [isWmsLoading, setIsWmsLoading] = useState(false);
   const { loginNodes } = useStore(LoginNodeStore);
 
-  // 获取所有集群的可用WM信息
-  const { data: allAvailableWms, isLoading: isWmsLoading } = useAsync({
+  // 获取所有集群的listDesktops信息
+  const {
+    data: allDesktops,
+    isLoading: isAllDesktopsLoading,
+    reload,
+  } = useAsync({
     promiseFn: useCallback(async () => {
+      try {
+        // loginNodes 传空，返回所有loginNode的desktop
+        const desktopData = await api.listDesktops({
+          body: {
+            clusters: clusters.map((cluster) => ({
+              cluster: cluster.id,
+              loginNodes: [],
+            })),
+          },
+        });
+
+        return desktopData.results.map(({ clusterId, userDesktops }) => {
+          const desktopItems = (userDesktops ?? [])
+            .map((userDesktop) =>
+              userDesktop.desktops.map((x) => {
+                const dataSource = x.data;
+
+                const item: APIDerivedDesktop = {
+                  id: dataSource?.id,
+                  isActive: dataSource?.isActive,
+                  desktopId: dataSource?.displayId || 0,
+                  desktopName: dataSource?.desktopName || "",
+                  iconPath: dataSource?.iconPath,
+                  createTime: dataSource?.createTime,
+                  addr: userDesktop.host,
+                  wm: dataSource?.wm || "",
+                  remoteControlTool:
+                    x.type === "shadowdesk"
+                      ? RemoteControlTool.SHADOWDESK
+                      : RemoteControlTool.VNC,
+                  clusterId,
+                };
+
+                return item;
+              })
+            )
+            .flat();
+
+          return {
+            clusterId,
+            desktops: desktopItems,
+          };
+        });
+      } catch (error) {
+        console.error("Failed to get desktops:", error);
+        return clusters.map((cluster) => {
+          return {
+            clusterId: cluster.id,
+            desktops: [],
+          };
+        });
+      }
+    }, [clusters]),
+  });
+
+  const handleReload = () => {
+    reload();
+  };
+
+  const handleCreateDesktop = async () => {
+    setIsWmsLoading(true);
+    try {
       const wmsPromises = clusters.map(async (cluster) => {
         try {
           const wmsData = await api.listAvailableWms({
@@ -88,7 +164,10 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
             wms: wmsData.wms,
           };
         } catch (error) {
-          console.error(`Failed to get available wms for cluster ${cluster.id}:`, error);
+          console.error(
+            `Failed to get available wms for cluster ${cluster.id}:`,
+            error
+          );
           return {
             clusterId: cluster.id,
             wms: [],
@@ -96,103 +175,42 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
         }
       });
 
-      const results = await Promise.all(wmsPromises);
-      return results;
-    }, [clusters]),
-  });
-
-  // 获取所有集群的listDesktops信息
-  const {
-    data: allDesktops,
-    isLoading: isAllDesktopsLoading,
-    reload,
-  } = useAsync({
-    promiseFn: useCallback(async () => {
-      const desktopsPromises = clusters.map(async (cluster) => {
-        try {
-          // login 传空，返回所有loginNode的desktop
-          const desktopData = await api.listDesktops({
-            query: { cluster: cluster.id },
-          });
-
-          // 处理返回的数据，将其扁平化为DesktopItem数组
-          const desktopItems = desktopData.userDesktops
-            .map((userDesktop) =>
-              userDesktop.desktops.map((x) => {
-                const dataSource = x.data;
-
-                const item: APIDerivedDesktop = {
-                  id: dataSource?.id,
-                  isActive: dataSource?.isActive,
-                  desktopId: dataSource?.displayId || 0,
-                  desktopName: dataSource?.desktopName || "",
-                  createTime: dataSource?.createTime,
-                  addr: userDesktop.host,
-                  wm: dataSource?.wm || "",
-                  remoteControlTool: x.type === "shadowdesk" ? RemoteControlTool.SHADOWDESK : RemoteControlTool.VNC,
-                  clusterId: cluster.id,
-                };
-
-                return item;
-              }),
-            )
-            .flat();
-
-          return {
-            clusterId: cluster.id,
-            desktops: desktopItems,
-          };
-        } catch (error) {
-          console.error(`Failed to get desktops for cluster ${cluster.id}:`, error);
-          return {
-            clusterId: cluster.id,
-            desktops: [],
-          };
-        }
-      });
-
-      const results = await Promise.all(desktopsPromises);
-      return results;
-    }, [clusters]),
-  });
-
-  const handleReload = () => {
-    reload();
-  };
-
-  const handleCreateDesktop = () => {
-    setOpenNewDesktopModal(true);
+      setAllAvailableWms(await Promise.all(wmsPromises));
+      setOpenNewDesktopModal(true);
+    } finally {
+      setIsWmsLoading(false);
+    }
   };
 
   // 将所有集群的桌面数据合并为一个数组，并添加完整的信息用于展示
-  const desktopData: DesktopItem[] = (allDesktops?.flatMap((item) => item.desktops) || []).map((desktop) => {
-    // 查找对应集群的WM信息
-    const clusterWms = allAvailableWms?.find((wmsItem) => wmsItem.clusterId === desktop.clusterId)?.wms || [];
-
+  const desktopData: DesktopItem[] = (
+    allDesktops?.flatMap((item) => item.desktops) || []
+  ).map((desktop) => {
     // 查找集群名称
     const clusterName = clusters.find((c) => c.id === desktop.clusterId)!.name;
 
     // 查找登录节点名称
-    const loginNodeInfo = loginNodes[desktop.clusterId]?.find((ln) => ln.address === desktop.addr);
-
-    // 查找桌面类型
-    const wmInfo = clusterWms.find((wm) => wm.wm === desktop.wm);
-    const desktopType = wmInfo?.name || desktop.wm;
+    const loginNodeInfo = loginNodes[desktop.clusterId]?.find(
+      (ln) => ln.address === desktop.addr
+    );
 
     // 远程控制工具名称
-    const remoteTool = desktop.remoteControlTool === RemoteControlTool.SHADOWDESK ? "shadowdesk" : "vnc";
+    const remoteTool =
+      desktop.remoteControlTool === RemoteControlTool.SHADOWDESK
+        ? "shadowdesk"
+        : "vnc";
 
     // 创建时间格式化
-    const creationTime = desktop.createTime ? dayjs(desktop.createTime).format("YYYY-MM-DD HH:mm:ss") : "";
+    const creationTime = desktop.createTime
+      ? dayjs(desktop.createTime).format("YYYY-MM-DD HH:mm:ss")
+      : "";
 
     return {
       ...desktop,
-      wmName: wmInfo?.name || desktop.wm,
-      iconPath: wmInfo?.iconPath,
       clusterName,
       loginNodeName: loginNodeInfo?.name || desktop.addr,
       title: desktop.desktopName,
-      desktopType,
+      desktopType: desktop.wm,
       remoteTool,
       creationTime,
     } as DesktopItem;
@@ -212,7 +230,11 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
       </HeaderContainer>
       <CardContainer>
         {desktopData.map((item) => (
-          <DesktopCard key={item.id || `${item.clusterId}-${item.desktopId}`} data={item} reload={handleReload} />
+          <DesktopCard
+            key={item.id || `${item.clusterId}-${item.desktopId}`}
+            data={item}
+            reload={handleReload}
+          />
         ))}
       </CardContainer>
       <NewDesktopCardModal
@@ -220,7 +242,7 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
         onClose={() => setOpenNewDesktopModal(false)}
         reload={handleReload}
         clusters={clusters}
-        allAvailableWms={allAvailableWms || []}
+        allAvailableWms={allAvailableWms}
         loginNodes={loginNodes}
       />
     </>

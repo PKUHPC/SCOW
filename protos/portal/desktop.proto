@@ -78,11 +78,15 @@ message ConnectToDesktopResponse {
   optional string shadowdesk_url = 4;
 }
 
+message ClusterLoginNodes {
+  string cluster = 1;
+  // 不指定login_nodes则返回集群下所有login_node的desktop
+  repeated string login_nodes = 2;
+}
+
 message ListUserDesktopsRequest {
   string user_id = 1;
-  string cluster = 2;
-  // 不指定login_node则返回该集群下所有login_node的desktop
-  optional string login_node = 3;
+  repeated ClusterLoginNodes clusters = 2;
 }
 
 message Desktop {
@@ -93,11 +97,13 @@ message Desktop {
   optional RemoteControlTool remote_control_tool = 5;
   optional bool is_active = 6;
   optional uint64 id = 7;
+  optional string icon_path = 8;
 }
 
 message UserDesktops {
   string host = 1;
   repeated Desktop desktops = 2;
+  string cluster = 3;
 }
 
 // NOT_FOUND: cluster is not found

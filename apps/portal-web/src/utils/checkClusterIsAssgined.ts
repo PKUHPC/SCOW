@@ -5,7 +5,7 @@ import { publicConfig, runtimeConfig } from "./config";
 
 export async function checkUserAssignedClusters(clusterIds: string[] | string, userId: string): Promise<boolean> {
   // 如果没有部署管理系统或没有部署资源管理系统。跳过此检查
-  if (!publicConfig.MIS_DEPLOYED || !runtimeConfig.SCOW_RESOURCE_CONFIG) {
+  if (!publicConfig.MIS_DEPLOYED || !runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {
     return true;
   }
 

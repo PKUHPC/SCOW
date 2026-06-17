@@ -12,11 +12,22 @@ import { sshConnect } from "src/utils/ssh";
 import { getTurboVNCBinPath, parseListOutput } from "src/utils/turbovnc";
 import { Logger } from "ts-log";
 
+const desktopConfigCache = new Map<string, LoginDeskopConfigSchema>();
+
 export function getDesktopConfig(cluster: string): LoginDeskopConfigSchema {
-  return {
+  const cached = desktopConfigCache.get(cluster);
+  if (cached) {
+    return cached;
+  }
+
+  const desktopConfig = {
     ...getPortalConfig().loginDesktop,
     ...getClusterConfigs(undefined, undefined, ["hpc"])[cluster].loginDesktop,
   };
+
+  desktopConfigCache.set(cluster, desktopConfig);
+
+  return desktopConfig;
 }
 
 export function ensureEnabled(cluster: string) {
