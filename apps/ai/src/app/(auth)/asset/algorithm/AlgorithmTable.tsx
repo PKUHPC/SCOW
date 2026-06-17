@@ -1,9 +1,10 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Modal, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Form, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateAndEditAlgorithmModal } from "src/components/assets/algorithm/CreateAndEditAlgorithmModal";
 import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
@@ -74,8 +75,8 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
     [Framework.OTHER]: getAlgorithmTexts(t).other,
   };
 
-  const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const { message } = App.useApp();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
@@ -109,14 +110,17 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
     },
   });
 
-  const deleteAlgorithm = useCallback((id: number) => {
-    confirm({
-      title: t(p("delete")),
-      onOk: async () => {
-        await deleteAlgorithmMutation.mutateAsync({ id });
-      },
-    });
+  const openDeleteModal = useCallback((id: number) => {
+    setDeleteId(id);
   }, []);
+
+  const handleDeleteOk = useCallback(async () => {
+    if (deleteId == null) {
+      return;
+    }
+    await deleteAlgorithmMutation.mutateAsync({ id: deleteId });
+    setDeleteId(null);
+  }, [deleteAlgorithmMutation, deleteId]);
 
   const getCurrentCluster = useCallback(
     (clusterId: string) => {
@@ -227,7 +231,7 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
                   <Tooltip title={t("button.deleteButton")}>
                     <DeleteIcon
                       onClick={() => {
-                        deleteAlgorithm(r.id);
+                        openDeleteModal(r.id);
                       }}
                     />
                   </Tooltip>
@@ -328,8 +332,14 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
         }}
         scroll={{ x: true }}
       />
-      {/* antd中modal组件 */}
-      {confirmModalHolder}
+      <AppRouterStyledModal
+        title={t(p("delete"))}
+        open={deleteId !== null}
+        onOk={handleDeleteOk}
+        onCancel={() => setDeleteId(null)}
+        confirmLoading={deleteAlgorithmMutation.isPending}
+        destroyOnClose
+      />
     </TableContainer>
   );
 };

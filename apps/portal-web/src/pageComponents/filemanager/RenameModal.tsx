@@ -1,5 +1,6 @@
+import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { App, Form, Modal } from "antd";
+import { App, Form } from "antd";
 import { dirname, join } from "path";
 import { useState } from "react";
 import { api } from "src/apis";
@@ -47,7 +48,7 @@ export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
   return (
     <div onDoubleClick={(event) => event.stopPropagation()}>
-      <Modal
+      <StyledModal
         open={open}
         title={t(p("title"))}
         okText={t("button.confirmButton")}
@@ -66,7 +67,7 @@ export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             <Input />
           </Form.Item>
         </Form>
-      </Modal>
+      </StyledModal>
     </div>
   );
 };

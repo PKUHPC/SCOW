@@ -15,7 +15,6 @@ const commonInputStyles = css`
   flex: 1;
   width: 100%;
   height: 42px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
 
   &,
   .ant-input-affix-wrapper {
@@ -59,7 +58,7 @@ export const RoundedSearch = styled(Input.Search)`
   .ant-input-search-button {
     width: 60px;
     background: ${({ theme }) => theme.token.colorBgContainer};
-    border-left: 2px solid ${({ theme }) => theme.palette.gray[4]};
+    border-left: 1px solid ${({ theme }) => theme.palette.gray[4]};
     &:hover {
       background: none !important;
     }
@@ -78,7 +77,6 @@ export const RoundedTextArea: ComponentType<TextAreaProps> = styled(Input.TextAr
   border-radius: 8px !important;
   width: 100%;
   min-height: 54px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
 
   ${focusedBorderAndShadowStyle}
@@ -102,7 +100,6 @@ export const RoundedPasswordInput = styled(Input.Password)`
   flex: 1;
   width: 100%;
   height: 42px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
 
   .ant-input {
     border-radius: 8px !important;
@@ -122,7 +119,6 @@ export const RoundedInputNumber: ComponentType<InputNumberProps> = styled(InputN
   font-weight: lighter;
   flex: 1;
   height: 42px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
 
   &,
   .ant-input-number {

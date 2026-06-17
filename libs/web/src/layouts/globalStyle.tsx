@@ -65,6 +65,22 @@ export const GlobalStyle = createGlobalStyle`
     font-weight: 400 !important;
   }
 
+  .ant-input-number-outlined:focus-within {
+    box-shadow: none !important;
+  }
+
+  .ant-input-outlined:focus-within {
+    box-shadow: none !important;
+  }
+
+  .ant-picker-outlined:focus-within {
+    box-shadow: none !important;
+  }
+
+  .ant-select-selector {
+    box-shadow: none !important;
+  }
+
   // 对head右侧操作栏悬浮窗做样式处理
   .head-language-select .ant-select-item {
     color: #434343 !important;

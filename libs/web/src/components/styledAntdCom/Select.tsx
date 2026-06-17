@@ -37,7 +37,7 @@ export const RoundedSelect: ComponentType<SelectProps> = styled(SelectContainer)
   .ant-select-selector {
     border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
     border-radius: 8px !important;
-    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    box-shadow: none !important;
     height: 42px !important;
     display: flex;
     align-items: center;

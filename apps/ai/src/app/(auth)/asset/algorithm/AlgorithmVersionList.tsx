@@ -1,7 +1,8 @@
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TRPCClientError } from "@trpc/client";
-import { App, Modal, Space, Table, Tooltip } from "antd";
+import { App, ModalFuncProps, Space, Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
 import { ExpandedTableContainer } from "src/components/assets/ExpandedTableContainer";
@@ -45,8 +46,18 @@ export const AlgorithmVersionList: React.FC<Props> = ({
   const isUserShareEnabled = publicConfig.AI_USER_SHARE_ENABLED;
 
   const { message } = App.useApp();
-  const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const router = useRouter();
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id?: number;
+    open: boolean;
+    title?: string;
+  }>({ open: false });
+  const [shareConfirm, setShareConfirm] = useState<{
+    content?: React.ReactNode;
+    onOk?: () => Promise<void> | void;
+    open: boolean;
+    title?: React.ReactNode;
+  }>({ open: false });
 
   const {
     data: versionData,
@@ -113,17 +124,35 @@ export const AlgorithmVersionList: React.FC<Props> = ({
     },
   });
 
-  const deleteAlgorithmVersion = useCallback(
-    (id: number, isConfirmed?: boolean) => {
-      confirm({
-        title: isConfirmed ? t(p("confirmedText")) : t(p("delete")),
-        onOk: async () => {
-          await deleteAlgorithmVersionMutation.mutateAsync({ algorithmVersionId: id, algorithmId });
-        },
-      });
-    },
-    [algorithmId],
-  );
+  const openDeleteModal = useCallback((id: number, isConfirmed?: boolean) => {
+    setDeleteConfirm({
+      id,
+      open: true,
+      title: isConfirmed ? t(p("confirmedText")) : t(p("delete")),
+    });
+  }, []);
+
+  const handleDeleteOk = useCallback(async () => {
+    if (deleteConfirm.id == null) {
+      return;
+    }
+    await deleteAlgorithmVersionMutation.mutateAsync({ algorithmVersionId: deleteConfirm.id, algorithmId });
+    setDeleteConfirm({ open: false });
+  }, [algorithmId, deleteAlgorithmVersionMutation, deleteConfirm.id]);
+
+  const confirmWithStyledModal = useCallback((config: ModalFuncProps) => {
+    setShareConfirm({
+      content: config.content,
+      onOk: async () => {
+        await config.onOk?.();
+        setShareConfirm({ open: false });
+      },
+      open: true,
+      title: config.title,
+    });
+  }, []);
+
+  const shareConfirmLoading = shareMutation.isPending || unShareMutation.isPending;
 
   return (
     <>
@@ -192,7 +221,7 @@ export const AlgorithmVersionList: React.FC<Props> = ({
                             if (checkExistRes?.exists) {
                               router.push(`/files${r.privatePath}?cluster=${cluster.id}`);
                             } else {
-                              deleteAlgorithmVersion(r.id, true);
+                              openDeleteModal(r.id, true);
                             }
                           } catch {
                             // onError 已经处理了 UI 提示
@@ -207,7 +236,7 @@ export const AlgorithmVersionList: React.FC<Props> = ({
                           sharedStatus={r.sharedStatus}
                           confirmTitle={shareConfirmTitle}
                           confirmContent={`${t(p("confirmed"), [t(pCommon(getSharedStatusText(r.sharedStatus))), r.versionName])}`}
-                          confirmAction={confirm}
+                          confirmAction={confirmWithStyledModal}
                           onShare={async () => {
                             await shareMutation.mutateAsync({
                               algorithmVersionId: r.id,
@@ -227,7 +256,7 @@ export const AlgorithmVersionList: React.FC<Props> = ({
                       <DeleteIcon
                         disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
                         onClick={() => {
-                          deleteAlgorithmVersion(r.id);
+                          openDeleteModal(r.id);
                         }}
                       />
                     </Tooltip>
@@ -238,8 +267,31 @@ export const AlgorithmVersionList: React.FC<Props> = ({
           ]}
         />
       </ExpandedTableContainer>
-      {/* antd中modal组件 */}
-      {confirmModalHolder}
+      <AppRouterStyledModal
+        title={shareConfirm.title}
+        open={shareConfirm.open}
+        onOk={async () => {
+          await shareConfirm.onOk?.();
+        }}
+        onCancel={() => {
+          if (!shareConfirmLoading) {
+            setShareConfirm({ open: false });
+          }
+        }}
+        confirmLoading={shareConfirmLoading}
+        cancelButtonProps={{ disabled: shareConfirmLoading }}
+        destroyOnClose
+      >
+        {shareConfirm.content}
+      </AppRouterStyledModal>
+      <AppRouterStyledModal
+        title={deleteConfirm.title}
+        open={deleteConfirm.open}
+        onOk={handleDeleteOk}
+        onCancel={() => setDeleteConfirm({ open: false })}
+        confirmLoading={deleteAlgorithmVersionMutation.isPending}
+        destroyOnClose
+      />
     </>
   );
 };

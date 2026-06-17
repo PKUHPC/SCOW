@@ -1,7 +1,8 @@
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TRPCClientError } from "@trpc/client";
-import { App, Modal, Space, Table, Tooltip } from "antd";
+import { App, ModalFuncProps, Space, Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { ExpandedTableContainer } from "src/components/assets/ExpandedTableContainer";
 import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
@@ -39,8 +40,18 @@ export const ModelVersionList: React.FC<Props> = ({ models, isPublic, modelId, m
   const isUserShareEnabled = publicConfig.AI_USER_SHARE_ENABLED;
 
   const { message } = App.useApp();
-  const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const router = useRouter();
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    title?: string;
+    versionId?: number;
+  }>({ open: false });
+  const [shareConfirm, setShareConfirm] = useState<{
+    content?: React.ReactNode;
+    onOk?: () => Promise<void> | void;
+    open: boolean;
+    title?: React.ReactNode;
+  }>({ open: false });
 
   const {
     data: versionData,
@@ -107,17 +118,35 @@ export const ModelVersionList: React.FC<Props> = ({ models, isPublic, modelId, m
     },
   });
 
-  const deleteModelVersion = useCallback(
-    (versionId: number, isConfirmed?: boolean) => {
-      confirm({
-        title: isConfirmed ? t(p("confirmedText")) : t(p("delete")),
-        onOk: async () => {
-          await deleteModelVersionMutation.mutateAsync({ versionId, modelId });
-        },
-      });
-    },
-    [modelId],
-  );
+  const openDeleteModal = useCallback((versionId: number, isConfirmed?: boolean) => {
+    setDeleteConfirm({
+      open: true,
+      title: isConfirmed ? t(p("confirmedText")) : t(p("delete")),
+      versionId,
+    });
+  }, []);
+
+  const handleDeleteOk = useCallback(async () => {
+    if (deleteConfirm.versionId == null) {
+      return;
+    }
+    await deleteModelVersionMutation.mutateAsync({ versionId: deleteConfirm.versionId, modelId });
+    setDeleteConfirm({ open: false });
+  }, [deleteConfirm.versionId, deleteModelVersionMutation, modelId]);
+
+  const confirmWithStyledModal = useCallback((config: ModalFuncProps) => {
+    setShareConfirm({
+      content: config.content,
+      onOk: async () => {
+        await config.onOk?.();
+        setShareConfirm({ open: false });
+      },
+      open: true,
+      title: config.title,
+    });
+  }, []);
+
+  const shareConfirmLoading = shareMutation.isPending || unShareMutation.isPending;
 
   return (
     <>
@@ -187,7 +216,7 @@ export const ModelVersionList: React.FC<Props> = ({ models, isPublic, modelId, m
                             if (checkExistRes?.exists) {
                               router.push(`/files${r.privatePath}?cluster=${cluster.id}`);
                             } else {
-                              deleteModelVersion(r.id, true);
+                              openDeleteModal(r.id, true);
                             }
                           } catch {
                             // onError 已经处理了 UI 提示
@@ -202,7 +231,7 @@ export const ModelVersionList: React.FC<Props> = ({ models, isPublic, modelId, m
                           sharedStatus={r.sharedStatus}
                           confirmTitle={shareConfirmTitle}
                           confirmContent={`${t(p("confirmed"), [t(pCommon(getSharedStatusText(r.sharedStatus))), r.versionName])}`}
-                          confirmAction={confirm}
+                          confirmAction={confirmWithStyledModal}
                           onShare={async () => {
                             await shareMutation.mutateAsync({
                               versionId: r.id,
@@ -222,7 +251,7 @@ export const ModelVersionList: React.FC<Props> = ({ models, isPublic, modelId, m
                       <DeleteIcon
                         disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
                         onClick={() => {
-                          deleteModelVersion(r.id);
+                          openDeleteModal(r.id);
                         }}
                       />
                     </Tooltip>
@@ -233,8 +262,31 @@ export const ModelVersionList: React.FC<Props> = ({ models, isPublic, modelId, m
           ]}
         />
       </ExpandedTableContainer>
-      {/* antd中modal组件 */}
-      {confirmModalHolder}
+      <AppRouterStyledModal
+        title={shareConfirm.title}
+        open={shareConfirm.open}
+        onOk={async () => {
+          await shareConfirm.onOk?.();
+        }}
+        onCancel={() => {
+          if (!shareConfirmLoading) {
+            setShareConfirm({ open: false });
+          }
+        }}
+        confirmLoading={shareConfirmLoading}
+        cancelButtonProps={{ disabled: shareConfirmLoading }}
+        destroyOnClose
+      >
+        {shareConfirm.content}
+      </AppRouterStyledModal>
+      <AppRouterStyledModal
+        title={deleteConfirm.title}
+        open={deleteConfirm.open}
+        onOk={handleDeleteOk}
+        onCancel={() => setDeleteConfirm({ open: false })}
+        confirmLoading={deleteModelVersionMutation.isPending}
+        destroyOnClose
+      />
     </>
   );
 };

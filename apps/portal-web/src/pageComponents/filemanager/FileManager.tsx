@@ -86,7 +86,6 @@ const SelectPreFix = styled.span`
 const TopBar = styled(FilterFormContainer)`
   display: flex;
   flex-direction: row;
-  padding-bottom: 8px;
   width: 100%;
   align-items: center;
 
@@ -113,6 +112,23 @@ interface Operation {
   started: boolean;
   selected: FileInfo[];
   completed: FileInfo[];
+}
+
+interface OverwriteConfirmInfo {
+  file: FileInfo;
+  onConfirm: () => Promise<void>;
+  resolve: (confirmed: boolean) => void;
+}
+
+interface DeleteSelectedConfirmInfo {
+  type: "selected";
+  files: FileInfo[];
+}
+
+interface DeleteSingleConfirmInfo {
+  type: "single";
+  file: FileInfo;
+  fullPath: string;
 }
 
 export interface Compression {
@@ -175,6 +191,13 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   });
   const { currentClusters } = useStore(ClusterInfoStore);
   const [operation, setOperation] = useState<Operation | undefined>(undefined);
+  const overwriteConfirmInfoRef = useRef<OverwriteConfirmInfo | null>(null);
+  const [overwriteConfirmInfo, setOverwriteConfirmInfo] = useState<OverwriteConfirmInfo | null>(null);
+  const [overwriteLoading, setOverwriteLoading] = useState(false);
+  const [deleteConfirmInfo, setDeleteConfirmInfo] = useState<
+    DeleteSelectedConfirmInfo | DeleteSingleConfirmInfo | null
+  >(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [compression, setCompression] = useState<Compression>({ started: [], completed: [] });
   const [showHiddenFile, setShowHiddenFile] = useState(false);
   const [submitSuccessJobId, setSubmitSuccessJobId] = useState<number | null>(null);
@@ -305,6 +328,45 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     setOperation(undefined);
   };
 
+  useEffect(() => {
+    overwriteConfirmInfoRef.current = overwriteConfirmInfo;
+  }, [overwriteConfirmInfo]);
+
+  useEffect(() => {
+    return () => {
+      overwriteConfirmInfoRef.current?.resolve(false);
+    };
+  }, []);
+
+  const confirmOverwrite = (file: FileInfo, onConfirm: () => Promise<void>) =>
+    new Promise<boolean>((resolve) => {
+      setOverwriteConfirmInfo({ file, onConfirm, resolve });
+    });
+
+  const handleOverwriteConfirmOk = async () => {
+    const confirmInfo = overwriteConfirmInfo;
+    if (!confirmInfo) return;
+
+    setOverwriteLoading(true);
+    try {
+      await confirmInfo.onConfirm();
+      confirmInfo.resolve(true);
+      setOverwriteConfirmInfo(null);
+    } finally {
+      setOverwriteLoading(false);
+    }
+  };
+
+  const handleOverwriteConfirmCancel = () => {
+    if (overwriteLoading) return;
+
+    const confirmInfo = overwriteConfirmInfo;
+    if (!confirmInfo) return;
+
+    confirmInfo.resolve(false);
+    setOverwriteConfirmInfo(null);
+  };
+
   const paste = async () => {
     if (!operation) {
       return;
@@ -355,29 +417,21 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
         });
         if (exists.result) {
-          await new Promise<void>((res) => {
-            modal.confirm({
-              title: t(p("moveCopy.existModalTitle")),
-              content: t(p("moveCopy.existModalContent"), [x.name]),
-              okText: t(p("moveCopy.existModalOk")),
-              onOk: async () => {
-                const fileType = await api.getFileType({
-                  query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
-                });
-                const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
-                await deleteOperation({
-                  query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
-                });
-                await pasteFile(x, join(operation.originalPath, x.name), join(path, x.name));
-                successfulCount++;
-                res();
-              },
-              onCancel: async () => {
-                abandonCount++;
-                res();
-              },
+          const overwritten = await confirmOverwrite(x, async () => {
+            const fileType = await api.getFileType({
+              query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
             });
+            const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
+            await deleteOperation({
+              query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
+            });
+            await pasteFile(x, join(operation.originalPath, x.name), join(path, x.name));
           });
+          if (overwritten) {
+            successfulCount++;
+          } else {
+            abandonCount++;
+          }
         } else {
           await pasteFile(x, join(operation.originalPath, x.name), join(path, x.name));
           successfulCount++;
@@ -419,11 +473,16 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
   const onDeleteClick = () => {
     const files = keysToFiles(selectedKeys);
-    modal.confirm({
-      title: t(p("delete.confirmTitle")),
-      okText: t(p("delete.confirmOk")),
-      content: t(p("delete.confirmContent"), [files.length]),
-      onOk: async () => {
+    setDeleteConfirmInfo({ type: "selected", files });
+  };
+
+  const handleDeleteConfirmOk = async () => {
+    if (deleteLoading || !deleteConfirmInfo) return;
+
+    setDeleteLoading(true);
+    try {
+      if (deleteConfirmInfo.type === "selected") {
+        const { files } = deleteConfirmInfo;
         await Promise.allSettled(
           files.map(async (x) => {
             return (x.type === "FILE" ? api.deleteFile : api.deleteDir)({
@@ -459,8 +518,29 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             setOperation(undefined);
             reload();
           });
-      },
-    });
+      } else {
+        const { file, fullPath } = deleteConfirmInfo;
+        await (file.type === "DIR" ? api.deleteDir : api.deleteFile)({
+          query: {
+            cluster: currentClusterRef.current.id,
+            path: fullPath,
+          },
+        }).then(() => {
+          message.success(t(p("tableInfo.deleteSuccessMessage")));
+          resetSelectedAndOperation();
+          reload();
+        });
+      }
+
+      setDeleteConfirmInfo(null);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteConfirmCancel = () => {
+    if (deleteLoading) return;
+    setDeleteConfirmInfo(null);
   };
 
   const keysToFiles = (keys: React.Key[]) => {
@@ -1043,24 +1123,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               <DeleteIcon
                 onClick={() => {
                   const fullPath = join(path, i.name);
-                  modal.confirm({
-                    title: t(p("tableInfo.deleteConfirmTitle")),
-                    // icon: < />,
-                    content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
-                    okText: t(p("tableInfo.deleteConfirmOk")),
-                    onOk: async () => {
-                      await (i.type === "DIR" ? api.deleteDir : api.deleteFile)({
-                        query: {
-                          cluster: currentClusterRef.current.id,
-                          path: fullPath,
-                        },
-                      }).then(() => {
-                        message.success(t(p("tableInfo.deleteSuccessMessage")));
-                        resetSelectedAndOperation();
-                        reload();
-                      });
-                    },
-                  });
+                  setDeleteConfirmInfo({ type: "single", file: i, fullPath });
                 }}
               />
             </Tooltip>
@@ -1094,6 +1157,46 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         reload={reload}
         scowdEnabled={scowdEnabled}
       />
+      <StyledModal
+        open={overwriteConfirmInfo !== null}
+        title={
+          <span>
+            <ExclamationCircleFilled style={{ color: theme.token.colorWarning, marginRight: 8 }} />
+            {t(p("moveCopy.existModalTitle"))}
+          </span>
+        }
+        okText={t(p("moveCopy.existModalOk"))}
+        onOk={handleOverwriteConfirmOk}
+        confirmLoading={overwriteLoading}
+        onCancel={handleOverwriteConfirmCancel}
+        cancelButtonProps={{ disabled: overwriteLoading }}
+        maskClosable={false}
+        destroyOnClose
+      >
+        <p>{t(p("moveCopy.existModalContent"), [overwriteConfirmInfo?.file.name])}</p>
+      </StyledModal>
+      <StyledModal
+        open={deleteConfirmInfo !== null}
+        title={
+          <span>
+            <ExclamationCircleFilled style={{ color: theme.token.colorWarning, marginRight: 8 }} />
+            {deleteConfirmInfo?.type === "single" ? t(p("tableInfo.deleteConfirmTitle")) : t(p("delete.confirmTitle"))}
+          </span>
+        }
+        okText={deleteConfirmInfo?.type === "single" ? t(p("tableInfo.deleteConfirmOk")) : t(p("delete.confirmOk"))}
+        onOk={handleDeleteConfirmOk}
+        confirmLoading={deleteLoading}
+        onCancel={handleDeleteConfirmCancel}
+        cancelButtonProps={{ disabled: deleteLoading }}
+        maskClosable={false}
+        destroyOnClose
+      >
+        <p>
+          {deleteConfirmInfo?.type === "single"
+            ? t(p("tableInfo.deleteConfirmContent"), [deleteConfirmInfo.fullPath])
+            : t(p("delete.confirmContent"), [deleteConfirmInfo?.files.length ?? 0])}
+        </p>
+      </StyledModal>
       <StyledModal
         open={submitConfirmInfo !== null}
         title={

@@ -213,9 +213,9 @@ export const ImageListTable: React.FC<Props> = ({ clusters }) => {
                   );
                 case Status.CREATED: {
                   if (r.isShared) {
-                    return <a style={{ color: "#5FBDEC" }}>{t(pCommon("PUBLISHED"))}</a>;
+                    return <a style={{ color: "#5FBDEC", cursor: "default" }}>{t(pCommon("PUBLISHED"))}</a>;
                   }
-                  return <a style={{ color: "#3584D9" }}>{t(p("success"))}</a>;
+                  return <a style={{ color: "#3584D9", cursor: "default" }}>{t(p("success"))}</a>;
                 }
                 default:
                   return (

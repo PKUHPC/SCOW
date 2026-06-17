@@ -1,10 +1,11 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Modal, Select, Space, Table, Tooltip } from "antd";
+import { App, Button, Form, Select, Space, Table, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateEditDatasetModal } from "src/components/assets/dataset/CreateEditDatasetModal";
 import { CreateEditDSVersionModal } from "src/components/assets/dataset/CreateEditDSVersionModal";
@@ -87,7 +88,6 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters }) => {
     AUDIO: getDatasetTexts(t).audio,
     OTHER: getDatasetTexts(t).other,
   };
-  const [{ confirm }, confirmModalHolder] = Modal.useModal();
 
   const { message } = App.useApp();
 
@@ -127,13 +127,22 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters }) => {
     },
   });
 
-  const deleteDataset = useCallback((id: number) => {
-    confirm({
-      title: t(p("delete")),
-      onOk: async () => {
-        await deleteDatasetMutation.mutateAsync({ id });
-      },
-    });
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const openDeleteModal = useCallback((id: number) => {
+    setDeleteId(id);
+  }, []);
+
+  const handleDeleteOk = useCallback(async () => {
+    if (deleteId == null) {
+      return;
+    }
+    await deleteDatasetMutation.mutateAsync({ id: deleteId });
+    setDeleteId(null);
+  }, [deleteId, deleteDatasetMutation]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteId(null);
   }, []);
 
   const getCurrentCluster = useCallback(
@@ -291,7 +300,7 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                         <Tooltip title={t("button.deleteButton")}>
                           <DeleteIcon
                             onClick={() => {
-                              deleteDataset(r.id);
+                              openDeleteModal(r.id);
                             }}
                           />
                         </Tooltip>
@@ -333,8 +342,15 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters }) => {
         }}
         scroll={{ x: true }}
       />
-      {/* antd中modal组件 */}
-      {confirmModalHolder}
+      {/* 删除确认弹窗（App Router 样式） */}
+      <AppRouterStyledModal
+        title={t(p("delete"))}
+        open={deleteId !== null}
+        onOk={handleDeleteOk}
+        onCancel={handleDeleteCancel}
+        confirmLoading={deleteDatasetMutation.isPending}
+        destroyOnClose
+      />
     </TableContainer>
   );
 };

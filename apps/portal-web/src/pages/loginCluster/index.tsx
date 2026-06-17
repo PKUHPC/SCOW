@@ -40,9 +40,7 @@ type Props =
       shellClusters: Cluster[];
     };
 
-const Container = styled.div`
-  padding: 24px;
-`;
+const Container = styled.div``;
 
 const StyledCard = styled(Card)`
   .ant-card-head {

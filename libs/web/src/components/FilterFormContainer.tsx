@@ -2,13 +2,13 @@ import { Tabs, TabsProps } from "antd";
 import { styled } from "styled-components";
 
 export const FilterFormContainer = styled.div`
-  padding: 8px 16px 16px 16px;
+  padding: 12px 12px;
   margin: 8px 0;
   background: ${({ theme }) => theme.token.colorBgElevated};
   border-radius: ${({ theme }) => theme.token.borderRadius}px;
 
   .ant-form-item {
-    margin: 4px;
+    margin: 6px 10px;
     max-width: 100%;
   }
 `;

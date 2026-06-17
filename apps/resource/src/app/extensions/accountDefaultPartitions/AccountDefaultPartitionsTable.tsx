@@ -2,13 +2,13 @@
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getCurrentLangTextArgs, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Table } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
+import { FilterInput } from "src/components/FilterInput";
 import { I18nDicType } from "src/models/i18n";
 import { ClusterPartition } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
@@ -177,7 +177,7 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
             />
           </Form.Item>
           <Form.Item name="partition">
-            <Input allowClear placeholder={language.common.partitionInputPlaceholder} />
+            <FilterInput allowClear placeholder={language.common.partitionInputPlaceholder} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">

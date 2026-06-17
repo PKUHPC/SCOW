@@ -20,7 +20,22 @@ const SearchContainer = styled(Space)`
   justify-content: flex-end;
   background: ${({ theme }) => theme.token.colorBgContainer};
   border-radius: 12px;
-  padding: 12px 10px 12px 20px;
+  padding: 12px 10px 16px 20px;
+`;
+
+const AppSearch = styled(RoundedSearch)`
+  height: 36px !important;
+  overflow: hidden;
+
+  .ant-input-group,
+  .ant-input-wrapper {
+    height: 100%;
+  }
+
+  .ant-input {
+    height: 100%;
+    line-height: 34px;
+  }
 `;
 
 interface FilterForm {
@@ -75,13 +90,13 @@ export default function Page() {
       <SearchContainer>
         <Form<FilterForm> layout="inline" form={filterForm} initialValues={initialFilterQuery}>
           <Form.Item name="appName">
-            <RoundedSearch
+            <AppSearch
               placeholder={t(p("searchPlaceholder"))}
               onSearch={async () => {
                 const { appName } = await filterForm.validateFields();
                 setQuery({ appName: appName === "" ? undefined : appName?.trim() });
               }}
-              size="large"
+              size="middle"
               enterButton
             />
           </Form.Item>

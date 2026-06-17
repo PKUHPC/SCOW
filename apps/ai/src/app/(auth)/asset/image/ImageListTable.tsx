@@ -1,12 +1,13 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
 import { App, Button, Form, Select, Space, Table, Tag, Tooltip } from "antd";
 import NextError from "next/error";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { CreateEditImageModal } from "src/components/assets/image/CreateEditImageModal";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
@@ -45,6 +46,14 @@ interface PageInfo {
   pageSize?: number;
 }
 
+interface ImageConfirmState {
+  force?: "true" | "false";
+  id?: number;
+  open: boolean;
+  title?: ReactNode;
+  content?: ReactNode;
+}
+
 const CreateImageModalButton = ModalButton(CreateEditImageModal, { type: "primary", icon: <PlusOutlined /> });
 const EditImageModalButton = ModalLink(CreateEditImageModal);
 const CopyImageModalButton = ModalLink(CopyImageModal);
@@ -80,6 +89,15 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const [showLogModal, setShowLogModal] = useState(false);
   // 存储选中的镜像
   const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<ImageConfirmState>({ open: false });
+  const [shareConfirm, setShareConfirm] = useState<{
+    id?: number;
+    open: boolean;
+    share?: boolean;
+    successMessage?: string;
+    title?: ReactNode;
+    content?: ReactNode;
+  }>({ open: false });
 
   const handleOpenModal = (image: any) => {
     setSelectedImage(image);
@@ -104,7 +122,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
 
   const { data: imageQuota, refetch: refetchImageQuota } = trpc.image.getImageQuota.useQuery();
 
-  const { modal, message } = App.useApp();
+  const { message } = App.useApp();
 
   if (error) {
     return <NextError title={error.message} statusCode={error.data?.httpStatus ?? 500} />;
@@ -227,7 +245,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                     </PlatformTag>
                   ) : (
                     `${r.ownerName}（ID:${r.owner}）`
-                ),
+                  ),
               }
             : {},
           {
@@ -247,9 +265,9 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                   );
                 case Status.CREATED: {
                   if (r.isShared) {
-                    return <a style={{ color: "#5FBDEC" }}>{t(pCommon("PUBLISHED"))}</a>;
+                    return <a style={{ color: "#5FBDEC", cursor: "default" }}>{t(pCommon("PUBLISHED"))}</a>;
                   }
-                  return <a style={{ color: "#3584D9" }}>{t(p("success"))}</a>;
+                  return <a style={{ color: "#3584D9", cursor: "default" }}>{t(p("success"))}</a>;
                 }
                 default:
                   return (
@@ -285,23 +303,13 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                     <Tooltip title={shareOrUnshareStr}>
                       <span
                         onClick={() => {
-                          modal.confirm({
+                          setShareConfirm({
+                            id: r.id,
+                            open: true,
+                            share: !r.isShared,
+                            successMessage: `${shareOrUnshareStr}${t(p("imageSuccessfully"))}`,
                             title: `${shareOrUnshareStr}${languageId === "en" ? " " : ""}${t(p("image"))}`,
                             content: `${t(p("confirmText"), [shareOrUnshareStr, r.name, r.tag])}`,
-                            onOk: async () => {
-                              await shareOrUnshareMutation.mutateAsync(
-                                {
-                                  id: r.id,
-                                  share: !r.isShared,
-                                },
-                                {
-                                  onSuccess() {
-                                    refetch();
-                                    message.success(`${shareOrUnshareStr}${t(p("imageSuccessfully"))}`);
-                                  },
-                                },
-                              );
-                            },
                           });
                         }}
                       >
@@ -324,7 +332,10 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                   <Tooltip title={t("button.deleteButton")}>
                     <DeleteIcon
                       onClick={() => {
-                        modal.confirm({
+                        setDeleteConfirm({
+                          id: r.id,
+                          force: parseBooleanParam(r.status === Status.CREATING),
+                          open: true,
                           title: t(p("delImage")),
                           content:
                             r.status === Status.CREATING ? (
@@ -334,12 +345,6 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                                 <p>{`${t(p("confirmDel"))}${r.name}${t(p("tag"))}${r.tag}？${t(p("delText2"))}`}</p>
                               </>
                             ),
-                          onOk: async () => {
-                            await deleteImageMutation.mutateAsync({
-                              id: r.id,
-                              force: parseBooleanParam(r.status === Status.CREATING),
-                            });
-                          },
                         });
                       }}
                     />
@@ -391,6 +396,54 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
           selectedImage?.status === Status.FAILURE ? (selectedImage?.failedReason ?? "创建失败") : undefined
         }
       />
+      <AppRouterStyledModal
+        title={shareConfirm.title}
+        open={shareConfirm.open}
+        onOk={async () => {
+          if (shareConfirm.id == null || shareConfirm.share == null) {
+            return;
+          }
+          await shareOrUnshareMutation.mutateAsync(
+            {
+              id: shareConfirm.id,
+              share: shareConfirm.share,
+            },
+            {
+              onSuccess() {
+                refetch();
+                message.success(shareConfirm.successMessage ?? t(p("imageSuccessfully")));
+              },
+            },
+          );
+          setShareConfirm({ open: false });
+        }}
+        onCancel={() => setShareConfirm({ open: false })}
+        confirmLoading={shareOrUnshareMutation.isPending}
+        cancelButtonProps={{ disabled: shareOrUnshareMutation.isPending }}
+        destroyOnClose
+      >
+        {shareConfirm.content}
+      </AppRouterStyledModal>
+      <AppRouterStyledModal
+        title={deleteConfirm.title}
+        open={deleteConfirm.open}
+        onOk={async () => {
+          if (deleteConfirm.id == null) {
+            return;
+          }
+          await deleteImageMutation.mutateAsync({
+            id: deleteConfirm.id,
+            force: deleteConfirm.force,
+          });
+          setDeleteConfirm({ open: false });
+        }}
+        onCancel={() => setDeleteConfirm({ open: false })}
+        confirmLoading={deleteImageMutation.isPending}
+        cancelButtonProps={{ disabled: deleteImageMutation.isPending }}
+        destroyOnClose
+      >
+        {deleteConfirm.content}
+      </AppRouterStyledModal>
     </TableContainer>
   );
 };

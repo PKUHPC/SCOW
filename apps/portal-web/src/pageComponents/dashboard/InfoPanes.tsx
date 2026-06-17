@@ -78,7 +78,6 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
               color: `${activeTabKey === "platformOverview" ? "#FFF" : "#000"}`,
               background: `${activeTabKey === "platformOverview" ? theme.token.colorPrimary : "transparent"}`,
               borderRadius: "5px",
-              fontWeight: "700",
               paddingLeft: "20px",
               paddingRight: "20px",
             }}
@@ -126,6 +125,9 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
     pendingJobCount: 0,
   };
 
+  const hasGpu = gpuCoreCount > 0;
+  const paneXlSpan = hasGpu ? 6 : 8;
+
   return (
     <Card
       style={{ width: "100%", boxShadow: "#0000000D 0px 4px 4px 0px" }}
@@ -133,8 +135,8 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
       activeTabKey={activeTabKey}
       onTabChange={onTabChange}
     >
-      <Row justify="space-between" wrap gutter={[50, 50]}>
-        <Col xs={24} md={12} xl={gpuCoreCount > 0 ? 6 : 8}>
+      <Row wrap gutter={[50, 50]}>
+        <Col xs={24} md={12} lg={paneXlSpan} xl={paneXlSpan}>
           <InfoPaneContainer>
             <InfoPane
               loading={loading}
@@ -151,7 +153,7 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
             ></InfoPane>
           </InfoPaneContainer>
         </Col>
-        <Col xs={24} md={12} xl={6}>
+        <Col xs={24} md={12} lg={paneXlSpan} xl={paneXlSpan}>
           <InfoPaneContainer>
             <InfoPane
               loading={loading}
@@ -164,8 +166,8 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
             ></InfoPane>
           </InfoPaneContainer>
         </Col>
-        {gpuCoreCount > 0 && (
-          <Col xs={24} md={12} xl={gpuCoreCount > 0 ? 6 : 8}>
+        {hasGpu && (
+          <Col xs={24} md={12} lg={paneXlSpan} xl={paneXlSpan}>
             <InfoPaneContainer>
               <InfoPane
                 loading={loading}
@@ -179,7 +181,7 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
             </InfoPaneContainer>
           </Col>
         )}
-        <Col xs={24} md={12} xl={gpuCoreCount > 0 ? 6 : 8}>
+        <Col xs={24} md={12} lg={paneXlSpan} xl={paneXlSpan}>
           <InfoPaneContainer>
             <JobInfo
               runningJobs={`${runningJobCount}`}

@@ -1,11 +1,11 @@
 "use client";
 
 import { Cluster } from "@scow/config/build/type";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getCurrentLangTextArgs } from "@scow/lib-web/build/utils/systemLanguage";
 import { keepPreviousData } from "@tanstack/react-query";
 import { App, Button, Divider, Form, Space, Table } from "antd";
 import React, { useEffect, useState } from "react";
+import { FilterInput } from "src/components/FilterInput";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { AssignedDetailsDrawer } from "src/components/pageComponents/AssignedDetailsDrawer";
@@ -309,11 +309,11 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
             }
             name="name"
           >
-            <Input />
+            <FilterInput />
           </Form.Item>
           {operationType === PartitionOperationType.ACCOUNT_OPERATION && (
             <Form.Item label={language.common.accountOwner} name="ownerIdOrName">
-              <Input placeholder={language.common.searchOwnerText} />
+              <FilterInput placeholder={language.common.searchOwnerText} />
             </Form.Item>
           )}
           <Button className="ant-form-item" type="primary" htmlType="submit">

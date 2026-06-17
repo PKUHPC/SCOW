@@ -1,7 +1,9 @@
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TRPCClientError } from "@trpc/client";
 import { App, Space, Table, Tooltip } from "antd";
+import { ModalFuncProps } from "antd";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { CreateEditDSVersionModal } from "src/components/assets/dataset/CreateEditDSVersionModal";
 import { ExpandedTableContainer } from "src/components/assets/ExpandedTableContainer";
@@ -37,7 +39,7 @@ export const DatasetVersionList: React.FC<Props> = ({ datasets, datasetId, datas
   const { publicConfig } = usePublicConfig();
   const isUserShareEnabled = publicConfig.AI_USER_SHARE_ENABLED;
 
-  const { modal, message } = App.useApp();
+  const { message } = App.useApp();
   const CreateEditVersionModalButton = ModalLink(CreateEditDSVersionModal);
 
   const router = useRouter();
@@ -110,17 +112,37 @@ export const DatasetVersionList: React.FC<Props> = ({ datasets, datasetId, datas
     },
   });
 
-  const deleteDatasetVersion = useCallback((id: number, datasetId: number, isConfirmed?: boolean) => {
-    modal.confirm({
-      title: isConfirmed ? t(p("confirmedText")) : t(p("delete")),
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    title?: string;
+    id?: number;
+    datasetId?: number;
+  }>({ open: false });
+
+  const [shareConfirm, setShareConfirm] = useState<{
+    open: boolean;
+    title?: React.ReactNode;
+    content?: React.ReactNode;
+    onOk?: () => Promise<void> | void;
+  }>({ open: false });
+
+  const confirmWithStyledModal = useCallback((config: ModalFuncProps) => {
+    setShareConfirm({
+      open: true,
+      title: config.title,
+      content: config.content,
       onOk: async () => {
-        await deleteMutation.mutateAsync({
-          datasetVersionId: id,
-          datasetId,
-        });
+        await config.onOk?.();
+        setShareConfirm({ open: false });
       },
     });
   }, []);
+
+  const deleteDatasetVersion = (id: number, datasetId: number, isConfirmed?: boolean) => {
+    setDeleteConfirm({ open: true, title: isConfirmed ? t(p("confirmedText")) : t(p("delete")), id, datasetId });
+  };
+
+  const shareConfirmLoading = shareMutation.isPending || unShareMutation.isPending;
 
   return (
     <ExpandedTableContainer>
@@ -188,7 +210,7 @@ export const DatasetVersionList: React.FC<Props> = ({ datasets, datasetId, datas
                         sharedStatus={r.sharedStatus}
                         confirmTitle={r.sharedStatus === SharedStatus.SHARED ? t(p("cancelShareTitle")) : t(p("share"))}
                         confirmContent={`${t(p("confirmed"), [t(pCommon(getSharedStatusText(r.sharedStatus))), r.versionName])}`}
-                        confirmAction={modal.confirm}
+                        confirmAction={confirmWithStyledModal}
                         onShare={async () => {
                           await shareMutation.mutateAsync({
                             datasetVersionId: r.id,
@@ -229,6 +251,42 @@ export const DatasetVersionList: React.FC<Props> = ({ datasets, datasetId, datas
             },
           },
         ]}
+      />
+      {/* 分享/取消分享确认弹窗 */}
+      <AppRouterStyledModal
+        title={shareConfirm.title}
+        open={shareConfirm.open}
+        onOk={async () => {
+          await shareConfirm.onOk?.();
+        }}
+        onCancel={() => {
+          if (!shareConfirmLoading) {
+            setShareConfirm({ open: false });
+          }
+        }}
+        confirmLoading={shareConfirmLoading}
+        cancelButtonProps={{ disabled: shareConfirmLoading }}
+        destroyOnClose
+      >
+        {shareConfirm.content}
+      </AppRouterStyledModal>
+
+      {/* 删除版本确认弹窗 */}
+      <AppRouterStyledModal
+        title={deleteConfirm.title}
+        open={deleteConfirm.open}
+        onOk={async () => {
+          if (deleteConfirm.id != null && deleteConfirm.datasetId != null) {
+            await deleteMutation.mutateAsync({
+              datasetVersionId: deleteConfirm.id,
+              datasetId: deleteConfirm.datasetId,
+            });
+          }
+          setDeleteConfirm({ open: false });
+        }}
+        onCancel={() => setDeleteConfirm({ open: false })}
+        confirmLoading={deleteMutation.isPending}
+        destroyOnClose
       />
     </ExpandedTableContainer>
   );

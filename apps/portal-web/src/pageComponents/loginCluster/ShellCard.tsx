@@ -2,7 +2,6 @@ import { join } from "path";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { ShellIcon } from "src/icons/headerIcons/headerIcons";
 import { BaseCardInfoItem, CardActions, CardTitleContainer, StyledButton, StyledCard } from "src/utils/baseCardStyles";
-import { getTransparentColor } from "src/utils/color";
 import { publicConfig } from "src/utils/config";
 import { styled, useTheme } from "styled-components";
 
@@ -49,7 +48,6 @@ export const ShellCard: React.FC<ShellCardProps> = ({ data }) => {
 
   const theme = useTheme();
   const themeColor = theme.token.colorPrimary;
-  const borderColorWithAlpha = getTransparentColor(themeColor, 0.15);
 
   const handleOpenShell = () => {
     const url = join(publicConfig.BASE_PATH, `/shell/${data.clusterId}/${data.nodeAddress}`);
@@ -66,8 +64,9 @@ export const ShellCard: React.FC<ShellCardProps> = ({ data }) => {
         </CardTitleContainer>
       }
       style={{
-        borderColor: borderColorWithAlpha,
+        borderColor: "#D9D9D9",
         borderWidth: "1px",
+        boxShadow: "0 2px 2px 0 rgba(0, 0, 0, 0.05)",
       }}
     >
       <CardDescription>

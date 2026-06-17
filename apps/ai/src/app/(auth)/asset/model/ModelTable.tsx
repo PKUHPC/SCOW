@@ -1,9 +1,10 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Modal, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Form, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateAndEditModalModal } from "src/components/assets/model/CreateAndEditModelModal";
 import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
@@ -50,8 +51,8 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const languageId = useI18n().currentLanguage.id;
   const theme = useTheme();
 
-  const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const { message } = App.useApp();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
@@ -84,14 +85,17 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
     },
   });
 
-  const deleteModel = useCallback(async (id: number) => {
-    confirm({
-      title: t(p("delete")),
-      onOk: async () => {
-        await deleteModelMutation.mutateAsync({ id });
-      },
-    });
+  const openDeleteModal = useCallback((id: number) => {
+    setDeleteId(id);
   }, []);
+
+  const handleDeleteOk = useCallback(async () => {
+    if (deleteId == null) {
+      return;
+    }
+    await deleteModelMutation.mutateAsync({ id: deleteId });
+    setDeleteId(null);
+  }, [deleteId, deleteModelMutation]);
 
   const getCurrentCluster = useCallback(
     (clusterId: string) => {
@@ -194,7 +198,7 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
                   <Tooltip title={t("button.deleteButton")}>
                     <DeleteIcon
                       onClick={() => {
-                        deleteModel(r.id);
+                        openDeleteModal(r.id);
                       }}
                     />
                   </Tooltip>
@@ -284,8 +288,14 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
         scroll={{ x: true }}
       />
 
-      {/* antd中modal组件 */}
-      {confirmModalHolder}
+      <AppRouterStyledModal
+        title={t(p("delete"))}
+        open={deleteId !== null}
+        onOk={handleDeleteOk}
+        onCancel={() => setDeleteId(null)}
+        confirmLoading={deleteModelMutation.isPending}
+        destroyOnClose
+      />
     </TableContainer>
   );
 };
