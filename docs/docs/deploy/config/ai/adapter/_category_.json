@@ -1,0 +1,8 @@
+{
+  "label": "配置 AI 适配器（beta）",
+  "position": 3,
+  "link": {
+    "type": "doc",
+    "id": "deploy/config/ai/adapter/index"
+  }
+}
