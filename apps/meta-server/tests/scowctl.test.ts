@@ -27,8 +27,8 @@ it("renders scowctl page with install command and binary links", () => {
   expect(html).toContain("/scow/meta/scowctl/install.ps1");
   expect(html).toContain("curl https://scow.example.com/scow/meta/scowctl/install.sh | sh");
   expect(html).toContain("iwr https://scow.example.com/scow/meta/scowctl/install.ps1 -UseB | iex");
-  expect(html).toContain("scowctl login https://scow.example.com");
-  expect(html).toContain("scowctl login https://scow.example.com --auth-secret &lt;secret&gt; --auth-user &lt;user-id&gt;");
+  expect(html).toContain("scowctl login https://scow.example.com/scow");
+  expect(html).toContain("scowctl login https://scow.example.com/scow --auth-secret &lt;secret&gt; --auth-user &lt;user-id&gt;");
   expect(html).toContain('<div class="brand">SCOW</div>');
   expect(html).toContain("面向用户侧的轻量命令行工具");
   expect(html).toContain('<button class="copy-button" type="button">复制</button>');

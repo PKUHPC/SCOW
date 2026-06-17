@@ -28,6 +28,8 @@ const defaultInternalUrls = {
   resource: "http://resource:3000",
 } as const;
 
+export type OpenApiInternalUrlOverrides = Partial<Record<keyof typeof defaultInternalUrls, string>>;
+
 function joinPath(...segments: string[]) {
   const result = path.posix.normalize(path.posix.join(...segments));
   return result === "/" ? result : result.replace(/\/$/, "");
@@ -43,24 +45,37 @@ function getComponentBasePath(systemBasePath: string, componentBasePath: string)
   return joinPath(systemBasePath === "/" ? "" : systemBasePath, componentBasePath);
 }
 
-function createSource(name: keyof typeof defaultInternalUrls, config: InstallConfigSchema, componentBasePath: string) {
+function createSource(
+  name: keyof typeof defaultInternalUrls,
+  config: InstallConfigSchema,
+  componentBasePath: string,
+  internalUrlOverrides: OpenApiInternalUrlOverrides = {},
+) {
   const publicBasePath = getComponentBasePath(config.basePath, componentBasePath);
+  const internalUrl = internalUrlOverrides[name]?.trim();
   return {
     name,
     systemBasePath: config.basePath,
     publicBasePath,
-    internalUrl: joinUrl(defaultInternalUrls[name], publicBasePath, "/api/openapi.json"),
+    internalUrl: internalUrl || joinUrl(defaultInternalUrls[name], publicBasePath, "/api/openapi.json"),
   };
 }
 
-export function getOpenApiSources(config: InstallConfigSchema): OpenApiSource[] {
+export function getOpenApiSources(
+  config: InstallConfigSchema,
+  internalUrlOverrides: OpenApiInternalUrlOverrides = {},
+): OpenApiSource[] {
   return [
-    ...(config.portal?.enabled ? [createSource("portal", config, config.portal.basePath)] : []),
-    ...(config.mis?.enabled ? [createSource("mis", config, config.mis.basePath)] : []),
-    ...(config.ai?.enabled ? [createSource("ai", config, config.ai.basePath)] : []),
-    ...(config.quantum?.enabled ? [createSource("quantum", config, config.quantum.basePath)] : []),
-    ...(config.notification ? [createSource("notification", config, config.notification.basePath)] : []),
-    ...(config.resource ? [createSource("resource", config, config.resource.basePath)] : []),
+    ...(config.portal?.enabled ? [createSource("portal", config, config.portal.basePath, internalUrlOverrides)] : []),
+    ...(config.mis?.enabled ? [createSource("mis", config, config.mis.basePath, internalUrlOverrides)] : []),
+    ...(config.ai?.enabled ? [createSource("ai", config, config.ai.basePath, internalUrlOverrides)] : []),
+    ...(config.quantum?.enabled
+      ? [createSource("quantum", config, config.quantum.basePath, internalUrlOverrides)]
+      : []),
+    ...(config.notification
+      ? [createSource("notification", config, config.notification.basePath, internalUrlOverrides)]
+      : []),
+    ...(config.resource ? [createSource("resource", config, config.resource.basePath, internalUrlOverrides)] : []),
   ];
 }
 

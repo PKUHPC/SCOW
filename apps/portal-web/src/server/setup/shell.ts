@@ -167,6 +167,8 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   let authCheckInterval: NodeJS.Timeout | undefined;
   let isStreamWritable = true;
   let pendingMessages: Buffer[] = [];
+  let streamEnded = false;
+  let exitSent = false;
 
   /* eslint-disable prefer-const */
   // 保存事件处理器引用以便正确清理
@@ -176,6 +178,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   let handleStreamDrain: (() => void) | undefined;
   let handleStreamError: ((err: Error) => void) | undefined;
   let handleStreamData: ((chunk: ShellResponse) => void) | undefined;
+  let handleStreamEnd: (() => void) | undefined;
   /* eslint-enable prefer-const */
 
   // 公共函数：进行错误处理的包装
@@ -251,19 +254,22 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
       if (handleStreamDrain) stream.removeListener("drain", handleStreamDrain);
       if (handleStreamError) stream.removeListener("error", handleStreamError);
       if (handleStreamData) stream.removeListener("data", handleStreamData);
+      if (handleStreamEnd) stream.removeListener("end", handleStreamEnd);
     }, "cleanup Stream listeners");
 
     // 4. 清空待发送消息队列
     pendingMessages = [];
 
     // 5. 断开gRPC Stream连接
-    safeExecute(() => {
-      stream.write({ message: { $case: "disconnect", disconnect: {} } });
-    }, "write disconnect to stream");
+    if (!streamEnded) {
+      safeExecute(() => {
+        stream.write({ message: { $case: "disconnect", disconnect: {} } });
+      }, "write disconnect to stream");
 
-    safeExecute(() => {
-      stream.end();
-    }, "end stream");
+      safeExecute(() => {
+        stream.end();
+      }, "end stream");
+    }
   };
 
   // 处理服务器端drain事件
@@ -326,11 +332,31 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
         send({ $case: "data", data: { data: chunk.message.data.data.toString() } });
         break;
       case "exit":
+        exitSent = true;
         send({ $case: "exit", exit: { code: chunk.message.exit.code, signal: chunk.message.exit.signal } });
         break;
     }
   };
   stream.on("data", handleStreamData);
+
+  handleStreamEnd = () => {
+    if (streamEnded || cleanedUp) {
+      return;
+    }
+    streamEnded = true;
+    log("gRPC stream ended.");
+    closed = true;
+    if (!exitSent) {
+      safeExecute(() => {
+        send({ $case: "exit", exit: {} });
+      }, "send exit message");
+    }
+    safeExecute(() => {
+      ws.close(1000, "shell session ended");
+    }, "close websocket");
+    cleanup();
+  };
+  stream.on("end", handleStreamEnd);
 
   // 保存事件处理器以便后续清理
   handleMessage = (data: RawData) => {

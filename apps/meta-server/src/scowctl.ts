@@ -27,6 +27,14 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#39;");
 }
 
+function getScowctlLoginBaseUrl(basePath: string, scowBaseUrl?: string) {
+  if (!scowBaseUrl) {
+    return "<scow base url>";
+  }
+
+  return `${scowBaseUrl}${basePath === "/" ? "" : basePath}`;
+}
+
 export function createScowctlHtml(basePath: string, scowBaseUrl?: string) {
   const installScriptPath = `${scowctlBasePath(basePath)}/install.sh`;
   const powershellInstallScriptPath = `${scowctlBasePath(basePath)}/install.ps1`;
@@ -35,10 +43,11 @@ export function createScowctlHtml(basePath: string, scowBaseUrl?: string) {
   const macosArm64Path = getScowctlBinaryPath(basePath, "scowctl-macos-arm64");
   const windowsX64Path = getScowctlBinaryPath(basePath, "scowctl-windows-x64.exe");
   const displayBaseUrl = scowBaseUrl ?? "<scow base url>";
+  const loginBaseUrl = getScowctlLoginBaseUrl(basePath, scowBaseUrl);
   const shellInstallCommand = `curl ${displayBaseUrl}${installScriptPath} | sh`;
   const powershellInstallCommand = `iwr ${displayBaseUrl}${powershellInstallScriptPath} -UseB | iex`;
-  const loginCommand = `scowctl login ${displayBaseUrl}`;
-  const staticAuthLoginCommand = `scowctl login ${displayBaseUrl} --auth-secret <secret> --auth-user <user-id>`;
+  const loginCommand = `scowctl login ${loginBaseUrl}`;
+  const staticAuthLoginCommand = `scowctl login ${loginBaseUrl} --auth-secret <secret> --auth-user <user-id>`;
 
   return `<!doctype html>
 <html lang="zh-CN">

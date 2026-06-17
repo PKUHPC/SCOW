@@ -2,7 +2,7 @@ import { getInstallConfig } from "@scow/config/build/install";
 import fastify from "fastify";
 
 import { getMetadata } from "./metadata";
-import { createMergedOpenApiDocument, getOpenApiSources } from "./openapi";
+import { createMergedOpenApiDocument, getOpenApiSources, type OpenApiInternalUrlOverrides } from "./openapi";
 import { createOpenApiHtml, sendSwaggerUiAsset } from "./openapiUi";
 import { META_BASE_PATH, metaBasePath } from "./paths";
 import {
@@ -57,7 +57,7 @@ export function stripMetaBasePath(pathname: string) {
   return pathname;
 }
 
-export function createMetaServer(installConfigPath: string) {
+export function createMetaServer(installConfigPath: string, openApiInternalUrlOverrides: OpenApiInternalUrlOverrides = {}) {
   const installConfig = getInstallConfig(installConfigPath);
   const server = fastify({ logger: false, ignoreTrailingSlash: true });
   const metadataRootPath = metaBasePath(installConfig.basePath);
@@ -74,7 +74,7 @@ export function createMetaServer(installConfigPath: string) {
   });
 
   server.get(`${metadataRootPath}/api/openapi.json`, async () => {
-    const sources = getOpenApiSources(installConfig);
+    const sources = getOpenApiSources(installConfig, openApiInternalUrlOverrides);
     return createMergedOpenApiDocument(sources);
   });
 

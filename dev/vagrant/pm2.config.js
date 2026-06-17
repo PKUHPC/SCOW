@@ -9,6 +9,17 @@ const SCOW_CONFIG_PATH_ENV = {
   SCOW_CONFIG_PATH: "../../dev/vagrant/config.local",
 };
 
+const PM2_INSTALL_CONFIG_PATH = "../../dev/vagrant/install.pm2.yaml";
+
+const PM2_OPENAPI_INTERNAL_URL_ENV = {
+  PORTAL_OPENAPI_INTERNAL_URL: "http://localhost:5001/api/openapi.json",
+  MIS_OPENAPI_INTERNAL_URL: "http://localhost:5003/api/openapi.json",
+  AI_OPENAPI_INTERNAL_URL: "http://localhost:5006/api/openapi.json",
+  QUANTUM_OPENAPI_INTERNAL_URL: "http://localhost:5007/api/openapi.json",
+  RESOURCE_OPENAPI_INTERNAL_URL: "http://localhost:6003/api/openapi.json",
+  NOTIFICATION_OPENAPI_INTERNAL_URL: "http://localhost:6004/api/openapi.json",
+};
+
 module.exports = {
   apps: [
     {
@@ -180,6 +191,51 @@ module.exports = {
         SERVER_URL: "http://localhost:6004",
         ...PRODUCTION_ENV,
         ...SCOW_CONFIG_PATH_ENV,
+      },
+    },
+    {
+      name: "meta-server",
+      script: "src/index.ts",
+      cwd: "./apps/meta-server",
+      watch: ".",
+      interpreter: "tsx",
+      env: {
+        PORT: "5010",
+        INSTALL_CONFIG_PATH: PM2_INSTALL_CONFIG_PATH,
+        SCOWCTL_BIN_DIR: "../scowctl/build/bin",
+        ...PRODUCTION_ENV,
+        ...PM2_OPENAPI_INTERNAL_URL_ENV,
+      },
+    },
+    {
+      name: "gateway",
+      script: "src/devProxy.ts",
+      cwd: "./apps/gateway",
+      watch: ".",
+      interpreter: "tsx",
+      env: {
+        PORT: "5080",
+        BASE_PATH: "",
+        PORTAL_ENABLED: "true",
+        PORTAL_PATH: "/",
+        PORTAL_PATH_INTERNAL_URL: "http://localhost:5001",
+        MIS_ENABLED: "true",
+        MIS_PATH: "/mis",
+        MIS_PATH_INTERNAL_URL: "http://localhost:5003",
+        AI_ENABLED: "true",
+        AI_PATH: "/ai",
+        AI_PATH_INTERNAL_URL: "http://localhost:5006",
+        QUANTUM_ENABLED: "true",
+        QUANTUM_PATH: "/quantum",
+        QUANTUM_PATH_INTERNAL_URL: "http://localhost:5007",
+        RESOURCE_PATH: "/resource",
+        RESOURCE_PATH_INTERNAL_URL: "http://localhost:6003",
+        NOTIFICATION_PATH: "/notification",
+        NOTIFICATION_PATH_INTERNAL_URL: "http://localhost:6004",
+        VNC_ENABLED: "false",
+        AUTH_URL: "http://localhost:5000",
+        META_SERVER_URL: "http://localhost:5010",
+        ...PRODUCTION_ENV,
       },
     },
     {

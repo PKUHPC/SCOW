@@ -21,4 +21,5 @@ func Execute() error {
 func init() {
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(apiCmd)
+	rootCmd.AddCommand(profileCmd)
 }

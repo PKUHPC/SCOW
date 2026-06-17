@@ -1,6 +1,8 @@
-import { bool, envConfig, str } from "@scow/lib-config";
+import { bool, envConfig, port, str } from "@scow/lib-config";
 
 export const config = envConfig({
+  PORT: port({ desc: "HTTP 服务监听端口，仅 Node dev proxy 使用", default: 80 }),
+
   RESOLVER: str({ desc: "DNS地址", default: "127.0.0.11" }),
 
   CLIENT_MAX_BODY_SIZE: str({ desc: "请求文件大小限制", default: "1G" }),

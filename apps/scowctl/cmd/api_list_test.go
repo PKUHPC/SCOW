@@ -68,6 +68,38 @@ func TestFormatAPIList(t *testing.T) {
 	}
 }
 
+func TestAPICommandHelpIncludesParameterForms(t *testing.T) {
+	var output bytes.Buffer
+	apiCmd.SetOut(&output)
+	apiCmd.SetErr(&output)
+	t.Cleanup(func() {
+		apiCmd.SetOut(nil)
+		apiCmd.SetErr(nil)
+	})
+
+	if err := apiCmd.Help(); err != nil {
+		t.Fatal(err)
+	}
+
+	help := output.String()
+	for _, want := range []string{
+		"Parameters use key=value syntax",
+		"customAttributes.CODE_SERVER_VERSION=4.105.1",
+		"ids=1 ids=2",
+		`names='["alice","bob"]'`,
+		`items='[{"id":"item1"},{"id":"item2"}]'`,
+		"?ids=1&ids=2",
+		"For non-array parameters repeated keys use the last value",
+		"--body",
+		`--body '{"name":"test","ids":[1,2]}'`,
+		"must not provide request body fields",
+	} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("api help missing %q:\n%s", want, help)
+		}
+	}
+}
+
 func TestFindAPIRouteUsesDisplayPath(t *testing.T) {
 	route, err := findAPIRoute([]cachedOpenAPISystem{
 		{

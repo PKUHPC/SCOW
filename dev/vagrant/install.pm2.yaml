@@ -1,0 +1,30 @@
+port: 5080
+basePath: /
+imageTag: master
+
+portal:
+  enabled: true
+
+mis:
+  enabled: true
+  dbPassword: must!chang3this
+
+ai:
+  enabled: true
+  dbPassword: must!chang3this
+
+quantum:
+  enabled: true
+  qobody:
+    token: dev
+
+notification: {}
+
+resource: {}
+
+auth: {}
+
+audit: {}
+
+gateway:
+  proxyReadTimeout: 36000s

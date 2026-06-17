@@ -19,15 +19,60 @@ import (
 var apiCmd = &cobra.Command{
 	Use:   "api <http method> <path> <parameters...>",
 	Short: "Call SCOW HTTP OpenAPI",
-	Args:  cobra.MinimumNArgs(2),
+	Long: `Call SCOW HTTP OpenAPI.
+
+Parameters use key=value syntax. scowctl matches keys to the cached OpenAPI
+document:
+  - path parameters replace placeholders in the request path.
+  - query parameters are appended to the request URL.
+  - header parameters are sent as request headers.
+  - remaining known request body fields are sent as JSON body fields.
+
+Body field parameters can use dot notation for nested objects:
+  user.name=alice
+  customAttributes.CODE_SERVER_VERSION=4.105.1
+
+Array parameters support two forms when the OpenAPI schema marks the parameter
+or body field as an array:
+  ids=1 ids=2
+  ids='[1,2]'
+  names='["alice","bob"]'
+  items='[{"id":"item1"},{"id":"item2"}]'
+
+For query arrays, repeated values are encoded as repeated query parameters:
+  ids=1 ids=2 -> ?ids=1&ids=2
+
+For non-array parameters repeated keys use the last value.
+
+Use --body to pass a complete JSON request body directly. When --body is used,
+key=value arguments may still provide path, query, and header parameters, but
+must not provide request body fields.`,
+	Example: `  scowctl api GET /api/users userId=alice
+  scowctl api GET /api/jobs clusters=hpc01 clusters=hpc02
+  scowctl api POST /api/jobs name=test coreCount=4 customAttributes.image=ubuntu
+  scowctl api POST /api/jobs ids='[1,2]' names='["alice","bob"]'
+  scowctl api POST /api/jobs --body '{"name":"test","ids":[1,2]}'
+  scowctl api POST /api/jobs/{id} id=job1 verbose=true --body '{"name":"test"}'
+  scowctl api help POST /api/jobs`,
+	Args: cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		noPretty, err := cmd.Flags().GetBool("no-pretty")
 		if err != nil {
 			return err
 		}
-		return runAPI(cmd.Context(), args[0], args[1], args[2:], os.Stdout, responseOutputOptions{
-			pretty: !noPretty && isInteractiveStdout(),
-		})
+		body, err := cmd.Flags().GetString("body")
+		if err != nil {
+			return err
+		}
+		return runAPI(
+			cmd.Context(),
+			args[0],
+			args[1],
+			args[2:],
+			os.Stdout,
+			apiRequestOptions{body: body},
+			responseOutputOptions{pretty: !noPretty && isInteractiveStdout()},
+		)
 	},
 }
 
@@ -68,6 +113,7 @@ var apiHelpCmd = &cobra.Command{
 
 func init() {
 	apiCmd.Flags().Bool("no-pretty", false, "disable pretty JSON output")
+	apiCmd.Flags().String("body", "", "JSON request body")
 	apiRefreshCmd.Flags().Bool("verbose", false, "show OpenAPI discovery details")
 	apiListCmd.Flags().Bool("no-pager", false, "print directly without using a pager")
 	apiCmd.AddCommand(apiRefreshCmd)
@@ -95,6 +141,7 @@ func runAPI(
 	apiPath string,
 	rawParams []string,
 	output io.Writer,
+	requestOptions apiRequestOptions,
 	outputOptions responseOutputOptions,
 ) error {
 	current, err := getCurrentProfile()
@@ -117,7 +164,7 @@ func runAPI(
 		return err
 	}
 
-	request, err := buildAPIRequest(ctx, current, route, params)
+	request, err := buildAPIRequest(ctx, current, route, params, requestOptions)
 	if err != nil {
 		return err
 	}
@@ -390,6 +437,12 @@ type matchedAPIRoute struct {
 	route  apiRoute
 }
 
+type cliParams map[string][]string
+
+type apiRequestOptions struct {
+	body string
+}
+
 func findAPIRoute(systems []cachedOpenAPISystem, method string, apiPath string) (*matchedAPIRoute, error) {
 	method = strings.ToLower(method)
 	if !strings.HasPrefix(apiPath, "/") {
@@ -458,16 +511,23 @@ func isHTTPMethod(method string) bool {
 	}
 }
 
-func parseCLIParams(rawParams []string) (map[string]string, error) {
-	params := map[string]string{}
+func parseCLIParams(rawParams []string) (cliParams, error) {
+	params := cliParams{}
 	for _, raw := range rawParams {
 		key, value, ok := strings.Cut(raw, "=")
 		if !ok || key == "" {
 			return nil, fmt.Errorf("invalid parameter %q, expected key=value", raw)
 		}
-		params[key] = value
+		params[key] = append(params[key], value)
 	}
 	return params, nil
+}
+
+func lastParamValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[len(values)-1]
 }
 
 func formatRequired(required bool) string {
@@ -514,7 +574,13 @@ func requiredPropertySet(schema map[string]any) map[string]bool {
 	return required
 }
 
-func buildAPIRequest(ctx context.Context, current *namedProfile, route *matchedAPIRoute, params map[string]string) (*http.Request, error) {
+func buildAPIRequest(
+	ctx context.Context,
+	current *namedProfile,
+	route *matchedAPIRoute,
+	params cliParams,
+	options apiRequestOptions,
+) (*http.Request, error) {
 	requestURL, err := buildAPIRequestURL(route, params)
 	if err != nil {
 		return nil, err
@@ -525,7 +591,7 @@ func buildAPIRequest(ctx context.Context, current *namedProfile, route *matchedA
 	used := map[string]bool{}
 
 	for _, parameter := range route.route.Parameters {
-		value, ok := params[parameter.Name]
+		values, ok := params[parameter.Name]
 		if !ok {
 			if parameter.Required {
 				return nil, fmt.Errorf("missing required parameter %q in %s", parameter.Name, parameter.In)
@@ -535,11 +601,11 @@ func buildAPIRequest(ctx context.Context, current *namedProfile, route *matchedA
 
 		used[parameter.Name] = true
 		if parameter.In == "header" {
-			headers[parameter.Name] = value
+			headers[parameter.Name] = lastParamValue(values)
 		}
 	}
 
-	for key, value := range params {
+	for key, values := range params {
 		if used[key] {
 			continue
 		}
@@ -549,16 +615,24 @@ func buildAPIRequest(ctx context.Context, current *namedProfile, route *matchedA
 		if isQueryParameter(route.route.Parameters, key) {
 			continue
 		}
+		if options.body != "" {
+			return nil, fmt.Errorf("unknown parameter %q for %s %s when --body is used", key, strings.ToUpper(route.method), route.path)
+		}
 		if !route.allowsBodyParameter(key) {
 			return nil, fmt.Errorf("unknown parameter %q for %s %s", key, strings.ToUpper(route.method), route.path)
 		}
-		if err := setBodyParameter(bodyParams, route, key, value); err != nil {
+		if err := setBodyParameter(bodyParams, route, key, values); err != nil {
 			return nil, err
 		}
 	}
 
 	var body io.Reader
-	if len(bodyParams) > 0 {
+	if options.body != "" {
+		if !json.Valid([]byte(options.body)) {
+			return nil, fmt.Errorf("--body must be valid JSON")
+		}
+		body = strings.NewReader(options.body)
+	} else if len(bodyParams) > 0 {
 		content, err := json.Marshal(bodyParams)
 		if err != nil {
 			return nil, fmt.Errorf("marshal request body: %w", err)
@@ -610,7 +684,7 @@ func (route *matchedAPIRoute) allowsBodyParameter(key string) bool {
 	return false
 }
 
-func setBodyParameter(bodyParams map[string]any, route *matchedAPIRoute, key string, rawValue string) error {
+func setBodyParameter(bodyParams map[string]any, route *matchedAPIRoute, key string, rawValues []string) error {
 	path := strings.Split(key, ".")
 	current := bodyParams
 
@@ -638,11 +712,46 @@ func setBodyParameter(bodyParams map[string]any, route *matchedAPIRoute, key str
 		return fmt.Errorf("invalid body parameter %q", key)
 	}
 
-	current[last] = parseBodyValue(rawValue, route.bodyParameterSchema(key))
+	current[last] = parseBodyValue(rawValues, route.bodyParameterSchema(key))
 	return nil
 }
 
-func parseBodyValue(rawValue string, schema map[string]any) any {
+func parseBodyValue(rawValues []string, schema map[string]any) any {
+	if schemaType(schema) == "array" {
+		return parseBodyArrayValue(rawValues, schemaMap(schema["items"]))
+	}
+
+	return parseSingleBodyValue(lastParamValue(rawValues), schema)
+}
+
+func parseBodyArrayValue(rawValues []string, itemSchema map[string]any) []any {
+	if len(rawValues) == 1 {
+		if values, ok := parseJSONLiteralArray(rawValues[0], itemSchema); ok {
+			return values
+		}
+	}
+
+	values := make([]any, 0, len(rawValues))
+	for _, rawValue := range rawValues {
+		values = append(values, parseSingleBodyValue(rawValue, itemSchema))
+	}
+	return values
+}
+
+func parseJSONLiteralArray(rawValue string, itemSchema map[string]any) ([]any, bool) {
+	var rawItems []any
+	if err := json.Unmarshal([]byte(rawValue), &rawItems); err != nil {
+		return nil, false
+	}
+
+	values := make([]any, 0, len(rawItems))
+	for _, item := range rawItems {
+		values = append(values, coerceJSONValue(item, itemSchema))
+	}
+	return values, true
+}
+
+func parseSingleBodyValue(rawValue string, schema map[string]any) any {
 	switch schemaType(schema) {
 	case "integer":
 		var value int64
@@ -661,8 +770,56 @@ func parseBodyValue(rawValue string, schema map[string]any) any {
 		if rawValue == "false" {
 			return false
 		}
+	case "object":
+		var value map[string]any
+		if err := json.Unmarshal([]byte(rawValue), &value); err == nil {
+			return value
+		}
 	}
 	return rawValue
+}
+
+func coerceJSONValue(value any, schema map[string]any) any {
+	switch schemaType(schema) {
+	case "integer":
+		switch v := value.(type) {
+		case float64:
+			if v == float64(int64(v)) {
+				return int64(v)
+			}
+		case string:
+			return parseSingleBodyValue(v, schema)
+		}
+	case "number":
+		if v, ok := value.(string); ok {
+			return parseSingleBodyValue(v, schema)
+		}
+	case "boolean":
+		if v, ok := value.(string); ok {
+			return parseSingleBodyValue(v, schema)
+		}
+	case "array":
+		values, ok := value.([]any)
+		if !ok {
+			return value
+		}
+
+		itemSchema := schemaMap(schema["items"])
+		result := make([]any, 0, len(values))
+		for _, item := range values {
+			result = append(result, coerceJSONValue(item, itemSchema))
+		}
+		return result
+	}
+
+	return value
+}
+
+func schemaMap(value any) map[string]any {
+	if typed, ok := value.(map[string]any); ok {
+		return typed
+	}
+	return nil
 }
 
 func (route *matchedAPIRoute) bodyParameterSchema(key string) map[string]any {
@@ -699,7 +856,7 @@ func (route *matchedAPIRoute) bodyParameterSchema(key string) map[string]any {
 	return nil
 }
 
-func buildAPIRequestURL(route *matchedAPIRoute, params map[string]string) (string, error) {
+func buildAPIRequestURL(route *matchedAPIRoute, params cliParams) (string, error) {
 	baseURL, err := url.Parse(route.system.BaseURL)
 	if err != nil {
 		return "", fmt.Errorf("parse system base url: %w", err)
@@ -711,12 +868,12 @@ func buildAPIRequestURL(route *matchedAPIRoute, params map[string]string) (strin
 			continue
 		}
 
-		value, ok := params[parameter.Name]
+		values, ok := params[parameter.Name]
 		if !ok {
 			return "", fmt.Errorf("missing required path parameter %q", parameter.Name)
 		}
 
-		path = strings.ReplaceAll(path, "{"+parameter.Name+"}", value)
+		path = strings.ReplaceAll(path, "{"+parameter.Name+"}", lastParamValue(values))
 	}
 
 	if absolute, err := url.Parse(path); err == nil && absolute.IsAbs() {
@@ -737,7 +894,7 @@ func buildAPIRequestURL(route *matchedAPIRoute, params map[string]string) (strin
 			continue
 		}
 
-		value, ok := params[parameter.Name]
+		values, ok := params[parameter.Name]
 		if !ok {
 			if parameter.Required {
 				return "", fmt.Errorf("missing required query parameter %q", parameter.Name)
@@ -745,11 +902,31 @@ func buildAPIRequestURL(route *matchedAPIRoute, params map[string]string) (strin
 			continue
 		}
 
-		query.Set(parameter.Name, value)
+		if schemaType(parameter.Schema) == "array" {
+			for _, value := range parseQueryArrayValues(values, parameter.Schema) {
+				query.Add(parameter.Name, value)
+			}
+		} else {
+			query.Set(parameter.Name, lastParamValue(values))
+		}
 	}
 	u.RawQuery = query.Encode()
 
 	return u.String(), nil
+}
+
+func parseQueryArrayValues(rawValues []string, schema map[string]any) []string {
+	if len(rawValues) == 1 {
+		if values, ok := parseJSONLiteralArray(rawValues[0], schemaMap(schema["items"])); ok {
+			result := make([]string, 0, len(values))
+			for _, value := range values {
+				result = append(result, fmt.Sprint(value))
+			}
+			return result
+		}
+	}
+
+	return rawValues
 }
 
 func isQueryParameter(parameters []apiParameter, key string) bool {

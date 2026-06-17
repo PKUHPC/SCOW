@@ -32,6 +32,31 @@ it("creates openapi sources from enabled components", () => {
   ]);
 });
 
+it("overrides openapi source internal urls", () => {
+  const sources = getOpenApiSources(
+    {
+      basePath: "/",
+      portal: { enabled: true, basePath: "/" },
+      mis: { enabled: true, basePath: "/mis" },
+    } as InstallConfigSchema,
+    {
+      portal: "http://localhost:5001/api/openapi.json",
+      mis: "http://localhost:5003/api/openapi.json",
+    },
+  );
+
+  expect(sources).toMatchObject([
+    {
+      name: "portal",
+      internalUrl: "http://localhost:5001/api/openapi.json",
+    },
+    {
+      name: "mis",
+      internalUrl: "http://localhost:5003/api/openapi.json",
+    },
+  ]);
+});
+
 it("merges openapi specs and prefixes component refs", async () => {
   const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue({
     ok: true,

@@ -72,7 +72,12 @@ export const scowdShellServices = (): ShellOps => ({
       );
 
       for await (const data of scowdStream) {
-        if (!data?.message.case || data?.message.case === "exit") {
+        if (!data?.message.case) {
+          continue;
+        }
+
+        if (data.message.case === "exit") {
+          call.write({ message: { $case: "exit", exit: data.message.value } });
           break;
         }
 
