@@ -1,5 +1,6 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
+import { Metadata } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded, LockMode, MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
@@ -258,11 +259,20 @@ export async function processSynchronization(
               subLogger,
               clusterClient,
               async (client) => {
-                const clusterChunkResult = await asyncClientCall(client.account, "syncAccountUserInfo", {
-                  sessionId,
-                  syncAccounts: syncAccountsData,
-                  timeoutMilliseconds: remainingMillisecondsForCluster,
-                });
+                const clusterChunkResult = await asyncClientCall(
+                  client.account,
+                  "syncAccountUserInfo",
+                  {
+                    sessionId,
+                    syncAccounts: syncAccountsData,
+                    timeoutMilliseconds: remainingMillisecondsForCluster,
+                  },
+                  {
+                    metadata: new Metadata(),
+                    // 在原本给适配器的执行时间基础上增加 10s 的冗余超时时间，避免因为网络等问题无法按时响应
+                    options: { deadline: Date.now() + remainingMillisecondsForCluster + 10 * 1000 },
+                  },
+                );
 
                 let timeoutException: ListAccountUserSynchronizationsResponse_ExceptionDetail | undefined = undefined;
                 // 检查本次chunk内是否在限制时间内已全部执行

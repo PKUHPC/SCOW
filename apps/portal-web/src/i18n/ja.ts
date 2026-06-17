@@ -705,6 +705,8 @@ export default {
       sftpError: "SFTP 操作に失敗しました。権限をご確認ください",
       otherError: "サーバーでエラーが発生しました",
       adapterConnectionError: "{} クラスターに現在接続できません。後でもう一度お試しください",
+      adapterTimeoutError:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
       noActivatedClusters: "利用可能なクラスターがありません。ページを更新した後でお試しください",
       notExistInActivatedClusters:
         "問い合わせ中のクラスターは停止されている可能性があります。ページを更新した後でお試しください",

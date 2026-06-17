@@ -14,6 +14,7 @@ import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
 import { AdminMessageType, InternalMessageType } from "@scow/lib-web/build/models/notification";
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { isSchedulerAdapterTimeoutError } from "@scow/utils";
 import { App as AntdApp } from "antd";
 import NextApp from "next/app";
 import dynamic from "next/dynamic";
@@ -74,15 +75,20 @@ const FailEventHandler: React.FC = () => {
       }
 
       if (e.data?.code === "ADAPTER_CALL_ON_ONE_ERROR") {
-        const clusterId = e.data.clusterErrorsArray[0].clusterId;
+        const clusterError = e.data.clusterErrorsArray?.[0];
+        const clusterId = clusterError?.clusterId;
         const clusterName = clusterId
           ? (publicConfigClusters.find((c) => c.id === clusterId)?.name ?? clusterId)
           : undefined;
+        const clusterDisplayName = getI18nConfigCurrentText(clusterName, languageId);
+
+        if (isSchedulerAdapterTimeoutError(clusterError?.details) || isSchedulerAdapterTimeoutError(e.data.details)) {
+          message.error(tArgs("pages._app.adapterTimeoutError", [clusterDisplayName]));
+          return;
+        }
 
         message.error(
-          `${
-            tArgs("pages._app.adapterConnectionError", [getI18nConfigCurrentText(clusterName, languageId)]) as string
-          }(${e.data.details})`,
+          `${tArgs("pages._app.adapterConnectionError", [clusterDisplayName]) as string}(${e.data.details})`,
         );
         return;
       }

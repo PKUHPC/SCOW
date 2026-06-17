@@ -1156,7 +1156,14 @@ export default {
       multiClusterOpErrorTitle: "작업 실패",
       multiClusterOpErrorContent:
         "다중 클러스터 작업 중 오류가 발생하여 일부 클러스터에 수정 사항이 동기화되지 않았습니다.",
+      multiClusterAdapterTimeoutErrorContent:
+        "Scheduler adapter timeout occurred during multi-cluster operations, and some clusters were not " +
+        "synchronized with the modifications.",
       adapterConnErrorContent: "{} 클러스터에 현재 접속할 수 없습니다. 나중에 다시 시도하세요. ",
+      adapterTimeoutErrorContent:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
+      schedulerAdapterTimeoutErrorContent:
+        "Scheduler adapter timed out. Please try again later or contact the administrator.",
       effectErrorMessage: "서버 오류가 발생했습니다!",
       noActivatedClusters: "사용 가능한 클러스터가 없습니다. 페이지를 새로고침한 후 다시 시도하세요.",
       notExistInActivatedClusters:

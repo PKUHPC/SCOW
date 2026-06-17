@@ -724,6 +724,8 @@ export default {
       sftpError: "Opération SFTP échouée. Vérifiez vos permissions",
       otherError: "Erreur du serveur",
       adapterConnectionError: "Le cluster {} est actuellement inaccessible. Réessayez plus tard",
+      adapterTimeoutError:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
       noActivatedClusters: "Aucun cluster disponible. Réessayez après rafraîchissement",
       notExistInActivatedClusters:
         "Le(s) cluster(s) consulté(s) peut/peuvent avoir été désactivé(s)." + " Réessayez après rafraîchissement",

@@ -1210,6 +1210,8 @@ export default {
   },
   common: {
     noSpaceError: "저장 공간이 부족합니다. 공간을 정리하거나 관리자에게 문의하세요",
+    schedulerAdapterTimeoutError:
+      "Scheduler adapter timed out. Please try again later or contact the administrator.",
     clusterNotAvailableForAccount: "계정 {0}은(는) 클러스터 {1}에 대한 권한이 없습니다",
     clusterPartitionNotAvailableForAccount: "계정 {0}은(는) 클러스터 {1} 및 파티션 {2}에 대한 권한이 없습니다",
     userAccountNotAvailableWhenSubmit: "계정 {}에서 사용자 {0}을(를) 사용할 수 없습니다",

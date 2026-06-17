@@ -883,6 +883,7 @@ export default {
       sftpError: "SFTP操作失败，请确认您是否有操作的权限",
       otherError: "服务器出错啦！",
       adapterConnectionError: "{} 集群无法连接，请稍后重试 ",
+      adapterTimeoutError: "{} 集群适配器响应超时，请稍后重试或联系管理员。",
       noActivatedClusters: "现在没有可用的集群，请在页面刷新后重试。",
       notExistInActivatedClusters: "正在查询的集群可能已被停用，请在页面刷新后重试。",
 

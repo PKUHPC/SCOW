@@ -1158,7 +1158,14 @@ export default {
     _app: {
       multiClusterOpErrorTitle: "操作に失敗しました",
       multiClusterOpErrorContent: "複数クラスタの操作でエラーが発生し、一部クラスタに変更が同期されませんでした。",
+      multiClusterAdapterTimeoutErrorContent:
+        "Scheduler adapter timeout occurred during multi-cluster operations, and some clusters were not " +
+        "synchronized with the modifications.",
       adapterConnErrorContent: "{} クラスタに現在接続できません。後ほど再試行してください。 ",
+      adapterTimeoutErrorContent:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
+      schedulerAdapterTimeoutErrorContent:
+        "Scheduler adapter timed out. Please try again later or contact the administrator.",
       effectErrorMessage: "サーバーエラーが発生しました！",
       noActivatedClusters: "利用可能なクラスタがありません。ページを更新後に再試行してください。",
       notExistInActivatedClusters:

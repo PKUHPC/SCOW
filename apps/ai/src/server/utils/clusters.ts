@@ -1,54 +1,22 @@
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { getCommonConfig } from "@scow/config/src/common";
-import { createAdapterCertificates } from "@scow/lib-scheduler-adapter";
-import { SslConfig } from "@scow/lib-scheduler-adapter/build/ssl";
+import {
+  createAdapterCertificates,
+  getSchedulerAdapterClient,
+} from "@scow/lib-scheduler-adapter";
+import type { SchedulerAdapterClient } from "@scow/lib-scheduler-adapter";
 import { getUserAccountsClusterIds } from "@scow/lib-scow-resource";
 import { libGetClustersRuntimeInfo } from "@scow/lib-web/build/server/clustersActivation";
 import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { ClusterActivationStatus } from "@scow/protos/build/server/config";
-import { AccountServiceClient } from "@scow/scheduler-adapter-protos/build/account";
-import { AppServiceClient } from "@scow/scheduler-adapter-protos/build/app";
-import { ConfigServiceClient } from "@scow/scheduler-adapter-protos/build/config";
-import { JobServiceClient } from "@scow/scheduler-adapter-protos/build/job";
-import { UserServiceClient } from "@scow/scheduler-adapter-protos/build/user";
-import { VersionServiceClient } from "@scow/scheduler-adapter-protos/build/version";
 import { TRPCError } from "@trpc/server";
 import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { logger } from "src/server/utils/logger";
 import { isParentOrSameFolder } from "src/utils/file";
 
-type ClientConstructor<TClient> = new (address: string, credentials: ChannelCredentials) => TClient;
-
-export interface SchedulerAdapterClient {
-  account: AccountServiceClient;
-  user: UserServiceClient;
-  job: JobServiceClient;
-  config: ConfigServiceClient;
-  version: VersionServiceClient;
-  app: AppServiceClient;
-}
-
-export function getClient<TClient>(address: string, sslConfig: SslConfig, ctor: ClientConstructor<TClient>): TClient {
-  if (sslConfig.enabled) {
-    return new ctor(address, ChannelCredentials.createSsl(sslConfig.ca, sslConfig.key, sslConfig.cert));
-  }
-
-  return new ctor(address, ChannelCredentials.createInsecure());
-}
+export type { SchedulerAdapterClient };
 
 export const certificates = createAdapterCertificates(config);
-
-export const getSchedulerAdapterClient = (address: string, sslConfig: SslConfig) => {
-  return {
-    account: getClient(address, sslConfig, AccountServiceClient),
-    user: getClient(address, sslConfig, UserServiceClient),
-    job: getClient(address, sslConfig, JobServiceClient),
-    config: getClient(address, sslConfig, ConfigServiceClient),
-    version: getClient(address, sslConfig, VersionServiceClient),
-    app: getClient(address, sslConfig, AppServiceClient),
-  } as SchedulerAdapterClient;
-};
 
 const adapterClientForClusters = Object.entries(clusters).reduce(
   (prev, [cluster, c]) => {

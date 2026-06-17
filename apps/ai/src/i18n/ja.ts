@@ -1214,6 +1214,8 @@ export default {
   },
   common: {
     noSpaceError: "ストレージスペースが不足しています。スペースをクリーンアップするか、管理者に連絡してください",
+    schedulerAdapterTimeoutError:
+      "Scheduler adapter timed out. Please try again later or contact the administrator.",
     clusterNotAvailableForAccount: "アカウント{0}はクラスター{1}の承認を受けていません",
     clusterPartitionNotAvailableForAccount: "アカウント{0}はクラスター{1}とパーティション{2}の承認を受けていません",
     userAccountNotAvailableWhenSubmit: "アカウント{}の下ではユーザー{0}は利用できません",

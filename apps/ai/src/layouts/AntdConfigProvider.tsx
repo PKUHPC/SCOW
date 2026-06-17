@@ -17,6 +17,7 @@ import ptPTlocale from "antd/locale/pt_PT";
 import ruRUlocale from "antd/locale/ru_RU";
 import zhCNlocale from "antd/locale/zh_CN";
 import React, { useMemo } from "react";
+import { SchedulerAdapterTimeoutErrorHandler } from "src/app/trpcClient";
 import { useI18n } from "src/i18n";
 import { AppFloatButtons } from "src/layouts/AppFloatButtons";
 import { useDarkMode } from "src/layouts/darkMode";
@@ -80,6 +81,7 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) 
     >
       <StyledComponentsThemeProvider color={currentPrimaryColor} grayPalette={grayPalette}>
         <App>
+          <SchedulerAdapterTimeoutErrorHandler />
           <AppFloatButtons />
           {children}
         </App>

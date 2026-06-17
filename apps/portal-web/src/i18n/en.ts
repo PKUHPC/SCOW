@@ -903,6 +903,8 @@ export default {
       sftpError: "SFTP operation failed. Please confirm if you have the necessary permissions.",
       otherError: "Server encountered an error!",
       adapterConnectionError: "The {} cluster is currently unreachable. Please try again later. ",
+      adapterTimeoutError:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
       noActivatedClusters: "No available clusters. Please try again after refreshing the page.",
       notExistInActivatedClusters:
         "The cluster(s) being queried may have been deactivated. " + "Please try again after refreshing the page.",

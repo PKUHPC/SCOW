@@ -961,16 +961,23 @@ export const addToAccountDefaultPartitions = adminAuthProcedure
     const { failedUnblockedAccounts, successfullyUnblockedAccounts, accountsToProcessInEm } = clusterProcessResult;
 
     return await em.transactional(async (em) => {
+      const existedAccountClusterNames = new Set(
+        accountsToProcessInEm.length > 0
+          ? (
+              await em.find(AccountClusterRule, {
+                accountName: { $in: accountsToProcessInEm },
+                tenantName,
+                clusterId,
+              })
+            ).map((x) => x.accountName)
+          : [],
+      );
+
       const accountClustersToPersist: AccountClusterRule[] = [];
       const accountPartitionsToPersist: AccountPartitionRule[] = [];
       for (const accountName of accountsToProcessInEm) {
         // 检查集群是否已授权，如没有，则重新授权
-        const accountCluster = await em.findOne(AccountClusterRule, {
-          accountName,
-          tenantName,
-          clusterId,
-        });
-        if (!accountCluster) {
+        if (!existedAccountClusterNames.has(accountName)) {
           const newAccountCluster = new AccountClusterRule({
             accountName,
             tenantName,
@@ -989,10 +996,22 @@ export const addToAccountDefaultPartitions = adminAuthProcedure
 
       // 为所有账户写入授权信息
       if (accountPartitionsToPersist.length > 0 || accountClustersToPersist.length > 0) {
-        await Promise.all([
-          em.insertMany(AccountClusterRule, accountClustersToPersist),
-          em.insertMany(AccountPartitionRule, accountPartitionsToPersist),
-        ]);
+        const insertPromises: Promise<unknown>[] = [];
+        if (accountClustersToPersist.length > 0) {
+          insertPromises.push(em.insertMany(AccountClusterRule, accountClustersToPersist));
+        }
+        if (accountPartitionsToPersist.length > 0) {
+          insertPromises.push(em.insertMany(AccountPartitionRule, accountPartitionsToPersist));
+        }
+        await Promise.all(insertPromises);
+        logger.info(
+          "Added %d account cluster rules and %d account partition rules while adding default partition %s:%s for tenant %s.",
+          accountClustersToPersist.length,
+          accountPartitionsToPersist.length,
+          clusterId,
+          partition,
+          tenantName,
+        );
 
         // call hook
         // 同步添加租户下账户授权分区时补充添加的账户的集群授权
@@ -1264,8 +1283,9 @@ export const addToAccountDefaultClusters = adminAuthProcedure
       const existedAccountNames = accountClusters.map((x) => x.accountName);
 
       const accountClustersToPersist: AccountClusterRule[] = [];
+      const existedAccountNameSet = new Set(existedAccountNames);
       accountNameList.forEach((accountName) => {
-        if (!existedAccountNames.includes(accountName)) {
+        if (!existedAccountNameSet.has(accountName)) {
           const newAccountCluster = new AccountClusterRule({
             accountName,
             tenantName,
@@ -1274,9 +1294,23 @@ export const addToAccountDefaultClusters = adminAuthProcedure
           accountClustersToPersist.push(newAccountCluster);
         }
       });
+      logger.info(
+        "Start adding default cluster %s for tenant %s. Total accounts %d, existing account rules %d, new account rules %d.",
+        clusterId,
+        tenantName,
+        accountNameList.length,
+        existedAccountNameSet.size,
+        accountClustersToPersist.length,
+      );
       // 为所有账户写入集群的授权信息
       if (accountClustersToPersist.length > 0) {
         await em.insertMany(AccountClusterRule, accountClustersToPersist);
+        logger.info(
+          "Added %d account cluster rules while adding default cluster %s for tenant %s.",
+          accountClustersToPersist.length,
+          clusterId,
+          tenantName,
+        );
         // call hook
         await Promise.all(
           accountClustersToPersist.map((ac) => {

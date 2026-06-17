@@ -1222,7 +1222,14 @@ export default {
       multiClusterOpErrorContent:
         "Operações em múltiplos clusters encontraram erros, e alguns clusters não foram " +
         "sincronizados com as modificações.",
+      multiClusterAdapterTimeoutErrorContent:
+        "Scheduler adapter timeout occurred during multi-cluster operations, and some clusters were not " +
+        "synchronized with the modifications.",
       adapterConnErrorContent: "O cluster {} está atualmente inacessível. Tente novamente mais tarde. ",
+      adapterTimeoutErrorContent:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
+      schedulerAdapterTimeoutErrorContent:
+        "Scheduler adapter timed out. Please try again later or contact the administrator.",
       effectErrorMessage: "Ocorreu erro no servidor!",
       noActivatedClusters: "Sem clusters disponíveis. Tente novamente após atualizar a página.",
       notExistInActivatedClusters:

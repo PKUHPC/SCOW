@@ -1492,6 +1492,7 @@ export default {
   },
   common: {
     noSpaceError: "存储空间不足，请清理空间或联系管理员",
+    schedulerAdapterTimeoutError: "调度器适配器响应超时，请稍后重试或联系管理员。",
     clusterNotAvailableForAccount: "账户 {0} 没有该集群 {1} 的授权",
     clusterPartitionNotAvailableForAccount: "账户 {0} 没有该集群 {1} 与分区 {2} 的授权",
     userAccountNotAvailableWhenSubmit: "用户 {0} 在账户 {1} 下不可用",

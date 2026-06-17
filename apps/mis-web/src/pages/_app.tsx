@@ -13,6 +13,7 @@ import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
 import { AdminMessageType, InternalMessageType } from "@scow/lib-web/build/models/notification";
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { hasSchedulerAdapterTimeoutError } from "@scow/utils";
 import { App as AntdApp } from "antd";
 import App from "next/app";
 import dynamic from "next/dynamic";
@@ -52,20 +53,34 @@ const FailEventHandler: React.FC = () => {
         return;
       }
       if (e.data?.code === "CLUSTEROPS_ERROR") {
+        const hasTimeoutError = hasSchedulerAdapterTimeoutError(e.data);
+        const content = hasTimeoutError
+          ? tArgs("page._app.multiClusterAdapterTimeoutErrorContent")
+          : tArgs("page._app.multiClusterOpErrorContent");
+
         modal.error({
           title: tArgs("page._app.multiClusterOpErrorTitle"),
-          content: `${tArgs("page._app.multiClusterOpErrorContent") as string}(${e.data.details})`,
+          content: hasTimeoutError ? content : `${content as string}(${e.data.details})`,
         });
         return;
       }
       if (e.data?.code === "ADAPTER_CALL_ON_ONE_ERROR") {
-        const clusterId = e.data.clusterErrorsArray[0].clusterId;
+        const clusterError = e.data.clusterErrorsArray?.[0];
+        const clusterId = clusterError?.clusterId;
         const clusterName = clusterId ? (publicConfigClusters[clusterId]?.name ?? clusterId) : undefined;
+        const clusterDisplayName = getI18nConfigCurrentText(clusterName, languageId);
+
+        if (hasSchedulerAdapterTimeoutError(e.data)) {
+          message.error(
+            clusterDisplayName
+              ? tArgs("page._app.adapterTimeoutErrorContent", [clusterDisplayName])
+              : tArgs("page._app.schedulerAdapterTimeoutErrorContent"),
+          );
+          return;
+        }
 
         message.error(
-          `${
-            tArgs("page._app.adapterConnErrorContent", [getI18nConfigCurrentText(clusterName, languageId)]) as string
-          }(${e.data.details})`,
+          `${tArgs("page._app.adapterConnErrorContent", [clusterDisplayName]) as string}(${e.data.details})`,
         );
         return;
       }
@@ -98,6 +113,11 @@ const FailEventHandler: React.FC = () => {
       // 网络问题或标签休眠期间的定时任务会报错到此处处理
       // 忽略通知接口的错误
       if (e.request?.url?.includes("/api/notification/getUnreadMessages") && e.status === -1) {
+        return;
+      }
+
+      if (hasSchedulerAdapterTimeoutError(e.data)) {
+        message.error(tArgs("page._app.schedulerAdapterTimeoutErrorContent"));
         return;
       }
 

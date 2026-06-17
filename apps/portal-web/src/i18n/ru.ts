@@ -717,6 +717,8 @@ export default {
       sftpError: "Ошибка операции SFTP. Проверьте права",
       otherError: "Ошибка сервера!",
       adapterConnectionError: "Кластер {} недоступен. Попробуйте позже",
+      adapterTimeoutError:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
       noActivatedClusters: "Нет доступных кластеров. Попробуйте обновить страницу и повторить",
       notExistInActivatedClusters: "Запрашиваемый кластер мог быть отключён. Попробуйте обновить страницу и повторить",
       noClusters: "Не удалось найти файлы конфигурации кластеров. Свяжитесь с администратором",

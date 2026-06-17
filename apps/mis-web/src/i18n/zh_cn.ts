@@ -1189,8 +1189,11 @@ export default {
     _app: {
       multiClusterOpErrorTitle: "操作失败",
       multiClusterOpErrorContent: "多集群操作出现错误，部分集群未同步修改",
+      multiClusterAdapterTimeoutErrorContent: "多集群操作出现适配器响应超时，部分集群未同步修改",
 
       adapterConnErrorContent: "{} 集群无法连接，请稍后重试 ",
+      adapterTimeoutErrorContent: "{} 集群适配器响应超时，请稍后重试或联系管理员。",
+      schedulerAdapterTimeoutErrorContent: "调度器适配器响应超时，请稍后重试或联系管理员。",
       effectErrorMessage: "服务器出错啦！",
       noActivatedClusters: "现在没有可用的集群，请在页面刷新后重试。",
       notExistInActivatedClusters: "正在查询的集群可能已被停用，请在页面刷新后重试。",

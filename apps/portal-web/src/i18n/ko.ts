@@ -701,6 +701,8 @@ export default {
       sftpError: "SFTP 작업 실패. 권한이 있는지 확인하세요",
       otherError: "서버 오류 발생",
       adapterConnectionError: "{} 클러스터에 현재 연결할 수 없습니다. 나중에 다시 시도하세요",
+      adapterTimeoutError:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
       noActivatedClusters: "사용 가능한 클러스터가 없습니다. 페이지 새로고침 후 다시 시도하세요",
       notExistInActivatedClusters:
         "조회 중인 클러스터가 비활성화되었을 수 있습니다. 페이지 새로고침 후 다시 시도하세요",

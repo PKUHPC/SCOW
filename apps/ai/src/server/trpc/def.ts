@@ -1,3 +1,4 @@
+import { isSchedulerAdapterTimeoutError } from "@scow/utils";
 import { initTRPC } from "@trpc/server";
 import Superjson from "superjson";
 import { OpenApiMeta } from "trpc-to-openapi";
@@ -17,6 +18,7 @@ export const trpc = initTRPC
         data: {
           ...shape.data,
           detailedError: error instanceof DetailedTRPCError ? error.detail : null,
+          schedulerAdapterTimeout: isSchedulerAdapterTimeoutError(error),
         },
       };
     },

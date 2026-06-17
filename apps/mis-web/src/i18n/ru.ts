@@ -1220,7 +1220,14 @@ export default {
       multiClusterOpErrorContent:
         "При выполнении операций на нескольких кластерах возникли ошибки, некоторые кластеры не " +
         "были синхронизированы с изменениями.",
+      multiClusterAdapterTimeoutErrorContent:
+        "Scheduler adapter timeout occurred during multi-cluster operations, and some clusters were not " +
+        "synchronized with the modifications.",
       adapterConnErrorContent: "Кластер {} сейчас недоступен. Пожалуйста, попробуйте позже. ",
+      adapterTimeoutErrorContent:
+        "The scheduler adapter for cluster {} timed out. Please try again later or contact the administrator.",
+      schedulerAdapterTimeoutErrorContent:
+        "Scheduler adapter timed out. Please try again later or contact the administrator.",
       effectErrorMessage: "Произошла ошибка сервера!",
       noActivatedClusters: "Нет доступных кластеров. Обновите страницу и попробуйте снова.",
       notExistInActivatedClusters:

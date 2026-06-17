@@ -18,6 +18,36 @@ export interface AssignResult {
 export type UnassignResultType = UnassignResult;
 export type AssignResultType = AssignResult;
 
+const ACCOUNT_ASSIGNMENT_PROGRESS_LOG_INTERVAL = 100;
+
+const logAccountAssignmentProgress = (
+  logger: Logger,
+  action: string,
+  completed: number,
+  total: number,
+  successCount: number,
+  failedCount: number,
+  startedAt: number,
+) => {
+  if (total === 0) {
+    return;
+  }
+
+  if (completed !== total && completed % ACCOUNT_ASSIGNMENT_PROGRESS_LOG_INTERVAL !== 0) {
+    return;
+  }
+
+  logger.info(
+    "%s progress: completed %d/%d accounts, succeeded %d, failed %d, elapsed %dms.",
+    action,
+    completed,
+    total,
+    successCount,
+    failedCount,
+    Date.now() - startedAt,
+  );
+};
+
 /**
  * 在取消租户授权集群/授权分区 或者移出默认集群/移出默认分区时
  * 对租户下所有账户进行集群下所有分区的封锁/或者某一分区的封锁
@@ -42,32 +72,52 @@ export async function unAssignTenantAccountsThroughCluster(
   const failedBlockedAccounts: string[] = [];
   const successfullyBlockedAccounts: string[] = [];
 
-  let blockedPartitions: string[];
+  if (accountNameList.length === 0) {
+    logger.info("No accounts need to be unassigned for tenant %s in cluster %s.", tenantName, clusterId);
+    return {
+      failedBlockedAccounts,
+      successfullyBlockedAccounts,
+    };
+  }
 
   const clustersUtil = await getClusterUtils();
+  const startedAt = Date.now();
   await clustersUtil.callOnOne(clusterId, logger, async (adapterClient) => {
+    let blockedPartitions = partitionName ? [partitionName] : [];
+
+    if (!partitionName) {
+      const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
+      // 获取当前集群下所有分区
+      blockedPartitions = clusterConfig.partitions.map((p) => p.name);
+    }
+
+    logger.info(
+      "Start unassigning %d accounts of tenant %s in cluster %s with %d blocked partitions.",
+      accountNameList.length,
+      tenantName,
+      clusterId,
+      blockedPartitions.length,
+    );
+
+    if (blockedPartitions.length === 0) {
+      logger.info("No partitions need to be blocked for tenant %s in cluster %s.", tenantName, clusterId);
+      return;
+    }
+
+    await ensureResourceManagementFeatureAvailable(adapterClient, logger);
+
+    let completed = 0;
     await Promise.allSettled(
       accountNameList.map(async (accountName) => {
         try {
-          if (!partitionName) {
-            const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
-            // 获取当前集群下所有分区
-            blockedPartitions = clusterConfig.partitions.map((p) => p.name);
-          } else {
-            blockedPartitions = [partitionName];
-          }
-
           // 封锁当前集群下所有分区 或者传递的指定分区
-          if (blockedPartitions.length > 0) {
-            await ensureResourceManagementFeatureAvailable(adapterClient, logger);
-            const result = await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
-              accountName,
-              blockedPartitions,
-            });
+          const result = await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
+            accountName,
+            blockedPartitions,
+          });
 
-            if (result) {
-              successfullyBlockedAccounts.push(accountName);
-            }
+          if (result) {
+            successfullyBlockedAccounts.push(accountName);
           }
         } catch (e) {
           logger.info(
@@ -77,10 +127,31 @@ export async function unAssignTenantAccountsThroughCluster(
             e,
           );
           failedBlockedAccounts.push(accountName);
+        } finally {
+          completed += 1;
+          logAccountAssignmentProgress(
+            logger,
+            "Unassign tenant accounts through cluster",
+            completed,
+            accountNameList.length,
+            successfullyBlockedAccounts.length,
+            failedBlockedAccounts.length,
+            startedAt,
+          );
         }
       }),
     );
   });
+
+  logger.info(
+    "Finished unassigning accounts of tenant %s in cluster %s. Total %d, succeeded %d, failed %d, elapsed %dms.",
+    tenantName,
+    clusterId,
+    accountNameList.length,
+    successfullyBlockedAccounts.length,
+    failedBlockedAccounts.length,
+    Date.now() - startedAt,
+  );
 
   return {
     failedBlockedAccounts,
@@ -131,7 +202,19 @@ export async function assignTenantAccountsPartitionThroughCluster(
   // scow在账户解封时同时还会再次传输在scow保存的分区信息，此时会处理未授权和授权的分区信息
   if (unblockedAccountsToProcess.length > 0) {
     const clustersUtil = await getClusterUtils();
+    const startedAt = Date.now();
     await clustersUtil.callOnOne(clusterId, logger, async (adapterClient) => {
+      await ensureResourceManagementFeatureAvailable(adapterClient, logger);
+
+      logger.info(
+        "Start assigning partition %s of cluster %s to %d unblocked accounts of tenant %s.",
+        partitionName,
+        clusterId,
+        unblockedAccountsToProcess.length,
+        tenantName,
+      );
+
+      let completed = 0;
       await Promise.allSettled(
         unblockedAccountsToProcess.map(async (accountName) => {
           try {
@@ -151,15 +234,39 @@ export async function assignTenantAccountsPartitionThroughCluster(
               e,
             );
             failedUnblockedAccounts.push(accountName);
+          } finally {
+            completed += 1;
+            logAccountAssignmentProgress(
+              logger,
+              "Assign tenant accounts partition through cluster",
+              completed,
+              unblockedAccountsToProcess.length,
+              successfullyUnblockedAccounts.length,
+              failedUnblockedAccounts.length,
+              startedAt,
+            );
           }
         }),
       );
     });
+
+    logger.info(
+      "Finished assigning partition %s of cluster %s to unblocked accounts of tenant %s. " +
+        "Total %d, succeeded %d, failed %d, elapsed %dms.",
+      partitionName,
+      clusterId,
+      tenantName,
+      unblockedAccountsToProcess.length,
+      successfullyUnblockedAccounts.length,
+      failedUnblockedAccounts.length,
+      Date.now() - startedAt,
+    );
   }
 
+  const failedUnblockedAccountSet = new Set(failedUnblockedAccounts);
   const accountsToProcessInEm = accountNameList
     .filter((accountName) => !existedAccountSet.has(accountName))
-    .filter((x) => !failedUnblockedAccounts.includes(x));
+    .filter((accountName) => !failedUnblockedAccountSet.has(accountName));
 
   return {
     failedUnblockedAccounts,

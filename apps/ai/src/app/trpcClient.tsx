@@ -1,17 +1,24 @@
 "use client";
 
 import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
-import { joinWithUrl } from "@scow/utils";
+import { hasSchedulerAdapterTimeoutError, joinWithUrl } from "@scow/utils";
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, httpLink, loggerLink, splitLink, TRPCClientError } from "@trpc/client";
-import { message } from "antd";
+import { App, message } from "antd";
 import { join } from "path";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useI18nTranslateToString } from "src/i18n";
 import { AppRouter } from "src/server/trpc/router";
 import { trpc } from "src/utils/trpc";
 import superjson from "superjson";
 
 const MAX_RETRIES = 3;
+
+let schedulerAdapterTimeoutErrorHandler: (() => void) | undefined;
+
+const notifySchedulerAdapterTimeoutError = () => {
+  schedulerAdapterTimeoutErrorHandler?.();
+};
 
 declare module "@trpc/client" {
   interface TRPCRequestOptions {
@@ -20,6 +27,23 @@ declare module "@trpc/client" {
       noBatch?: boolean;
     };
   }
+}
+
+export function SchedulerAdapterTimeoutErrorHandler() {
+  const t = useI18nTranslateToString();
+  const { message } = App.useApp();
+
+  useEffect(() => {
+    schedulerAdapterTimeoutErrorHandler = () => {
+      message.error(t("common.schedulerAdapterTimeoutError"));
+    };
+
+    return () => {
+      schedulerAdapterTimeoutErrorHandler = undefined;
+    };
+  }, [t]);
+
+  return null;
 }
 
 export function ClientProvider(props: { baseUrl: string; basePath: string; children: React.ReactNode }) {
@@ -35,6 +59,10 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
               if (data?.code && data?.code === "UNAUTHORIZED") {
                 setIsRedirecting(true);
                 window.location.href = join(props.basePath, "/api/auth");
+                return false;
+              }
+
+              if (hasSchedulerAdapterTimeoutError(data)) {
                 return false;
               }
 
@@ -56,6 +84,8 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
               window.location.href = join(props.basePath, "/api/auth");
             } else if (silent) {
               return;
+            } else if (hasSchedulerAdapterTimeoutError(data)) {
+              notifySchedulerAdapterTimeoutError();
             } else if (msg) {
               message.error(msg);
             } else if (data?.code && query?.meta?.[data?.code]) {
@@ -73,6 +103,8 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
             if (data?.code && data?.code === "UNAUTHORIZED") {
               setIsRedirecting(true);
               window.location.href = join(props.basePath, "/api/auth");
+            } else if (hasSchedulerAdapterTimeoutError(data) && !onError) {
+              notifySchedulerAdapterTimeoutError();
             } else if (
               data?.path?.startsWith("file") &&
               data?.code === "PRECONDITION_FAILED" &&

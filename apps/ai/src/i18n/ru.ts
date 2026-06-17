@@ -1216,6 +1216,8 @@ export default {
   },
   common: {
     noSpaceError: "Espacio de almacenamiento insuficiente, por favor limpie el espacio o contacte al administrador",
+    schedulerAdapterTimeoutError:
+      "Scheduler adapter timed out. Please try again later or contact the administrator.",
     clusterNotAvailableForAccount: "Cuenta {0} no está autorizada para el cluster {1}",
     clusterPartitionNotAvailableForAccount: "Cuenta {0} no está autorizada para el cluster {1} y la partición {2}",
     userAccountNotAvailableWhenSubmit: "Usuario {0} no está disponible bajo la cuenta {}",
