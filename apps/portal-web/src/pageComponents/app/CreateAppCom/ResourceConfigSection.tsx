@@ -2,38 +2,28 @@ import type { ColumnsType } from "antd/es/table";
 import type { ReactNode } from "react";
 
 import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
+import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import {
-  RoundedInputNumber,
-  RoundedInputNumberWithAddonAfter,
-} from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { AddonAfterSelect } from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import { PresetNumberSelector } from "@scow/lib-web/build/components/styledAntdCom/SegmentedButtons";
 import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Tooltip } from "@scow/lib-web/build/components/styledAntdCom/Tooltip";
 import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
-import { Form, type FormInstance, Select, Space } from "antd";
+import { Form, type FormInstance, Space } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { ReservedAppAttributeName } from "src/models/job";
+import { ReservedAppAttributeName, TimeUnit } from "src/models/job";
+import { MaxTimeSelector } from "src/pageComponents/job/submitJobCom/ResourceConfigSection";
 import { ReservedAppAttribute } from "src/pages/api/app/getAppMetadata";
 import { Partition } from "src/pages/api/cluster";
 
-import { getReservedAppAttributeConfig } from "../LaunchAppForm";
+import { getReservedAppAttributeConfig } from "../LauchAppFormUtils";
+import type { AccountOption } from "../LaunchAppForm";
 import { AppResourceFormValues, FixedOrEditableFormItem } from "./FixedOrEditableFormItem";
-
-interface ClusterOption {
-  id: string;
-  name: string;
-  disabled: boolean;
-}
 
 export type PartitionTabKey = "cpu" | "gpu";
 const PARTITION_TABLE_SCROLL_Y = 325;
 const PARTITION_TABLE_MAX_VISIBLE_ROWS = 5;
-
-export type TimeUnit = "min" | "hour" | "day";
 
 export interface PartitionRow {
   key: string;
@@ -49,9 +39,9 @@ export interface PartitionRow {
 
 interface ResourceConfigSectionProps {
   form: FormInstance<AppResourceFormValues>;
-  accountOptions: string[];
-  clusterOptions: ClusterOption[];
-  selectedCluster?: string;
+  accountOptions: AccountOption[];
+  selectedAccount?: string;
+  clusterName?: string;
   partitionRows: PartitionRow[];
   activePartitionTab: PartitionTabKey;
   onActivePartitionTabChange: (tab: PartitionTabKey) => void;
@@ -61,6 +51,8 @@ interface ResourceConfigSectionProps {
   inputsDisabled?: boolean;
   maxTimeUnit: TimeUnit;
   onMaxTimeUnitChange: (unit: TimeUnit) => void;
+  selectedPresetUnit?: TimeUnit;
+  onSelectedPresetUnitChange: (unit: TimeUnit | undefined) => void;
   languageId: string;
   appId: string;
   clusterId: string;
@@ -70,12 +62,13 @@ interface ResourceConfigSectionProps {
 }
 
 const p = prefix("pageComp.app.launchAppForm.");
+const PARTITION_TABLE_SELECTION_WIDTH = 48;
 
 export const ResourceConfigSection = ({
   form,
   accountOptions,
-  clusterOptions,
-  selectedCluster,
+  selectedAccount,
+  clusterName,
   partitionRows,
   activePartitionTab,
   onActivePartitionTabChange,
@@ -85,6 +78,8 @@ export const ResourceConfigSection = ({
   inputsDisabled,
   maxTimeUnit,
   onMaxTimeUnitChange,
+  selectedPresetUnit,
+  onSelectedPresetUnitChange,
   languageId,
   appId,
   clusterId,
@@ -94,19 +89,18 @@ export const ResourceConfigSection = ({
 }: ResourceConfigSectionProps) => {
   const t = useI18nTranslateToString();
   const maxTimeReservedConfig = getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME);
-  const maxTimeValidatorUnit = maxTimeReservedConfig ? "min" : maxTimeUnit;
+  const effectiveMaxTimeUnit = selectedPresetUnit ?? maxTimeUnit;
+  const maxTimeValidatorUnit = maxTimeReservedConfig ? "min" : effectiveMaxTimeUnit;
 
-  const inputNumberFloorConfig = {
-    formatter: (value: number) => `${Math.floor(value)}`,
-    parser: (value: string) => Math.floor(+value),
-  };
+  const selectedQos = Form.useWatch<string | undefined>("qos", form);
 
   const baseColumns: ColumnsType<PartitionRow> = [
-    { title: t(p("partition")), dataIndex: "name", key: "name" },
+    { title: t(p("partition")), dataIndex: "name", key: "name", width: "14%" },
     {
       title: t(p("tablePartitionDescription")),
       dataIndex: "description",
       key: "description",
+      width: "36%",
       render: (description: string) => (
         <div>
           {description.split(";").map((line, index) => (
@@ -119,6 +113,7 @@ export const ResourceConfigSection = ({
       title: t(p("tableNodeSpec")),
       dataIndex: "nodeSpecLines",
       key: "nodeSpecLines",
+      width: "14%",
       render: (lines: ReactNode[]) => (
         <div>
           {lines?.map((line, index) => (
@@ -127,17 +122,17 @@ export const ResourceConfigSection = ({
         </div>
       ),
     },
-    { title: t(p("tableIdleNodes")), dataIndex: "idleNodes", key: "idleNodes" },
-    { title: t(p("tablePendingJobs")), dataIndex: "pendingJobs", key: "pendingJobs" },
+    { title: t(p("tableIdleNodes")), dataIndex: "idleNodes", key: "idleNodes", width: "12%" },
+    { title: t(p("tablePendingJobs")), dataIndex: "pendingJobs", key: "pendingJobs", width: "12%" },
   ];
   const cpuColumns: ColumnsType<PartitionRow> = [
     ...baseColumns.slice(0, 4),
-    { title: t(p("tableIdleCpu")), dataIndex: "idleCpu", key: "idleCpu" },
+    { title: t(p("tableIdleCpu")), dataIndex: "idleCpu", key: "idleCpu", width: "12%" },
     ...baseColumns.slice(4),
   ];
   const gpuColumns: ColumnsType<PartitionRow> = [
     ...baseColumns.slice(0, 4),
-    { title: t(p("tableIdleGpu")), dataIndex: "idleGpu", key: "idleGpu" },
+    { title: t(p("tableIdleGpu")), dataIndex: "idleGpu", key: "idleGpu", width: "12%" },
     ...baseColumns.slice(4),
   ];
 
@@ -156,12 +151,14 @@ export const ResourceConfigSection = ({
         bordered
         size="small"
         pagination={false}
+        tableLayout="fixed"
         rowKey="key"
         columns={cpuColumns}
         dataSource={cpuRows}
         scroll={getTableScroll(cpuRows)}
         rowSelection={{
           type: "radio",
+          columnWidth: PARTITION_TABLE_SELECTION_WIDTH,
           selectedRowKeys: activePartitionTab === "cpu" ? selectedKeyInTab(cpuRows) : [],
           onChange: (keys) => onPartitionSelect(keys[0] as string),
         }}
@@ -178,12 +175,14 @@ export const ResourceConfigSection = ({
         bordered
         size="small"
         pagination={false}
+        tableLayout="fixed"
         rowKey="key"
         columns={gpuColumns}
         dataSource={gpuRows}
         scroll={getTableScroll(gpuRows)}
         rowSelection={{
           type: "radio",
+          columnWidth: PARTITION_TABLE_SELECTION_WIDTH,
           selectedRowKeys: activePartitionTab === "gpu" ? selectedKeyInTab(gpuRows) : [],
           onChange: (keys) => onPartitionSelect(keys[0] as string),
         }}
@@ -203,53 +202,30 @@ export const ResourceConfigSection = ({
           rules={[{ required: true }]}
           reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT)}
           children={
-            <RoundedSelect
-              size="large"
-              options={accountOptions?.map((account) => ({ label: account, value: account }))}
-              placeholder={t(p("accountPlaceholder"))}
-              onChange={(value) => form.setFieldValue("account", value)}
-            />
-          }
-          currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
-          onChange={(value) => form.setFieldValue("account", value)}
-          appId={appId}
-          clusterId={clusterId}
-        />
-
-        <FixedOrEditableFormItem
-          form={form}
-          languageId={languageId}
-          t={t}
-          name="cluster"
-          label={<FormLabel>{t(p("clusterLabel"))}</FormLabel>}
-          rules={[{ required: true, message: t(p("clusterRequired")) }]}
-          children={
             <Space wrap>
-              {clusterOptions.map(({ id, name, disabled }) => {
+              {accountOptions.map(({ label, value, disabled, disabledReason }) => {
                 const button = (
                   <RoundedButton
                     size="large"
-                    key={id}
-                    type={selectedCluster === id ? "primary" : "default"}
-                    $selected={selectedCluster === id}
+                    key={value}
+                    type={selectedAccount === value ? "primary" : "default"}
+                    $selected={selectedAccount === value}
                     disabled={disabled}
                     onClick={() => {
-                      if (disabled) {
-                        return;
-                      }
-                      form.setFieldValue("cluster", id);
+                      if (disabled) return;
+                      form.setFieldValue("account", value);
                     }}
                   >
-                    {name}
+                    {label}
                   </RoundedButton>
                 );
 
-                if (!disabled) {
+                if (!disabled || !disabledReason) {
                   return button;
                 }
 
                 return (
-                  <Tooltip key={id} title={t(p("clusterUnauthorized"))} arrow={false} align={{ offset: [0, -12] }}>
+                  <Tooltip key={value} title={disabledReason} arrow={false} align={{ offset: [0, -12] }}>
                     <span>{button}</span>
                   </Tooltip>
                 );
@@ -257,10 +233,23 @@ export const ResourceConfigSection = ({
             </Space>
           }
           currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
-          onChange={(value) => form.setFieldValue("cluster", value)}
+          onChange={(value) => form.setFieldValue("account", value)}
           appId={appId}
           clusterId={clusterId}
         />
+        <InlineFormItem
+          name="cluster"
+          label={<FormLabel>{t(p("clusterLabel"))}</FormLabel>}
+          rules={[{ required: true, message: t(p("clusterRequired")) }]}
+        >
+          <Space wrap>
+            {clusterName && (
+              <RoundedButton size="large" type="primary" $selected>
+                {clusterName}
+              </RoundedButton>
+            )}
+          </Space>
+        </InlineFormItem>
 
         <FixedOrEditableFormItem
           form={form}
@@ -291,13 +280,25 @@ export const ResourceConfigSection = ({
           rules={[{ required: true }]}
           reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.QOS)}
           children={
-            <RoundedSelect
-              size="large"
-              options={qosOptions.map((qos) => ({ label: qos, value: qos }))}
-              style={{ width: "50%" }}
-              placeholder={qosOptions.length ? t(p("qosPlaceholder")) : t(p("noSelectableQos"))}
-              disabled={!qosOptions.length}
-            />
+            <Space wrap>
+              {qosOptions.length ? (
+                qosOptions.map((qos) => (
+                  <RoundedButton
+                    size="large"
+                    key={qos}
+                    type={selectedQos === qos ? "primary" : "default"}
+                    $selected={selectedQos === qos}
+                    onClick={() => form.setFieldValue("qos", qos)}
+                  >
+                    {qos}
+                  </RoundedButton>
+                ))
+              ) : (
+                <RoundedButton size="large" disabled>
+                  {t(p("noSelectableQos"))}
+                </RoundedButton>
+              )}
+            </Space>
           }
           currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
           appId={appId}
@@ -311,15 +312,25 @@ export const ResourceConfigSection = ({
           label={<FormLabel>{t(p("nodeCount"))}</FormLabel>}
           dependencies={["partition"]}
           rules={[
-            { required: true, type: "integer", max: currentPartitionInfo?.nodes, message: t(p("nodeCountRequired")) },
+            { required: true, message: t(p("nodeCountRequired")) },
+            { type: "integer", message: t(p("nodeCountRequired")) },
+            ...(currentPartitionInfo?.nodes
+              ? [
+                  {
+                    type: "integer" as const,
+                    max: currentPartitionInfo.nodes,
+                    message: t(p("nodeCountExceedsMaxTooltip")),
+                  },
+                ]
+              : []),
           ]}
           reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.NODE_COUNT)}
           children={
-            <RoundedInputNumber
-              min={1}
-              max={currentPartitionInfo?.nodes}
-              {...inputNumberFloorConfig}
+            <PresetNumberSelector
               disabled={inputsDisabled}
+              max={currentPartitionInfo?.nodes}
+              placeholder={t(p("nodeCountOtherPlaceholder"))}
+              disabledTooltip={t(p("nodeCountExceedsMaxTooltip"))}
             />
           }
           isNumberAttribute={true}
@@ -337,18 +348,24 @@ export const ResourceConfigSection = ({
             dependencies={["partition"]}
             rules={[
               { required: true, message: t(p("gpuCoresRequired")) },
-              { type: "number" as const, min: 1 },
+              { type: "number" as const, min: 1, message: t(p("gpuCoresRequired")) },
               ...(currentPartitionInfo?.gpus
-                ? [{ type: "number" as const, max: currentPartitionInfo.gpus / currentPartitionInfo?.nodes }]
+                ? [
+                    {
+                      type: "number" as const,
+                      max: currentPartitionInfo.gpus / currentPartitionInfo?.nodes,
+                      message: t(p("nodeCountExceedsMaxTooltip")),
+                    },
+                  ]
                 : []),
             ]}
             reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.GPU_COUNT)}
             children={
-              <RoundedInputNumber
-                min={1}
-                max={currentPartitionInfo?.gpus ? currentPartitionInfo.gpus / currentPartitionInfo.nodes : undefined}
-                {...inputNumberFloorConfig}
+              <PresetNumberSelector
                 disabled={inputsDisabled}
+                max={currentPartitionInfo?.gpus ? currentPartitionInfo.gpus / currentPartitionInfo.nodes : undefined}
+                placeholder={t(p("nodeCountOtherPlaceholder"))}
+                disabledTooltip={t(p("nodeCountExceedsMaxTooltip"))}
               />
             }
             isNumberAttribute={true}
@@ -365,20 +382,25 @@ export const ResourceConfigSection = ({
             label={<FormLabel>{t(p("coreCount"))}</FormLabel>}
             dependencies={["partition"]}
             rules={[
-              {
-                required: true,
-                type: "integer",
-                max: currentPartitionInfo ? currentPartitionInfo.cores / currentPartitionInfo.nodes : undefined,
-                message: t(p("cpuCoresRequired")),
-              },
+              { required: true, message: t(p("cpuCoresRequired")) },
+              { type: "integer" as const, message: t(p("cpuCoresRequired")) },
+              ...(currentPartitionInfo
+                ? [
+                    {
+                      type: "integer" as const,
+                      max: currentPartitionInfo.cores / currentPartitionInfo.nodes,
+                      message: t(p("nodeCountExceedsMaxTooltip")),
+                    },
+                  ]
+                : []),
             ]}
             reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.CORE_COUNT)}
             children={
-              <RoundedInputNumber
-                min={1}
-                max={currentPartitionInfo ? currentPartitionInfo.cores / currentPartitionInfo.nodes : undefined}
-                {...inputNumberFloorConfig}
+              <PresetNumberSelector
                 disabled={inputsDisabled}
+                max={currentPartitionInfo ? currentPartitionInfo.cores / currentPartitionInfo.nodes : undefined}
+                placeholder={t(p("nodeCountOtherPlaceholder"))}
+                disabledTooltip={t(p("nodeCountExceedsMaxTooltip"))}
               />
             }
             isNumberAttribute={true}
@@ -406,24 +428,20 @@ export const ResourceConfigSection = ({
           ]}
           reservedConfig={maxTimeReservedConfig}
           children={
-            <RoundedInputNumberWithAddonAfter
-              size="large"
-              min={1}
-              step={1}
-              precision={0}
-              style={{ width: "calc(50% - 90px)", minWidth: "130px" }}
+            <MaxTimeSelector
               disabled={inputsDisabled}
-              addonAfter={
-                <AddonAfterSelect
-                  style={{ minWidth: "90px" }}
-                  value={maxTimeUnit}
-                  onChange={(value) => onMaxTimeUnitChange(value)}
-                >
-                  <Select.Option value="min">{t(p("minute"))}</Select.Option>
-                  <Select.Option value="hour">{t(p("hour"))}</Select.Option>
-                  <Select.Option value="day">{t(p("day"))}</Select.Option>
-                </AddonAfterSelect>
-              }
+              maxRunningTimeHours={maxRunningTimeHours}
+              disabledTooltip={t(p("maxRunTimeExceed"), [maxRunningTimeHours?.toString() ?? ""])}
+              maxTimeUnit={maxTimeUnit}
+              onMaxTimeUnitChange={onMaxTimeUnitChange}
+              selectedPresetUnit={selectedPresetUnit}
+              onSelectedPresetUnitChange={onSelectedPresetUnitChange}
+              labels={{
+                minutes: t(p("minute")),
+                hours: t(p("hour")),
+                days: t(p("day")),
+                otherValue: t(p("nodeCountOtherPlaceholder")),
+              }}
             />
           }
           isNumberAttribute={true}

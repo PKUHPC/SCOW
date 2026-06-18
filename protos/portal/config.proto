@@ -147,16 +147,27 @@ message GetClusterNodesInfoResponse {
   repeated NodeInfo nodes = 1;
 }
 
-message GetAvailableAccountsAndClustersRequest {
+message GetAccountClustersWithUnavailableReasonsRequest {
   string user_id = 1;
+}
+
+enum AccountUnavailableReason {
+  ACCOUNT_UNAVAILABLE_REASON_UNSPECIFIED = 0;
+  USER_BLOCKED = 1;
+  ACCOUNT_FROZEN = 2;
+  ACCOUNT_BLOCKED = 3;
+  ACCOUNT_DEBT = 4;
+  USER_QUOTA_EXCEEDED = 5;
 }
 
 message AvailableAccountClusters {
   string account_name = 1;
   repeated string clusters = 2;
+  bool available = 3;
+  repeated AccountUnavailableReason unavailable_reasons = 4;
 }
 
-message GetAvailableAccountsAndClustersResponse {
+message GetAccountClustersWithUnavailableReasonsResponse {
   repeated AvailableAccountClusters account_clusters = 1;
 }
 
@@ -175,5 +186,5 @@ service ConfigService {
     option deprecated = true;
   };
 
-  rpc GetAvailableAccountsAndClusters(GetAvailableAccountsAndClustersRequest) returns (GetAvailableAccountsAndClustersResponse);
+  rpc GetAccountClustersWithUnavailableReasons(GetAccountClustersWithUnavailableReasonsRequest) returns (GetAccountClustersWithUnavailableReasonsResponse);
 }

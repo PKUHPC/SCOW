@@ -3,6 +3,7 @@
 import type { ColumnsType } from "antd/es/table";
 import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
 import type { CreateAppInput } from "src/server/trpc/route/jobs/apps";
+import type { AppTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import {
@@ -28,11 +29,15 @@ import { useRouter } from "next/navigation";
 import { join } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
+import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
+import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { HeaderAvatar } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
+import { JobType } from "src/models/Job";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -42,11 +47,13 @@ import type {
   BaseFormValues,
   CommandCacheEntry,
   CPUQueueRow,
+  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
   ImageSourceKey,
   MaxTimeUnit,
+  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
@@ -61,12 +68,16 @@ import {
   buildPrivatePathLookup,
   buildResubmitResourceSelections,
   buildSelectionPathLookup,
+  buildUnavailableParams,
   buildVersionLookup,
+  cleanFormData,
   convertDurationToHours,
   deriveQueueStats,
   getCommandCacheKey,
   initBuiltinEnvVariables,
   mapQueuesToRows,
+  normalizeEnvVariables,
+  normalizeMountPoints,
   mergeResubmitEnvVariables,
   renderCascaderLabels,
   sanitizeFormMountAndEnvValues,
@@ -260,6 +271,7 @@ export const LaunchAppForm = ({
     hasInitializedBuiltinEnvVariablesRef.current = true;
   }, [appForm, createAppParams]);
 
+  const trpcUtils = trpc.useUtils();
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -312,6 +324,7 @@ export const LaunchAppForm = ({
   const hasClusterSelectionRef = useRef(false);
   const hasClusterSwitchedRef = useRef(false);
   const isClusterResettingRef = useRef(false);
+  const isApplyingTemplateRef = useRef(false);
   const resubmitImageAppliedRef = useRef(false);
   const resubmitResourceAppliedRef = useRef(false);
   const resubmitQueueAppliedRef = useRef(false);
@@ -325,6 +338,16 @@ export const LaunchAppForm = ({
   const resubmitMountEnvAppliedRef = useRef(false);
   const resubmitCustomFieldsAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
+
+  // createAppParams is used directly by resubmit effects (no template merge)
+
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateListOpen, setTemplateListOpen] = useState(false);
+  const [templateSnapshot, setTemplateSnapshot] = useState<AppTemplateFormData | null>(null);
+  const [unavailableParamsModal, setUnavailableParamsModal] = useState<{
+    params: UnavailableParam[];
+    applyFn: () => void | Promise<void>;
+  } | null>(null);
 
   // 账户集群关系
   const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({
@@ -407,7 +430,8 @@ export const LaunchAppForm = ({
     if (previousCluster === undefined && selectedCluster === undefined) {
       return;
     }
-    if (hadClusterSelection) {
+    const applyingTemplate = isApplyingTemplateRef.current;
+    if (hadClusterSelection && !applyingTemplate) {
       hasClusterSwitchedRef.current = true;
     }
     const shouldReset = hadClusterSelection;
@@ -418,14 +442,16 @@ export const LaunchAppForm = ({
     if (!resubmitQueueEverAppliedRef.current) {
       resubmitQueueAppliedRef.current = false;
     }
-    resubmitCascaderAppliedRef.current = {
-      datasets: shouldReset,
-      algorithms: shouldReset,
-      models: shouldReset,
-    };
-    resubmitMountEnvAppliedRef.current = shouldReset;
-    resubmitCustomFieldsAppliedRef.current = shouldReset;
-    if (shouldReset) {
+    if (!applyingTemplate) {
+      resubmitCascaderAppliedRef.current = {
+        datasets: shouldReset,
+        algorithms: shouldReset,
+        models: shouldReset,
+      };
+      resubmitMountEnvAppliedRef.current = shouldReset;
+      resubmitCustomFieldsAppliedRef.current = shouldReset;
+    }
+    if (shouldReset && !applyingTemplate) {
       resourceForm.setFieldsValue({ priority: undefined });
       appForm.setFieldsValue({
         image: undefined,
@@ -880,7 +906,6 @@ export const LaunchAppForm = ({
     if (resubmitMountEnvAppliedRef.current) {
       return;
     }
-
     const mountPointsDraft = (createAppParams.mountPoints ?? [])
       .map((item) => {
         const path =
@@ -899,8 +924,8 @@ export const LaunchAppForm = ({
       .map((env) => ({ key: env.key, value: env.value }));
 
     appForm.setFieldsValue({
-      mountPoints: mountPointsDraft,
-      envVariables: mergeResubmitEnvVariables(envVariablesDraft),
+      mountPoints: normalizeMountPoints(mountPointsDraft),
+      envVariables: mergeResubmitEnvVariables(normalizeEnvVariables(envVariablesDraft)),
     });
 
     resubmitMountEnvAppliedRef.current = true;
@@ -1190,6 +1215,9 @@ export const LaunchAppForm = ({
 
   useEffect(() => {
     // 当镜像来源或选项发生变化时，将缓存中的默认/自定义命令同步到表单
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     const currentKey = getCommandCacheKey(selectedImageSource, normalizedSelectedImageValue);
     const cache = commandCacheRef.current;
     const entry = cache[currentKey] ?? (cache[currentKey] = { default: currentCommandDefault });
@@ -1413,6 +1441,9 @@ export const LaunchAppForm = ({
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     if (!createAppParams) {
       resubmitQueueAppliedRef.current = false;
       return;
@@ -1556,7 +1587,14 @@ export const LaunchAppForm = ({
 
   // 队列数据变化时，保持或回退到可用的第一条记录
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
+
     if (!currentQueueOptions.length) {
+      if (selectedQueueKey !== undefined && getAvailablePartitionIsLoading) {
+        return;
+      }
       if (selectedQueueKey !== undefined) {
         setSelectedQueueKey(undefined);
       }
@@ -1583,7 +1621,7 @@ export const LaunchAppForm = ({
         setSelectedQueueKey(undefined);
       }
     }
-  }, [createAppParams, currentQueueOptions, selectedQueueKey]);
+  }, [createAppParams, currentQueueOptions, getAvailablePartitionIsLoading, selectedQueueKey]);
 
   // 若用户尚未选择账户，自动填入第一条有效账户
   useEffect(() => {
@@ -1670,6 +1708,9 @@ export const LaunchAppForm = ({
 
   // 切换镜像来源时恢复已保存的选项
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     const draft = imageSourceDraftsRef.current[selectedImageSource] ?? {};
 
     if (selectedImageSource === "remote") {
@@ -1934,6 +1975,73 @@ export const LaunchAppForm = ({
     router.push("/jobs/createApp");
   };
 
+  const buildAppTemplateFormData = (): AppTemplateFormData => {
+    const resourceValues = resourceForm.getFieldsValue();
+    const appValues = appForm.getFieldsValue();
+    const gpuTypeValue = selectedQueueOption?.type === "gpu" ? (selectedQueueOption as GPUQueueRow).gpuType : undefined;
+    return {
+      account: selectedAccount ?? undefined,
+      appId,
+      partition: selectedQueueKey ?? undefined,
+      qos: resourceValues.priority ?? undefined,
+      coreCount: resourceValues.cpuCores ?? 1,
+      nodeCount: 1,
+      gpuCount: selectedGpuCount > 0 ? selectedGpuCount : undefined,
+      gpuType: gpuTypeValue ?? undefined,
+      maxTime: resourceValues.maxTime ?? 60,
+      maxTimeUnit,
+      isImagePrivate:
+        selectedImageSource === "mine" || selectedImageSource === "public" ? selectedImageSource === "mine" : undefined,
+      image:
+        selectedImageSource === "mine" || selectedImageSource === "public"
+          ? Number(appValues.image) || undefined
+          : undefined,
+      localImageName:
+        selectedImageSource === "preset"
+          ? typeof appValues.image === "string"
+            ? appValues.image
+            : undefined
+          : undefined,
+      remoteImageUrl:
+        selectedImageSource === "remote"
+          ? typeof appValues.image === "string"
+            ? appValues.image
+            : undefined
+          : undefined,
+      startCommand: appValues.command ?? undefined,
+      datasets: toIdPrivateList(
+        appValues.datasets,
+        buildVersionLookup(
+          datasets?.personal as VersionGroup[] | undefined,
+          datasets?.public as VersionGroup[] | undefined,
+        ),
+      ),
+      models: toIdPrivateList(
+        appValues.models,
+        buildVersionLookup(
+          models?.personal as VersionGroup[] | undefined,
+          models?.public as VersionGroup[] | undefined,
+        ),
+      ),
+      algorithms: toIdPrivateList(
+        appValues.algorithms,
+        buildVersionLookup(
+          algorithms?.personal as VersionGroup[] | undefined,
+          algorithms?.public as VersionGroup[] | undefined,
+        ),
+      ),
+      mountPoints: (appValues.mountPoints ?? [])
+        .filter((m: MountPointField | undefined) => m?.source && m?.target)
+        .map((m: MountPointField) => ({ path: m.source, target: m.target })),
+      envVariables: (appValues.envVariables ?? []).filter((e: EnvVariableField | undefined) => e?.key),
+      workingDirectory:
+        typeof appValues.customFields?.workingDir === "string" ? appValues.customFields.workingDir : undefined,
+      customAttributes: Object.fromEntries(
+        Object.entries(appValues.customFields ?? {}).map(([k, v]) => [k, v ?? undefined]),
+      ),
+    };
+  };
+
   // ----- 提交逻辑：校验 + 组装 payload + 调用接口 -----
   // 聚合验证三个表单区域，确保必填项完整后续再接入真实提交
   const handleSubmit = async () => {
@@ -2094,15 +2202,367 @@ export const LaunchAppForm = ({
     }
   };
 
+  const handleTemplateUse = async (formData: TemplateFormData, templateCluster: string) => {
+    const fd = formData;
+
+    const {
+      unavailableParams,
+      effectiveAccount: effectiveAcc,
+      effectiveCluster,
+    } = await buildUnavailableParams({
+      fd,
+      templateCluster,
+      isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
+      getAvailableAccounts: () => accountOptions.map((o) => o.value),
+      getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
+      selectedAccount,
+      selectedCluster,
+      selectedQueueKey,
+      currentQos: resourceForm.getFieldValue("priority"),
+      fetchPartitions: (acc, cluster) =>
+        trpcUtils.config.getAvailablePartitions.fetch({ accountName: acc, clusterId: cluster }).catch(() => undefined),
+      t: (key) => t(p(key as any)),
+      resolveClusterName: (id) => {
+        const clusterConfig = CLUSTERS.find((c) => c.id === id);
+        return clusterConfig ? getI18nConfigCurrentText(clusterConfig.name, languageId) : id;
+      },
+    });
+
+    const applyFn = async () => {
+      const cleanedFormData = cleanFormData(fd, unavailableParams);
+      isApplyingTemplateRef.current = true;
+      hasClusterSwitchedRef.current = false;
+      commandCacheRef.current = {};
+
+      resourceForm.setFieldsValue({ account: effectiveAcc, cluster: effectiveCluster });
+
+      const tplMaxTime = cleanedFormData.maxTime as number | undefined;
+      const tplMaxTimeUnit = cleanedFormData.maxTimeUnit as MaxTimeUnit | undefined;
+      if (tplMaxTimeUnit) {
+        setMaxTimeUnit(tplMaxTimeUnit);
+      }
+
+      const tplPartition = cleanedFormData.partition as string | undefined;
+      const tplCoreCount = cleanedFormData.coreCount as number | undefined;
+      const tplGpuCount = cleanedFormData.gpuCount as number | undefined;
+      const tplQos = cleanedFormData.qos as string | undefined;
+      let partitionMatched = false;
+
+      if (tplPartition) {
+        const partitionsForCluster = await trpcUtils.config.getAvailablePartitions
+          .fetch({ accountName: effectiveAcc, clusterId: effectiveCluster })
+          .catch(() => undefined);
+        if (partitionsForCluster) {
+          const matched = partitionsForCluster.find((pt) => pt.name === tplPartition);
+          if (matched) {
+            partitionMatched = true;
+            const rows = mapQueuesToRows(partitionsForCluster);
+            const allRows = [...rows.gpuRows, ...rows.cpuRows];
+            const matchedRow = allRows.find((r) => r.id === tplPartition);
+            if (matchedRow) {
+              setActiveResourceTab(matchedRow.type);
+            }
+            setSelectedQueueKey(tplPartition);
+            if (tplQos && matched.qos.includes(tplQos)) {
+              resourceForm.setFieldsValue({ priority: tplQos });
+            }
+            if (tplMaxTime != null) {
+              resourceForm.setFieldsValue({ maxTime: tplMaxTime });
+            }
+            if (matchedRow?.type === "gpu") {
+              if (tplGpuCount != null) {
+                const perPodLimit =
+                  typeof matchedRow.maxAcceleratorsPerPod === "number" ? matchedRow.maxAcceleratorsPerPod : undefined;
+                const maxGpu =
+                  perPodLimit != null ? Math.min(matchedRow.totalUnits, perPodLimit) : matchedRow.totalUnits;
+                resourceForm.setFieldsValue({ gpuCores: Math.min(tplGpuCount, maxGpu) });
+              }
+              if (tplCoreCount != null) {
+                resourceForm.setFieldsValue({ cpuCores: tplCoreCount });
+              }
+            } else {
+              if (tplCoreCount != null) {
+                resourceForm.setFieldsValue({
+                  cpuCores: Math.min(tplCoreCount, matchedRow?.totalUnits ?? tplCoreCount),
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (!partitionMatched) {
+        const inferredTab: QueueKind = tplGpuCount != null && tplGpuCount > 0 ? "gpu" : "cpu";
+        setActiveResourceTab(inferredTab);
+        if (tplMaxTime != null) {
+          resourceForm.setFieldsValue({ maxTime: tplMaxTime });
+        }
+        if (inferredTab === "gpu") {
+          if (tplGpuCount != null) {
+            resourceForm.setFieldsValue({ gpuCores: tplGpuCount });
+          }
+          if (tplCoreCount != null) {
+            resourceForm.setFieldsValue({ cpuCores: tplCoreCount });
+          }
+        } else {
+          if (tplCoreCount != null) {
+            resourceForm.setFieldsValue({ cpuCores: tplCoreCount });
+          }
+        }
+      }
+
+      appForm.setFieldsValue({
+        mountPoints: normalizeMountPoints(cleanedFormData.mountPoints as unknown[] | undefined),
+        envVariables: normalizeEnvVariables(cleanedFormData.envVariables as unknown[] | undefined),
+      });
+
+      const tplCustomAttributes = cleanedFormData.customAttributes as Record<string, unknown> | undefined;
+      const tplWorkingDirectory = cleanedFormData.workingDirectory as string | undefined;
+      if (tplCustomAttributes || tplWorkingDirectory) {
+        const attributeList = appInfo?.attributes ?? [];
+        const attributeMap = new Map(attributeList.map((item) => [item.name, item.type]));
+        const customFields: Record<string, string | number | undefined> = {};
+
+        if (tplCustomAttributes) {
+          Object.entries(tplCustomAttributes).forEach(([key, value]) => {
+            if (!attributeMap.has(key) || value === undefined || value === null || value === "") {
+              return;
+            }
+            const fieldType = attributeMap.get(key);
+            if (fieldType === "NUMBER") {
+              const parsed = Number(value);
+              if (!Number.isNaN(parsed)) {
+                customFields[key] = parsed;
+              }
+              return;
+            }
+            customFields[key] = typeof value === "string" ? value : String(value);
+          });
+        }
+
+        if (attributeMap.has("workingDir") && tplWorkingDirectory) {
+          customFields.workingDir = tplWorkingDirectory;
+        }
+
+        if (Object.keys(customFields).length > 0) {
+          appForm.setFieldsValue({ customFields });
+        }
+      }
+
+      const clusterChanged = templateCluster !== effectiveCluster;
+
+      const tplDatasets = (cleanedFormData.datasets ?? []) as { id: number; isPrivate: boolean }[];
+      const tplAlgorithms = (cleanedFormData.algorithms ?? []) as { id: number; isPrivate: boolean }[];
+      const tplModels = (cleanedFormData.models ?? []) as { id: number; isPrivate: boolean }[];
+      if (!clusterChanged && (tplDatasets.length || tplAlgorithms.length || tplModels.length)) {
+        const [fetchedDatasets, fetchedAlgorithms, fetchedModels] = await Promise.all([
+          tplDatasets.length
+            ? trpcUtils.dataset.getAllDatasetVersions.fetch({ clusterId: effectiveCluster }).catch(() => undefined)
+            : undefined,
+          tplAlgorithms.length
+            ? trpcUtils.algorithm.getAllAlgorithmVersions.fetch({ clusterId: effectiveCluster }).catch(() => undefined)
+            : undefined,
+          tplModels.length
+            ? trpcUtils.model.getAllModelVersions.fetch({ clusterId: effectiveCluster }).catch(() => undefined)
+            : undefined,
+        ]);
+
+        if (fetchedDatasets && tplDatasets.length) {
+          const categories: ResourceCategory[] = [];
+          const personal = (fetchedDatasets.personal ?? [])
+            .map((d) => ({
+              label: d.name,
+              value: d.id,
+              children: (d.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((d) => d.children.length > 0);
+          const pub = (fetchedDatasets.public ?? [])
+            .map((d) => ({
+              label: d.name,
+              value: d.id,
+              children: (d.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((d) => d.children.length > 0);
+          if (personal.length) categories.push({ label: "", value: 1, children: personal });
+          if (pub.length) categories.push({ label: "", value: 2, children: pub });
+          const lookup = buildSelectionPathLookup(categories);
+          const selections = buildResubmitResourceSelections(tplDatasets, lookup);
+          if (selections.length > 0) {
+            appForm.setFieldsValue({ datasets: selections });
+          }
+        }
+
+        if (fetchedAlgorithms && tplAlgorithms.length) {
+          const categories: ResourceCategory[] = [];
+          const personal = (fetchedAlgorithms.personal ?? [])
+            .map((a) => ({
+              label: a.name,
+              value: a.id,
+              children: (a.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((a) => a.children.length > 0);
+          const pub = (fetchedAlgorithms.public ?? [])
+            .map((a) => ({
+              label: a.name,
+              value: a.id,
+              children: (a.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((a) => a.children.length > 0);
+          if (personal.length) categories.push({ label: "", value: 1, children: personal });
+          if (pub.length) categories.push({ label: "", value: 2, children: pub });
+          const lookup = buildSelectionPathLookup(categories);
+          const selections = buildResubmitResourceSelections(tplAlgorithms, lookup);
+          if (selections.length > 0) {
+            appForm.setFieldsValue({ algorithms: selections });
+          }
+        }
+
+        if (fetchedModels && tplModels.length) {
+          const categories: ResourceCategory[] = [];
+          const personal = (fetchedModels.personal ?? [])
+            .map((m) => ({
+              label: m.name,
+              value: m.id,
+              children: (m.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((m) => m.children.length > 0);
+          const pub = (fetchedModels.public ?? [])
+            .map((m) => ({
+              label: m.name,
+              value: m.id,
+              children: (m.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((m) => m.children.length > 0);
+          if (personal.length) categories.push({ label: "", value: 1, children: personal });
+          if (pub.length) categories.push({ label: "", value: 2, children: pub });
+          const lookup = buildSelectionPathLookup(categories);
+          const selections = buildResubmitResourceSelections(tplModels, lookup);
+          if (selections.length > 0) {
+            appForm.setFieldsValue({ models: selections });
+          }
+        }
+      }
+
+      let finalImageSource: ImageSourceKey | undefined;
+      let finalImageValue: string | undefined;
+
+      if (clusterChanged) {
+        // skip image backfill
+      } else {
+        const tplRemoteImageUrl = cleanedFormData.remoteImageUrl as string | undefined;
+        const tplLocalImageName = cleanedFormData.localImageName as string | undefined;
+        const tplImageId = cleanedFormData.image as number | undefined;
+        const tplIsImagePrivate = cleanedFormData.isImagePrivate as boolean | undefined;
+
+        if (tplRemoteImageUrl) {
+          finalImageSource = "remote";
+          finalImageValue = tplRemoteImageUrl;
+          imageSourceDraftsRef.current.remote = { image: tplRemoteImageUrl };
+          setSelectedImageSource("remote");
+          appForm.setFieldsValue({
+            image: tplRemoteImageUrl,
+            usePrivateImage: false,
+            remoteUsername: undefined,
+            remotePassword: undefined,
+          });
+        } else if (tplLocalImageName) {
+          finalImageSource = "preset";
+          finalImageValue = tplLocalImageName;
+          imageSourceDraftsRef.current.preset = { image: tplLocalImageName };
+          setSelectedImageSource("preset");
+          appForm.setFieldsValue({ image: tplLocalImageName });
+        } else if (tplIsImagePrivate === true || tplIsImagePrivate === false) {
+          const imageSource = tplIsImagePrivate ? "mine" : "public";
+          finalImageSource = imageSource;
+          if (tplImageId != null) {
+            const fetchedImages = await trpcUtils.image.list
+              .fetch({
+                isPublic: tplIsImagePrivate ? parseBooleanParam(false) : parseBooleanParam(true),
+                clusterId: effectiveCluster,
+                withExternal: "true",
+                types: ImageType.APP,
+              })
+              .catch(() => undefined);
+            if (fetchedImages) {
+              const found = fetchedImages.items.some((img) => img.id === tplImageId && img.status === Status.CREATED);
+              if (found) {
+                finalImageValue = String(tplImageId);
+                imageSourceDraftsRef.current[imageSource] = { image: String(tplImageId) };
+                setSelectedImageSource(imageSource);
+                appForm.setFieldsValue({ image: String(tplImageId) });
+              } else {
+                setSelectedImageSource(imageSource);
+              }
+            }
+          } else {
+            setSelectedImageSource(imageSource);
+          }
+        }
+      }
+
+      if (!clusterChanged) {
+        const tplStartCommand = cleanedFormData.startCommand as string | undefined;
+        if (tplStartCommand) {
+          appForm.setFieldsValue({ command: tplStartCommand });
+          if (finalImageSource && finalImageValue) {
+            const cacheKey = getCommandCacheKey(finalImageSource, finalImageValue);
+            commandCacheRef.current[cacheKey] = { default: undefined, custom: tplStartCommand };
+          }
+        }
+      }
+
+      setTemplateListOpen(false);
+      requestAnimationFrame(() => {
+        isApplyingTemplateRef.current = false;
+      });
+    };
+
+    if (unavailableParams.length > 0) {
+      setUnavailableParamsModal({ params: unavailableParams, applyFn });
+    } else {
+      await applyFn();
+    }
+  };
+
   // ======================= 渲染 =======================
   return (
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
           title={
-            <HeaderRow align="center" size={16}>
-              {appLogoSrc ? <HeaderAvatar size={32} src={appLogoSrc} /> : null}
-              <HeaderTitle>{t(p("createAppTitle"), [effectiveAppName ?? ""])}</HeaderTitle>
+            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                {appLogoSrc ? <HeaderAvatar size={32} src={appLogoSrc} /> : null}
+                <HeaderTitle>{t(p("createAppTitle"), [effectiveAppName ?? ""])}</HeaderTitle>
+              </span>
+              {/* 先隐藏 */}
+              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                {t(p("templateButton"))}
+              </Button> */}
             </HeaderRow>
           }
         >
@@ -2163,6 +2623,25 @@ export const LaunchAppForm = ({
       </PageContainer>
 
       <FixedFooter>
+        {/* 先隐藏 */}
+        {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
+          <FooterStatValue
+            $isPrimaryColor
+            style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
+            onClick={async () => {
+              try {
+                await resourceForm.validateFields();
+                await appForm.validateFields();
+                setTemplateSnapshot(buildAppTemplateFormData());
+                setSaveTemplateOpen(true);
+              } catch {
+                message.warning(t(p("completeFormFirst")));
+              }
+            }}
+          >
+            {t(p("saveAsTemplate"))}
+          </FooterStatValue>
+        </div> */}
         <FooterStats>
           <span>
             {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
@@ -2192,6 +2671,30 @@ export const LaunchAppForm = ({
           </Button>
         </FooterActions>
       </FixedFooter>
+      <SaveAsTemplateModal
+        open={saveTemplateOpen}
+        onClose={() => setSaveTemplateOpen(false)}
+        jobType={JobType.APP}
+        appId={appId}
+        cluster={selectedCluster ?? ""}
+        formData={templateSnapshot}
+      />
+      <TemplateListModal
+        open={templateListOpen}
+        onClose={() => setTemplateListOpen(false)}
+        onUse={handleTemplateUse}
+        jobType={JobType.APP}
+        appId={appId}
+      />
+      <UnavailableParamsModal
+        open={!!unavailableParamsModal}
+        params={unavailableParamsModal?.params ?? []}
+        onConfirm={async () => {
+          await unavailableParamsModal?.applyFn();
+          setUnavailableParamsModal(null);
+        }}
+        onCancel={() => setUnavailableParamsModal(null)}
+      />
     </>
   );
 };

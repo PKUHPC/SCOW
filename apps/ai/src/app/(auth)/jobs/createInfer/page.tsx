@@ -1,8 +1,9 @@
 "use client";
 
 import { LoadingOutlined } from "@ant-design/icons";
+import { App } from "antd";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useI18nTranslateToString } from "src/i18n";
 import { useDocumentTitle } from "src/utils/head";
@@ -14,6 +15,7 @@ import { LaunchInferForm } from "./LaunchInferForm";
 export default function Page() {
   const searchParams = useSearchParams();
   const t = useI18nTranslateToString();
+  const { message } = App.useApp();
 
   useDocumentTitle(t("app.jobs.launchInferForm.title"));
   const { publicConfig } = usePublicConfig();
@@ -46,11 +48,26 @@ export default function Page() {
   }, [clusterId, jobId, sessionId]);
 
   const emptyParams = useMemo(() => ({ clusterId: "", jobId: 0, sessionId: "" }), []);
-  const { data: createInferParams, isLoading: isCreateInferParamsLoading } =
+  const {
+    data: createInferParams,
+    error: getCreateInferParamsError,
+    isLoading: isCreateInferParamsLoading,
+  } =
     trpc.jobs.getSubmitInferenceParams.useQuery(resubmitInput ?? emptyParams, {
       enabled: Boolean(resubmitInput),
       retry: false,
+      meta: {
+        silent: true,
+      },
     });
+
+  useEffect(() => {
+    if (!getCreateInferParamsError) {
+      return;
+    }
+
+    message.error(`${t("app.jobs.launchInferForm.getCreateInferParamsFailed")}: ${getCreateInferParamsError.message}`);
+  }, [getCreateInferParamsError, message, t]);
 
   if (resubmitInput && isCreateInferParamsLoading) {
     return (

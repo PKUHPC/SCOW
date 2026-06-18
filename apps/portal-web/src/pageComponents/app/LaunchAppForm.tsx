@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import type { AppTemplateDetail } from "src/pages/api/app/listAppTemplates";
 
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
   HeaderRow,
@@ -9,10 +11,19 @@ import {
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
+import { BackIcon } from "@scow/lib-web/build/icons/commonIcons";
+import {
+  JobContainer,
+  JobMainContent,
+  JobPageLayout,
+  JobSidePanel,
+  JobSidePanelInner,
+  JobSidePanelScrollBox,
+} from "@scow/lib-web/build/layouts/base/JobContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Avatar, Button, Divider, Form, Typography } from "antd";
+import { App, Avatar, Button, Form, Typography } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
 import { join } from "path";
@@ -20,35 +31,46 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { ReservedAppAttributeName } from "src/models/job";
-import {
-  CommandSelectReservedConfig,
-  FixedValueConfig,
-  ReservedAppAttribute,
-  SelectConfig,
-} from "src/pages/api/app/getAppMetadata";
+import { AccountUnavailableReason, ReservedAppAttributeName, TimeUnit } from "src/models/job";
 import { Partition } from "src/pages/api/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { formatSize } from "src/utils/format";
-import { styled } from "styled-components";
+import { styled, useTheme } from "styled-components";
 
+import { MAX_TIME_PRESETS } from "../job/submitJobCom/ResourceConfigSection";
+import { SaveAsTemplateModal } from "../job/submitJobCom/SaveAsTemplateModal";
+import { AppTemplateListModal } from "./AppTemplateListModal";
 import { AppConfigSection } from "./CreateAppCom/AppConfigSection";
-import {
-  AppResourceFormValues,
-  FixedOrEditableFormItem,
-  getSelectAttributeInitalValue,
-} from "./CreateAppCom/FixedOrEditableFormItem";
+import { AppResourceFormValues, FixedOrEditableFormItem } from "./CreateAppCom/FixedOrEditableFormItem";
 import { ResourceConfigSection } from "./CreateAppCom/ResourceConfigSection";
+import {
+  getFixedValueListByAttributeName,
+  getInitialFixedValueByAttributeName,
+  getReservedAppAttributeConfig,
+  getVisibleCustomTemplateFieldNames,
+  getVisibleResourceTemplateFieldNames,
+  isTemplateCustomAttributesAvailable,
+  isTemplateResourceReservedConfigAvailable,
+  normalizeResourceValuesByReservedConfig,
+  templateCustomAttributesKey,
+  templateResourceAttributesKey,
+} from "./LauchAppFormUtils";
+
+interface AccountAvailabilityInfo {
+  accountName: string;
+  available: boolean;
+  unavailableReasons: number[];
+}
 
 interface App {
   id: string;
   name: string;
   logoPath?: string;
   availableAccounts?: string[];
+  accountAvailabilities?: AccountAvailabilityInfo[];
 }
 
 const Text = styled(Typography.Paragraph)``;
@@ -57,10 +79,29 @@ const HeaderAvatar = styled(Avatar)`
   background-color: rgba(240, 240, 240, 1) !important;
 `;
 
+const SidePanelGroupWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+`;
+
+const SidePanelDivider = styled.div`
+  height: 1px;
+  margin: 24px 0px;
+  background: ${({ theme }) => theme.palette.gray[4]};
+  flex-shrink: 0;
+`;
+
+export interface AccountOption {
+  label: string;
+  value: string;
+  disabled?: boolean;
+  disabledReason?: string;
+}
+
 interface Props {
   appInfo: App | undefined;
-  availableAccounts: string[];
-  allAvailableAccounts: string[];
   accountAppClusterMap: Map<string, string[]>;
   preSelectedCluster: string | undefined;
   setSelectedAppInfo: (value: App | undefined) => void;
@@ -77,7 +118,6 @@ interface FormFields {
   account: string;
   maxTime: number;
 }
-type TimeUnit = "min" | "hour" | "day";
 
 type PartitionTabKey = "cpu" | "gpu";
 
@@ -104,8 +144,6 @@ const pResource = prefix("pageComp.submitJobCom.ResourceConfigSection.");
 
 export const LaunchAppForm: React.FC<Props> = ({
   appInfo,
-  availableAccounts,
-  allAvailableAccounts,
   accountAppClusterMap,
   preSelectedCluster,
   setSelectedAppInfo,
@@ -119,18 +157,25 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
-  const isFullDisplayMode = useMemo(() => {
-    return user?.isAdmin || publicConfig.DASHBOARD_USER_DISPLAY_MODE === "full";
-  }, [user]);
+  const theme = useTheme();
 
   const [baseForm] = Form.useForm<FormFields>();
   const [resourceForm] = Form.useForm<AppResourceFormValues>();
   const [appForm] = Form.useForm<FormFields>();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [templateListOpen, setTemplateListOpen] = useState(false);
   const [activePartitionTab, setActivePartitionTab] = useState<PartitionTabKey>("cpu");
 
-  const [maxTimeUnitValue, setMaxTimeUnitValue] = useState<TimeUnit>("hour");
+  const [maxTimeUnitValue, setMaxTimeUnitValue] = useState<TimeUnit>(TimeUnit.HOURS);
+  const [selectedPresetUnit, setSelectedPresetUnit] = useState<TimeUnit | undefined>(TimeUnit.MINUTES);
+  const [pendingTemplatePartition, setPendingTemplatePartition] = useState<string | undefined>();
+  const [pendingTemplateQos, setPendingTemplateQos] = useState<string | undefined>();
+  const [expiredTemplate, setExpiredTemplate] = useState<{ id: number; templateName: string } | undefined>();
+  const [deletingExpiredTemplate, setDeletingExpiredTemplate] = useState(false);
+  const [templateRefreshSignal, setTemplateRefreshSignal] = useState(0);
 
   const selectedAccount = Form.useWatch("account", resourceForm);
   const selectedCluster = Form.useWatch<string>("cluster", resourceForm);
@@ -139,7 +184,10 @@ export const LaunchAppForm: React.FC<Props> = ({
   const nodeCount = Form.useWatch("nodeCount", resourceForm);
   const coreCount = Form.useWatch("coreCount", resourceForm);
   const gpuCount = Form.useWatch("gpuCount", resourceForm);
-  const maxRunningTimeHours = selectedCluster ? fullClusterConfigs[selectedCluster]?.hpc?.app?.maxRunningTimeHours : undefined;
+  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
+  const maxRunningTimeHours = selectedCluster
+    ? fullClusterConfigs[selectedCluster]?.hpc?.app?.maxRunningTimeHours
+    : undefined;
 
   const router = useRouter();
 
@@ -202,33 +250,43 @@ export const LaunchAppForm: React.FC<Props> = ({
     ReservedAppAttributeName.PARTITION,
   ).map((x) => x.toString());
 
+  const fixedMaxTimeValue = getInitialFixedValueByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.MAX_TIME,
+  );
+
   const initialValues = {
     nodeCount: fixedNodeCountValue ? parseInt(fixedNodeCountValue, 10) : 1,
     coreCount: fixedCoreCountValue ? parseInt(fixedCoreCountValue, 10) : 1,
     gpuCount: fixedGpuCountValue ? parseInt(fixedGpuCountValue, 10) : 1,
+    maxTime: fixedMaxTimeValue ? parseInt(fixedMaxTimeValue, 10) : 30,
   } as Partial<FormFields>;
 
-  // 获取集群信息
-  const summaryClusterInfoQuery = useAsync({
+  const validateResourceFormWithReservedConfig = useCallback(async () => {
+    const normalizedCurrentValues = normalizeResourceValuesByReservedConfig(
+      resourceForm.getFieldsValue(),
+      reservedAppAttributes,
+    );
+    resourceForm.setFieldsValue(normalizedCurrentValues);
+
+    const validatedValues = await resourceForm.validateFields();
+    return normalizeResourceValuesByReservedConfig(validatedValues, reservedAppAttributes);
+  }, [resourceForm, reservedAppAttributes]);
+
+  // 获取集群运行信息，分区空闲资源与 dashboard 保持同一口径
+  const clusterRunningInfoQuery = useAsync({
     promiseFn: useCallback(async () => {
-      if (!currentClusters.length) {
-        return {
-          results: [] as {
-            clusterId: string;
-            partitions: [];
-          }[],
-        };
+      if (!selectedCluster) {
+        return undefined;
       }
-      const clusterIds = currentClusters.map((cluster) => cluster.id);
       return await api
-        .getAllSummaryClustersInfo({
+        .getClusterRunningInfo({
           query: {
-            clusterIds,
-            isFullDisplayMode,
+            clusterId: selectedCluster,
           },
         })
-        .httpError(500, () => ({ results: [] }));
-    }, [currentClusters, isFullDisplayMode]),
+        .httpError(500, () => undefined);
+    }, [selectedCluster]),
   });
 
   // 获取账户的可见分区
@@ -255,6 +313,15 @@ export const LaunchAppForm: React.FC<Props> = ({
     }, [selectedAccount, selectedCluster]),
   });
 
+  const accountInfoQuery = useAsync({
+    promiseFn: useCallback(async () => {
+      if (!selectedAccount || !publicConfig.MIS_DEPLOYED) {
+        return undefined;
+      }
+      return api.getAccountInfo({ query: { accountName: selectedAccount } }).catch(() => undefined);
+    }, [selectedAccount]),
+  });
+
   const partitionRows: PartitionRow[] = useMemo(() => {
     if (!selectedCluster || !selectedAccount) {
       return [];
@@ -264,41 +331,24 @@ export const LaunchAppForm: React.FC<Props> = ({
       availablePartitionsForAccountQuery.data?.cluster === selectedCluster &&
       availablePartitionsForAccountQuery.data?.accountName === selectedAccount;
     const partitions = hasMatchedPartitionData ? (availablePartitionsForAccountQuery.data?.partitions ?? []) : [];
-    const summaryPartitions =
-      summaryClusterInfoQuery.data?.results?.find((cluster) => cluster.clusterId === selectedCluster)?.partitions ?? [];
-
-    // usage 为 0~100 的百分比，统一换算为 0~1
-    const normalizeUsageRatio = (usage: number | undefined) => {
-      if (usage == null || Number.isNaN(usage)) {
-        return undefined;
-      }
-      const ratio = usage / 100;
-      return Math.min(1, Math.max(0, ratio));
-    };
-
-    const calculateIdleCount = (total: number | undefined, usageRatio: number | undefined) => {
-      if (total == null || usageRatio == null) {
-        return undefined;
-      }
-      return Math.max(0, Math.round(total * (1 - usageRatio)));
-    };
+    const summaryPartitions = clusterRunningInfoQuery.data?.clusterInfo.partitions ?? [];
 
     const partitionsInfo = partitions.map((partition) => {
       const summary = summaryPartitions.find((item) => item.partitionName === partition.name);
-      const nodeSpecParts = [
-        partition.gpus ? t(pResource("nodeSpecGpu"), [partition.gpus]) : undefined,
-        partition.cores ? t(pResource("nodeSpecCpu"), [partition.cores]) : undefined,
-        partition.memMb ? t(pResource("nodeSpecMemory"), [formatSize(partition.memMb, ["MB", "GB", "TB"])]) : undefined,
-      ].filter(Boolean);
       const nodeTotal = summary?.nodeCount;
+      const perNodeDivisor = nodeTotal && nodeTotal > 0 ? nodeTotal : 1;
+      const nodeSpecParts = [
+        partition.gpus ? t(pResource("nodeSpecGpu"), [partition.gpus / perNodeDivisor]) : undefined,
+        partition.cores ? t(pResource("nodeSpecCpu"), [partition.cores / perNodeDivisor]) : undefined,
+        partition.memMb
+          ? t(pResource("nodeSpecMemory"), [formatSize(partition.memMb / perNodeDivisor, ["MB", "GB", "TB"])])
+          : undefined,
+      ].filter(Boolean);
       const cpuTotal = summary?.cpuCoreCount;
       const gpuTotal = summary?.gpuCoreCount;
-      const nodeUsageRatio = normalizeUsageRatio(summary?.nodeUsage);
-      const cpuUsageRatio = normalizeUsageRatio(summary?.cpuUsage);
-      const gpuUsageRatio = normalizeUsageRatio(summary?.gpuUsage);
-      const idleNodeCount = calculateIdleCount(nodeTotal, nodeUsageRatio);
-      const idleCpuCount = calculateIdleCount(cpuTotal, cpuUsageRatio);
-      const idleGpuCount = calculateIdleCount(gpuTotal, gpuUsageRatio);
+      const idleNodeCount = summary?.idleNodeCount;
+      const idleCpuCount = summary?.idleCpuCount;
+      const idleGpuCount = summary?.idleGpuCount;
       const idleNodes = nodeTotal != null && idleNodeCount != null ? `${idleNodeCount}/${nodeTotal}` : "-";
       const idleCpu = cpuTotal != null && idleCpuCount != null ? `${idleCpuCount}/${cpuTotal}` : "-";
       const idleGpu = gpuTotal != null && idleGpuCount != null ? `${idleGpuCount}/${gpuTotal}` : "-";
@@ -350,53 +400,93 @@ export const LaunchAppForm: React.FC<Props> = ({
       return result;
     }
 
-    if (partitionsInfo?.length > 0) {
-      const hasCpuPartition = partitionsInfo.some((p) => p.kind === "cpu");
-      const hasGpuPartition = partitionsInfo.some((p) => p.kind === "gpu");
-
-      if (activePartitionTab === "cpu" && !hasCpuPartition && hasGpuPartition) {
-        setActivePartitionTab("gpu");
-      } else if (activePartitionTab === "gpu" && !hasGpuPartition && hasCpuPartition) {
-        setActivePartitionTab("cpu");
-      }
-    }
     return partitionsInfo;
   }, [
     availablePartitionsForAccountQuery.isLoading,
+    availablePartitionsForAccountQuery.data?.accountName,
+    availablePartitionsForAccountQuery.data?.cluster,
     availablePartitionsForAccountQuery.data?.partitions,
+    clusterRunningInfoQuery.data?.clusterInfo.partitions,
     languageId,
     selectedAccount,
     selectedCluster,
-    summaryClusterInfoQuery.data?.results,
   ]);
 
-  const accountOptions = useMemo(() => {
-    if (fixedAccountList.length > 0) {
-      return fixedAccountList;
+  useEffect(() => {
+    if (fixedPartitionList.length > 0 || partitionRows.length === 0) {
+      return;
     }
-    return allAvailableAccounts;
-  }, [allAvailableAccounts, fixedAccountList]);
 
-  const clusterOptions = useMemo(() => {
-    // 使用复合 map 精确判断：该账户在该 app 下，在哪些集群可用
-    const validClusters = new Set<string>(
-      selectedAccount && appInfo?.id ? (accountAppClusterMap.get(`${selectedAccount}::${appInfo.id}`) ?? []) : [],
-    );
+    const hasCpuPartition = partitionRows.some((p) => p.kind === "cpu");
+    const hasGpuPartition = partitionRows.some((p) => p.kind === "gpu");
 
-    return currentClusters.map((cluster) => ({
-      id: cluster.id,
-      name: getI18nConfigCurrentText(cluster.name, languageId),
-      disabled: !selectedAccount || !validClusters.has(cluster.id),
-    }));
-  }, [accountAppClusterMap, currentClusters, languageId, selectedAccount, appInfo?.id]);
+    setActivePartitionTab((current) => {
+      if (current === "cpu" && !hasCpuPartition && hasGpuPartition) {
+        return "gpu";
+      } else if (current === "gpu" && !hasGpuPartition && hasCpuPartition) {
+        return "cpu";
+      }
+      return current;
+    });
+  }, [fixedPartitionList.length, partitionRows]);
+
+  const accountReasonTextMap = useMemo<Record<number, string>>(
+    () => ({
+      [AccountUnavailableReason.USER_BLOCKED]: t(p("accountUserBlocked")),
+      [AccountUnavailableReason.ACCOUNT_FROZEN]: t(p("accountFrozen")),
+      [AccountUnavailableReason.ACCOUNT_BLOCKED]: t(p("accountBlocked")),
+      [AccountUnavailableReason.ACCOUNT_DEBT]: t(p("accountDebt")),
+      [AccountUnavailableReason.USER_QUOTA_EXCEEDED]: t(p("userQuotaExceeded")),
+    }),
+    [t],
+  );
+
+  const accountOptions = useMemo((): AccountOption[] => {
+    if (fixedAccountList.length > 0) {
+      return fixedAccountList.map((account) => ({ label: account, value: account }));
+    }
+
+    const appAccountAvailabilities = appInfo?.accountAvailabilities ?? [];
+
+    return appAccountAvailabilities
+      .sort((a, b) => {
+        if (a.available !== b.available) return a.available ? -1 : 1;
+        return a.accountName.localeCompare(b.accountName);
+      })
+      .map((info) => ({
+        label: info.accountName,
+        value: info.accountName,
+        disabled: !info.available,
+        disabledReason: info.available
+          ? undefined
+          : (info.unavailableReasons ?? []).map((reason) => accountReasonTextMap[reason] ?? reason).join("；"),
+      }));
+  }, [appInfo?.accountAvailabilities, fixedAccountList, accountReasonTextMap]);
+
+  const clusterName = useMemo(() => {
+    const cluster = currentClusters.find((c) => c.id === preSelectedCluster);
+    return cluster ? getI18nConfigCurrentText(cluster.name, languageId) : preSelectedCluster;
+  }, [currentClusters, preSelectedCluster, languageId]);
 
   const qosOptions = useMemo(() => {
     if (!selectedPartition) {
       return [];
     }
-    const partitions = availablePartitionsForAccountQuery.data?.partitions ?? [];
+    const hasMatchedPartitionData =
+      !availablePartitionsForAccountQuery.isLoading &&
+      availablePartitionsForAccountQuery.data?.cluster === selectedCluster &&
+      availablePartitionsForAccountQuery.data?.accountName === selectedAccount;
+    const partitions = hasMatchedPartitionData ? (availablePartitionsForAccountQuery.data?.partitions ?? []) : [];
     return partitions.find((partition) => partition.name === selectedPartition)?.qos ?? [];
-  }, [availablePartitionsForAccountQuery.data?.partitions, selectedPartition]);
+  }, [
+    availablePartitionsForAccountQuery.isLoading,
+    availablePartitionsForAccountQuery.data?.accountName,
+    availablePartitionsForAccountQuery.data?.cluster,
+    availablePartitionsForAccountQuery.data?.partitions,
+    selectedAccount,
+    selectedCluster,
+    selectedPartition,
+  ]);
 
   const selectedPartitionInfo = useMemo(() => {
     if (!selectedPartition) {
@@ -539,7 +629,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     ]),
   });
 
-  const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)}元`;
+  const formattedHourlyPrice = jobOneHourPrice == null ? "-" : jobOneHourPrice.toFixed(2);
 
   const createErrorModal = (message: string) =>
     modal.error({
@@ -558,9 +648,245 @@ export const LaunchAppForm: React.FC<Props> = ({
     return logText;
   }
 
+  const handleGoBack = useCallback(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const callbackPath = searchParams.get("callbackPath");
+    if (callbackPath) {
+      window.location.href = callbackPath;
+    } else {
+      setSelectedAppInfo(undefined);
+    }
+  }, [setSelectedAppInfo]);
+
+  const handleSaveAsTemplate = async (templateName: string) => {
+    if (savingTemplate || isSubmitting) return;
+
+    const resourceValues = await validateResourceFormWithReservedConfig();
+    const appFormFields = await appForm.validateFields();
+
+    const customFormKeyValue: Record<string, string> = {};
+    attributes.forEach((attr) => {
+      if (attr.fixedValue?.hidden) {
+        return;
+      }
+
+      const key = attr.name;
+      customFormKeyValue[key] = appFormFields[key];
+    });
+    customFormKeyValue[templateResourceAttributesKey] = JSON.stringify(
+      getVisibleResourceTemplateFieldNames(reservedAppAttributes),
+    );
+    customFormKeyValue[templateCustomAttributesKey] = JSON.stringify(getVisibleCustomTemplateFieldNames(attributes));
+
+    try {
+      setSavingTemplate(true);
+      await api
+        .saveAsAppTemplate({
+          body: {
+            cluster: selectedCluster,
+            templateName,
+            account: resourceValues.account,
+            partition: resourceValues.partition,
+            qos: resourceValues.qos,
+            nodeCount: resourceValues.nodeCount ?? 1,
+            coreCount: resourceValues.gpuCount
+              ? resourceValues.gpuCount *
+                Math.floor((selectedPartitionInfo?.cores ?? 1) / (selectedPartitionInfo?.gpus ?? 1))
+              : (resourceValues.coreCount ?? 1),
+            gpuCount: resourceValues.gpuCount ?? 0,
+            memoryMb: totalMemoryMb,
+            maxTime: resourceValues.maxTime ?? 60,
+            maxTimeUnit: selectedPresetUnit ?? maxTimeUnitValue,
+            appId,
+            customAttributes: JSON.stringify(customFormKeyValue),
+          },
+        })
+        .httpError(409, () => {
+          message.error(t(p("templateNameExists")));
+          throw new Error("ALREADY_EXISTS");
+        })
+        .then(() => {
+          message.success(t(p("saveTemplateSuccess")));
+        });
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const handleOpenSaveTemplateModal = async () => {
+    if (savingTemplate || isSubmitting) return;
+    try {
+      await validateResourceFormWithReservedConfig();
+      await appForm.validateFields();
+      setSaveModalOpen(true);
+    } catch {
+      message.warning(t(p("completeRequiredInfo")));
+    }
+  };
+
+  const showTemplateExpiredConfirm = (template: AppTemplateDetail) => {
+    setExpiredTemplate({ id: template.id, templateName: template.templateName });
+  };
+
+  const handleDeleteExpiredTemplate = async () => {
+    if (!expiredTemplate) return;
+    setDeletingExpiredTemplate(true);
+    await api
+      .deleteAppTemplate({ query: expiredTemplate })
+      .then(() => {
+        message.success(t(p("templateDeleteSuccess")));
+        setExpiredTemplate(undefined);
+        setTemplateRefreshSignal((prev) => prev + 1);
+      })
+      .catch(() => {
+        message.error(t(p("templateDeleteFailed")));
+      })
+      .finally(() => {
+        setDeletingExpiredTemplate(false);
+      });
+  };
+
+  const handleUseTemplate = async (template: AppTemplateDetail) => {
+    const accountAvailable =
+      template.account && accountOptions.some((o) => o.value === template.account && !o.disabled);
+    if (!accountAvailable) {
+      showTemplateExpiredConfirm(template);
+      return;
+    }
+
+    const validClustersForAccount =
+      template.account && appId
+        ? new Set(accountAppClusterMap.get(`${template.account}::${appId}`) ?? [])
+        : new Set<string>();
+
+    if (template.cluster && !validClustersForAccount.has(template.cluster)) {
+      showTemplateExpiredConfirm(template);
+      return;
+    }
+
+    const cluster = template.cluster || selectedCluster;
+
+    let matchedPartition: Partition | undefined;
+    if (template.partition && template.account && cluster) {
+      const availablePartitions = await api
+        .getAvailablePartitionsForCluster({
+          query: { cluster, accountName: template.account },
+        })
+        .then((res) => res.partitions)
+        .catch(() => undefined);
+
+      matchedPartition = availablePartitions?.find((p) => p.name === template.partition);
+      if (!matchedPartition) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+
+      if (template.qos && !(matchedPartition.qos ?? []).includes(template.qos)) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+    }
+
+    if (matchedPartition) {
+      if (template.nodeCount > matchedPartition.nodes) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+      const useGpu = (matchedPartition.gpus ?? 0) > 0;
+      if (useGpu && template.gpuCount && template.gpuCount > matchedPartition.gpus) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+      if (!useGpu && template.coreCount > matchedPartition.cores) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+    }
+
+    const templatePartitionIsWithGpu = matchedPartition ? !!matchedPartition.gpus : !!template.gpuCount;
+    if (!isTemplateResourceReservedConfigAvailable(template, reservedAppAttributes, templatePartitionIsWithGpu)) {
+      showTemplateExpiredConfirm(template);
+      return;
+    }
+
+    const useGpuTab = matchedPartition
+      ? (matchedPartition.gpus ?? 0) > 0
+      : !!template.gpuCount && template.gpuCount > 0;
+
+    const targetCluster = template.cluster ?? selectedCluster;
+    let targetAttributes = attributes;
+    if (targetCluster && targetCluster !== selectedCluster) {
+      try {
+        const meta = await api.getAppMetadata({ query: { appId, cluster: targetCluster } });
+        targetAttributes = meta.appCustomFormAttributes ?? [];
+      } catch {
+        /* fall back to current attributes */
+      }
+    }
+
+    if (!isTemplateCustomAttributesAvailable(template.customAttributes, targetAttributes)) {
+      showTemplateExpiredConfirm(template);
+      return;
+    }
+
+    const nextValues: Partial<AppResourceFormValues & FormFields> = {
+      account: template.account,
+      cluster: template.cluster,
+      partition: template.partition,
+      qos: template.qos,
+      nodeCount: template.nodeCount,
+      maxTime: template.maxTime,
+    };
+    if (useGpuTab) {
+      nextValues.gpuCount = template.gpuCount;
+      nextValues.coreCount = undefined;
+    } else {
+      nextValues.coreCount = template.coreCount;
+      nextValues.gpuCount = undefined;
+    }
+
+    setActivePartitionTab(useGpuTab ? "gpu" : "cpu");
+    setPendingTemplatePartition(template.partition);
+    setPendingTemplateQos(template.qos);
+    resourceForm.setFieldsValue(nextValues);
+    const templateMaxTimeUnit = template.maxTimeUnit ?? TimeUnit.MINUTES;
+    const matchedMaxTimePreset = MAX_TIME_PRESETS.find(
+      (preset) => preset.maxTime === template.maxTime && preset.maxTimeUnit === templateMaxTimeUnit,
+    );
+    setMaxTimeUnitValue(templateMaxTimeUnit);
+    setSelectedPresetUnit(matchedMaxTimePreset?.maxTimeUnit);
+    if (template.customAttributes) {
+      try {
+        const parsed = JSON.parse(template.customAttributes) as Record<string, string>;
+        const validated: Record<string, string> = {};
+        for (const [key, value] of Object.entries(parsed)) {
+          if (key === templateResourceAttributesKey || key === templateCustomAttributesKey) {
+            continue;
+          }
+
+          const attrDef = targetAttributes.find((a) => a.name === key);
+          if (
+            attrDef &&
+            (attrDef.type === "SELECT" || attrDef.type === "COMMAND_SELECT") &&
+            attrDef.select.length > 0
+          ) {
+            const available = attrDef.select.map((opt) => opt.value);
+            validated[key] = available.includes(value) ? value : available[0];
+          } else {
+            validated[key] = value;
+          }
+        }
+        appForm.setFieldsValue(validated);
+      } catch {
+        /* ignore parse errors */
+      }
+    }
+    setTemplateListOpen(false);
+  };
+
   const handleSubmit = async () => {
     const baseFormFields = await baseForm.validateFields();
-    const resourceFormFields = await resourceForm.validateFields();
+    const resourceFormFields = await validateResourceFormWithReservedConfig();
     const appFormFields = await appForm.validateFields();
     const allFormFields = { ...baseFormFields, ...resourceFormFields, ...appFormFields };
     const { appJobName, nodeCount, coreCount, gpuCount, partition, qos, account, maxTime } = allFormFields;
@@ -588,7 +914,7 @@ export const LaunchAppForm: React.FC<Props> = ({
           partition,
           qos,
           account,
-          maxTime: transformTime(maxTime),
+          maxTime: transformTime(maxTime, selectedPresetUnit ?? maxTimeUnitValue),
           customAttributes: customFormKeyValue,
         },
       })
@@ -649,11 +975,11 @@ export const LaunchAppForm: React.FC<Props> = ({
       });
   };
 
-  const transformTime = (amount: number) => {
-    switch (maxTimeUnitValue) {
-      case "hour":
+  const transformTime = (amount: number, unit: TimeUnit) => {
+    switch (unit) {
+      case TimeUnit.HOURS:
         return amount * 60;
-      case "day":
+      case TimeUnit.DAYS:
         return amount * 60 * 24;
       default:
         return amount;
@@ -669,50 +995,55 @@ export const LaunchAppForm: React.FC<Props> = ({
   }, [baseForm, selectedCluster]);
 
   useEffect(() => {
-    if (fixedQosName || !qosOptions.length) return;
-    if (!selectedQos || !qosOptions.includes(selectedQos)) {
-      resourceForm.setFieldValue("qos", qosOptions[0]);
-    }
-  }, [qosOptions, resourceForm, selectedQos]);
-
-  useEffect(() => {
     if (!selectedPartitionInfo) {
       return;
     }
     const nodeCountNotSet = nodeCount === undefined || nodeCount === null;
     if (nodeCountNotSet && !resourceForm.isFieldTouched("nodeCount")) {
-      resourceForm.setFieldValue("nodeCount", initialValues.nodeCount ?? 1);
+      const storeNodeCount = resourceForm.getFieldValue("nodeCount");
+      if (storeNodeCount === undefined || storeNodeCount === null) {
+        resourceForm.setFieldValue("nodeCount", initialValues.nodeCount ?? 1);
+      }
     }
 
     if (activePartitionTab === "gpu") {
-      if (gpuCount === undefined || gpuCount === null || gpuCount === 0) {
-        resourceForm.setFieldValue("gpuCount", 1);
+      if (gpuCount === undefined || gpuCount === null) {
+        const storeGpuCount = resourceForm.getFieldValue("gpuCount");
+        if (storeGpuCount === undefined || storeGpuCount === null || storeGpuCount === 0) {
+          resourceForm.setFieldValue("gpuCount", 1);
+        }
       }
     } else {
-      if (coreCount === undefined || coreCount === null || coreCount === 0) {
-        resourceForm.setFieldValue("coreCount", 1);
+      if (coreCount === undefined || coreCount === null) {
+        const storeCoreCount = resourceForm.getFieldValue("coreCount");
+        if (storeCoreCount === undefined || storeCoreCount === null || storeCoreCount === 0) {
+          resourceForm.setFieldValue("coreCount", 1);
+        }
       }
     }
   }, [activePartitionTab, resourceForm, selectedPartitionInfo]);
 
   useEffect(() => {
-    if (!accountOptions.length) return;
-    if (selectedAccount && fixedAccountList) return;
-    const currentAccount = resourceForm.getFieldValue("account");
-    if (currentAccount && accountOptions.includes(currentAccount)) return;
+    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
+    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
+      resourceForm.setFieldValue("maxTime", initialValues.maxTime ?? 30);
+    }
+  }, [resourceForm, selectedMaxTime]);
 
-    // 有预选集群时，优先选当前集群中有效的账户；否则取 accountOptions 第一项
-    const defaultAccount = preSelectedCluster
-      ? (availableAccounts.find((a) => accountOptions.includes(a)) ?? accountOptions[0])
-      : accountOptions[0];
-
-    resourceForm.setFieldValue("account", defaultAccount);
-  }, [accountOptions, availableAccounts, preSelectedCluster, resourceForm, fixedAccountList]);
+  const availableAccountOptions = useMemo(() => accountOptions.filter((o) => !o.disabled), [accountOptions]);
 
   useEffect(() => {
-    if (!partitionRows.length) {
-      return;
-    }
+    if (!accountOptions.length) return;
+    if (selectedAccount && fixedAccountList.length) return;
+    const currentAccount = resourceForm.getFieldValue("account");
+    if (currentAccount && availableAccountOptions.some((o) => o.value === currentAccount)) return;
+
+    resourceForm.setFieldValue("account", availableAccountOptions[0]?.value);
+  }, [accountOptions, availableAccountOptions, resourceForm, fixedAccountList]);
+
+  useEffect(() => {
+    if (!partitionRows.length) return;
+    if (pendingTemplatePartition) return;
 
     const currentPartition = resourceForm.getFieldValue("partition");
     const hasSelection = currentPartition && partitionRows.some((row) => row.key === currentPartition);
@@ -726,7 +1057,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     } else {
       resourceForm.setFieldValue("partition", rowsInTab[0]?.key);
     }
-  }, [activePartitionTab, partitionRows, resourceForm]);
+  }, [activePartitionTab, fixedPartitionName, partitionRows, pendingTemplatePartition, resourceForm]);
 
   // 当分区通过固定选项下拉框选择时，同步 activePartitionTab
   useEffect(() => {
@@ -738,23 +1069,15 @@ export const LaunchAppForm: React.FC<Props> = ({
     }
   }, [selectedPartition, partitionRows]);
 
-  // 验证当前选择的集群是否有效
-  // 如果当前集群无效，自动选择一个有效的集群
   useEffect(() => {
-    if (!selectedAccount) {
-      resourceForm.setFieldValue("cluster", undefined);
-      return;
-    }
-    const currentCluster = resourceForm.getFieldValue("cluster");
-    const clusterValid =
-      currentCluster && clusterOptions.some((option) => option.id === currentCluster && !option.disabled);
-    const preferredClusterValid =
-      preSelectedCluster && clusterOptions.some((option) => option.id === preSelectedCluster && !option.disabled);
-    if (!clusterValid) {
-      const firstEnabledCluster = clusterOptions.find((option) => !option.disabled)?.id;
-      resourceForm.setFieldValue("cluster", preferredClusterValid ? preSelectedCluster : firstEnabledCluster);
-    }
-  }, [clusterOptions, resourceForm, selectedAccount]);
+    resourceForm.setFieldValue("cluster", preSelectedCluster);
+  }, [preSelectedCluster, resourceForm]);
+
+  useEffect(() => {
+    resourceForm.setFieldsValue(
+      normalizeResourceValuesByReservedConfig(resourceForm.getFieldsValue(), reservedAppAttributes),
+    );
+  }, [resourceForm, reservedAppAttributes]);
 
   // 单位或配置上限变化时触发校验，让用户看到最新提示
   useEffect(() => {
@@ -762,124 +1085,195 @@ export const LaunchAppForm: React.FC<Props> = ({
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [maxTimeUnitValue, maxRunningTimeHours, resourceForm]);
+  }, [maxTimeUnitValue, maxRunningTimeHours, resourceForm, selectedPresetUnit]);
+
+  useEffect(() => {
+    if (!pendingTemplatePartition) return;
+    if (partitionRows.some((row) => row.key === pendingTemplatePartition)) {
+      resourceForm.setFieldValue("partition", pendingTemplatePartition);
+      setPendingTemplatePartition(undefined);
+    }
+  }, [partitionRows, pendingTemplatePartition, resourceForm]);
+
+  useEffect(() => {
+    if (fixedQosName) return;
+    if (!qosOptions.length) {
+      if (!pendingTemplateQos) {
+        resourceForm.setFieldValue("qos", undefined);
+      }
+      return;
+    }
+    if (pendingTemplateQos) {
+      if (qosOptions.includes(pendingTemplateQos)) {
+        resourceForm.setFieldValue("qos", pendingTemplateQos);
+      }
+      setPendingTemplateQos(undefined);
+      return;
+    }
+    if (!selectedQos || !qosOptions.includes(selectedQos)) {
+      resourceForm.setFieldValue("qos", qosOptions[0]);
+    }
+  }, [fixedQosName, pendingTemplateQos, qosOptions, resourceForm, selectedQos]);
 
   return (
     <>
-      <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
-        <PaddedCard
-          title={
-            <HeaderRow align="center" size={16}>
-              {appLogoPath ? <HeaderAvatar size={32} src={join(publicConfig.PUBLIC_PATH, appLogoPath)} /> : null}
-              <HeaderTitle>{t(p("create")) + appName}</HeaderTitle>
-            </HeaderRow>
-          }
-        >
-          <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <Form form={baseForm} colon={false} requiredMark={false}>
-              <FixedOrEditableFormItem
-                form={baseForm}
-                languageId={languageId}
-                t={t}
-                name="appJobName"
-                label={<FormLabel>{t(p("appJobName"))}</FormLabel>}
-                rules={[{ required: true, message: t(p("jobNameRequired")) }, { max: 50 }]}
-                reservedConfig={getReservedAppAttributeConfig(
-                  reservedAppAttributes,
-                  ReservedAppAttributeName.APP_JOB_NAME,
-                )}
-                children={<RoundedInput />}
-                currentPartitionIsWithGpu={!!selectedPartitionInfo?.gpus}
-                appId={appId}
-                clusterId={selectedCluster}
+      <JobPageLayout>
+        <JobMainContent>
+          <JobContainer direction="vertical" size={0}>
+            <div style={{ position: "relative" }}>
+              <BackIcon
+                onClick={handleGoBack}
+                style={{
+                  position: "absolute",
+                  left: 21,
+                  top: 38,
+                  cursor: "pointer",
+                  fontSize: 20,
+                  zIndex: 1,
+                }}
               />
-            </Form>
-          </BorderlessCard>
-        </PaddedCard>
+              <PaddedCard
+                styles={{ header: { borderBottom: "none" } }}
+                title={
+                  <HeaderRow
+                    align="center"
+                    size={16}
+                    style={{
+                      justifyContent: "space-between",
+                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
+                      paddingBottom: 24,
+                    }}
+                  >
+                    <HeaderRow align="center" size={16}>
+                      {appLogoPath ? (
+                        <HeaderAvatar size={32} src={join(publicConfig.PUBLIC_PATH, appLogoPath)} />
+                      ) : null}
+                      <HeaderTitle>{t(p("create")) + appName}</HeaderTitle>
+                    </HeaderRow>
+                    <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                      {t(p("templateButton"))}
+                    </Button>
+                  </HeaderRow>
+                }
+              >
+                <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
+                  <Form form={baseForm} colon={false} requiredMark={false}>
+                    <FixedOrEditableFormItem
+                      form={baseForm}
+                      languageId={languageId}
+                      t={t}
+                      name="appJobName"
+                      label={<FormLabel>{t(p("appJobName"))}</FormLabel>}
+                      rules={[{ required: true, message: t(p("jobNameRequired")) }, { max: 50 }]}
+                      reservedConfig={getReservedAppAttributeConfig(
+                        reservedAppAttributes,
+                        ReservedAppAttributeName.APP_JOB_NAME,
+                      )}
+                      children={<RoundedInput />}
+                      currentPartitionIsWithGpu={!!selectedPartitionInfo?.gpus}
+                      appId={appId}
+                      clusterId={selectedCluster}
+                    />
+                  </Form>
+                </BorderlessCard>
+              </PaddedCard>
+            </div>
 
-        <ResourceConfigSection
-          form={resourceForm}
-          accountOptions={accountOptions}
-          clusterOptions={clusterOptions}
-          selectedCluster={selectedCluster}
-          partitionRows={partitionRows}
-          activePartitionTab={activePartitionTab}
-          onActivePartitionTabChange={setActivePartitionTab}
-          selectedPartitionKey={selectedPartition}
-          onPartitionSelect={(value) => {
-            resourceForm.setFieldValue("partition", value);
-          }}
-          qosOptions={qosOptions}
-          inputsDisabled={inputsDisabled}
-          maxTimeUnit={maxTimeUnitValue}
-          onMaxTimeUnitChange={setMaxTimeUnitValue}
-          languageId={languageId}
-          appId={appId}
-          clusterId={selectedCluster}
-          reservedAppAttributes={reservedAppAttributes}
-          currentPartitionInfo={selectedPartitionInfo}
-          maxRunningTimeHours={maxRunningTimeHours}
-        />
+            <ResourceConfigSection
+              form={resourceForm}
+              accountOptions={accountOptions}
+              selectedAccount={selectedAccount}
+              clusterName={clusterName}
+              partitionRows={partitionRows}
+              activePartitionTab={activePartitionTab}
+              onActivePartitionTabChange={setActivePartitionTab}
+              selectedPartitionKey={selectedPartition}
+              onPartitionSelect={(value) => {
+                resourceForm.setFieldValue("partition", value);
+              }}
+              qosOptions={qosOptions}
+              inputsDisabled={inputsDisabled}
+              maxTimeUnit={maxTimeUnitValue}
+              onMaxTimeUnitChange={setMaxTimeUnitValue}
+              selectedPresetUnit={selectedPresetUnit}
+              onSelectedPresetUnitChange={setSelectedPresetUnit}
+              languageId={languageId}
+              appId={appId}
+              clusterId={selectedCluster}
+              reservedAppAttributes={reservedAppAttributes}
+              currentPartitionInfo={selectedPartitionInfo}
+              maxRunningTimeHours={maxRunningTimeHours}
+            />
 
-        <AppConfigSection
-          form={appForm}
-          languageId={languageId}
-          appId={appId}
-          clusterId={selectedCluster}
-          attributes={attributes}
-          currentPartitionInfo={selectedPartitionInfo}
-        />
+            <AppConfigSection
+              form={appForm}
+              languageId={languageId}
+              appId={appId}
+              clusterId={selectedCluster}
+              attributes={attributes}
+              currentPartitionInfo={selectedPartitionInfo}
+            />
+          </JobContainer>
+        </JobMainContent>
 
-        {appCommentI18nText && (
-          <div style={{ marginTop: "64px" }}>
-            <Divider />
-            <PageTitle titleText={t(p("appCommentTitle"))} />
-            <Text>
-              <div dangerouslySetInnerHTML={{ __html: appCommentI18nText }} />
-            </Text>
-          </div>
-        )}
-      </PageContainer>
+        <JobSidePanel>
+          <JobSidePanelInner>
+            <SidePanelGroupWrapper>
+              {appCommentI18nText && (
+                <>
+                  <JobSidePanelScrollBox>
+                    <Text>
+                      <div dangerouslySetInnerHTML={{ __html: appCommentI18nText }} />
+                    </Text>
+                  </JobSidePanelScrollBox>
+                  <SidePanelDivider />
+                </>
+              )}
+              <JobSideInfo
+                labels={{
+                  totalNodeCount: t(p("totalNodeCount")),
+                  totalGpuCount: t(p("totalGpuCount")),
+                  totalCoreCount: t(p("totalCoreCount")),
+                  totalMemory: t(p("totalMemory")),
+                  costPerHour: t(p("costPerHour")),
+                  pricingStandard: t(p("pricingStandard")),
+                  yuan: t(p("yuan")),
+                  hours: t(p("hours")),
+                  accountNameLabel: t(p("accountNameLabel")),
+                  whitelistTag: t(p("whitelistTag")),
+                  accountOwner: t(p("accountOwner")),
+                  accountBalance: t(p("accountBalance")),
+                  accountBlockThreshold: t(p("accountBlockThreshold")),
+                  userUsedLimit: t(p("userUsedLimit")),
+                  userChargeNoLimit: t(p("userChargeNoLimit")),
+                }}
+                nodeCount={nodeCount}
+                totalGpuCount={totalGpuCount}
+                totalCpuCount={totalCpuCount}
+                totalMemory={totalMemory}
+                hourlyPrice={formattedHourlyPrice}
+                showHourlyPriceUnit={jobOneHourPrice != null}
+                pricingStandardUrl={join(publicConfig.MIS_URL ?? "/mis", "/user/partitions")}
+                showAccountInfo={publicConfig.MIS_DEPLOYED}
+                accountInfo={accountInfoQuery.data}
+              />
+            </SidePanelGroupWrapper>
+          </JobSidePanelInner>
+        </JobSidePanel>
+      </JobPageLayout>
 
       <FixedFooter>
-        <FooterStats>
-          <span>
-            {t(p("totalNodeCount"))} <FooterStatValue>{nodeCount ?? "-"}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("totalGpuCount"))} <FooterStatValue>{totalGpuCount}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("totalCoreCount"))} <FooterStatValue>{totalCpuCount}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("totalMemory"))} <FooterStatValue>{totalMemory}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("costPerHour"))} <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
-          </span>
-          <a
-            onClick={() => {
-              window.open(join(publicConfig.MIS_URL ?? "/mis", "/user/partitions"), "_blank", "noopener,noreferrer");
-            }}
+        <div style={{ marginLeft: 208, marginRight: "auto" }}>
+          <FooterStatValue
+            $isPrimaryColor
+            style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
+            onClick={handleOpenSaveTemplateModal}
           >
-            <FooterStatValue $isPrimaryColor>{t(p("pricingStandard"))}</FooterStatValue>
-          </a>
-        </FooterStats>
+            {t(p("saveToTemplate"))}
+          </FooterStatValue>
+        </div>
         <FooterActions>
-          <Button
-            onClick={() => {
-              const searchParams = new URLSearchParams(window.location.search);
-              const callbackPath = searchParams.get("callbackPath");
-
-              if (callbackPath) {
-                window.location.href = callbackPath;
-              } else {
-                setSelectedAppInfo(undefined);
-              }
-            }}
-            style={{ marginRight: "10px" }}
-          >
+          <Button onClick={handleGoBack} style={{ marginRight: "10px" }}>
             {t("button.cancelButton")}
           </Button>
           <Button type="primary" onClick={handleSubmit} loading={isSubmitting}>
@@ -887,54 +1281,29 @@ export const LaunchAppForm: React.FC<Props> = ({
           </Button>
         </FooterActions>
       </FixedFooter>
+
+      <SaveAsTemplateModal open={saveModalOpen} onClose={() => setSaveModalOpen(false)} onSave={handleSaveAsTemplate} />
+      <AppTemplateListModal
+        open={templateListOpen}
+        onClose={() => setTemplateListOpen(false)}
+        onUse={handleUseTemplate}
+        appId={appId}
+        cluster={selectedCluster}
+        attributes={attributes}
+        refreshSignal={templateRefreshSignal}
+      />
+      <StyledModal
+        open={expiredTemplate !== undefined}
+        title={t(p("unavailableParamsTitle"))}
+        onOk={handleDeleteExpiredTemplate}
+        onCancel={() => setExpiredTemplate(undefined)}
+        okText={t(p("unavailableParamsConfirm"))}
+        cancelText={t(p("unavailableParamsCancel"))}
+        confirmLoading={deletingExpiredTemplate}
+        centered
+      >
+        {t(p("unavailableParamsDesc"))}
+      </StyledModal>
     </>
   );
-};
-
-// 在已配置固定值或固定选项时，获取系统保留字段的对应formField的固定值初始值
-const getInitialFixedValueByAttributeName = (
-  reservedAppAttributes: ReservedAppAttribute[] | undefined,
-  attributeName: ReservedAppAttributeName,
-): string | undefined => {
-  const attribute = reservedAppAttributes?.find((x) => x.name === attributeName);
-
-  if (!attribute) {
-    return undefined;
-  }
-
-  // 根据配置类型返回初始值
-  if (attribute.reservedConfig.type === "fixedValue") {
-    return attribute.reservedConfig.fixedValue.value.toString();
-  } else if (attribute.reservedConfig.type === "select") {
-    const value = getSelectAttributeInitalValue(attribute.reservedConfig.defaultValue, attribute.reservedConfig.select);
-    return value?.toString();
-  }
-
-  return undefined;
-};
-
-// 在已配置固定值或固定选项时，获取系统保留字段的对应formField的固定值初始值
-const getFixedValueListByAttributeName = (
-  reservedAppAttributes: ReservedAppAttribute[] | undefined,
-  attributeName: ReservedAppAttributeName,
-): (string | number)[] => {
-  const attribute = reservedAppAttributes?.find((x) => x.name === attributeName);
-
-  if (!attribute) {
-    return [];
-  }
-
-  // 根据配置类型返回初始值
-  if (attribute.reservedConfig.type === "select") {
-    return attribute.reservedConfig.select.map((x) => x.value);
-  }
-
-  return [];
-};
-
-export const getReservedAppAttributeConfig = (
-  attributes: ReservedAppAttribute[] | undefined,
-  attributeName: ReservedAppAttributeName,
-): FixedValueConfig | SelectConfig | CommandSelectReservedConfig | undefined => {
-  return attributes?.find((x) => x.name === attributeName)?.reservedConfig;
 };

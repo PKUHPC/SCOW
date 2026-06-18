@@ -20,6 +20,8 @@ import { User } from "src/entities/User";
 import { UserAccount } from "src/entities/UserAccount";
 import { UserBill } from "src/entities/UserBill";
 
+import { AppTemplate } from "./AppTemplate";
+import { JobTemplate } from "./JobTemplate";
 import { TenantDefaultAppRemovedList } from "./TenantDefaultAppRemovedList";
 
 export const entities = [
@@ -45,4 +47,6 @@ export const entities = [
   TenantAppBlacklist,
   TenantDefaultAppRemovedList,
   RunningJobChargeRecord,
+  JobTemplate,
+  AppTemplate,
 ];

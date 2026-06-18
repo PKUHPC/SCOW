@@ -1,7 +1,6 @@
 import { JsonFetchResultPromiseLike } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { type api } from "src/apis/api";
-import { TimeUnit } from "src/models/job";
 export type MockApi<TApi extends Record<string, (...args: any[]) => JsonFetchResultPromiseLike<any>>> = {
   [key in keyof TApi]:
     | null
@@ -123,10 +122,36 @@ export const mockApi: MockApi<typeof api> = {
             id: "vscode",
             name: "VSCode",
             logoPath: "/apps/VSCode.svg",
-            availableAccounts: [],
+            availableAccounts: ["account1", "account2"],
+            accountAvailabilities: [
+              { accountName: "account1", available: true, unavailableReasons: [] },
+              { accountName: "account2", available: true, unavailableReasons: [] },
+              { accountName: "account3", available: false, unavailableReasons: [3] },
+              { accountName: "account4", available: false, unavailableReasons: [4] },
+            ],
           },
-          { id: "emacs", name: "Emacs", availableAccounts: [] },
-          { id: "jupyter", name: "jupyter", availableAccounts: [] },
+          {
+            id: "emacs",
+            name: "Emacs",
+            availableAccounts: ["account1", "account2"],
+            accountAvailabilities: [
+              { accountName: "account1", available: true, unavailableReasons: [] },
+              { accountName: "account2", available: true, unavailableReasons: [] },
+              { accountName: "account3", available: false, unavailableReasons: [3] },
+              { accountName: "account4", available: false, unavailableReasons: [4] },
+            ],
+          },
+          {
+            id: "jupyter",
+            name: "jupyter",
+            availableAccounts: ["account1", "account2"],
+            accountAvailabilities: [
+              { accountName: "account1", available: true, unavailableReasons: [] },
+              { accountName: "account2", available: true, unavailableReasons: [] },
+              { accountName: "account3", available: false, unavailableReasons: [3] },
+              { accountName: "account4", available: false, unavailableReasons: [4] },
+            ],
+          },
         ],
       },
     ],
@@ -137,10 +162,31 @@ export const mockApi: MockApi<typeof api> = {
         id: "vscode",
         name: "VSCode",
         logoPath: "/apps/VSCode.svg",
-        availableAccounts: [],
+        availableAccounts: ["account1", "account2"],
+        accountAvailabilities: [
+          { accountName: "account1", available: true, unavailableReasons: [] },
+          { accountName: "account2", available: true, unavailableReasons: [] },
+          { accountName: "account3", available: false, unavailableReasons: [3] },
+        ],
       },
-      { id: "emacs", name: "Emacs", availableAccounts: [] },
-      { id: "jupyter", name: "jupyter", availableAccounts: [] },
+      {
+        id: "emacs",
+        name: "Emacs",
+        availableAccounts: ["account1", "account2"],
+        accountAvailabilities: [
+          { accountName: "account1", available: true, unavailableReasons: [] },
+          { accountName: "account2", available: true, unavailableReasons: [] },
+        ],
+      },
+      {
+        id: "jupyter",
+        name: "jupyter",
+        availableAccounts: ["account1", "account2"],
+        accountAvailabilities: [
+          { accountName: "account1", available: true, unavailableReasons: [] },
+          { accountName: "account2", available: true, unavailableReasons: [] },
+        ],
+      },
     ],
   }),
 
@@ -290,27 +336,22 @@ export const mockApi: MockApi<typeof api> = {
           type: "vnc",
         },
 
-  getJobTemplate: async () => ({
-    template: {
-      account: "123",
-      command: "123",
-      coreCount: 2,
-      jobName: "123",
-      maxTime: 123,
-      nodeCount: 4,
-      partition: "low",
-      qos: "low",
-      maxTimeUnit: TimeUnit.MINUTES,
-    },
-  }),
-
   listJobTemplates: async () => ({
     results: [
       {
-        id: "123-sample-apple",
-        comment: "1234",
-        submitTime: new Date().toString(),
-        jobName: "sample-apple",
+        id: 1,
+        templateName: "sample-apple",
+        cluster: "hpc01",
+        account: "123",
+        partition: "low",
+        qos: "low",
+        nodeCount: 4,
+        coreCount: 2,
+        gpuCount: 0,
+        maxTime: 123,
+        maxTimeUnit: 0,
+        command: "echo hello",
+        createdAt: new Date().toISOString(),
       },
     ],
   }),
@@ -318,6 +359,33 @@ export const mockApi: MockApi<typeof api> = {
   deleteJobTemplate: async () => null,
 
   renameJobTemplate: async () => null,
+
+  deleteAppTemplate: async () => null,
+
+  listAppTemplates: async () => ({
+    results: [
+      {
+        id: 1,
+        templateName: "sample-app-template",
+        cluster: "hpc01",
+        account: "123",
+        partition: "low",
+        qos: "low",
+        nodeCount: 1,
+        coreCount: 2,
+        gpuCount: 0,
+        maxTime: 60,
+        maxTimeUnit: 0,
+        appId: "jupyter",
+        customAttributes: JSON.stringify({ version: "3.0" }),
+        createdAt: new Date().toISOString(),
+      },
+    ],
+  }),
+
+  renameAppTemplate: async () => null,
+
+  saveAsAppTemplate: async () => ({ id: 1 }),
 
   getAccounts: async () => ({ accounts: ["hpc01", "hpc02"] }),
 
@@ -709,13 +777,26 @@ export const mockApi: MockApi<typeof api> = {
     ],
   }),
 
-  getAvailableAccountsAndClusters: async () => ({
-    accountClusters: [],
+  getAccountClustersWithUnavailableReasons: async () => ({
+    accountClusters: [
+      {
+        accountName: "default",
+        clusters: ["hpc01"],
+        available: true,
+        unavailableReasons: [],
+      },
+    ],
+  }),
+
+  getAccountInfo: async () => ({
+    accountName: "default",
+    balance: 0,
+    blockThresholdAmount: 0,
   }),
 
   calculateJobPrice: async () => ({
     accountPrice: 0,
   }),
 
-  saveAsJobTemplate: async () => null,
+  saveAsJobTemplate: async () => ({ id: 1 }),
 };

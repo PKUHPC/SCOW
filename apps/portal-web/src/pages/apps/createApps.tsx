@@ -13,27 +13,49 @@ import { LaunchAppForm } from "src/pageComponents/app/LaunchAppForm";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Head } from "src/utils/head";
 
+interface AccountAvailabilityInfo {
+  accountName: string;
+  available: boolean;
+  unavailableReasons: number[];
+}
+
 interface App {
   id: string;
   name: string;
   logoPath?: string;
   availableAccounts?: string[];
+  accountAvailabilities?: AccountAvailabilityInfo[];
 }
+
+// 对应集群有授权了该应用的账户
+const hasAccountAvailabilities = (app: App) => (app.accountAvailabilities?.length ?? 0) > 0;
 
 export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
   const router = useRouter();
   const clusterId = queryToString(router.query.clusterId);
   const appId = queryToString(router.query.appId);
 
-  const { currentClusters } = useStore(ClusterInfoStore);
+  const { currentClusters, defaultCluster, setDefaultCluster } = useStore(ClusterInfoStore);
   const t = useI18nTranslateToString();
 
   const [selectedAppInfo, setSelectedAppInfo] = useState<App>();
-  const [selectedCluster, setSelectedCluster] = useState<string | undefined>(clusterId);
+  const [selectedCluster, _setSelectedCluster] = useState<string | undefined>(clusterId || defaultCluster?.id);
+
+  const setSelectedCluster = useCallback(
+    (cluster: string | undefined) => {
+      _setSelectedCluster(cluster);
+      setDefaultCluster(cluster ? currentClusters.find((c) => c.id === cluster) : undefined);
+    },
+    [currentClusters, setDefaultCluster],
+  );
   const [filteredApps, setFilteredApps] = useState<App[]>();
-  const [availableAccounts, setAvailableAccounts] = useState<string[]>([]);
-  const [allAvailableAccounts, setAllAvailableAccounts] = useState<string[]>([]);
   const [accountAppClusterMap, setAccountAppClusterMap] = useState<Map<string, string[]>>(new Map());
+
+  useEffect(() => {
+    if (!selectedCluster && currentClusters.length > 0) {
+      setSelectedCluster(defaultCluster?.id || currentClusters[0].id);
+    }
+  }, [currentClusters, selectedCluster, defaultCluster]);
 
   const { data: clusterAppsList, isLoading } = useAsync({
     promiseFn: useCallback(async () => {
@@ -52,10 +74,10 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
     clusterAppsList?.forEach((clusterApp) => {
       if (clusterId) {
         if (clusterId === clusterApp.clusterId) {
-          allApps.push(...clusterApp.apps);
+          allApps.push(...clusterApp.apps.filter(hasAccountAvailabilities));
         }
       } else {
-        allApps.push(...clusterApp.apps);
+        allApps.push(...clusterApp.apps.filter(hasAccountAvailabilities));
       }
     });
 
@@ -95,15 +117,6 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
       convertedAccountAppMap.set(key, Array.from(clusters));
     });
     setAccountAppClusterMap(convertedAccountAppMap);
-
-    // 计算所有 app 可用账户的并集
-    const allAccountsSet = new Set<string>();
-    clusterAppsList?.forEach((clusterData) => {
-      clusterData.apps.forEach((app) => {
-        app.availableAccounts?.forEach((account) => allAccountsSet.add(account));
-      });
-    });
-    setAllAvailableAccounts(Array.from(allAccountsSet));
   }, [clusterAppsList]);
 
   useEffect(() => {
@@ -113,7 +126,7 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
       // 如果选择了集群，只返回该集群的 apps
       const clusterData = clusterAppsList?.find((item) => item.clusterId === selectedCluster);
       if (clusterData) {
-        result = clusterData.apps;
+        result = clusterData.apps.filter(hasAccountAvailabilities);
       }
     } else {
       // 如果没有选择集群，返回所有去重的 apps
@@ -122,7 +135,7 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
       clusterAppsList?.forEach((clusterData) => {
         if (clusterData.apps && Array.isArray(clusterData.apps)) {
           clusterData.apps.forEach((app) => {
-            if (!appMap.has(app.id)) {
+            if (!appMap.has(app.id) && hasAccountAvailabilities(app)) {
               appMap.set(app.id, app);
             }
           });
@@ -135,12 +148,6 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
     setFilteredApps(result);
   }, [clusterAppsList, selectedCluster]);
 
-  useEffect(() => {
-    if (selectedCluster && selectedAppInfo) {
-      setAvailableAccounts(selectedAppInfo.availableAccounts || []);
-    }
-  }, [selectedAppInfo, selectedCluster]);
-
   return (
     <>
       <Head title={t("pages.apps.createApps.title")} />
@@ -150,13 +157,14 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
           setSelectedAppInfo={setSelectedAppInfo}
           preSelectedCluster={selectedCluster}
           setSelectedCluster={setSelectedCluster}
-          availableAccounts={availableAccounts}
-          allAvailableAccounts={allAvailableAccounts}
           accountAppClusterMap={accountAppClusterMap}
         />
       ) : (
         <>
-          <PageTitle titleText={t("pages.apps.createApps.title")} />
+          {/* 去掉了BaseLayout中的padding和margin */}
+          <div style={{ paddingLeft: 24, paddingTop: 24 }}>
+            <PageTitle titleText={t("pages.apps.createApps.title")} />
+          </div>
           <CreateAppsTable
             allApps={filteredApps || []}
             isLoading={isLoading}

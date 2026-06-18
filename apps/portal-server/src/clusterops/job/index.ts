@@ -27,7 +27,7 @@ export const jobOps = (cluster: string): JobOps => {
     }
 
     return {
-      ...sshJobServices(host),
+      ...sshJobServices(),
     };
   }
 };

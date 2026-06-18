@@ -26,23 +26,26 @@ const TableWrapper = ({ className, rowSelection, ...tableProps }: TableProps<any
   const mergedRowSelection: TableProps<any>["rowSelection"] =
     rowSelection?.type === "radio"
       ? {
-        ...rowSelection,
-        renderCell: rowSelection.renderCell ?? defaultRadioSelectionCell,
-      }
+          ...rowSelection,
+          renderCell: rowSelection.renderCell ?? defaultRadioSelectionCell,
+        }
       : rowSelection;
 
   return <Table {...tableProps} className={className} rowSelection={mergedRowSelection} />;
 };
+const StyledTableWrapper = ({ scroll, ...tableProps }: TableProps<any>) => (
+  <TableWrapper {...tableProps} scroll={{ ...scroll, x: scroll?.x ?? "max-content" }} />
+);
 
-export const StyledTable: StyledTableComponent = styled(TableWrapper) <TableProps<any>>`
+export const StyledTable: StyledTableComponent = styled(StyledTableWrapper)<TableProps<any>>`
   .ant-table-container {
-    border-radius: 12px;
+    border-radius: 4px;
     border-top: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
     border-right: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
     border-bottom: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
     border-left: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
     overflow: hidden;
-    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: none !important;
   }
 
   .ant-table-tbody > tr > td {
@@ -70,6 +73,22 @@ export const StyledTable: StyledTableComponent = styled(TableWrapper) <TableProp
     color: ${({ theme }) => theme.token.colorTextHeading} !important;
   }
 
+  .ant-table-container:has(.ant-table-tbody > tr.selected-row:last-child) {
+    box-shadow: inset 0 -4px 0 ${({ theme }) => theme.token.colorPrimaryBg} !important;
+  }
+
+  .ant-table-content::-webkit-scrollbar-track {
+    background-color: ${({ theme }) => theme.token.colorBgContainer};
+  }
+
+  .ant-table-tbody > tr.selected-row:last-child > td:first-child {
+    border-bottom-left-radius: 4px !important;
+  }
+
+  .ant-table-tbody > tr.selected-row:last-child > td:last-child {
+    border-bottom-right-radius: 4px !important;
+  }
+
   tr.disabled-row td {
     color: ${({ theme }) => theme.token.colorTextDisabled} !important;
     background-color: ${({ theme }) => theme.token.colorFillQuaternary} !important;
@@ -94,11 +113,11 @@ export const StyledTable: StyledTableComponent = styled(TableWrapper) <TableProp
   }
 `;
 
-export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper) <TableProps<any>>`
+export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper)<TableProps<any>>`
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid ${({ theme }) => theme.palette.gray[3]};
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: none !important;
 
   .ant-table {
     border-radius: 0;

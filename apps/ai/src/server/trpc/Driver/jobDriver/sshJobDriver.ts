@@ -902,4 +902,11 @@ export class SshJobDriver implements JobDriver {
       message: "Create dev host is not implemented",
     });
   }
+
+  async getDevHostParams(): Promise<never> {
+    throw new TRPCError({
+      code: "NOT_IMPLEMENTED",
+      message: "Get dev host params is not implemented",
+    });
+  }
 }

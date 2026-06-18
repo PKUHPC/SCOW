@@ -2,6 +2,7 @@
 
 import type { ColumnsType } from "antd/es/table";
 import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import type { InferTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import {
@@ -19,8 +20,12 @@ import { useRouter } from "next/navigation";
 import { join } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
+import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
+import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
+import { JobType } from "src/models/Job";
 import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
@@ -31,14 +36,16 @@ import type {
   BaseFormValues,
   CommandCacheEntry,
   CPUQueueRow,
+  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
+  InferImageSourceKey,
   MaxTimeUnit,
+  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
-  InferImageSourceKey,
   VersionGroup,
 } from "./LaunchInferForm.types";
 
@@ -47,13 +54,17 @@ import {
   buildPrivatePathLookup,
   buildResubmitResourceSelections,
   buildSelectionPathLookup,
+  buildUnavailableParams,
   buildVersionLookup,
+  cleanFormData,
   convertDurationToHours,
   deriveQueueStats,
   getCommandCacheKey,
   initBuiltinEnvVariables,
   mapQueuesToRows,
   mergeResubmitEnvVariables,
+  normalizeEnvVariables,
+  normalizeMountPoints,
   renderCascaderLabels,
   sanitizeFormMountAndEnvValues,
   toIdPrivateList,
@@ -218,6 +229,16 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const router = useRouter();
 
   const { message } = App.useApp();
+
+  // createInferParams is used directly by resubmit effects (no template merge)
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateListOpen, setTemplateListOpen] = useState(false);
+  const [templateSnapshot, setTemplateSnapshot] = useState<InferTemplateFormData | null>(null);
+  const [unavailableParamsModal, setUnavailableParamsModal] = useState<{
+    params: UnavailableParam[];
+    applyFn: () => void | Promise<void>;
+  } | null>(null);
+
   // ======================= 状态与引用 =======================
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
@@ -233,6 +254,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     hasInitializedBuiltinEnvVariablesRef.current = true;
   }, [appForm, createInferParams]);
 
+  const trpcUtils = trpc.useUtils();
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -282,6 +304,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const hasClusterSelectionRef = useRef(false);
   const hasClusterSwitchedRef = useRef(false);
   const isClusterResettingRef = useRef(false);
+  const isApplyingTemplateRef = useRef(false);
   const resubmitImageAppliedRef = useRef(false);
   const resubmitResourceAppliedRef = useRef(false);
   const resubmitQueueAppliedRef = useRef(false);
@@ -385,7 +408,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (previousCluster === undefined && selectedCluster === undefined) {
       return;
     }
-    if (hadClusterSelection) {
+    const applyingTemplate = isApplyingTemplateRef.current;
+    if (hadClusterSelection && !applyingTemplate) {
       hasClusterSwitchedRef.current = true;
     }
     const shouldReset = hadClusterSelection;
@@ -396,12 +420,14 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (!resubmitQueueEverAppliedRef.current) {
       resubmitQueueAppliedRef.current = false;
     }
-    resubmitCascaderAppliedRef.current = {
-      models: shouldReset,
-    };
-    resubmitMountEnvAppliedRef.current = shouldReset;
-    resubmitServicePortAppliedRef.current = shouldReset;
-    if (shouldReset) {
+    if (!applyingTemplate) {
+      resubmitCascaderAppliedRef.current = {
+        models: shouldReset,
+      };
+      resubmitMountEnvAppliedRef.current = shouldReset;
+      resubmitServicePortAppliedRef.current = shouldReset;
+    }
+    if (shouldReset && !applyingTemplate) {
       resourceForm.setFieldsValue({ priority: undefined });
       appForm.setFieldsValue({
         image: undefined,
@@ -597,8 +623,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       .map((env) => ({ key: env.key, value: env.value }));
 
     appForm.setFieldsValue({
-      mountPoints: mountPointsDraft,
-      envVariables: mergeResubmitEnvVariables(envVariablesDraft),
+      mountPoints: normalizeMountPoints(mountPointsDraft),
+      envVariables: mergeResubmitEnvVariables(normalizeEnvVariables(envVariablesDraft)),
     });
 
     if (!resubmitServicePortAppliedRef.current) {
@@ -780,7 +806,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
   useEffect(() => {
     // 当镜像来源或选项发生变化时，将缓存中的默认/自定义命令同步到表单
-    if (isClusterResettingRef.current) {
+    if (isClusterResettingRef.current || isApplyingTemplateRef.current) {
       return;
     }
     const currentKey = getCommandCacheKey(selectedImageSource, normalizedSelectedImageValue);
@@ -1007,6 +1033,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     if (!createInferParams) {
       resubmitQueueAppliedRef.current = false;
       return;
@@ -1165,7 +1194,14 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
   // 队列数据变化时，保持或回退到可用的第一条记录
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
+
     if (!currentQueueOptions.length) {
+      if (selectedQueueKey !== undefined && getAvailablePartitionIsLoading) {
+        return;
+      }
       if (selectedQueueKey !== undefined) {
         setSelectedQueueKey(undefined);
       }
@@ -1192,7 +1228,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
         setSelectedQueueKey(undefined);
       }
     }
-  }, [createInferParams, currentQueueOptions, selectedQueueKey]);
+  }, [createInferParams, currentQueueOptions, getAvailablePartitionIsLoading, selectedQueueKey]);
 
   // 若用户尚未选择账户，自动填入第一条有效账户
   useEffect(() => {
@@ -1257,6 +1293,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
   // 切换镜像来源时恢复已保存的选项
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     const draft = imageSourceDraftsRef.current[selectedImageSource] ?? {};
 
     if (selectedImageSource === "remote") {
@@ -1456,6 +1495,51 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     }
   }, [createInferParams, resourceForm, selectedQueueKey, selectedQueueOption]);
 
+  const buildInferTemplateFormData = (): InferTemplateFormData => {
+    const resourceValues = resourceForm.getFieldsValue();
+    const appValues = appForm.getFieldsValue();
+    const gpuTypeValue = selectedQueueOption?.type === "gpu" ? (selectedQueueOption as GPUQueueRow).gpuType : undefined;
+    return {
+      account: selectedAccount ?? undefined,
+      partition: selectedQueueKey ?? undefined,
+      qos: resourceValues.priority ?? undefined,
+      coreCount: resourceValues.cpuCores ?? 1,
+      nodeCount: resourceValues.nodeCount ?? 1,
+      gpuCount: selectedGpuCount > 0 ? selectedGpuCount : undefined,
+      gpuType: gpuTypeValue ?? undefined,
+      maxTime: resourceValues.maxTime ?? 60,
+      maxTimeUnit,
+      maxTimeUnlimited: resourceValues.maxTimeUnlimited ?? false,
+      isImagePrivate: selectedImageSource === "mine" ? true : selectedImageSource === "public" ? false : undefined,
+      image:
+        selectedImageSource === "mine" || selectedImageSource === "public"
+          ? typeof appValues.image === "string"
+            ? Number(appValues.image) || undefined
+            : appValues.image
+          : undefined,
+      localImageName: selectedImageOption?.label,
+      remoteImageUrl:
+        selectedImageSource === "remote"
+          ? typeof appValues.image === "string"
+            ? appValues.image
+            : undefined
+          : undefined,
+      models: toIdPrivateList(
+        appValues.models,
+        buildVersionLookup(
+          models?.personal as VersionGroup[] | undefined,
+          models?.public as VersionGroup[] | undefined,
+        ),
+      ),
+      mountPoints: (appValues.mountPoints ?? [])
+        .filter((m: MountPointField | undefined) => m?.source && m?.target)
+        .map((m: MountPointField) => ({ path: m.source, target: m.target })),
+      envVariables: (appValues.envVariables ?? []).filter((e: EnvVariableField | undefined) => e?.key),
+      command: appValues.command ?? "",
+      containerServicePort: appValues.containerServicePort ?? 8080,
+    };
+  };
+
   // ----- 提交逻辑：校验 + 组装 payload + 调用接口 -----
   // 聚合验证三个表单区域，确保必填项完整后续再接入真实提交
   const handleSubmit = async () => {
@@ -1638,14 +1722,265 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     }
   };
 
+  const handleTemplateUse = async (formData: TemplateFormData, templateCluster: string) => {
+    const fd = formData;
+
+    const {
+      unavailableParams,
+      effectiveAccount: finalAccount,
+      effectiveCluster: finalCluster,
+    } = await buildUnavailableParams({
+      fd,
+      templateCluster,
+      isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
+      getAvailableAccounts: () => accountOptions.map((o) => o.value),
+      getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
+      selectedAccount,
+      selectedCluster,
+      selectedQueueKey,
+      currentQos: resourceForm.getFieldValue("priority"),
+      fetchPartitions: (acc, cluster) =>
+        trpcUtils.config.getAvailablePartitions.fetch({ accountName: acc, clusterId: cluster }).catch(() => undefined),
+      t: (key) => t(p(key as any)),
+      resolveClusterName: (id) => {
+        const clusterConfig = CLUSTERS.find((c) => c.id === id);
+        return clusterConfig ? getI18nConfigCurrentText(clusterConfig.name, languageId) : id;
+      },
+    });
+
+    const applyFn = async () => {
+      const cleanedFormData = cleanFormData(fd, unavailableParams);
+      isApplyingTemplateRef.current = true;
+      hasClusterSwitchedRef.current = false;
+      commandCacheRef.current = {};
+
+      resourceForm.setFieldsValue({ account: finalAccount, cluster: finalCluster });
+
+      const tplMaxTime = cleanedFormData.maxTime as number | undefined;
+      const tplMaxTimeUnit = cleanedFormData.maxTimeUnit as MaxTimeUnit | undefined;
+      const tplMaxTimeUnlimited = cleanedFormData.maxTimeUnlimited as boolean | undefined;
+      if (tplMaxTimeUnit) {
+        setMaxTimeUnit(tplMaxTimeUnit);
+      }
+
+      const tplPartition = cleanedFormData.partition as string | undefined;
+      const tplCoreCount = cleanedFormData.coreCount as number | undefined;
+      const tplGpuCount = cleanedFormData.gpuCount as number | undefined;
+      const tplNodeCount = cleanedFormData.nodeCount as number | undefined;
+      const tplQos = cleanedFormData.qos as string | undefined;
+      let partitionMatched = false;
+
+      if (tplPartition) {
+        const partitionsForCluster = await trpcUtils.config.getAvailablePartitions
+          .fetch({ accountName: finalAccount, clusterId: finalCluster })
+          .catch(() => undefined);
+        if (partitionsForCluster) {
+          const matched = partitionsForCluster.find((pt) => pt.name === tplPartition);
+          if (matched) {
+            partitionMatched = true;
+            const rows = mapQueuesToRows(partitionsForCluster);
+            const allRows = [...rows.gpuRows, ...rows.cpuRows];
+            const matchedRow = allRows.find((r) => r.id === tplPartition);
+            if (matchedRow) {
+              setActiveResourceTab(matchedRow.type);
+            }
+            setSelectedQueueKey(tplPartition);
+            if (tplQos && matched.qos.includes(tplQos)) {
+              resourceForm.setFieldsValue({ priority: tplQos });
+            }
+            if (tplMaxTimeUnlimited != null) {
+              resourceForm.setFieldsValue({ maxTimeUnlimited: tplMaxTimeUnlimited });
+            }
+            if (tplMaxTime != null && !tplMaxTimeUnlimited) {
+              resourceForm.setFieldsValue({ maxTime: tplMaxTime });
+            }
+            if (tplNodeCount != null) {
+              resourceForm.setFieldsValue({ nodeCount: tplNodeCount });
+            }
+            if (matchedRow?.type === "gpu") {
+              if (tplGpuCount != null) {
+                const perPodLimit =
+                  typeof matchedRow.maxAcceleratorsPerPod === "number" ? matchedRow.maxAcceleratorsPerPod : undefined;
+                const maxGpu =
+                  perPodLimit != null ? Math.min(matchedRow.totalUnits, perPodLimit) : matchedRow.totalUnits;
+                resourceForm.setFieldsValue({ gpuCores: Math.min(tplGpuCount, maxGpu) });
+              }
+              if (tplCoreCount != null) {
+                resourceForm.setFieldsValue({ cpuCores: tplCoreCount });
+              }
+            } else {
+              if (tplCoreCount != null) {
+                resourceForm.setFieldsValue({
+                  cpuCores: Math.min(tplCoreCount, matchedRow?.totalUnits ?? tplCoreCount),
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (!partitionMatched) {
+        const inferredTab: QueueKind = tplGpuCount != null && tplGpuCount > 0 ? "gpu" : "cpu";
+        setActiveResourceTab(inferredTab);
+        if (tplMaxTimeUnlimited != null) {
+          resourceForm.setFieldsValue({ maxTimeUnlimited: tplMaxTimeUnlimited });
+        }
+        if (tplMaxTime != null && !tplMaxTimeUnlimited) {
+          resourceForm.setFieldsValue({ maxTime: tplMaxTime });
+        }
+        if (tplNodeCount != null) {
+          resourceForm.setFieldsValue({ nodeCount: tplNodeCount });
+        }
+        if (inferredTab === "gpu") {
+          if (tplGpuCount != null) {
+            resourceForm.setFieldsValue({ gpuCores: tplGpuCount });
+          }
+          if (tplCoreCount != null) {
+            resourceForm.setFieldsValue({ cpuCores: tplCoreCount });
+          }
+        } else {
+          if (tplCoreCount != null) {
+            resourceForm.setFieldsValue({ cpuCores: tplCoreCount });
+          }
+        }
+      }
+
+      appForm.setFieldsValue({
+        mountPoints: normalizeMountPoints(cleanedFormData.mountPoints as unknown[] | undefined),
+        envVariables: normalizeEnvVariables(cleanedFormData.envVariables as unknown[] | undefined),
+      });
+
+      const clusterChanged = templateCluster !== finalCluster;
+
+      if (!clusterChanged) {
+        const port = cleanedFormData.containerServicePort;
+        if (port !== undefined && port !== null && !Number.isNaN(Number(port))) {
+          appForm.setFieldValue("containerServicePort", Number(port));
+        }
+      }
+
+      const tplModels = (cleanedFormData.models ?? []) as { id: number; isPrivate: boolean }[];
+      if (!clusterChanged && tplModels.length) {
+        const fetchedModels = await trpcUtils.model.getAllModelVersions
+          .fetch({ clusterId: finalCluster })
+          .catch(() => undefined);
+        if (fetchedModels) {
+          const categories: ResourceCategory[] = [];
+          const personal = (fetchedModels.personal ?? [])
+            .map((m) => ({
+              label: m.name,
+              value: m.id,
+              children: (m.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((m) => m.children.length > 0);
+          const pub = (fetchedModels.public ?? [])
+            .map((m) => ({
+              label: m.name,
+              value: m.id,
+              children: (m.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((m) => m.children.length > 0);
+          if (personal.length) categories.push({ label: "", value: 1, children: personal });
+          if (pub.length) categories.push({ label: "", value: 2, children: pub });
+          const lookup = buildSelectionPathLookup(categories);
+          const selections = buildResubmitResourceSelections(tplModels, lookup);
+          if (selections.length > 0) {
+            appForm.setFieldsValue({ models: selections });
+          }
+        }
+      }
+
+      let finalImageSource: InferImageSourceKey | undefined;
+      let finalImageValue: string | undefined;
+
+      if (!clusterChanged) {
+        const tplRemoteImageUrl = cleanedFormData.remoteImageUrl as string | undefined;
+        const tplImageId = cleanedFormData.image as number | undefined;
+        const tplIsImagePrivate = cleanedFormData.isImagePrivate as boolean | undefined;
+
+        if (tplRemoteImageUrl) {
+          finalImageSource = "remote";
+          finalImageValue = tplRemoteImageUrl;
+          imageSourceDraftsRef.current.remote = { image: tplRemoteImageUrl };
+          setSelectedImageSource("remote");
+          appForm.setFieldsValue({
+            image: tplRemoteImageUrl,
+            usePrivateImage: false,
+            remoteUsername: undefined,
+            remotePassword: undefined,
+          });
+        } else if (tplIsImagePrivate === true || tplIsImagePrivate === false) {
+          const imageSource = tplIsImagePrivate ? "mine" : "public";
+          finalImageSource = imageSource;
+          if (tplImageId != null) {
+            const fetchedImages = await trpcUtils.image.list
+              .fetch({
+                isPublic: tplIsImagePrivate ? parseBooleanParam(false) : parseBooleanParam(true),
+                clusterId: finalCluster,
+                withExternal: "true",
+                types: ImageType.INFER,
+              })
+              .catch(() => undefined);
+            if (fetchedImages) {
+              const found = fetchedImages.items.some((img) => img.id === tplImageId && img.status === Status.CREATED);
+              if (found) {
+                finalImageValue = String(tplImageId);
+                imageSourceDraftsRef.current[imageSource] = { image: String(tplImageId) };
+                setSelectedImageSource(imageSource);
+                appForm.setFieldsValue({ image: String(tplImageId) });
+              } else {
+                setSelectedImageSource(imageSource);
+              }
+            }
+          } else {
+            setSelectedImageSource(imageSource);
+          }
+        }
+      }
+
+      if (!clusterChanged) {
+        const tplCommand = cleanedFormData.command as string | undefined;
+        if (tplCommand) {
+          appForm.setFieldsValue({ command: tplCommand });
+          if (finalImageSource && finalImageValue) {
+            const cacheKey = getCommandCacheKey(finalImageSource, finalImageValue);
+            commandCacheRef.current[cacheKey] = { default: undefined, custom: tplCommand };
+          }
+        }
+      }
+
+      setTemplateListOpen(false);
+      requestAnimationFrame(() => {
+        isApplyingTemplateRef.current = false;
+      });
+    };
+
+    if (unavailableParams.length > 0) {
+      setUnavailableParamsModal({ params: unavailableParams, applyFn });
+    } else {
+      await applyFn();
+    }
+  };
+
   // ======================= 渲染 =======================
   return (
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
           title={
-            <HeaderRow align="center" size={16}>
+            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
               <HeaderTitle>{t(pInfer("createInferTitle"))}</HeaderTitle>
+              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                {t(pInfer("templateButton"))}
+              </Button> */}
             </HeaderRow>
           }
         >
@@ -1699,6 +2034,24 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       </PageContainer>
 
       <FixedFooter>
+        {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
+          <FooterStatValue
+            $isPrimaryColor
+            style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
+            onClick={async () => {
+              try {
+                await resourceForm.validateFields();
+                await appForm.validateFields();
+                setTemplateSnapshot(buildInferTemplateFormData());
+                setSaveTemplateOpen(true);
+              } catch {
+                message.warning(t(p("completeFormFirst")));
+              }
+            }}
+          >
+            {t(p("saveAsTemplate"))}
+          </FooterStatValue>
+        </div> */}
         <FooterStats>
           <span>
             {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
@@ -1727,6 +2080,28 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           </Button>
         </FooterActions>
       </FixedFooter>
+      <SaveAsTemplateModal
+        open={saveTemplateOpen}
+        onClose={() => setSaveTemplateOpen(false)}
+        jobType={JobType.INFER}
+        cluster={selectedCluster ?? ""}
+        formData={templateSnapshot}
+      />
+      <TemplateListModal
+        open={templateListOpen}
+        onClose={() => setTemplateListOpen(false)}
+        onUse={handleTemplateUse}
+        jobType={JobType.INFER}
+      />
+      <UnavailableParamsModal
+        open={!!unavailableParamsModal}
+        params={unavailableParamsModal?.params ?? []}
+        onConfirm={async () => {
+          await unavailableParamsModal?.applyFn();
+          setUnavailableParamsModal(null);
+        }}
+        onCancel={() => setUnavailableParamsModal(null)}
+      />
     </>
   );
 };

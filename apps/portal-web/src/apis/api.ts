@@ -7,12 +7,16 @@ import type { CheckAppConnectivitySchema } from "src/pages/api/app/checkConnecti
 import type { CheckShadowDeskConnectivitySchema } from "src/pages/api/app/checkShadowDeskConnectivity";
 import type { ConnectToAppSchema } from "src/pages/api/app/connectToApp";
 import type { CreateAppSessionSchema } from "src/pages/api/app/createAppSession";
+import type { DeleteAppTemplateSchema } from "src/pages/api/app/deleteAppTemplate";
 import type { GetAllClustersAvailableAppsSchema } from "src/pages/api/app/getAllClustersAvailableApps";
 import type { GetAppLastSubmissionSchema } from "src/pages/api/app/getAppLastSubmission";
 import type { GetAppMetadataSchema } from "src/pages/api/app/getAppMetadata";
 import type { GetAppSessionsSchema } from "src/pages/api/app/getAppSessions";
 import type { GetDynamicFormOptionsSchema } from "src/pages/api/app/getDynamicFromOptions";
+import type { ListAppTemplatesSchema } from "src/pages/api/app/listAppTemplates";
 import type { ListAvailableAppsSchema } from "src/pages/api/app/listAvailableApps";
+import type { RenameAppTemplateSchema } from "src/pages/api/app/renameAppTemplate";
+import type { SaveAsAppTemplateSchema } from "src/pages/api/app/saveAsAppTemplate";
 import type { AuthCallbackSchema } from "src/pages/api/auth/callback";
 import type { LogoutSchema } from "src/pages/api/auth/logout";
 import type { ValidateTokenSchema } from "src/pages/api/auth/validateToken";
@@ -64,11 +68,11 @@ import type { GetUserInfoSchema } from "src/pages/api//getUserInfo";
 import type { CalculateJobPriceSchema } from "src/pages/api/job/calculateJobPrice";
 import type { CancelJobSchema } from "src/pages/api/job/cancelJob";
 import type { DeleteJobTemplateSchema } from "src/pages/api/job/deleteJobTemplate";
+import type { GetAccountClustersWithUnavailableReasonsSchema } from "src/pages/api/job/getAccountClustersWithUnavailableReasons";
+import type { GetAccountInfoSchema } from "src/pages/api/job/getAccountInfo";
 import type { GetAccountsSchema } from "src/pages/api/job/getAccounts";
 import type { GetAllJobsSchema } from "src/pages/api/job/getAllJobs";
-import type { GetAvailableAccountsAndClustersSchema } from "src/pages/api/job/getAvailableAccountsAndClusters";
 import type { GetAvailablePartitionsForClusterSchema } from "src/pages/api/job/getAvailablePartitionsForCluster";
-import type { GetJobTemplateSchema } from "src/pages/api/job/getJobTemplate";
 import type { GetRunningJobsSchema } from "src/pages/api/job/getRunningJobs";
 import type { ListJobTemplatesSchema } from "src/pages/api/job/listJobTemplates";
 import type { RenameJobTemplateSchema } from "src/pages/api/job/renameJobTemplate";
@@ -88,12 +92,16 @@ export const api = {
   checkShadowDeskConnectivity: apiClient.fromTypeboxRoute<typeof CheckShadowDeskConnectivitySchema>("GET", "/api/app/checkShadowDeskConnectivity"),
   connectToApp: apiClient.fromTypeboxRoute<typeof ConnectToAppSchema>("POST", "/api/app/connectToApp"),
   createAppSession: apiClient.fromTypeboxRoute<typeof CreateAppSessionSchema>("POST", "/api/app/createAppSession"),
+  deleteAppTemplate: apiClient.fromTypeboxRoute<typeof DeleteAppTemplateSchema>("DELETE", "/api/app/deleteAppTemplate"),
   getAllClustersAvailableApps: apiClient.fromTypeboxRoute<typeof GetAllClustersAvailableAppsSchema>("GET", "/api/app/getAllClustersAvailableApps"),
   getAppLastSubmission: apiClient.fromTypeboxRoute<typeof GetAppLastSubmissionSchema>("GET", "/api/app/getAppLastSubmission"),
   getAppMetadata: apiClient.fromTypeboxRoute<typeof GetAppMetadataSchema>("GET", "/api/app/getAppMetadata"),
   getAppSessions: apiClient.fromTypeboxRoute<typeof GetAppSessionsSchema>("GET", "/api/app/getAppSessions"),
   getDynamicFormOptions: apiClient.fromTypeboxRoute<typeof GetDynamicFormOptionsSchema>("GET", "/api/app/getDynamicFromOptions"),
+  listAppTemplates: apiClient.fromTypeboxRoute<typeof ListAppTemplatesSchema>("GET", "/api/app/listAppTemplates"),
   listAvailableApps: apiClient.fromTypeboxRoute<typeof ListAvailableAppsSchema>("GET", "/api/app/listAvailableApps"),
+  renameAppTemplate: apiClient.fromTypeboxRoute<typeof RenameAppTemplateSchema>("POST", "/api/app/renameAppTemplate"),
+  saveAsAppTemplate: apiClient.fromTypeboxRoute<typeof SaveAsAppTemplateSchema>("POST", "/api/app/saveAsAppTemplate"),
   authCallback: apiClient.fromTypeboxRoute<typeof AuthCallbackSchema>("GET", "/api/auth/callback"),
   logout: apiClient.fromTypeboxRoute<typeof LogoutSchema>("DELETE", "/api/auth/logout"),
   validateToken: apiClient.fromTypeboxRoute<typeof ValidateTokenSchema>("GET", "/api/auth/validateToken"),
@@ -145,11 +153,11 @@ export const api = {
   calculateJobPrice: apiClient.fromTypeboxRoute<typeof CalculateJobPriceSchema>("GET", "/api/job/calculateJobPrice"),
   cancelJob: apiClient.fromTypeboxRoute<typeof CancelJobSchema>("DELETE", "/api/job/cancelJob"),
   deleteJobTemplate: apiClient.fromTypeboxRoute<typeof DeleteJobTemplateSchema>("DELETE", "/api/job/deleteJobTemplate"),
+  getAccountClustersWithUnavailableReasons: apiClient.fromTypeboxRoute<typeof GetAccountClustersWithUnavailableReasonsSchema>("GET", "/api/job/getAccountClustersWithUnavailableReasons"),
+  getAccountInfo: apiClient.fromTypeboxRoute<typeof GetAccountInfoSchema>("GET", "/api/job/getAccountInfo"),
   getAccounts: apiClient.fromTypeboxRoute<typeof GetAccountsSchema>("GET", "/api/job/getAccounts"),
   getAllJobs: apiClient.fromTypeboxRoute<typeof GetAllJobsSchema>("GET", "/api/job/getAllJobs"),
-  getAvailableAccountsAndClusters: apiClient.fromTypeboxRoute<typeof GetAvailableAccountsAndClustersSchema>("GET", "/api/job/getAvailableAccountsAndClusters"),
   getAvailablePartitionsForCluster: apiClient.fromTypeboxRoute<typeof GetAvailablePartitionsForClusterSchema>("GET", "/api/job/getAvailablePartitionsForCluster"),
-  getJobTemplate: apiClient.fromTypeboxRoute<typeof GetJobTemplateSchema>("GET", "/api/job/getJobTemplate"),
   getRunningJobs: apiClient.fromTypeboxRoute<typeof GetRunningJobsSchema>("GET", "/api/job/getRunningJobs"),
   listJobTemplates: apiClient.fromTypeboxRoute<typeof ListJobTemplatesSchema>("GET", "/api/job/listJobTemplates"),
   renameJobTemplate: apiClient.fromTypeboxRoute<typeof RenameJobTemplateSchema>("POST", "/api/job/renameJobTemplate"),

@@ -6,12 +6,16 @@ import { CheckAppConnectivitySchema } from "src/pages/api/app/checkConnectivity"
 import { CheckShadowDeskConnectivitySchema } from "src/pages/api/app/checkShadowDeskConnectivity";
 import { ConnectToAppSchema } from "src/pages/api/app/connectToApp";
 import { CreateAppSessionSchema } from "src/pages/api/app/createAppSession";
+import { DeleteAppTemplateSchema } from "src/pages/api/app/deleteAppTemplate";
 import { GetAllClustersAvailableAppsSchema } from "src/pages/api/app/getAllClustersAvailableApps";
 import { GetAppLastSubmissionSchema } from "src/pages/api/app/getAppLastSubmission";
 import { GetAppMetadataSchema } from "src/pages/api/app/getAppMetadata";
 import { GetAppSessionsSchema } from "src/pages/api/app/getAppSessions";
 import { GetDynamicFormOptionsSchema } from "src/pages/api/app/getDynamicFromOptions";
+import { ListAppTemplatesSchema } from "src/pages/api/app/listAppTemplates";
 import { ListAvailableAppsSchema } from "src/pages/api/app/listAvailableApps";
+import { RenameAppTemplateSchema } from "src/pages/api/app/renameAppTemplate";
+import { SaveAsAppTemplateSchema } from "src/pages/api/app/saveAsAppTemplate";
 import { AuthCallbackSchema } from "src/pages/api/auth/callback";
 import { LogoutSchema } from "src/pages/api/auth/logout";
 import { ValidateTokenSchema } from "src/pages/api/auth/validateToken";
@@ -63,11 +67,11 @@ import { GetUserInfoSchema } from "src/pages/api//getUserInfo";
 import { CalculateJobPriceSchema } from "src/pages/api/job/calculateJobPrice";
 import { CancelJobSchema } from "src/pages/api/job/cancelJob";
 import { DeleteJobTemplateSchema } from "src/pages/api/job/deleteJobTemplate";
+import { GetAccountClustersWithUnavailableReasonsSchema } from "src/pages/api/job/getAccountClustersWithUnavailableReasons";
+import { GetAccountInfoSchema } from "src/pages/api/job/getAccountInfo";
 import { GetAccountsSchema } from "src/pages/api/job/getAccounts";
 import { GetAllJobsSchema } from "src/pages/api/job/getAllJobs";
-import { GetAvailableAccountsAndClustersSchema } from "src/pages/api/job/getAvailableAccountsAndClusters";
 import { GetAvailablePartitionsForClusterSchema } from "src/pages/api/job/getAvailablePartitionsForCluster";
-import { GetJobTemplateSchema } from "src/pages/api/job/getJobTemplate";
 import { GetRunningJobsSchema } from "src/pages/api/job/getRunningJobs";
 import { ListJobTemplatesSchema } from "src/pages/api/job/listJobTemplates";
 import { RenameJobTemplateSchema } from "src/pages/api/job/renameJobTemplate";
@@ -88,12 +92,16 @@ export const openapiRoutes: RouteEntry[] = [
   { schema: CheckShadowDeskConnectivitySchema, method: "GET", url: "/api/app/checkShadowDeskConnectivity" },
   { schema: ConnectToAppSchema, method: "POST", url: "/api/app/connectToApp" },
   { schema: CreateAppSessionSchema, method: "POST", url: "/api/app/createAppSession" },
+  { schema: DeleteAppTemplateSchema, method: "DELETE", url: "/api/app/deleteAppTemplate" },
   { schema: GetAllClustersAvailableAppsSchema, method: "GET", url: "/api/app/getAllClustersAvailableApps" },
   { schema: GetAppLastSubmissionSchema, method: "GET", url: "/api/app/getAppLastSubmission" },
   { schema: GetAppMetadataSchema, method: "GET", url: "/api/app/getAppMetadata" },
   { schema: GetAppSessionsSchema, method: "GET", url: "/api/app/getAppSessions" },
   { schema: GetDynamicFormOptionsSchema, method: "GET", url: "/api/app/getDynamicFromOptions" },
+  { schema: ListAppTemplatesSchema, method: "GET", url: "/api/app/listAppTemplates" },
   { schema: ListAvailableAppsSchema, method: "GET", url: "/api/app/listAvailableApps" },
+  { schema: RenameAppTemplateSchema, method: "POST", url: "/api/app/renameAppTemplate" },
+  { schema: SaveAsAppTemplateSchema, method: "POST", url: "/api/app/saveAsAppTemplate" },
   { schema: AuthCallbackSchema, method: "GET", url: "/api/auth/callback" },
   { schema: LogoutSchema, method: "DELETE", url: "/api/auth/logout" },
   { schema: ValidateTokenSchema, method: "GET", url: "/api/auth/validateToken" },
@@ -145,11 +153,11 @@ export const openapiRoutes: RouteEntry[] = [
   { schema: CalculateJobPriceSchema, method: "GET", url: "/api/job/calculateJobPrice" },
   { schema: CancelJobSchema, method: "DELETE", url: "/api/job/cancelJob" },
   { schema: DeleteJobTemplateSchema, method: "DELETE", url: "/api/job/deleteJobTemplate" },
+  { schema: GetAccountClustersWithUnavailableReasonsSchema, method: "GET", url: "/api/job/getAccountClustersWithUnavailableReasons" },
+  { schema: GetAccountInfoSchema, method: "GET", url: "/api/job/getAccountInfo" },
   { schema: GetAccountsSchema, method: "GET", url: "/api/job/getAccounts" },
   { schema: GetAllJobsSchema, method: "GET", url: "/api/job/getAllJobs" },
-  { schema: GetAvailableAccountsAndClustersSchema, method: "GET", url: "/api/job/getAvailableAccountsAndClusters" },
   { schema: GetAvailablePartitionsForClusterSchema, method: "GET", url: "/api/job/getAvailablePartitionsForCluster" },
-  { schema: GetJobTemplateSchema, method: "GET", url: "/api/job/getJobTemplate" },
   { schema: GetRunningJobsSchema, method: "GET", url: "/api/job/getRunningJobs" },
   { schema: ListJobTemplatesSchema, method: "GET", url: "/api/job/listJobTemplates" },
   { schema: RenameJobTemplateSchema, method: "POST", url: "/api/job/renameJobTemplate" },

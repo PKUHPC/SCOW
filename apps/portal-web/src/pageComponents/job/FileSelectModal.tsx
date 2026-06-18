@@ -33,7 +33,7 @@ const TopBar = styled(FilterFormContainer)`
 `;
 
 const FolderTriggerButton = styled(Button)`
-  width: 40px !important;
+  width: 36px !important;
   height: 24px !important;
   border-radius: 6px !important;
   border-style: none;

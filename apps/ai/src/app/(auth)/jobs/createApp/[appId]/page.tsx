@@ -1,8 +1,9 @@
 "use client";
 
 import { LoadingOutlined } from "@ant-design/icons";
+import { App } from "antd";
 import { useSearchParams } from "next/navigation";
-import { use, useMemo } from "react";
+import { use, useEffect, useMemo } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { FullWidthContainer } from "src/app/(auth)/jobs/common";
 import { useI18nTranslateToString } from "src/i18n";
@@ -15,6 +16,7 @@ export default function Page({ params }: { params: Promise<{ appId: string }> })
   const { appId } = use(params);
   const t = useI18nTranslateToString();
   const searchParams = useSearchParams();
+  const { message } = App.useApp();
 
   useDocumentTitle(t("app.jobs.launchAppForm.title"));
 
@@ -55,13 +57,25 @@ export default function Page({ params }: { params: Promise<{ appId: string }> })
   }, [clusterId, jobId, sessionId]);
 
   const emptyParams = useMemo(() => ({ clusterId: "", jobId: 0, sessionId: "" }), []);
-  const { data: createAppParams, isLoading: isCreateAppParamsLoading } = trpc.jobs.getCreateAppParams.useQuery(
-    resubmitInput ?? emptyParams,
-    {
-      enabled: Boolean(resubmitInput),
-      retry: false,
+  const {
+    data: createAppParams,
+    error: getCreateAppParamsError,
+    isLoading: isCreateAppParamsLoading,
+  } = trpc.jobs.getCreateAppParams.useQuery(resubmitInput ?? emptyParams, {
+    enabled: Boolean(resubmitInput),
+    retry: false,
+    meta: {
+      silent: true,
     },
-  );
+  });
+
+  useEffect(() => {
+    if (!getCreateAppParamsError) {
+      return;
+    }
+
+    message.error(`${t("app.jobs.launchAppForm.getCreateAppParamsFailed")}: ${getCreateAppParamsError.message}`);
+  }, [getCreateAppParamsError, message, t]);
 
   if (resubmitInput && isCreateAppParamsLoading) {
     return (

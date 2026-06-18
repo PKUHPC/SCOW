@@ -101,6 +101,12 @@ export const useQueueTabSelection = <GpuRow extends QueueRowBase, CpuRow extends
       return;
     }
 
+    // 当前选中的队列在当前 tab 中有效时，不自动切换（保护模板/再次提交设置的分区）
+    const currentTabRows = activeResourceTab === "gpu" ? sortedGpuRows : sortedCpuRows;
+    if (selectedQueueKey && currentTabRows.some((r) => r.id === selectedQueueKey)) {
+      return;
+    }
+
     const nextTab: QueueKind = sortedGpuRows.length === 0 && sortedCpuRows.length > 0 ? "cpu" : "gpu";
     if (activeResourceTab === nextTab) {
       return;

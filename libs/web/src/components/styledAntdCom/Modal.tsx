@@ -8,7 +8,7 @@ import { InlineFormItem } from "./CustomFormItem";
 
 const modalBaseStyles = css`
   .ant-modal-content {
-    border-radius: 12px;
+    border-radius: 4px;
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -52,13 +52,13 @@ const modalBaseStyles = css`
 
   .ant-modal-footer .ant-btn-default {
     color: ${(props) => props.theme.palette.gray[6]};
-    border-radius: 8px;
+    border-radius: 4px;
     height: 36px;
     padding: 0 24px;
   }
 
   .ant-modal-footer .ant-btn-primary {
-    border-radius: 8px;
+    border-radius: 4px;
     box-shadow: none;
     height: 36px;
     padding: 0 24px;
@@ -87,10 +87,13 @@ export const AppRouterStyledModal = styled(Modal)`
     }
 
     .ant-form-item-row {
+      align-items: flex-start;
     }
 
     .ant-form-item-label {
       display: flex;
+      align-items: center;
+      min-height: 40px;
     }
 
     .ant-form-item-label > label {
@@ -106,6 +109,10 @@ export const CompactInlineFormItem = styled(InlineFormItem)`
 
   .ant-form-item-label {
     width: 72px;
+  }
+
+  .ant-form-item-control {
+    padding-bottom: 0;
   }
 `;
 

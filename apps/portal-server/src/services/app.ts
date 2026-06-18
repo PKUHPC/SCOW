@@ -5,6 +5,7 @@ import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType, AttributeType } from "@scow/config/build/app";
 import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
 import {
+  getClientFn,
   getI18nSeverTypeFormat,
   libGetAccounts,
   libGetUserAvailableClusterApps,
@@ -25,12 +26,14 @@ import {
 } from "@scow/protos/build/portal/app";
 import { AppSession } from "@scow/protos/build/portal/app";
 import { AccountStatusFilter } from "@scow/protos/build/portal/job";
+import { AccountState, AccountStatus, UserServiceClient } from "@scow/protos/build/server/user";
 import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
 import { camelToSnakeCase } from "@scow/utils";
 import { getClusterOps } from "src/clusterops";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
+import { getAccountUnavailableReasons } from "src/services/config";
 import { convertAttributesFixedValue, convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
 import { filterAccountsByStatus } from "src/utils/app";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
@@ -415,52 +418,84 @@ export const appServiceServer = plugin((server) => {
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
-      // 先计算 配置了 resource 的集群分区过滤结果
+      // 获取用户信息和账户状态（用于计算 accountAvailabilities）
+      let userInfo: Awaited<ReturnType<typeof libGetUserInfo>> | undefined;
+      let accountStatuses: Record<string, AccountStatus> = {};
+      let allUserAccounts: string[] = [];
+
+      if (config.MIS_DEPLOYED && userId) {
+        userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+        allUserAccounts = (userInfo.affiliations ?? [])
+          .filter((a) => a.accountState !== AccountState.ACCOUNT_DELETED)
+          .map((a) => a.accountName);
+
+        if (allUserAccounts.length > 0 && userInfo.tenantName) {
+          accountStatuses = (
+            await asyncClientCall(
+              getClientFn(config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)(UserServiceClient),
+              "getUserStatus",
+              { userId, tenantName: userInfo.tenantName, accountNames: allUserAccounts },
+            )
+          ).accountStatuses;
+        }
+      }
+
+      const buildAccountAvailabilities = (accountNames: string[]) => {
+        return accountNames.map((account) => {
+          const statusReasons = getAccountUnavailableReasons(accountStatuses[account]);
+          return {
+            accountName: account,
+            available: statusReasons.length === 0,
+            unavailableReasons: statusReasons,
+          };
+        });
+      };
+
+      // 计算 resource 授权的集群过滤结果。账户展示只要求授权到当前集群，
+      // 分区授权由后续 getAvailablePartitionsForCluster 继续控制。
       let resourceFilteredAccountSet: Set<string> | undefined;
-      if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled && userId) {
-        const [userInfo, { accounts }] = await Promise.all([
-          libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token),
+      let resourceClusterAccountSet: Set<string> | undefined;
+      if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled && userId && userInfo) {
+        const [allAssigned, { accounts: unblockedAccounts }] = await Promise.all([
+          getUserAccountsClusterPartitionsByAccount(commonConfig.scowResource, allUserAccounts, userInfo.tenantName),
           libGetAccounts(
-            logger,
-            userId,
-            AccountStatusFilter.UNBLOCKED_ONLY,
-            config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token,
+            logger, userId, AccountStatusFilter.UNBLOCKED_ONLY,
+            config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token,
           ),
         ]);
-        const assignedClusterPartitionsByAccount = await getUserAccountsClusterPartitionsByAccount(
-          commonConfig.scowResource,
-          accounts,
-          userInfo.tenantName,
+
+        resourceClusterAccountSet = new Set(
+          allUserAccounts.filter((account) => Object.hasOwnProperty.call(allAssigned[account] ?? {}, cluster)),
         );
-        resourceFilteredAccountSet = new Set(
-          accounts.filter((account) => {
-            const partitions = assignedClusterPartitionsByAccount[account]?.[cluster];
-            return partitions && partitions.length > 0;
-          }),
-        );
+        resourceFilteredAccountSet = new Set(unblockedAccounts.filter((a) => resourceClusterAccountSet!.has(a)));
       }
 
       const applyResourceFilter = (accountList: string[]) =>
         resourceFilteredAccountSet ? accountList.filter((a) => resourceFilteredAccountSet!.has(a)) : accountList;
 
+      const clusterAccounts = resourceClusterAccountSet
+        ? allUserAccounts.filter((a) => resourceClusterAccountSet!.has(a))
+        : allUserAccounts;
+
       // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的应用
       if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && userId) {
         const availableApps = await libGetUserAvailableClusterApps(
-          logger,
-          cluster,
-          userId,
-          config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
+          logger, cluster, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token,
         );
-        return [
-          {
-            apps: availableApps.apps.map((app) => ({
-              ...app,
-              availableAccounts: applyResourceFilter(app.availableAccounts ?? []),
-            })),
-          },
-        ];
+
+        const clusterAccountSet = new Set(clusterAccounts);
+        const appsWithAvailabilities = availableApps.apps.map((app) => {
+          const filteredAccounts = applyResourceFilter(app.availableAccounts ?? []);
+          const authorizedAccounts = (app.allAuthorizedAccounts ?? []).filter((a) => clusterAccountSet.has(a));
+
+          return {
+            ...app,
+            availableAccounts: filteredAccounts,
+            accountAvailabilities: buildAccountAvailabilities(authorizedAccounts),
+          };
+        });
+
+        return [{ apps: appsWithAvailabilities }];
       }
 
       const apps = getClusterAppConfigs(cluster);
@@ -497,6 +532,14 @@ export const appServiceServer = plugin((server) => {
         );
       }
 
+      const accountAvailabilities = config.MIS_DEPLOYED
+        ? buildAccountAvailabilities(clusterAccounts)
+        : accountsResult.map((account) => ({
+            accountName: account,
+            available: true,
+            unavailableReasons: [],
+          }));
+
       return [
         {
           apps: Object.keys(apps).map((x) => ({
@@ -504,6 +547,7 @@ export const appServiceServer = plugin((server) => {
             name: apps[x].name,
             logoPath: apps[x].logoPath,
             availableAccounts: accountsResult,
+            accountAvailabilities,
           })),
         },
       ];

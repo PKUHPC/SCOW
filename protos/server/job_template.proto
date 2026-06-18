@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package scow.server;
+
+import "google/protobuf/timestamp.proto";
+
+enum MaxTimeUnit {
+  MINUTE = 0;
+  HOUR   = 1;
+  DAY    = 2;
+}
+
+message JobTemplateDetail {
+  uint32 id              = 1;
+  string template_name   = 2;
+  string cluster         = 3;
+  string account         = 4;
+  string partition       = 5;
+  string qos             = 6;
+  uint32 node_count      = 7;
+  uint32 core_count      = 8;
+  uint32 gpu_count       = 9;
+  uint32 max_time        = 10;
+  MaxTimeUnit max_time_unit = 11;
+  optional uint32 memory_mb = 12;
+  optional string command   = 13;
+  google.protobuf.Timestamp created_at = 16;
+}
+
+// ----- SaveJobTemplate -----
+message SaveJobTemplateRequest {
+  string user_id         = 1;
+  string cluster         = 3;
+  string template_name   = 4;
+  string account         = 5;
+  string partition       = 6;
+  string qos             = 7;
+  uint32 node_count      = 8;
+  uint32 core_count      = 9;
+  uint32 gpu_count       = 10;
+  uint32 max_time        = 11;
+  MaxTimeUnit max_time_unit = 12;
+  optional uint32 memory_mb = 13;
+  optional string command   = 14;
+}
+
+message SaveJobTemplateResponse {
+  uint32 id = 1;
+}
+
+// ----- ListJobTemplates -----
+message ListJobTemplatesRequest {
+  string user_id = 1;
+}
+
+message ListJobTemplatesResponse {
+  repeated JobTemplateDetail templates = 1;
+}
+
+// ----- DeleteJobTemplate -----
+message DeleteJobTemplateRequest {
+  string user_id  = 1;
+  uint32 id       = 2;
+}
+
+message DeleteJobTemplateResponse {}
+
+// ----- RenameJobTemplate -----
+message RenameJobTemplateRequest {
+  string user_id       = 1;
+  uint32 id            = 2;
+  string new_name      = 3;
+}
+
+message RenameJobTemplateResponse {}
+
+service JobTemplateService {
+  rpc SaveJobTemplate(SaveJobTemplateRequest) returns (SaveJobTemplateResponse);
+  rpc ListJobTemplates(ListJobTemplatesRequest) returns (ListJobTemplatesResponse);
+  rpc DeleteJobTemplate(DeleteJobTemplateRequest) returns (DeleteJobTemplateResponse);
+  rpc RenameJobTemplate(RenameJobTemplateRequest) returns (RenameJobTemplateResponse);
+}

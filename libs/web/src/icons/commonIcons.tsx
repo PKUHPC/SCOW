@@ -39,7 +39,7 @@ const selectionArrow = () => {
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="22" viewBox="0 0 24 22" fill="none">
       <path
         d="M16.8652 7.23438C17.1375 6.92217 17.5784 6.92217 17.8506 7.23438C18.1227 7.54659 18.1228 8.0521 17.8506 8.36426L12.0273 15.0439L6.2041 8.36426C5.93199 8.05212 5.93209 7.54658 6.2041 7.23438C6.47632 6.92217 6.91724 6.92217 7.18945 7.23438L12.0273 12.7822L16.8652 7.23438Z"
-        fill={theme.palette.gray[5]}
+        fill={theme.palette.gray[8]}
       />
     </svg>
   );
@@ -136,13 +136,19 @@ const check = () => {
 export const checkIcon = createIcon(check);
 
 // 返回图标
-const backSVG = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 3.75L2.5 10L10 16.25" stroke="black" stroke-width="2" stroke-linecap="round" />
-    <path d="M17.5 3.75L10 10L17.5 16.25" stroke="black" stroke-width="2" stroke-linecap="round" />
-  </svg>
-);
+const backSVG = () => {
+  const theme = useTheme();
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 3.75L2.5 10L10 16.25" stroke={theme.palette.primary[6]} stroke-width="2" stroke-linecap="round" />
+      <path
+        d="M17.5 3.75L10 10L17.5 16.25"
+        stroke={theme.palette.primary[6]}
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+    </svg>
+  );
+};
 
-export const BackIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={backSVG} {...props} ref={ref} />,
-);
+export const BackIcon = createIcon(backSVG, 1);

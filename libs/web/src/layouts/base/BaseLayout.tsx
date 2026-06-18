@@ -33,9 +33,9 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content)<{ $isDashboard: boolean }>`
-  margin: ${(props) => (props.$isDashboard ? "8px 8px 0px" : "8px")};
-  padding: 16px;
+const Content = styled(Layout.Content)<{ $isDashboard: boolean; $fullBleed: boolean }>`
+  margin: ${(props) => (props.$fullBleed ? "0" : props.$isDashboard ? "8px 8px 0px" : "8px")};
+  padding: ${(props) => (props.$fullBleed ? "0" : "16px")};
   flex: 1;
   display: ${(props) => (props.$isDashboard ? "flex" : "block")};
   flex-direction: column;
@@ -175,7 +175,11 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
       <StyledLayout>
         {hasSidebar ? <SideNav activeKeys={activeKeys} pathname={router.asPath} routes={sidebarRoutes} /> : undefined}
         <ContentPart>
-          <Content $isDashboard={router.pathname === "/dashboard"}>
+          <Content
+            $isDashboard={router.pathname === "/dashboard"}
+            // 提交作业和应用页面右侧需要全屏
+            $fullBleed={router.pathname === "/jobs/submit" || router.pathname === "/apps/createApps"}
+          >
             {children}
             {router.pathname === "/dashboard" ? <Footer text={footerText} versionTag={versionTag} /> : ""}
           </Content>

@@ -99,109 +99,6 @@ export const jobServiceServer = plugin((server) => {
       return [{ accounts: filterAccounts }];
     },
 
-    getJobTemplate: async ({ request, logger }) => {
-      const { cluster, templateId, userId } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
-
-      const clusterops = getClusterOps(cluster);
-
-      if (!clusterops) {
-        throw clusterNotFound(cluster);
-      }
-
-      const reply = await clusterops.job.getJobTemplate(
-        {
-          id: templateId,
-          userId,
-        },
-        logger,
-      );
-
-      return [{ template: reply.template }];
-    },
-
-    listJobTemplates: async ({ request, logger }) => {
-      const { cluster, userId } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
-
-      const clusterops = getClusterOps(cluster);
-
-      if (!clusterops) {
-        throw clusterNotFound(cluster);
-      }
-
-      const reply = await clusterops.job.listJobTemplates(
-        {
-          userId,
-        },
-        logger,
-      );
-
-      const results = reply.results.map((x) => {
-        if (!x.submitTime) {
-          return { ...x, submitTime: undefined };
-        }
-
-        const submitTimestamp = x.submitTime.getTime();
-        if (Number.isNaN(submitTimestamp)) {
-          logger.warn(
-            "Invalid submitTime in job template. cluster=%s, templateId=%s, submitTime=%o",
-            cluster,
-            x.id,
-            x.submitTime,
-          );
-          return { ...x, submitTime: undefined };
-        }
-
-        return { ...x, submitTime: new Date(submitTimestamp).toISOString() };
-      });
-
-      return [{ results }];
-    },
-
-    deleteJobTemplate: async ({ request, logger }) => {
-      const { cluster, templateId, userId } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
-
-      const clusterops = getClusterOps(cluster);
-
-      if (!clusterops) {
-        throw clusterNotFound(cluster);
-      }
-
-      await clusterops.job.deleteJobTemplate(
-        {
-          id: templateId,
-          userId,
-        },
-        logger,
-      );
-
-      return [{}];
-    },
-
-    renameJobTemplate: async ({ request, logger }) => {
-      const { cluster, templateId, userId, jobName } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
-
-      const clusterops = getClusterOps(cluster);
-
-      if (!clusterops) {
-        throw clusterNotFound(cluster);
-      }
-
-      await clusterops.job.renameJobTemplate(
-        {
-          id: templateId,
-          userId,
-          jobName,
-        },
-        logger,
-      );
-
-      return [{}];
-    },
-
     listRunningJobs: async ({ request, logger }) => {
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
@@ -363,21 +260,6 @@ export const jobServiceServer = plugin((server) => {
         logger.error("calculate job price failed : %o", error);
         return [{ accountPrice: numberToMoney(0) }];
       }
-    },
-
-    saveAsJobTemplate: async ({ request, logger }) => {
-      const { cluster } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
-
-      const clusterops = getClusterOps(cluster);
-
-      if (!clusterops) {
-        throw clusterNotFound(cluster);
-      }
-
-      await clusterops.job.saveAsJobTemplate(request, logger);
-
-      return [{}];
     },
   });
 });

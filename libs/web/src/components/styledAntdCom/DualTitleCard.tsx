@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Avatar, Card, Space } from "antd";
+import React from "react";
 import { styled } from "styled-components";
 
 import { SectionTitle } from "./TitledSectionCard";
@@ -27,15 +28,14 @@ export const DualTitleCard = ({ mainTitle, subTitle, logoSrc, children }: DualTi
 
 // 带主副标题的卡片，由两个antd 的Card组成
 export const PaddedCard = styled(Card)`
-  border: 1px solid ${({ theme }) => theme.palette.gray[3]};
-  border-radius: 8px;
+  border: none !important;
 
   .ant-card-head {
-    padding: 24px !important;
+    padding: 32px 56px 0 !important;
   }
 
   .ant-card-body {
-    padding: 24px 24px 0 !important;
+    padding: 32px 56px 0 !important;
   }
 `;
 
@@ -62,7 +62,7 @@ export const HeaderTitle = styled.span`
   line-height: 24px;
 `;
 
-export const BorderlessCard = styled(Card)`
+const StyledBorderlessCard = styled(Card)`
   border: none !important;
 
   .ant-card-head {
@@ -72,6 +72,20 @@ export const BorderlessCard = styled(Card)`
   }
 
   .ant-card-body {
-    padding: 26px 0 0 0 !important;
+    padding: 16px 0 0 0 !important;
   }
 `;
+
+const Divider = styled.div`
+  border-bottom: 1px solid ${({ theme }) => theme.palette.gray[3]};
+`;
+
+export const BorderlessCard: React.FC<Omit<React.ComponentProps<typeof Card>, "ref"> & { $showDivider?: boolean }> = ({
+  $showDivider,
+  ...props
+}) => (
+  <>
+    <StyledBorderlessCard {...props} />
+    {$showDivider && <Divider />}
+  </>
+);

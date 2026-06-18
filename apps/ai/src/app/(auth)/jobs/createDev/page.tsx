@@ -47,7 +47,7 @@ export default function Page() {
   }, [clusterId, jobId, sessionId]);
 
   const emptyParams = useMemo(() => ({ clusterId: "", jobId: 0, sessionId: "" }), []);
-  const { data: createDevParams, isLoading: isCreateDevParamsLoading } = trpc.jobs.getSubmitTrainParams.useQuery(
+  const { data: createDevParams, isLoading: isCreateDevParamsLoading } = trpc.devHost.getCreateDevParams.useQuery(
     resubmitInput ?? emptyParams,
     {
       enabled: Boolean(resubmitInput),

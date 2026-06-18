@@ -140,3 +140,19 @@ export interface VersionGroup {
   label?: ReactNode;
   versions?: VersionItem[];
 }
+
+export interface PartitionInfo {
+  name: string;
+  qos: string[];
+  gpus: number;
+  cores: number;
+  nodes: number;
+  maxAcceleratorsPerPod?: number;
+}
+
+export interface UnavailableParam {
+  key: string;
+  label: string;
+  templateValue: string;
+  recommendedValue: string;
+}

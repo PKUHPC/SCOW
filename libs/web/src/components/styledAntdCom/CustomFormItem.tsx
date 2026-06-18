@@ -82,14 +82,16 @@ export const CustomFormItem: React.FC<FormItemProps & { helpTip?: ReactNode }> =
 };
 
 export const InlineFormItem = styled(CustomFormItem)<{ $labelWidth?: number }>`
+  margin-bottom: 16px !important;
+
   .ant-form-item-row {
     display: flex;
     align-items: flex-start;
-    gap: 24px;
+    gap: 8px;
   }
 
   .ant-form-item-label {
-    width: ${({ $labelWidth = 131 }) => $labelWidth}px;
+    width: ${({ $labelWidth = 137 }) => $labelWidth}px;
     display: flex;
     align-items: center;
     min-height: 40px;
@@ -104,5 +106,14 @@ export const InlineFormItem = styled(CustomFormItem)<{ $labelWidth?: number }>`
 
   .ant-form-item-control {
     flex: 1;
+    position: relative;
+    padding-bottom: 6px;
+  }
+
+  .ant-form-item-explain {
+    position: static;
+    width: 100%;
+    min-height: 22px;
+    margin-top: 4px;
   }
 `;

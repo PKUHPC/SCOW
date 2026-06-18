@@ -1,7 +1,8 @@
 import { router } from "src/server/trpc/def";
 
-import { createDevHost } from "./devHost";
+import { createDevHost, getCreateDevParams } from "./devHost";
 
 export const devHost = router({
   createDevHost,
+  getCreateDevParams,
 });

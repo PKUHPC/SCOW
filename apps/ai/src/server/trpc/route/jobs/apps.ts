@@ -21,6 +21,7 @@ import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
+import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
@@ -49,6 +50,7 @@ import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getUserAssignedResourceDetails } from "src/server/utils/resource";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { getClusterLoginNode } from "src/server/utils/ssh";
+import { fetchSubmitRecord } from "src/server/utils/submitRecord";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { formatTime } from "src/utils/datetime";
@@ -56,8 +58,10 @@ import { parseIp } from "src/utils/parse";
 import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
 
+import { CreateDevHostInputSchema } from "../devHost/devHost";
 import { booleanQueryParam } from "../utils";
-import { EnvVariableSchema, EventSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
+import { InferenceJobInputSchema } from "./infer";
+import { EnvVariableSchema, EventSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH, TrainJobInputSchema } from "./jobs";
 
 const ImageSchema = z.object({
   name: z.string(),
@@ -533,6 +537,8 @@ export const CreateAppInputSchema = z.object({
   gpuCount: z.number().optional(),
   memory: z.number().optional(),
   maxTime: z.number(),
+  // APP工作目录
+  workingDirectory: z.string().optional(),
   customAttributes: z.record(z.string(), z.union([z.number(), z.string(), z.undefined()])),
   gpuType: z.string().optional(),
   envVariables: z.array(EnvVariableSchema).optional(),
@@ -545,6 +551,12 @@ export const CreateAppInputSchema = z.object({
 });
 
 export type CreateAppInput = z.infer<typeof CreateAppInputSchema>;
+
+export const AppSubmitRecordFormDataSchema = CreateAppInputSchema.omit({
+  clusterId: true,
+  account: true,
+  privateImageRepositoryCredentials: true,
+});
 
 export const createAppSession = procedure
   .meta({
@@ -574,7 +586,12 @@ export const createAppSession = procedure
       await callLog(
         {
           ...logInfo,
-          operationTypePayload: { clusterId, jobId: (res.data as any).jobId, accountName: "", appName },
+          operationTypePayload: {
+            clusterId,
+            jobId: (res.data as any).jobId,
+            accountName: "",
+            appName,
+          },
         },
         OperationResult.SUCCESS,
       );
@@ -664,7 +681,9 @@ export const createAppSession = procedure
           if (customAttributes[attribute.name] && Number.isNaN(Number(customAttributes[attribute.name]))) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `custom form attribute ${attribute.name} should be of type number, but of type ${typeof customAttributes[attribute.name]}`,
+              message: `custom form attribute ${
+                attribute.name
+              } should be of type number, but of type ${typeof customAttributes[attribute.name]}`,
             });
           }
           break;
@@ -749,6 +768,28 @@ export const createAppSession = procedure
       logger,
     );
 
+    const { clusterId: _cid, account: _acc, privateImageRepositoryCredentials: _cred, ...rawFormData } = input;
+    const parsedFormData = AppSubmitRecordFormDataSchema.safeParse(rawFormData);
+    if (!parsedFormData.success) {
+      logger.warn("Failed to parse app form data for jobId %s: %o", jobId, parsedFormData.error);
+    } else {
+      try {
+        await em.persistAndFlush(
+          new AiJobSubmitRecord({
+            userId,
+            jobType: JobType.APP,
+            jobId,
+            appId: input.appId,
+            cluster: clusterId,
+            account,
+            formData: parsedFormData.data,
+          }),
+        );
+      } catch (e) {
+        logger.warn("Failed to save app job submit record for jobId %s: %o", jobId, e);
+      }
+    }
+
     return { jobId };
   });
 
@@ -776,14 +817,14 @@ export const getCreateAppParams = procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    return await driver.withJobDriver(
-      {
-        clusterId,
-        user: userId,
-      },
-      async (jobDriver) => {
-        return await jobDriver.getAppParams(sessionId, jobId);
-      },
+    const em = await forkEntityManager();
+    return fetchSubmitRecord(
+      em,
+      userId,
+      clusterId,
+      jobId,
+      CreateAppInputSchema,
+      () => driver.withJobDriver({ clusterId, user: userId }, (d) => d.getAppParams(sessionId, jobId), logger),
       logger,
     );
   });
@@ -1111,6 +1152,7 @@ export const getJobDetails = procedure
 
     const apps = getClusterAppConfigs(clusterId);
 
+    const em = await forkEntityManager();
     const client = getAdapterClient(clusterId);
     const { job } = await asyncClientCall(client.job, "getJobById", {
       fields: [
@@ -1188,14 +1230,13 @@ export const getJobDetails = procedure
       }
 
       // 获取APP作业提交参数
-      const appJobParams = await driver.withJobDriver(
-        {
-          clusterId,
-          user: userId,
-        },
-        async (jobDriver) => {
-          return await jobDriver.getAppParams(sessionId, jobId);
-        },
+      const appJobParams = await fetchSubmitRecord(
+        em,
+        userId,
+        clusterId,
+        jobId,
+        CreateAppInputSchema,
+        () => driver.withJobDriver({ clusterId, user: userId }, (d) => d.getAppParams(sessionId, jobId), logger),
         logger,
       );
 
@@ -1213,28 +1254,39 @@ export const getJobDetails = procedure
       }
 
       // 获取推理作业提交参数
-      const inferJobParams = await driver.withJobDriver(
-        {
-          clusterId,
-          user: userId,
-        },
-        async (jobDriver) => {
-          return await jobDriver.getInferParams(sessionId, jobId);
-        },
+      const inferJobParams = await fetchSubmitRecord(
+        em,
+        userId,
+        clusterId,
+        jobId,
+        InferenceJobInputSchema,
+        () => driver.withJobDriver({ clusterId, user: userId }, (d) => d.getInferParams(sessionId, jobId), logger),
         logger,
       );
 
       extraDisplayResult = formatJobDetailsExtraInputs(inferJobParams, extraDisplayResult);
+    } else if (jobType === JobType.DEV_HOST) {
+      // 获取开发机作业提交参数
+      const devHostParams = await fetchSubmitRecord(
+        em,
+        userId,
+        clusterId,
+        jobId,
+        CreateDevHostInputSchema,
+        () => driver.withJobDriver({ clusterId, user: userId }, (d) => d.getDevHostParams(sessionId, jobId), logger),
+        logger,
+      );
+
+      extraDisplayResult = formatJobDetailsExtraInputs(devHostParams, extraDisplayResult);
     } else {
       // 获取训练作业提交参数
-      const trainJobParams = await driver.withJobDriver(
-        {
-          clusterId,
-          user: userId,
-        },
-        async (jobDriver) => {
-          return await jobDriver.getTrainParams(sessionId, jobId);
-        },
+      const trainJobParams = await fetchSubmitRecord(
+        em,
+        userId,
+        clusterId,
+        jobId,
+        TrainJobInputSchema,
+        () => driver.withJobDriver({ clusterId, user: userId }, (d) => d.getTrainParams(sessionId, jobId), logger),
         logger,
       );
 

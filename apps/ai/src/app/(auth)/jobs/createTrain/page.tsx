@@ -1,8 +1,9 @@
 "use client";
 
 import { LoadingOutlined } from "@ant-design/icons";
+import { App } from "antd";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useI18nTranslateToString } from "src/i18n";
 import { useDocumentTitle } from "src/utils/head";
@@ -14,6 +15,7 @@ import { LaunchTrainForm } from "./LaunchTrainForm";
 export default function Page() {
   const searchParams = useSearchParams();
   const t = useI18nTranslateToString();
+  const { message } = App.useApp();
 
   useDocumentTitle(t("app.jobs.launchTrainForm.title"));
   const { publicConfig } = usePublicConfig();
@@ -46,13 +48,25 @@ export default function Page() {
   }, [clusterId, jobId, sessionId]);
 
   const emptyParams = useMemo(() => ({ clusterId: "", jobId: 0, sessionId: "" }), []);
-  const { data: createTrainParams, isLoading: isCreateTrainParamsLoading } = trpc.jobs.getSubmitTrainParams.useQuery(
-    resubmitInput ?? emptyParams,
-    {
-      enabled: Boolean(resubmitInput),
-      retry: false,
+  const {
+    data: createTrainParams,
+    error: getCreateTrainParamsError,
+    isLoading: isCreateTrainParamsLoading,
+  } = trpc.jobs.getSubmitTrainParams.useQuery(resubmitInput ?? emptyParams, {
+    enabled: Boolean(resubmitInput),
+    retry: false,
+    meta: {
+      silent: true,
     },
-  );
+  });
+
+  useEffect(() => {
+    if (!getCreateTrainParamsError) {
+      return;
+    }
+
+    message.error(`${t("app.jobs.launchTrainForm.getCreateTrainParamsFailed")}: ${getCreateTrainParamsError.message}`);
+  }, [getCreateTrainParamsError, message, t]);
 
   if (resubmitInput && isCreateTrainParamsLoading) {
     return (

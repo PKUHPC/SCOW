@@ -42,6 +42,7 @@ const StyledSider = styled(Sider)<{ collapsed?: boolean }>`
     padding: 12px 12px 40px;
     min-height: 100%;
     border-right: 0;
+    border-inline-end: none !important;
   }
 
   .ant-menu-item:first-child {

@@ -1,5 +1,6 @@
 import { parsePlaceholder } from "@scow/lib-config/build/parse";
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import { AntdButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import {
   BorderlessCard,
@@ -8,11 +9,16 @@ import {
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
-import { TableWithSplitLines } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
+import {
+  JobContainer,
+  JobMainContent,
+  JobPageLayout,
+  JobSidePanel,
+  JobSidePanelInner,
+} from "@scow/lib-web/build/layouts/base/JobContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Typography } from "antd";
+import { App, Button, Form, Spin } from "antd";
 import dayjs from "dayjs";
 import Router from "next/router";
 import { join } from "path";
@@ -22,17 +28,23 @@ import { useStore } from "simstate";
 import { api } from "src/apis";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { TimeUnit } from "src/models/job";
+import { AccountUnavailableReason, TimeUnit } from "src/models/job";
 import { Partition } from "src/pages/api/cluster";
+import { JobTemplateDetail } from "src/pages/api/job/listJobTemplates";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { formatSize } from "src/utils/format";
-import { useTheme } from "styled-components";
+import { styled, useTheme } from "styled-components";
 
 import { BaseInfoSection } from "./submitJobCom/BaseInfoSection";
 import { JobConfigSection } from "./submitJobCom/JobConfigSection";
-import { PartitionRow, PartitionTabKey, ResourceConfigSection } from "./submitJobCom/ResourceConfigSection";
+import {
+  MAX_TIME_PRESETS,
+  PartitionRow,
+  PartitionTabKey,
+  ResourceConfigSection,
+} from "./submitJobCom/ResourceConfigSection";
 import { SaveAsTemplateModal } from "./submitJobCom/SaveAsTemplateModal";
 import { BaseFormValues, JobFormValues, ResourceFormValues } from "./submitJobCom/SubmitJobForm.types";
 import { TemplateListModal } from "./submitJobCom/TemplateListModal";
@@ -52,6 +64,7 @@ const initialValues = {
   nodeCount: 1,
   cpuCores: 1,
   gpuCores: 1,
+  maxTime: 30,
   maxTimeUnit: TimeUnit.HOURS,
   activePartitionTab: "cpu" as PartitionTabKey,
   output: "job.%j.out",
@@ -67,12 +80,14 @@ const p = prefix("pageComp.job.submitJobForm.");
 const pCommon = prefix("common.");
 const pResource = prefix("pageComp.submitJobCom.ResourceConfigSection.");
 
-interface UnavailableParamRow {
-  key: string;
-  label: string;
-  templateValue: string;
-  recommendedValue: string;
-}
+const JobPageLoading = styled.div`
+  width: 100%;
+  min-height: calc(100vh - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.token.colorBgContainer};
+`;
 
 export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
   const { currentClusters, setDefaultCluster, defaultCluster, fullClusterConfigs } = useStore(ClusterInfoStore);
@@ -83,19 +98,19 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
 
   const { message, modal } = App.useApp();
   const theme = useTheme();
-  const gray = theme.palette.gray;
 
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
   const [jobForm] = Form.useForm<JobFormValues>();
   const defaultJobName = useMemo(() => genJobName(), []);
+  const [selectorResetKey, setSelectorResetKey] = useState(0);
   const [activePartitionTab, setActivePartitionTab] = useState<PartitionTabKey>(
     initialValues.activePartitionTab ?? "cpu",
   );
 
-  // 获取可用账户和可以集群
-  const { data: availableAccountsAndClusters, isLoading: isGetAvailableAccountsAndClusters } = useAsync({
-    promiseFn: useCallback(async () => api.getAvailableAccountsAndClusters({ query: {} }), []),
+  // 获取账户集群映射及不可用原因
+  const { data: accountClustersWithReasons, isLoading: isGetAccountClustersWithUnavailableReasons } = useAsync({
+    promiseFn: useCallback(async () => api.getAccountClustersWithUnavailableReasons({ query: {} }), []),
   });
 
   // 生成默认作业名称，帮助用户快速提交
@@ -132,25 +147,45 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
   const t = useI18nTranslateToString();
   const { user } = useStore(UserStore);
   const languageId = useI18n().currentLanguage.id;
-  const isFullDisplayMode = useMemo(() => {
-    return user?.isAdmin || publicConfig.DASHBOARD_USER_DISPLAY_MODE === "full";
-  }, [user]);
+
+  const accountReasonTextMap = useMemo<Record<number, string>>(
+    () => ({
+      [AccountUnavailableReason.USER_BLOCKED]: t(pResource("accountUserBlocked")),
+      [AccountUnavailableReason.ACCOUNT_FROZEN]: t(pResource("accountFrozen")),
+      [AccountUnavailableReason.ACCOUNT_BLOCKED]: t(pResource("accountBlocked")),
+      [AccountUnavailableReason.ACCOUNT_DEBT]: t(pResource("accountDebt")),
+      [AccountUnavailableReason.USER_QUOTA_EXCEEDED]: t(pResource("userQuotaExceeded")),
+    }),
+    [t],
+  );
+
+  const accountDetails = useMemo(
+    () => accountClustersWithReasons?.accountClusters ?? [],
+    [accountClustersWithReasons?.accountClusters],
+  );
 
   const accountClusterMap = useMemo(() => {
-    const accountClusters = availableAccountsAndClusters?.accountClusters ?? [];
-    return Object.fromEntries(accountClusters.map((item) => [item.accountName, item.clusters])) as Record<
+    return Object.fromEntries(accountDetails.map((item) => [item.accountName, item.clusters])) as Record<
       string,
       string[]
     >;
-  }, [availableAccountsAndClusters?.accountClusters]);
-  const accountOptions = useMemo(
-    () =>
-      Object.keys(accountClusterMap).map((account) => ({
-        label: account,
-        value: account,
-      })),
-    [accountClusterMap],
-  );
+  }, [accountDetails]);
+  const accountOptions = useMemo(() => {
+    return [...accountDetails]
+      .sort((a, b) => {
+        if (a.available !== b.available) {
+          return a.available ? -1 : 1;
+        }
+        return a.accountName.localeCompare(b.accountName);
+      })
+      .map((account) => ({
+        label: account.accountName,
+        value: account.accountName,
+        disabled: !account.available,
+        disabledReason: account.unavailableReasons.map((reason) => accountReasonTextMap[reason] ?? reason).join("；"),
+      }));
+  }, [accountDetails, accountReasonTextMap]);
+  const availableAccountOptions = useMemo(() => accountOptions.filter((option) => !option.disabled), [accountOptions]);
 
   const selectedAccount = Form.useWatch<string | undefined>("account", resourceForm);
   const selectedCluster = Form.useWatch<string | undefined>("cluster", resourceForm);
@@ -159,22 +194,29 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
   const selectedNodeCount = Form.useWatch<number | undefined>("nodeCount", resourceForm);
   const selectedCpuCores = Form.useWatch<number | undefined>("cpuCores", resourceForm);
   const selectedGpuCores = Form.useWatch<number | undefined>("gpuCores", resourceForm);
+  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
   const [maxTimeUnit, setMaxTimeUnit] = useState<TimeUnit>(initialValues.maxTimeUnit ?? TimeUnit.HOURS);
+  const [selectedPresetUnit, setSelectedPresetUnit] = useState<TimeUnit | undefined>(TimeUnit.MINUTES);
 
   const clusterOptions = useMemo(() => {
     const allowedClusters = new Set<string>(selectedAccount ? (accountClusterMap[selectedAccount] ?? []) : []);
-    return currentClusters.map((cluster) => ({
-      id: cluster.id,
-      name: getI18nConfigCurrentText(cluster.name, languageId),
-      disabled: !selectedAccount || !allowedClusters.has(cluster.id),
-    }));
-  }, [accountClusterMap, currentClusters, languageId, selectedAccount]);
+    const allAuthorizedClusters = new Set(accountDetails.flatMap((account) => account.clusters));
+    return currentClusters
+      .filter((cluster) => allAuthorizedClusters.has(cluster.id))
+      .map((cluster) => ({
+        id: cluster.id,
+        name: getI18nConfigCurrentText(cluster.name, languageId),
+        disabled: !selectedAccount || !allowedClusters.has(cluster.id),
+      }));
+  }, [accountClusterMap, accountDetails, currentClusters, languageId, selectedAccount]);
 
   const selectedClusterInfo = useMemo(
     () => currentClusters.find((cluster) => cluster.id === selectedCluster),
     [currentClusters, selectedCluster],
   );
-  const maxRunningTimeHours = selectedCluster ? fullClusterConfigs[selectedCluster]?.hpc?.job?.maxRunningTimeHours : undefined;
+  const maxRunningTimeHours = selectedCluster
+    ? fullClusterConfigs[selectedCluster]?.hpc?.job?.maxRunningTimeHours
+    : undefined;
 
   // 保留之前的逻辑：提交作业时选择集群，将该集群设置默认集群
   useEffect(() => {
@@ -211,26 +253,28 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     }, [selectedAccount, selectedCluster]),
   });
 
-  const summaryClusterInfoQuery = useAsync({
+  const clusterRunningInfoQuery = useAsync({
     promiseFn: useCallback(async () => {
-      if (!currentClusters.length) {
-        return {
-          results: [] as {
-            clusterId: string;
-            partitions: [];
-          }[],
-        };
+      if (!selectedCluster) {
+        return undefined;
       }
-      const clusterIds = currentClusters.map((cluster) => cluster.id);
       return await api
-        .getAllSummaryClustersInfo({
+        .getClusterRunningInfo({
           query: {
-            clusterIds,
-            isFullDisplayMode,
+            clusterId: selectedCluster,
           },
         })
-        .httpError(500, () => ({ results: [] }));
-    }, [currentClusters, isFullDisplayMode]),
+        .httpError(500, () => undefined);
+    }, [selectedCluster]),
+  });
+
+  const accountInfoQuery = useAsync({
+    promiseFn: useCallback(async () => {
+      if (!selectedAccount || !publicConfig.MIS_DEPLOYED) {
+        return undefined;
+      }
+      return api.getAccountInfo({ query: { accountName: selectedAccount } }).catch(() => undefined);
+    }, [selectedAccount]),
   });
 
   const partitionRows: PartitionRow[] = useMemo(() => {
@@ -242,41 +286,24 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
       availablePartitionsForAccountQuery.data?.cluster === selectedCluster &&
       availablePartitionsForAccountQuery.data?.accountName === selectedAccount;
     const partitions = hasMatchedPartitionData ? (availablePartitionsForAccountQuery.data?.partitions ?? []) : [];
-    const summaryPartitions =
-      summaryClusterInfoQuery.data?.results?.find((cluster) => cluster.clusterId === selectedCluster)?.partitions ?? [];
-
-    // usage 为 0~100 的百分比，统一换算为 0~1
-    const normalizeUsageRatio = (usage: number | undefined) => {
-      if (usage == null || Number.isNaN(usage)) {
-        return undefined;
-      }
-      const ratio = usage / 100;
-      return Math.min(1, Math.max(0, ratio));
-    };
-
-    const calculateIdleCount = (total: number | undefined, usageRatio: number | undefined) => {
-      if (total == null || usageRatio == null) {
-        return undefined;
-      }
-      return Math.max(0, Math.round(total * (1 - usageRatio)));
-    };
+    const summaryPartitions = clusterRunningInfoQuery.data?.clusterInfo.partitions ?? [];
 
     return partitions.map((partition) => {
       const summary = summaryPartitions.find((item) => item.partitionName === partition.name);
-      const nodeSpecParts = [
-        partition.gpus ? t(pResource("nodeSpecGpu"), [partition.gpus]) : undefined,
-        partition.cores ? t(pResource("nodeSpecCpu"), [partition.cores]) : undefined,
-        partition.memMb ? t(pResource("nodeSpecMemory"), [formatSize(partition.memMb, ["MB", "GB", "TB"])]) : undefined,
-      ].filter(Boolean);
       const nodeTotal = summary?.nodeCount;
+      const perNodeDivisor = nodeTotal && nodeTotal > 0 ? nodeTotal : 1;
+      const nodeSpecParts = [
+        partition.gpus ? t(pResource("nodeSpecGpu"), [partition.gpus / perNodeDivisor]) : undefined,
+        partition.cores ? t(pResource("nodeSpecCpu"), [partition.cores / perNodeDivisor]) : undefined,
+        partition.memMb
+          ? t(pResource("nodeSpecMemory"), [formatSize(partition.memMb / perNodeDivisor, ["MB", "GB", "TB"])])
+          : undefined,
+      ].filter(Boolean);
       const cpuTotal = summary?.cpuCoreCount;
       const gpuTotal = summary?.gpuCoreCount;
-      const nodeUsageRatio = normalizeUsageRatio(summary?.nodeUsage);
-      const cpuUsageRatio = normalizeUsageRatio(summary?.cpuUsage);
-      const gpuUsageRatio = normalizeUsageRatio(summary?.gpuUsage);
-      const idleNodeCount = calculateIdleCount(nodeTotal, nodeUsageRatio);
-      const idleCpuCount = calculateIdleCount(cpuTotal, cpuUsageRatio);
-      const idleGpuCount = calculateIdleCount(gpuTotal, gpuUsageRatio);
+      const idleNodeCount = summary?.idleNodeCount;
+      const idleCpuCount = summary?.idleCpuCount;
+      const idleGpuCount = summary?.idleGpuCount;
       const idleNodes = nodeTotal != null && idleNodeCount != null ? `${idleNodeCount}/${nodeTotal}` : "-";
       const idleCpu = cpuTotal != null && idleCpuCount != null ? `${idleCpuCount}/${cpuTotal}` : "-";
       const idleGpu = gpuTotal != null && idleGpuCount != null ? `${idleGpuCount}/${gpuTotal}` : "-";
@@ -307,10 +334,10 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     availablePartitionsForAccountQuery.data?.accountName,
     availablePartitionsForAccountQuery.data?.cluster,
     availablePartitionsForAccountQuery.data?.partitions,
+    clusterRunningInfoQuery.data?.clusterInfo.partitions,
     languageId,
     selectedAccount,
     selectedCluster,
-    summaryClusterInfoQuery.data?.results,
   ]);
 
   const qosOptions = useMemo(() => {
@@ -490,17 +517,16 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     ]),
   });
 
-  const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)}${t(p("yuan"))}`;
+  const formattedHourlyPrice = jobOneHourPrice == null ? "-" : jobOneHourPrice.toFixed(2);
 
   const [submitting, setSubmitting] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [templateListOpen, setTemplateListOpen] = useState(false);
   const [pendingTemplatePartition, setPendingTemplatePartition] = useState<string | undefined>();
   const [pendingTemplateQos, setPendingTemplateQos] = useState<string | undefined>();
-  const [unavailableParamsModal, setUnavailableParamsModal] = useState<{
-    params: UnavailableParamRow[];
-    applyFn: () => void;
-  } | null>(null);
+  const [expiredTemplate, setExpiredTemplate] = useState<{ id: number; templateName: string } | undefined>();
+  const [deletingExpiredTemplate, setDeletingExpiredTemplate] = useState(false);
+  const [templateRefreshSignal, setTemplateRefreshSignal] = useState(0);
 
   useEffect(() => {
     setJobName(defaultJobName);
@@ -533,7 +559,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     const submitCoreCount =
       activePartitionTab === "gpu"
         ? (resourceValues.gpuCores ?? 0) *
-        Math.floor((selectedPartitionInfo?.cores ?? 0) / (selectedPartitionInfo?.gpus ?? 1))
+          Math.floor((selectedPartitionInfo?.cores ?? 0) / (selectedPartitionInfo?.gpus ?? 1))
         : (resourceValues.cpuCores ?? 0);
 
     const submitGpuCount = activePartitionTab === "gpu" ? (resourceValues.gpuCores ?? 0) : undefined;
@@ -563,7 +589,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
             jobName: baseValues.jobName,
             qos: resourceValues.qos,
             maxTime: resourceValues.maxTime,
-            maxTimeUnit: maxTimeUnit,
+            maxTimeUnit: selectedPresetUnit ?? maxTimeUnit,
             account: resourceValues.account,
             workingDirectory: jobValues.workingDirectory,
             output: jobValues.output,
@@ -640,28 +666,22 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
         .saveAsJobTemplate({
           body: {
             cluster: resourceValues.cluster,
-            jobName: templateName,
+            templateName,
             account: resourceValues.account,
             partition: resourceValues.partition,
-            qos: resourceValues.qos ?? "",
+            qos: resourceValues.qos,
             nodeCount: resourceValues.nodeCount,
             coreCount: submitCoreCount,
-            gpuCount: submitGpuCount,
-            memoryMb: memoryMb ? `${memoryMb}MB` : "0MB",
+            gpuCount: submitGpuCount ?? 0,
+            memoryMb: memoryMb ?? undefined,
             command: jobValues.command,
             maxTime: resourceValues.maxTime,
-            maxTimeUnit,
+            maxTimeUnit: selectedPresetUnit ?? maxTimeUnit,
           },
         })
-        .httpError(404, (e) => {
-          if (e.code === "UNIMPLEMENTED") {
-            modal.error({ title: t(p("errorMessage")), content: e.message });
-          } else {
-            throw e;
-          }
-        })
-        .httpError(429, () => {
-          message.error(t(pCommon("noSpaceError")));
+        .httpError(409, () => {
+          message.error(t(p("templateNameExists")));
+          throw new Error("ALREADY_EXISTS");
         })
         .then(() => {
           message.success(t(p("saveTemplateSuccess")));
@@ -685,112 +705,68 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     }
   };
 
-  const handleUseTemplate = async ({
-    cluster,
-    template,
-  }: {
-    cluster: string;
-    template: Awaited<ReturnType<typeof api.getJobTemplate>>["template"];
-  }) => {
+  const handleUseTemplate = async ({ cluster, template }: { cluster: string; template: JobTemplateDetail }) => {
+    const accountAvailable =
+      template.account && availableAccountOptions.some((option) => option.value === template.account);
+    if (!accountAvailable) {
+      showTemplateExpiredConfirm(template);
+      return;
+    }
+
+    if (!(accountClusterMap[template.account] ?? []).includes(cluster)) {
+      showTemplateExpiredConfirm(template);
+      return;
+    }
+
+    let matchedPartition: Partition | undefined;
+    if (template.partition) {
+      const availablePartitions = await api
+        .getAvailablePartitionsForCluster({
+          query: { cluster, accountName: template.account },
+        })
+        .then((res) => res.partitions)
+        .catch(() => undefined);
+
+      matchedPartition = availablePartitions?.find((p) => p.name === template.partition);
+      if (!matchedPartition) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+
+      if (template.qos && !(matchedPartition.qos ?? []).includes(template.qos)) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+    }
+
+    if (matchedPartition) {
+      if (template.nodeCount > matchedPartition.nodes) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+      const useGpu = (matchedPartition.gpus ?? 0) > 0;
+      if (useGpu && template.gpuCount && template.gpuCount > matchedPartition.gpus) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+      if (!useGpu && template.coreCount > matchedPartition.cores) {
+        showTemplateExpiredConfirm(template);
+        return;
+      }
+    }
+
+    const useGpuTab = matchedPartition
+      ? (matchedPartition.gpus ?? 0) > 0
+      : !!template.gpuCount && template.gpuCount > 0;
+
     const nextResourceValues: Partial<ResourceFormValues> = {
+      account: template.account,
+      cluster,
+      partition: template.partition,
+      qos: template.qos,
       nodeCount: template.nodeCount,
       maxTime: template.maxTime,
     };
-    const unavailableParams: UnavailableParamRow[] = [];
-
-    if (template.account && accountOptions.some((option) => option.value === template.account)) {
-      nextResourceValues.account = template.account;
-    } else if (template.account) {
-      unavailableParams.push({
-        key: "account",
-        label: t(pResource("accountLabel")),
-        templateValue: template.account,
-        recommendedValue: resourceForm.getFieldValue("account") ?? "-",
-      });
-    }
-
-    const currentAccount = (nextResourceValues.account ?? resourceForm.getFieldValue("account")) as string | undefined;
-    if (currentAccount && (accountClusterMap[currentAccount] ?? []).includes(cluster)) {
-      nextResourceValues.cluster = cluster;
-    } else {
-      unavailableParams.push({
-        key: "cluster",
-        label: t(pResource("clusterLabel")),
-        templateValue: cluster,
-        recommendedValue: resourceForm.getFieldValue("cluster") ?? "-",
-      });
-    }
-
-    const partitionCheckAccount = (nextResourceValues.account ?? resourceForm.getFieldValue("account")) as
-      | string
-      | undefined;
-    const partitionCheckCluster = (nextResourceValues.cluster ?? resourceForm.getFieldValue("cluster")) as
-      | string
-      | undefined;
-
-    let availablePartitions: Partition[] | undefined;
-    if (partitionCheckAccount && partitionCheckCluster && (template.partition || template.qos)) {
-      availablePartitions = await api
-        .getAvailablePartitionsForCluster({
-          query: {
-            cluster: partitionCheckCluster,
-            accountName: partitionCheckAccount,
-          },
-        })
-        .then((res) => res.partitions)
-        .catch(() => {
-          return undefined;
-        });
-    }
-
-    let matchedTemplatePartition: Partition | undefined;
-    if (template.partition && availablePartitions) {
-      const matchedPartition = availablePartitions.find((partition) => partition.name === template.partition);
-      if (matchedPartition) {
-        matchedTemplatePartition = matchedPartition;
-        nextResourceValues.partition = template.partition;
-        setPendingTemplatePartition(template.partition);
-
-        if (template.qos && (matchedPartition.qos ?? []).includes(template.qos)) {
-          nextResourceValues.qos = template.qos;
-          setPendingTemplateQos(template.qos);
-        } else if (template.qos) {
-          unavailableParams.push({
-            key: "qos",
-            label: t(pResource("qosLabel")),
-            templateValue: template.qos,
-            recommendedValue: resourceForm.getFieldValue("qos") ?? "-",
-          });
-          setPendingTemplateQos(undefined);
-        }
-      } else {
-        unavailableParams.push({
-          key: "partition",
-          label: t(pResource("partitionLabel")),
-          templateValue: template.partition,
-          recommendedValue: resourceForm.getFieldValue("partition") ?? "-",
-        });
-        setPendingTemplatePartition(undefined);
-        setPendingTemplateQos(undefined);
-      }
-    } else if (template.partition) {
-      unavailableParams.push({
-        key: "partition",
-        label: t(pResource("partitionLabel")),
-        templateValue: template.partition,
-        recommendedValue: resourceForm.getFieldValue("partition") ?? "-",
-      });
-      setPendingTemplatePartition(undefined);
-      setPendingTemplateQos(undefined);
-    } else {
-      setPendingTemplatePartition(undefined);
-      setPendingTemplateQos(undefined);
-    }
-
-    const useGpuTab = matchedTemplatePartition
-      ? (matchedTemplatePartition.gpus ?? 0) > 0
-      : !!template.gpuCount && template.gpuCount > 0;
-    setActivePartitionTab(useGpuTab ? "gpu" : "cpu");
     if (useGpuTab) {
       nextResourceValues.gpuCores = template.gpuCount;
       nextResourceValues.cpuCores = undefined;
@@ -799,51 +775,41 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
       nextResourceValues.gpuCores = undefined;
     }
 
-    if (matchedTemplatePartition) {
-      if (template.nodeCount > matchedTemplatePartition.nodes) {
-        unavailableParams.push({
-          key: "nodeCount",
-          label: t(pResource("nodeCountLabel")),
-          templateValue: String(template.nodeCount),
-          recommendedValue: String(resourceForm.getFieldValue("nodeCount") ?? "-"),
-        });
-        delete nextResourceValues.nodeCount;
-      }
-      if (useGpuTab) {
-        if (template.gpuCount && template.gpuCount > matchedTemplatePartition.gpus) {
-          unavailableParams.push({
-            key: "gpuCores",
-            label: t(pResource("gpuCoresLabel")),
-            templateValue: String(template.gpuCount),
-            recommendedValue: String(resourceForm.getFieldValue("gpuCores") ?? "-"),
-          });
-          nextResourceValues.gpuCores = undefined;
-        }
-      } else {
-        if (template.coreCount > matchedTemplatePartition.cores) {
-          unavailableParams.push({
-            key: "cpuCores",
-            label: t(pResource("cpuCoresLabel")),
-            templateValue: String(template.coreCount),
-            recommendedValue: String(resourceForm.getFieldValue("cpuCores") ?? "-"),
-          });
-          nextResourceValues.cpuCores = undefined;
-        }
-      }
-    }
+    setActivePartitionTab(useGpuTab ? "gpu" : "cpu");
+    setPendingTemplatePartition(template.partition);
+    setPendingTemplateQos(template.qos);
+    resourceForm.setFieldsValue(nextResourceValues);
+    const templateMaxTimeUnit = template.maxTimeUnit ?? TimeUnit.HOURS;
+    const matchedMaxTimePreset = MAX_TIME_PRESETS.find(
+      (preset) => preset.maxTime === template.maxTime && preset.maxTimeUnit === templateMaxTimeUnit,
+    );
+    setMaxTimeUnit(templateMaxTimeUnit);
+    setSelectedPresetUnit(matchedMaxTimePreset?.maxTimeUnit);
+    setSelectorResetKey((prev) => prev + 1);
+    jobForm.setFieldValue("command", template.command ?? "");
+    setTemplateListOpen(false);
+  };
 
-    const applyFn = () => {
-      resourceForm.setFieldsValue(nextResourceValues);
-      setMaxTimeUnit(template.maxTimeUnit ?? TimeUnit.HOURS);
-      jobForm.setFieldValue("command", template.command);
-      setTemplateListOpen(false);
-    };
+  const showTemplateExpiredConfirm = (template: JobTemplateDetail) => {
+    setExpiredTemplate({ id: template.id, templateName: template.templateName });
+  };
 
-    if (unavailableParams.length > 0) {
-      setUnavailableParamsModal({ params: unavailableParams, applyFn });
-    } else {
-      applyFn();
-    }
+  const handleDeleteExpiredTemplate = async () => {
+    if (!expiredTemplate) return;
+    setDeletingExpiredTemplate(true);
+    await api
+      .deleteJobTemplate({ query: expiredTemplate })
+      .then(() => {
+        message.success(t(p("templateDeleteSuccess")));
+        setExpiredTemplate(undefined);
+        setTemplateRefreshSignal((prev) => prev + 1);
+      })
+      .catch(() => {
+        message.error(t(p("templateDeleteFailed")));
+      })
+      .finally(() => {
+        setDeletingExpiredTemplate(false);
+      });
   };
 
   useEffect(() => {
@@ -871,22 +837,36 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     }
     const nodeCountNotSet = selectedNodeCount === undefined || selectedNodeCount === null;
     if (nodeCountNotSet && !resourceForm.isFieldTouched("nodeCount")) {
-      resourceForm.setFieldValue("nodeCount", initialValues.nodeCount ?? 1);
+      const storeNodeCount = resourceForm.getFieldValue("nodeCount");
+      if (storeNodeCount === undefined || storeNodeCount === null) {
+        resourceForm.setFieldValue("nodeCount", initialValues.nodeCount ?? 1);
+      }
     }
     if (activePartitionTab === "gpu") {
       const gpuCoresNotSet = selectedGpuCores === undefined || selectedGpuCores === null;
       if (gpuCoresNotSet && !resourceForm.isFieldTouched("gpuCores")) {
-        const nextGpuCores = initialValues.gpuCores ?? 1;
-        resourceForm.setFieldValue("gpuCores", nextGpuCores);
+        const storeGpuCores = resourceForm.getFieldValue("gpuCores");
+        if (storeGpuCores === undefined || storeGpuCores === null) {
+          resourceForm.setFieldValue("gpuCores", initialValues.gpuCores ?? 1);
+        }
       }
     } else {
       const cpuCoresNotSet = selectedCpuCores === undefined || selectedCpuCores === null;
       if (cpuCoresNotSet && !resourceForm.isFieldTouched("cpuCores")) {
-        const nextCpuCores = initialValues.cpuCores ?? 1;
-        resourceForm.setFieldValue("cpuCores", nextCpuCores);
+        const storeCpuCores = resourceForm.getFieldValue("cpuCores");
+        if (storeCpuCores === undefined || storeCpuCores === null) {
+          resourceForm.setFieldValue("cpuCores", initialValues.cpuCores ?? 1);
+        }
       }
     }
   }, [activePartitionTab, resourceForm, selectedCpuCores, selectedGpuCores, selectedNodeCount, selectedPartitionInfo]);
+
+  useEffect(() => {
+    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
+    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
+      resourceForm.setFieldValue("maxTime", initialValues.maxTime ?? 30);
+    }
+  }, [resourceForm, selectedMaxTime]);
 
   useEffect(() => {
     if (!jobForm.isFieldTouched("output")) {
@@ -916,14 +896,14 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
   }, [partitionRows, pendingTemplatePartition, resourceForm]);
 
   useEffect(() => {
-    if (!accountOptions.length) {
+    if (!availableAccountOptions.length) {
       return;
     }
     const currentAccount = resourceForm.getFieldValue("account");
-    if (!currentAccount || !accountOptions.some((option) => option.value === currentAccount)) {
-      resourceForm.setFieldValue("account", accountOptions[0].value);
+    if (!currentAccount || !availableAccountOptions.some((option) => option.value === currentAccount)) {
+      resourceForm.setFieldValue("account", availableAccountOptions[0].value);
     }
-  }, [accountOptions, resourceForm]);
+  }, [availableAccountOptions, resourceForm]);
 
   useEffect(() => {
     if (!selectedAccount) {
@@ -948,148 +928,158 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [maxTimeUnit, maxRunningTimeHours, resourceForm]);
+  }, [maxTimeUnit, maxRunningTimeHours, resourceForm, selectedPresetUnit]);
 
   return (
     <>
-      <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
-        <PaddedCard
-          title={
-            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
-              <HeaderTitle>{t(p("title"))}</HeaderTitle>
-              <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                {t(p("templateButton"))}
-              </Button>
-            </HeaderRow>
-          }
-        >
-          <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
-          </BorderlessCard>
-        </PaddedCard>
+      <JobPageLayout>
+        {isGetAccountClustersWithUnavailableReasons ? (
+          <JobPageLoading>
+            <Spin />
+          </JobPageLoading>
+        ) : (
+          <>
+            <JobMainContent>
+              <JobContainer direction="vertical" size={0}>
+                <PaddedCard
+                  styles={{ header: { borderBottom: "none" } }}
+                  title={
+                    <HeaderRow
+                      align="center"
+                      style={{
+                        justifyContent: "space-between",
+                        borderBottom: `1px solid ${theme.palette.gray[4]}`,
+                        paddingBottom: 24,
+                      }}
+                    >
+                      <HeaderTitle>{t(p("title"))}</HeaderTitle>
+                      <Button
+                        type="link"
+                        style={{ padding: 0, fontSize: 16 }}
+                        onClick={() => setTemplateListOpen(true)}
+                      >
+                        {t(p("templateButton"))}
+                      </Button>
+                    </HeaderRow>
+                  }
+                >
+                  <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
+                    <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
+                  </BorderlessCard>
+                </PaddedCard>
 
-        <ResourceConfigSection
-          form={resourceForm}
-          accountOptions={accountOptions}
-          accountLoading={isGetAvailableAccountsAndClusters}
-          clusterOptions={clusterOptions}
-          selectedCluster={selectedCluster}
-          partitionRows={partitionRows}
-          activePartitionTab={activePartitionTab}
-          onActivePartitionTabChange={setActivePartitionTab}
-          selectedPartitionKey={selectedPartition}
-          onPartitionSelect={(value) => resourceForm.setFieldValue("partition", value)}
-          qosOptions={qosOptions}
-          nodeCountLimit={nodeCountLimit}
-          unitCountLimit={unitCountLimit}
-          inputsDisabled={inputsDisabled}
-          maxTimeUnit={maxTimeUnit}
-          onMaxTimeUnitChange={setMaxTimeUnit}
-          maxRunningTimeHours={maxRunningTimeHours}
-        />
+                <ResourceConfigSection
+                  form={resourceForm}
+                  accountOptions={accountOptions}
+                  accountLoading={isGetAccountClustersWithUnavailableReasons}
+                  clusterOptions={clusterOptions}
+                  selectedAccount={selectedAccount}
+                  selectedCluster={selectedCluster}
+                  partitionRows={partitionRows}
+                  activePartitionTab={activePartitionTab}
+                  onActivePartitionTabChange={setActivePartitionTab}
+                  selectedPartitionKey={selectedPartition}
+                  onPartitionSelect={(value) => resourceForm.setFieldValue("partition", value)}
+                  qosOptions={qosOptions}
+                  nodeCountLimit={nodeCountLimit}
+                  unitCountLimit={unitCountLimit}
+                  inputsDisabled={inputsDisabled}
+                  maxTimeUnit={maxTimeUnit}
+                  onMaxTimeUnitChange={setMaxTimeUnit}
+                  selectedPresetUnit={selectedPresetUnit}
+                  onSelectedPresetUnitChange={setSelectedPresetUnit}
+                  selectorResetKey={selectorResetKey}
+                  maxRunningTimeHours={maxRunningTimeHours}
+                />
 
-        <JobConfigSection
-          form={jobForm}
-          cluster={selectedClusterInfo}
-          submitJobPromptText={submitJobPromptText}
-          jobName={jobName}
-          output={output}
-          errorOutput={errorOutput}
-          onOutputChange={handleOutputChange}
-          onErrorOutputChange={handleErrorOutputChange}
-          scriptOutput={scriptOutput}
-          onScriptOutputChange={handleScriptOutputChange}
-        />
-      </PageContainer>
+                <JobConfigSection
+                  form={jobForm}
+                  cluster={selectedClusterInfo}
+                  submitJobPromptText={submitJobPromptText}
+                  jobName={jobName}
+                  output={output}
+                  errorOutput={errorOutput}
+                  onOutputChange={handleOutputChange}
+                  onErrorOutputChange={handleErrorOutputChange}
+                  scriptOutput={scriptOutput}
+                  onScriptOutputChange={handleScriptOutputChange}
+                />
+              </JobContainer>
+            </JobMainContent>
 
-      <FixedFooter>
-        <div style={{ marginLeft: 208, marginRight: "auto" }}>
-          <FooterStatValue
-            $isPrimaryColor
-            style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
-            onClick={handleOpenSaveTemplateModal}
-          >
-            {t(p("saveToTemplate"))}
-          </FooterStatValue>
-        </div>
-        <FooterStats>
-          <span>
-            {t(p("totalNodeCount"))} <FooterStatValue>{selectedNodeCount ?? "-"}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("totalGpuCount"))} <FooterStatValue>{totalGpuCount}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("totalCoreCount"))} <FooterStatValue>{totalCpuCount}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("totalMemory"))} <FooterStatValue>{totalMemory}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("costPerHour"))} <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
-          </span>
-          <a
-            onClick={() => {
-              window.open(join(publicConfig.MIS_URL ?? "/mis", "/user/partitions"), "_blank", "noopener,noreferrer");
-            }}
-          >
-            <FooterStatValue $isPrimaryColor>{t(p("pricingStandard"))}</FooterStatValue>
-          </a>
-        </FooterStats>
-        <FooterActions>
-          <AntdButton type="primary" onClick={handleSubmit} loading={submitting}>
-            {t(p("submitButton"))}
-          </AntdButton>
-        </FooterActions>
-      </FixedFooter>
+            <JobSidePanel>
+              <JobSidePanelInner>
+                <JobSideInfo
+                  labels={{
+                    totalNodeCount: t(p("totalNodeCount")),
+                    totalGpuCount: t(p("totalGpuCount")),
+                    totalCoreCount: t(p("totalCoreCount")),
+                    totalMemory: t(p("totalMemory")),
+                    costPerHour: t(p("costPerHour")),
+                    pricingStandard: t(p("pricingStandard")),
+                    yuan: t(p("yuan")),
+                    hours: t(p("hours")),
+                    accountNameLabel: t(p("accountNameLabel")),
+                    whitelistTag: t(p("whitelistTag")),
+                    accountOwner: t(p("accountOwner")),
+                    accountBalance: t(p("accountBalance")),
+                    accountBlockThreshold: t(p("accountBlockThreshold")),
+                    userUsedLimit: t(p("userUsedLimit")),
+                    userChargeNoLimit: t(p("userChargeNoLimit")),
+                  }}
+                  nodeCount={selectedNodeCount}
+                  totalGpuCount={totalGpuCount}
+                  totalCpuCount={totalCpuCount}
+                  totalMemory={totalMemory}
+                  hourlyPrice={formattedHourlyPrice}
+                  showHourlyPriceUnit={jobOneHourPrice != null}
+                  pricingStandardUrl={join(publicConfig.MIS_URL ?? "/mis", "/user/partitions")}
+                  showAccountInfo={publicConfig.MIS_DEPLOYED}
+                  accountInfo={accountInfoQuery.data}
+                />
+              </JobSidePanelInner>
+            </JobSidePanel>
+          </>
+        )}
+      </JobPageLayout>
+
+      {!isGetAccountClustersWithUnavailableReasons && (
+        <FixedFooter>
+          <div style={{ marginLeft: 208, marginRight: "auto" }}>
+            <FooterStatValue
+              $isPrimaryColor
+              style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
+              onClick={handleOpenSaveTemplateModal}
+            >
+              {t(p("saveToTemplate"))}
+            </FooterStatValue>
+          </div>
+          <FooterActions>
+            <AntdButton type="primary" onClick={handleSubmit} loading={submitting}>
+              {t(p("submitButton"))}
+            </AntdButton>
+          </FooterActions>
+        </FixedFooter>
+      )}
 
       <SaveAsTemplateModal open={saveModalOpen} onClose={() => setSaveModalOpen(false)} onSave={handleSaveAsTemplate} />
       <TemplateListModal
-        clusterIds={clusterOptions.map((cluster) => cluster.id)}
         open={templateListOpen}
         onUse={handleUseTemplate}
         onClose={() => setTemplateListOpen(false)}
+        refreshSignal={templateRefreshSignal}
       />
       <StyledModal
-        open={!!unavailableParamsModal}
+        open={expiredTemplate !== undefined}
         title={t(p("unavailableParamsTitle"))}
-        onOk={() => {
-          unavailableParamsModal?.applyFn();
-          setUnavailableParamsModal(null);
-        }}
-        onCancel={() => setUnavailableParamsModal(null)}
+        onOk={handleDeleteExpiredTemplate}
+        onCancel={() => setExpiredTemplate(undefined)}
         okText={t(p("unavailableParamsConfirm"))}
         cancelText={t(p("unavailableParamsCancel"))}
+        confirmLoading={deletingExpiredTemplate}
         centered
-        width={448}
       >
-        <Typography.Paragraph style={{ marginBottom: 16, color: gray[7] }}>
-          {t(p("unavailableParamsDesc"))}
-        </Typography.Paragraph>
-        <TableWithSplitLines
-          dataSource={unavailableParamsModal?.params ?? []}
-          pagination={false}
-          size="small"
-          style={{ marginBottom: 32 }}
-          columns={[
-            {
-              title: "",
-              dataIndex: "label",
-              key: "label",
-            },
-            {
-              title: t(p("unavailableParamColumn")),
-              dataIndex: "templateValue",
-              key: "templateValue",
-              render: (val: string) => <Typography.Text type="danger">{val}</Typography.Text>,
-            },
-            {
-              title: t(p("recommendedParamColumn")),
-              dataIndex: "recommendedValue",
-              key: "recommendedValue",
-            },
-          ]}
-        />
+        {t(p("unavailableParamsDesc"))}
       </StyledModal>
     </>
   );

@@ -12,9 +12,9 @@
     "editor.defaultFormatter": "oxc.oxc-vscode",
   },
   "[go]": {
-    "editor.defaultFormatter": "golang.go"
+    "editor.defaultFormatter": "golang.go",
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
-  }
+  },
 }

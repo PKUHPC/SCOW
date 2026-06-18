@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnsType } from "antd/es/table";
+import type { DevTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import {
@@ -18,9 +19,13 @@ import { useRouter } from "next/navigation";
 import { join } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
+import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
+import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
-import { TrainJobInput as DevJobInput } from "src/server/trpc/route/jobs/jobs";
+import { JobType } from "src/models/Job";
+import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -34,12 +39,15 @@ import type {
   ImageOption,
   ImageSourceDraft,
   MaxTimeUnit,
+  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
 } from "./LaunchDevForm.types";
 
 import {
+  buildUnavailableParams,
+  cleanFormData,
   buildEnvPayload,
   convertDurationToHours,
   deriveQueueStats,
@@ -47,6 +55,7 @@ import {
   mapQueuesToRows,
   mergeResubmitEnvVariables,
   sanitizeFormMountAndEnvValues,
+  normalizeMountPoints,
 } from "../LaunchJobForm.utils";
 import { PublicImageOption } from "../PublicImageOption";
 import { BaseInfoSection } from "./components/BaseInfoSection";
@@ -55,7 +64,7 @@ import { ResourceConfigSection } from "./components/ResourceConfigSection";
 
 // ======================= 类型定义 =======================
 interface Props {
-  createDevParams?: DevJobInput;
+  createDevParams?: CreateDevHostInput;
   misPath: string;
 }
 
@@ -73,10 +82,10 @@ const IMAGE_SOURCE_TAB_CONFIG: readonly {
   labelKey: ImageSourceLabelKey;
   placeholderKey: ImagePlaceholderKey;
 }[] = [
-    { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
-    { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
-    { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
-  ];
+  { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
+  { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
+  { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
+];
 
 const IMAGE_PLACEHOLDER_KEYS: Record<DevImageSourceKey, ImagePlaceholderKey> = {
   mine: "imagePlaceholders.mine",
@@ -271,6 +280,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     hasInitializedBuiltinEnvVariablesRef.current = true;
   }, [appForm, createDevParams]);
 
+  const trpcUtils = trpc.useUtils();
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -318,6 +328,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const hasClusterSelectionRef = useRef(false);
   const hasClusterSwitchedRef = useRef(false);
   const isClusterResettingRef = useRef(false);
+  const isApplyingTemplateRef = useRef(false);
   const resubmitImageAppliedRef = useRef(false);
   const resubmitResourceAppliedRef = useRef(false);
   const resubmitQueueAppliedRef = useRef(false);
@@ -325,6 +336,13 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const resubmitImageSignatureRef = useRef<string | undefined>(undefined);
   const resubmitMountEnvAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateListOpen, setTemplateListOpen] = useState(false);
+  const [templateSnapshot, setTemplateSnapshot] = useState<DevTemplateFormData | null>(null);
+  const [unavailableParamsModal, setUnavailableParamsModal] = useState<{
+    params: UnavailableParam[];
+    applyFn: () => void | Promise<void>;
+  } | null>(null);
 
   // ----------- 表单字段监听 -----------
   // 通过 Form.useWatch 实时感知三个分表单中的关键字段，后续计算和副作用均依赖这些最新值
@@ -405,7 +423,8 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     if (previousCluster === undefined && selectedCluster === undefined) {
       return;
     }
-    if (hadClusterSelection) {
+    const applyingTemplate = isApplyingTemplateRef.current;
+    if (hadClusterSelection && !applyingTemplate) {
       hasClusterSwitchedRef.current = true;
     }
     const shouldReset = hadClusterSelection;
@@ -416,8 +435,10 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     if (!resubmitQueueEverAppliedRef.current) {
       resubmitQueueAppliedRef.current = false;
     }
-    resubmitMountEnvAppliedRef.current = shouldReset;
-    if (shouldReset) {
+    if (!applyingTemplate) {
+      resubmitMountEnvAppliedRef.current = shouldReset;
+    }
+    if (shouldReset && !applyingTemplate) {
       resourceForm.setFieldsValue({ priority: undefined });
       appForm.setFieldsValue({
         image: undefined,
@@ -514,7 +535,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       .map((env) => ({ key: env.key, value: env.value }));
 
     appForm.setFieldsValue({
-      mountPoints: mountPointsDraft,
+      mountPoints: normalizeMountPoints(mountPointsDraft),
       envVariables: mergeResubmitEnvVariables(envVariablesDraft),
     });
 
@@ -759,6 +780,9 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     if (!createDevParams) {
       resubmitQueueAppliedRef.current = false;
       return;
@@ -785,8 +809,8 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     }
 
     let maxTimeValue: number | undefined;
-    if (createDevParams.maxTime !== undefined && createDevParams.maxTime !== null) {
-      const minutes = Math.max(1, createDevParams.maxTime);
+    if (createDevParams.maxTimeMinutes !== undefined && createDevParams.maxTimeMinutes !== null) {
+      const minutes = Math.max(1, createDevParams.maxTimeMinutes);
       let unit: MaxTimeUnit = "min";
       let value = minutes;
       if (minutes % (24 * 60) === 0) {
@@ -884,7 +908,14 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
   // 队列数据变化时，保持或回退到可用的第一条记录
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
+
     if (!currentQueueOptions.length) {
+      if (selectedQueueKey !== undefined && getAvailablePartitionIsLoading) {
+        return;
+      }
       if (selectedQueueKey !== undefined) {
         setSelectedQueueKey(undefined);
       }
@@ -911,7 +942,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         setSelectedQueueKey(undefined);
       }
     }
-  }, [createDevParams, currentQueueOptions, selectedQueueKey]);
+  }, [createDevParams, currentQueueOptions, getAvailablePartitionIsLoading, selectedQueueKey]);
 
   // 若用户尚未选择账户，自动填入第一条有效账户
   useEffect(() => {
@@ -962,6 +993,9 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
   // 切换镜像来源时恢复已保存的选项
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     const draft = imageSourceDraftsRef.current[selectedImageSource] ?? {};
 
     if (selectedImageSource === "remote") {
@@ -1157,6 +1191,146 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     }
   }, [createDevParams, resourceForm, selectedQueueKey, selectedQueueOption]);
 
+  const buildDevTemplateFormData = (): DevTemplateFormData => {
+    const resourceValues = resourceForm.getFieldsValue();
+    const appValues = appForm.getFieldsValue();
+    const gpuTypeValue = selectedQueueOption?.type === "gpu" ? (selectedQueueOption as GPUQueueRow).gpuType : undefined;
+    const units = activeResourceTab === "gpu" ? totalGpuUnits : totalCpuUnits;
+    const memoryMb = memoryPerUnitMb ? Math.max(0, Math.round(memoryPerUnitMb * units)) : 0;
+    return {
+      account: selectedAccount ?? undefined,
+      partition: selectedQueueKey ?? "",
+      qos: resourceValues.priority ?? "",
+      coreCount: resourceValues.cpuCores ?? 1,
+      gpuCount: selectedGpuCount > 0 ? selectedGpuCount : undefined,
+      gpuType: gpuTypeValue ?? undefined,
+      memory: memoryMb,
+      maxTimeMinutes: Math.max(1, Math.round(convertDurationToHours(resourceValues.maxTime, maxTimeUnit) * 60)),
+      isImagePrivate: selectedImageSource === "mine" ? true : selectedImageSource === "public" ? false : undefined,
+      image:
+        selectedImageSource === "mine" || selectedImageSource === "public"
+          ? typeof appValues.image === "string"
+            ? Number(appValues.image) || undefined
+            : appValues.image
+          : undefined,
+      remoteImageUrl:
+        selectedImageSource === "remote"
+          ? typeof appValues.image === "string"
+            ? appValues.image
+            : undefined
+          : undefined,
+      mountPoints: (appValues.mountPoints ?? [])
+        .filter((m: MountPointField | undefined) => m?.source && m?.target)
+        .map((m: MountPointField) => ({ path: m.source, target: m.target })),
+    };
+  };
+
+  const applyDevTemplate = async (formData: Record<string, unknown>, cluster: string, originalCluster?: string) => {
+    const maxTimeMinutes = typeof formData.maxTimeMinutes === "number" ? formData.maxTimeMinutes : undefined;
+    let maxTimeValue: number | undefined;
+    let appliedMaxTimeUnit: MaxTimeUnit = "hour";
+    if (maxTimeMinutes !== undefined && maxTimeMinutes > 0) {
+      if (maxTimeMinutes % (24 * 60) === 0) {
+        appliedMaxTimeUnit = "day";
+        maxTimeValue = maxTimeMinutes / (24 * 60);
+      } else if (maxTimeMinutes % 60 === 0) {
+        appliedMaxTimeUnit = "hour";
+        maxTimeValue = maxTimeMinutes / 60;
+      } else {
+        appliedMaxTimeUnit = "min";
+        maxTimeValue = maxTimeMinutes;
+      }
+    }
+    setMaxTimeUnit(appliedMaxTimeUnit);
+    resourceForm.setFieldsValue({
+      priority: formData.qos as string | undefined,
+      cpuCores: formData.coreCount as number | undefined,
+      gpuCores: formData.gpuCount as number | undefined,
+      ...(maxTimeValue !== undefined ? { maxTime: maxTimeValue } : {}),
+    });
+    const clusterChanged = originalCluster !== undefined && originalCluster !== cluster;
+    if (!clusterChanged) {
+      if (formData.remoteImageUrl) {
+        setSelectedImageSource("remote");
+        imageSourceDraftsRef.current.remote = { image: formData.remoteImageUrl as string };
+        appForm.setFieldsValue({
+          image: formData.remoteImageUrl as string,
+          usePrivateImage: false,
+          remoteUsername: undefined,
+          remotePassword: undefined,
+        });
+        resubmitImageAppliedRef.current = true;
+      } else if (formData.isImagePrivate === true || formData.isImagePrivate === false) {
+        const source = formData.isImagePrivate === false ? ("public" as const) : ("mine" as const);
+        if (formData.image !== undefined && formData.image !== null) {
+          const imageStr = String(formData.image);
+          const fetchedImages = await trpcUtils.image.list
+            .fetch({
+              isPublic: formData.isImagePrivate === false ? parseBooleanParam(true) : parseBooleanParam(false),
+              clusterId: cluster,
+              withExternal: "true",
+              types: ImageType.DEV_HOST,
+            })
+            .catch(() => undefined);
+          if (fetchedImages) {
+            const found = fetchedImages.items.some(
+              (img) => img.id === Number(formData.image) && img.status === Status.CREATED,
+            );
+            if (found) {
+              imageSourceDraftsRef.current[source] = { image: imageStr };
+              setSelectedImageSource(source);
+              appForm.setFieldsValue({
+                image: imageStr,
+                usePrivateImage: false,
+                remoteUsername: undefined,
+                remotePassword: undefined,
+              });
+              resubmitImageAppliedRef.current = true;
+            } else {
+              setSelectedImageSource(source);
+              resubmitImageAppliedRef.current = true;
+            }
+          }
+        } else {
+          setSelectedImageSource(source);
+          resubmitImageAppliedRef.current = true;
+        }
+      }
+    }
+    if (formData.mountPoints) {
+      const mountPoints = (formData.mountPoints as { path: string; target: string }[]).map((m) => ({
+        source: m.path,
+        target: m.target,
+      }));
+      appForm.setFieldsValue({ mountPoints });
+    }
+    const tplPartition = formData.partition as string | undefined;
+    if (tplPartition) {
+      const effectiveAccount = resourceForm.getFieldValue("account") ?? selectedAccount ?? "";
+      const partitionsForCluster = await trpcUtils.config.getAvailablePartitions
+        .fetch({ accountName: effectiveAccount, clusterId: cluster })
+        .catch(() => undefined);
+      if (partitionsForCluster) {
+        const matched = partitionsForCluster.find((pt) => pt.name === tplPartition);
+        if (matched) {
+          const rows = mapQueuesToRows(partitionsForCluster);
+          const allRows = [...rows.gpuRows, ...rows.cpuRows];
+          const matchedRow = allRows.find((r) => r.id === tplPartition);
+          if (matchedRow) {
+            setActiveResourceTab(matchedRow.type);
+          }
+          setSelectedQueueKey(tplPartition);
+          const tplQos = formData.qos as string | undefined;
+          if (tplQos && matched.qos.includes(tplQos)) {
+            resourceForm.setFieldsValue({ priority: tplQos });
+          }
+        }
+      } else {
+        setSelectedQueueKey(tplPartition);
+      }
+    }
+  };
+
   const handleCancel = () => {
     router.push("/jobs/devList");
   };
@@ -1284,11 +1458,11 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         ...(envVariablesPayload.length ? { envVariables: envVariablesPayload } : {}),
         ...(appValues.usePrivateImage
           ? {
-            privateImageRepositoryCredentials: {
-              userName: appValues.remoteUsername ?? "",
-              password: appValues.remotePassword ?? "",
-            },
-          }
+              privateImageRepositoryCredentials: {
+                userName: appValues.remoteUsername ?? "",
+                password: appValues.remotePassword ?? "",
+              },
+            }
           : {}),
       };
 
@@ -1298,14 +1472,60 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     }
   };
 
+  const handleTemplateUse = async (formData: TemplateFormData, templateCluster: string) => {
+    const fd = formData;
+
+    const { unavailableParams, effectiveAccount, effectiveCluster } = await buildUnavailableParams({
+      fd,
+      templateCluster,
+      isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
+      getAvailableAccounts: () => accountOptions.map((o) => o.value),
+      getClustersForAccount: () => clusterOptions.filter((o) => !o.disabled).map((o) => o.id),
+      selectedAccount,
+      selectedCluster,
+      selectedQueueKey,
+      currentQos: resourceForm.getFieldValue("priority"),
+      fetchPartitions: (acc, cluster) =>
+        trpcUtils.config.getAvailablePartitions.fetch({ accountName: acc, clusterId: cluster }).catch(() => undefined),
+      t: (key) => t(p(key as any)),
+      resolveClusterName: (id) => {
+        const clusterConfig = CLUSTERS.find((c) => c.id === id);
+        return clusterConfig ? getI18nConfigCurrentText(clusterConfig.name, languageId) : id;
+      },
+    });
+
+    const applyFn = async () => {
+      const cleanedFormData = cleanFormData(fd, unavailableParams);
+      isApplyingTemplateRef.current = true;
+      hasClusterSwitchedRef.current = false;
+
+      resourceForm.setFieldsValue({ account: effectiveAccount, cluster: effectiveCluster });
+
+      await applyDevTemplate(cleanedFormData, effectiveCluster, templateCluster);
+      setTemplateListOpen(false);
+      requestAnimationFrame(() => {
+        isApplyingTemplateRef.current = false;
+      });
+    };
+
+    if (unavailableParams.length > 0) {
+      setUnavailableParamsModal({ params: unavailableParams, applyFn });
+    } else {
+      await applyFn();
+    }
+  };
+
   // ======================= 渲染 =======================
   return (
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
           title={
-            <HeaderRow align="center" size={16}>
+            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
               <HeaderTitle>{t(pDev("createDevTitle"))}</HeaderTitle>
+              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                {t(pDev("templateButton"))}
+              </Button> */}
             </HeaderRow>
           }
         >
@@ -1352,6 +1572,24 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       </PageContainer>
 
       <FixedFooter>
+        {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
+          <FooterStatValue
+            $isPrimaryColor
+            style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
+            onClick={async () => {
+              try {
+                await resourceForm.validateFields();
+                await appForm.validateFields();
+                setTemplateSnapshot(buildDevTemplateFormData());
+                setSaveTemplateOpen(true);
+              } catch {
+                message.warning(t(p("completeFormFirst")));
+              }
+            }}
+          >
+            {t(p("saveAsTemplate"))}
+          </FooterStatValue>
+        </div> */}
         <FooterStats>
           <span>
             {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
@@ -1381,6 +1619,28 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
           </Button>
         </FooterActions>
       </FixedFooter>
+      <SaveAsTemplateModal
+        open={saveTemplateOpen}
+        onClose={() => setSaveTemplateOpen(false)}
+        jobType={JobType.DEV_HOST}
+        cluster={selectedCluster ?? ""}
+        formData={templateSnapshot}
+      />
+      <TemplateListModal
+        open={templateListOpen}
+        onClose={() => setTemplateListOpen(false)}
+        onUse={handleTemplateUse}
+        jobType={JobType.DEV_HOST}
+      />
+      <UnavailableParamsModal
+        open={!!unavailableParamsModal}
+        params={unavailableParamsModal?.params ?? []}
+        onConfirm={async () => {
+          await unavailableParamsModal?.applyFn();
+          setUnavailableParamsModal(null);
+        }}
+        onCancel={() => setUnavailableParamsModal(null)}
+      />
     </>
   );
 };

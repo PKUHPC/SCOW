@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 import { CheckOutlined, LoadingOutlined, ReloadOutlined } from "@ant-design/icons";
 import { TableWithSplitLines } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Button, DatePicker, Descriptions, Divider, Flex, Select, Space, Table, Tabs, Typography } from "antd";
+import { App, Button, DatePicker, Descriptions, Divider, Flex, Select, Space, Table, Tabs, Typography } from "antd";
 import { RangePickerProps } from "antd/es/date-picker";
 import TextArea from "antd/lib/input/TextArea";
 import dayjs from "dayjs";
@@ -112,6 +112,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
   const languageId = useI18n().currentLanguage.id;
   const { clusterId } = params;
   const searchParams = useSearchParams();
+  const { message } = App.useApp();
 
   const { publicConfig, user, currentAvailableClusterIds } = usePublicConfig();
   const cluster = publicConfig.CLUSTERS.find((x) => x.id === clusterId);
@@ -224,13 +225,28 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
 
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
 
-  const { data: jobDetails, isLoading: isGettingJobDetailsLoading } = trpc.jobs.getJobDetails.useQuery(
+  const {
+    data: jobDetails,
+    error: getJobDetailsError,
+    isLoading: isGettingJobDetailsLoading,
+  } = trpc.jobs.getJobDetails.useQuery(
     { clusterId, jobId: parsedJobId!, jobType: jobType!, appId: appId ?? undefined, sessionId: sessionId! },
     {
       enabled: !!parsedJobId && !!jobType,
       retry: false,
+      meta: {
+        silent: true,
+      },
     },
   );
+
+  useEffect(() => {
+    if (!getJobDetailsError) {
+      return;
+    }
+
+    message.error(`${t(p("getJobDetailsFailed"))}: ${getJobDetailsError.message}`);
+  }, [getJobDetailsError, t, p]);
 
   const jobEventData = useMemo(() => (jobDetails ? jobDetails.jobEvent : []), [jobDetails]);
   const podListData = useMemo(() => (jobDetails ? jobDetails.podInfo : []), [jobDetails]);

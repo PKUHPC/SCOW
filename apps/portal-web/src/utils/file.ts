@@ -8,7 +8,6 @@ import {
   UnrecognizedFileIcon,
 } from "@scow/lib-web/build/icons/FileIcon";
 import { isExecutableScriptFilename, isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
-import * as crypto from "crypto";
 import { join } from "path";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { FileInfo, FileType } from "src/pages/api/file/list";

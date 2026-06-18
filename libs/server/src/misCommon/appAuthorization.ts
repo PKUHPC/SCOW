@@ -2,7 +2,6 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
-import { ListAvailableAppsResponse } from "@scow/protos/build/portal/app";
 import {
   AppAuthorizationServiceClient,
   GetUserAvailableClusterAppsResponse,
@@ -17,16 +16,14 @@ export const libGetUserAvailableClusterApps = async (
   userId: string,
   misServerUrl: string,
   scowApiAuthToken?: string,
-): Promise<ListAvailableAppsResponse> => {
+): Promise<GetUserAvailableClusterAppsResponse> => {
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
 
-  const reply = await asyncClientCall(client, "getUserAvailableClusterApps", {
+  return await asyncClientCall(client, "getUserAvailableClusterApps", {
     clusterId,
     userId,
   });
-
-  return { apps: reply.apps };
 };
 
 // 获取用户所有集群中所有可用的App

@@ -1,4 +1,5 @@
 import type { TextAreaProps } from "antd/es/input";
+import type { SearchProps } from "antd/es/input/Search";
 import type { ComponentType } from "react";
 
 import { Input, InputNumber, type InputNumberProps, Select, type SelectProps } from "antd";
@@ -11,21 +12,26 @@ import { TrimInput } from "./TrimInput";
 const commonInputStyles = css`
   font-size: 14px !important;
   font-weight: lighter;
-  border-radius: 8px;
+  border-radius: 4px;
+  box-sizing: border-box !important;
   flex: 1;
   width: 100%;
-  height: 42px;
+  height: 36px;
+  padding: 6px 16px !important;
+  box-shadow: none !important;
 
   &,
   .ant-input-affix-wrapper {
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
+    padding: 6px 16px !important;
   }
 
   ${focusedBorderAndShadowStyle}
 
   .ant-input {
     border: none !important;
+    padding: 0 !important;
     box-shadow: none !important;
   }
 
@@ -48,15 +54,34 @@ export const RoundedInput = styled(TrimInput)`
   ${commonInputStyles}
 `;
 
-export const RoundedSearch = styled(Input.Search)`
+export interface RoundedSearchOwnProps {
+  $height?: string;
+}
+
+export type RoundedSearchProps = SearchProps & RoundedSearchOwnProps;
+
+export const RoundedSearch: ComponentType<RoundedSearchProps> = styled(Input.Search)<RoundedSearchOwnProps>`
   ${commonInputStyles}
 
-  .ant-input-outlined::placeholder, &::placeholder {
+  &.ant-input-search {
+    padding: 0 !important;
+    height: auto;
+  }
+
+  .ant-input-wrapper .ant-input {
+    height: ${({ $height }) => $height ?? "36px"};
+    padding: 6px 16px !important;
+  }
+
+  .ant-input-outlined::placeholder,
+  &::placeholder {
     color: ${({ theme }) => theme.palette.gray[4]} !important;
+    font-size: 14px;
     font-weight: 300;
   }
   .ant-input-search-button {
     width: 60px;
+    height: ${({ $height }) => $height ?? "36px"};
     background: ${({ theme }) => theme.token.colorBgContainer};
     border-left: 1px solid ${({ theme }) => theme.palette.gray[4]};
     &:hover {
@@ -74,9 +99,11 @@ export const RoundedSearch = styled(Input.Search)`
 export const RoundedTextArea: ComponentType<TextAreaProps> = styled(Input.TextArea)`
   font-size: 14px !important;
   font-weight: lighter;
-  border-radius: 8px !important;
+  border-radius: 4px !important;
   width: 100%;
   min-height: 54px;
+  padding: 6px 16px !important;
+  box-shadow: none !important;
   border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
 
   ${focusedBorderAndShadowStyle}
@@ -96,14 +123,17 @@ export const RoundedTextArea: ComponentType<TextAreaProps> = styled(Input.TextAr
 export const RoundedPasswordInput = styled(Input.Password)`
   font-size: 14px !important;
   font-weight: lighter;
-  border-radius: 8px;
+  border-radius: 4px;
   flex: 1;
   width: 100%;
-  height: 42px;
+  height: 36px;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
 
   .ant-input {
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     border: 1px solid ${({ theme }) => theme.palette.gray[4]};
+    padding: 6px 16px !important;
   }
 
   .ant-input::placeholder {
@@ -118,16 +148,21 @@ export const RoundedInputNumber: ComponentType<InputNumberProps> = styled(InputN
   font-size: 14px !important;
   font-weight: lighter;
   flex: 1;
-  height: 42px;
+  height: 36px;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
 
   &,
   .ant-input-number {
-    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    border-radius: 4px !important;
     border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
   }
 
   .ant-input-number-input {
-    height: 42px;
+    height: 34px !important;
+    box-sizing: border-box !important;
+    padding: 6px 16px !important;
   }
 
   .ant-input-number-input::placeholder {
@@ -142,18 +177,25 @@ export const RoundedInputNumberWithAddonAfter: ComponentType<InputNumberProps> =
   font-size: 14px !important;
   font-weight: lighter;
   flex: 1;
-  height: 42px;
+  height: 36px;
   box-shadow: none !important;
 
   .ant-input {
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     border: 1px solid ${({ theme }) => theme.palette.gray[4]};
   }
 
   &.ant-input-number-group-wrapper .ant-input-number {
-    height: 42px;
-    border-radius: 8px 0 0 8px;
+    height: 36px !important;
+    box-sizing: border-box !important;
+    border-radius: 4px 0 0 4px;
     border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
+  }
+
+  &.ant-input-number-group-wrapper .ant-input-number-input {
+    height: 34px !important;
+    box-sizing: border-box !important;
+    padding: 6px 16px !important;
   }
 
   .ant-input-number-input::placeholder {
@@ -162,7 +204,7 @@ export const RoundedInputNumberWithAddonAfter: ComponentType<InputNumberProps> =
   }
 
   &.ant-input-number-group-wrapper {
-    border-radius: 8px;
+    border-radius: 4px;
   }
 
   &.ant-input-number-group-wrapper .ant-input-number-group {
@@ -188,17 +230,17 @@ export const RoundedInputNumberWithAddonAfter: ComponentType<InputNumberProps> =
 
   &.ant-input-number-group-wrapper .ant-select-selector {
     border-left: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
-    border-radius: 0 8px 8px 0 !important;
+    border-radius: 0 4px 4px 0 !important;
     box-shadow: none !important;
   }
 
   &.ant-input-number-group-wrapper .ant-input-number-group-addon .ant-select {
-    height: 42px;
+    height: 36px;
     margin: 0 !important;
   }
 
   &.ant-input-number-group-wrapper .ant-input-number-group-addon .ant-select-selector {
-    height: 42px !important;
+    height: 36px !important;
     border-color: ${({ theme }) => theme.palette.gray[4]} !important;
     display: flex;
     align-items: center;
@@ -236,14 +278,15 @@ export const AddonAfterSelect: ComponentType<SelectProps> = styled(Select).attrs
 })`
   font-size: 14px !important;
   font-weight: lighter;
-  height: 42px !important;
+  height: 36px !important;
   box-shadow: none !important;
 
   && .ant-select-selector {
+    box-sizing: border-box !important;
     border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
-    border-radius: 0 8px 8px 0 !important;
+    border-radius: 0 4px 4px 0 !important;
     border-left-width: 1px !important;
-    height: 42px !important;
+    height: 36px !important;
     padding: 0 10px !important;
     display: flex;
     align-items: center;

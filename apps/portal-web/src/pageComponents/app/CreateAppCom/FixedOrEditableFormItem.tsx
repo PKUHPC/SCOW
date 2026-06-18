@@ -1,7 +1,8 @@
+import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Select } from "antd";
+import { Form, Space } from "antd";
 import { NamePath } from "antd/es/form/interface";
 import { FormInstance } from "antd/lib";
 import { useEffect } from "react";
@@ -104,7 +105,8 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
       if (currentValue !== value) {
         form.setFieldsValue({ [name]: value });
       }
-      form.validateFields([name]);
+      form.setFields([{ name, value, errors: [] }]);
+      form.validateFields([name]).catch(() => undefined);
     }, [value]);
 
     return (
@@ -173,25 +175,20 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
       form.validateFields([name]);
     });
 
-    const getAttributeElement = (): JSX.Element => {
-      return (
-        <Select
-          options={selectOptions.map((x) => {
-            if (name === "maxTime" && !x.label) {
-              return {
-                label: formatMinutesToI18nDayHours(ensureNumberValue(x.value), t),
-                value: ensureNumberValue(x.value),
-              };
-            }
-            return {
-              label: `${x.label ? getI18nConfigCurrentText(x.label, languageId) : x.value}`,
-              value: isNumberAttribute ? ensureNumberValue(x.value) : x.value,
-            };
-          })}
-          onChange={onChange}
-        />
-      );
-    };
+    const currentValue = Form.useWatch(name, form);
+
+    const buttonOptions = selectOptions.map((x) => {
+      if (name === "maxTime" && !x.label) {
+        return {
+          label: formatMinutesToI18nDayHours(ensureNumberValue(x.value), t),
+          value: ensureNumberValue(x.value),
+        };
+      }
+      return {
+        label: `${x.label ? getI18nConfigCurrentText(x.label, languageId) : x.value}`,
+        value: isNumberAttribute ? ensureNumberValue(x.value) : x.value,
+      };
+    });
 
     return (
       <InlineFormItem
@@ -200,7 +197,22 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
         rules={rules}
         dependencies={ignoreDependenciesWhenFixed ? undefined : dependencies}
       >
-        {getAttributeElement()}
+        <Space wrap>
+          {buttonOptions.map((option) => (
+            <RoundedButton
+              size="large"
+              key={String(option.value)}
+              type={currentValue === option.value ? "primary" : "default"}
+              $selected={currentValue === option.value}
+              onClick={() => {
+                form.setFieldValue(name, option.value);
+                onChange?.(String(option.value));
+              }}
+            >
+              {option.label}
+            </RoundedButton>
+          ))}
+        </Space>
       </InlineFormItem>
     );
   } else if (reservedConfig?.type === "commandSelect") {

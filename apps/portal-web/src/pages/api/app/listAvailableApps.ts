@@ -2,11 +2,19 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
 import { AppServiceClient } from "@scow/protos/build/portal/app";
+import { AccountUnavailableReason } from "@scow/protos/build/portal/config";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
+
+export const AccountAvailability = Type.Object({
+  accountName: Type.String(),
+  available: Type.Boolean(),
+  unavailableReasons: Type.Array(Type.Enum(AccountUnavailableReason)),
+});
+export type AccountAvailability = Static<typeof AccountAvailability>;
 
 // Cannot use App from protos
 export const App = Type.Object({
@@ -14,6 +22,7 @@ export const App = Type.Object({
   name: Type.String(),
   logoPath: Type.Optional(Type.String()),
   availableAccounts: Type.Array(Type.String()),
+  accountAvailabilities: Type.Array(AccountAvailability),
 });
 export type App = Static<typeof App>;
 

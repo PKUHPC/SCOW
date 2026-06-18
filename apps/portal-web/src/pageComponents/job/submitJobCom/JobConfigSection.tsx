@@ -70,7 +70,10 @@ export const JobConfigSection = ({
   }, [clusterInfoQuery.data, form, homePath?.path, jobName]);
 
   return (
-    <TitledSectionCard title={<SectionTitle>{t(p("jobConfigSectionTitle"))}</SectionTitle>}>
+    <TitledSectionCard
+      style={{ paddingBottom: 40 }}
+      title={<SectionTitle>{t(p("jobConfigSectionTitle"))}</SectionTitle>}
+    >
       <Form form={form} colon={false} requiredMark={false} initialValues={{}}>
         <InlineFormItem
           name="workingDirectory"

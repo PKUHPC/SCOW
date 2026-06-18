@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import { config } from "src/server/config/env";
+import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/server/utils/app";
@@ -10,6 +11,7 @@ import { checkClusterAvailable } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
+import { fetchSubmitRecord } from "src/server/utils/submitRecord";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { parseIp } from "src/utils/parse";
@@ -82,6 +84,12 @@ export const InferenceJobInputSchema = z.object({
 });
 
 export type InferenceJobInput = z.infer<typeof InferenceJobInputSchema>;
+
+export const InferSubmitRecordFormDataSchema = InferenceJobInputSchema.omit({
+  clusterId: true,
+  account: true,
+  privateImageRepositoryCredentials: true,
+});
 
 export const submitInferJob = procedure
   .meta({
@@ -212,6 +220,27 @@ export const submitInferJob = procedure
       logger,
     );
 
+    const { clusterId: _cid, account: _acc, privateImageRepositoryCredentials: _cred, ...rawFormData } = input;
+    const parsedFormData = InferSubmitRecordFormDataSchema.safeParse(rawFormData);
+    if (!parsedFormData.success) {
+      logger.warn("Failed to parse infer form data for jobId %s: %o", jobId, parsedFormData.error);
+    } else {
+      try {
+        await em.persistAndFlush(
+          new AiJobSubmitRecord({
+            userId,
+            jobType: JobType.INFER,
+            jobId,
+            cluster: clusterId,
+            account,
+            formData: parsedFormData.data,
+          }),
+        );
+      } catch (e) {
+        logger.warn("Failed to save infer job submit record for jobId %s: %o", jobId, e);
+      }
+    }
+
     return { jobId };
   });
 
@@ -239,14 +268,14 @@ export const getSubmitInferenceParams = procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    return await driver.withJobDriver(
-      {
-        clusterId,
-        user: userId,
-      },
-      async (jobDriver) => {
-        return await jobDriver.getInferParams(sessionId, jobId);
-      },
+    const em = await forkEntityManager();
+    return fetchSubmitRecord(
+      em,
+      userId,
+      clusterId,
+      jobId,
+      InferenceJobInputSchema,
+      () => driver.withJobDriver({ clusterId, user: userId }, (d) => d.getInferParams(sessionId, jobId), logger),
       logger,
     );
   });

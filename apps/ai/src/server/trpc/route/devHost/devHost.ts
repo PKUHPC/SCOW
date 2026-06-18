@@ -1,6 +1,8 @@
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
+import { JobType } from "src/models/Job";
 import { clusters } from "src/server/config/clusters";
+import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -9,6 +11,7 @@ import { checkClusterAvailable, getCurrentClusters } from "src/server/utils/clus
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
+import { fetchSubmitRecord } from "src/server/utils/submitRecord";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
@@ -45,6 +48,12 @@ export const CreateDevHostInputSchema = z.object({
 });
 
 export type CreateDevHostInput = z.infer<typeof CreateDevHostInputSchema>;
+
+export const DevSubmitRecordFormDataSchema = CreateDevHostInputSchema.omit({
+  clusterId: true,
+  account: true,
+  privateImageRepositoryCredentials: true,
+});
 
 export const createDevHost = procedure
   .meta({
@@ -133,5 +142,64 @@ export const createDevHost = procedure
       logger,
     );
 
+    const { clusterId: _cid, account, privateImageRepositoryCredentials: _cred, ...rawFormData } = input;
+    const parsedFormData = DevSubmitRecordFormDataSchema.safeParse(rawFormData);
+    if (!parsedFormData.success) {
+      logger.warn("Failed to parse dev host form data for jobId %s: %o", devHostId, parsedFormData.error);
+    } else {
+      try {
+        await em.persistAndFlush(
+          new AiJobSubmitRecord({
+            userId,
+            jobType: JobType.DEV_HOST,
+            jobId: devHostId,
+            cluster: clusterId,
+            account,
+            formData: parsedFormData.data,
+          }),
+        );
+      } catch (e) {
+        logger.warn("Failed to save dev host job submit record for jobId %s: %o", devHostId, e);
+      }
+    }
+
     return { devHostId };
+  });
+
+export const getCreateDevParams = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/devHost/{jobId}/submissionParameters",
+      tags: ["devHost"],
+      summary: "Get Create Dev Host Parameters",
+    },
+  })
+  .input(
+    z.object({
+      clusterId: z.string(),
+      jobId: z.number(),
+      sessionId: z.string(),
+    }),
+  )
+  .output(CreateDevHostInputSchema)
+  .query(async ({ input, ctx: { user } }) => {
+    const { clusterId, jobId, sessionId } = input;
+    const userId = user.identityId;
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, clusterId);
+
+    const em = await forkEntityManager();
+    return fetchSubmitRecord(
+      em,
+      userId,
+      clusterId,
+      jobId,
+      CreateDevHostInputSchema,
+      async () => {
+        return driver.withJobDriver({ clusterId, user: userId }, (d) => d.getDevHostParams(sessionId, jobId), logger);
+      },
+      logger,
+    );
   });

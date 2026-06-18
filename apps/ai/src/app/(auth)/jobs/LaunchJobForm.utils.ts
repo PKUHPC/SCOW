@@ -2,7 +2,13 @@ import type { FormInstance } from "antd";
 
 import { createElement, isValidElement, type ReactNode } from "react";
 import { OwnerDisplayText, type ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
-import { getDefaultBuiltinEnvs, PREDEFINED_ENV_VAR, RESERVED_ENV_KEYS, shouldOmitEnvFromPayload } from "src/models/envVars";
+import {
+  getDefaultBuiltinEnvs,
+  PREDEFINED_ENV_VAR,
+  RESERVED_ENV_KEYS,
+  shouldOmitEnvFromPayload,
+} from "src/models/envVars";
+import { type TemplateFormData } from "src/server/trpc/route/jobs/templates";
 import { formatSize } from "src/utils/format";
 
 import type {
@@ -13,9 +19,11 @@ import type {
   ImageSourceKey,
   MaxTimeUnit,
   MountPointField,
+  PartitionInfo,
   QueueRow,
   QueueStats,
   ResourceSelectionField,
+  UnavailableParam,
   VersionGroup,
   VersionLookupEntry,
 } from "./LaunchJobForm.types";
@@ -164,7 +172,8 @@ export const renderCascaderLabels = (labels: ReactNode[], selectedOptions?: unkn
     .join(" / ");
 
   const ownerText = (selectedOptions as (Record<string, unknown> | null | undefined)[] | undefined)
-    ?.map((opt) => opt?.ownerText as string | undefined)
+    ?.filter((opt): opt is Record<string, unknown> => opt != null)
+    .map((opt) => opt.ownerText as string | undefined)
     .find(Boolean);
 
   if (!ownerText) return pathText;
@@ -399,3 +408,180 @@ export const buildEnvPayload = (envVariables: EnvVariableField[] | undefined) =>
   (envVariables ?? [])
     .filter((env) => env?.key && env?.value && !shouldOmitEnvFromPayload(env.key))
     .map((env) => ({ key: env.key.trim(), value: env.value.trim() }));
+
+export async function buildUnavailableParams(opts: {
+  fd: TemplateFormData;
+  templateCluster: string;
+  isAccountAvailable: (account: string) => boolean;
+  getAvailableAccounts: () => string[];
+  getClustersForAccount: (account: string) => string[];
+  selectedAccount: string | undefined;
+  selectedCluster: string | undefined;
+  selectedQueueKey: string | undefined;
+  currentQos: string | undefined;
+  fetchPartitions: (account: string, cluster: string) => Promise<PartitionInfo[] | undefined>;
+  t: (key: string) => string;
+  resolveClusterName?: (clusterId: string) => string;
+}): Promise<{
+  unavailableParams: UnavailableParam[];
+  matchedPartition: PartitionInfo | undefined;
+  effectiveAccount: string;
+  effectiveCluster: string;
+}> {
+  const {
+    fd,
+    templateCluster,
+    isAccountAvailable,
+    getAvailableAccounts,
+    getClustersForAccount,
+    selectedAccount,
+    selectedCluster,
+    selectedQueueKey,
+    currentQos,
+    fetchPartitions,
+    t,
+    resolveClusterName,
+  } = opts;
+
+  const unavailableParams: UnavailableParam[] = [];
+  const resolveCluster = (id: string) => (resolveClusterName ? resolveClusterName(id) : id);
+
+  const templateAccount = fd.account;
+  const templatePartition = fd.partition;
+  const templateQos = fd.qos;
+
+  // Step 1: 检查账户
+  const accountUnavailable = !!templateAccount && !isAccountAvailable(templateAccount);
+  let effectiveAccount: string;
+  if (accountUnavailable) {
+    const recommended = getAvailableAccounts()[0] ?? selectedAccount ?? "";
+    unavailableParams.push({
+      key: "account",
+      label: t("paramAccount"),
+      templateValue: templateAccount!,
+      recommendedValue: recommended || "-",
+    });
+    effectiveAccount = recommended;
+  } else {
+    effectiveAccount = templateAccount ?? selectedAccount ?? "";
+  }
+
+  // Step 2: 检查集群（基于 effectiveAccount 的可用集群）
+  const effectiveClusters = effectiveAccount ? getClustersForAccount(effectiveAccount) : [];
+  const clusterUnavailable = !!templateCluster && !effectiveClusters.includes(templateCluster);
+  let effectiveCluster: string;
+  if (clusterUnavailable) {
+    const recommended = effectiveClusters[0] ?? selectedCluster ?? "";
+    unavailableParams.push({
+      key: "cluster",
+      label: t("paramCluster"),
+      templateValue: resolveCluster(templateCluster),
+      recommendedValue: recommended ? resolveCluster(recommended) : "-",
+    });
+    effectiveCluster = recommended;
+  } else {
+    effectiveCluster = templateCluster;
+  }
+
+  // Step 3: 检查分区（基于 effectiveAccount + effectiveCluster 的可用分区）
+  let availablePartitions: PartitionInfo[] | undefined;
+  if (effectiveAccount && effectiveCluster && (templatePartition || templateQos)) {
+    availablePartitions = await fetchPartitions(effectiveAccount, effectiveCluster);
+  }
+
+  const partitionUnavailable =
+    !!templatePartition && (!availablePartitions || !availablePartitions.find((pt) => pt.name === templatePartition));
+  if (partitionUnavailable && templatePartition) {
+    const recommended = availablePartitions?.[0]?.name ?? selectedQueueKey ?? "";
+    unavailableParams.push({
+      key: "partition",
+      label: t("paramPartition"),
+      templateValue: templatePartition,
+      recommendedValue: recommended || "-",
+    });
+  }
+
+  // 确定用于后续校验的 matchedPartition
+  let matchedPartition: PartitionInfo | undefined;
+  if (partitionUnavailable) {
+    const fallbackPartitionName = availablePartitions?.[0]?.name ?? selectedQueueKey;
+    if (fallbackPartitionName && availablePartitions) {
+      matchedPartition = availablePartitions.find((pt) => pt.name === fallbackPartitionName);
+    } else if (selectedAccount && selectedCluster && selectedQueueKey) {
+      const currentPartitions = await fetchPartitions(selectedAccount, selectedCluster);
+      matchedPartition = currentPartitions?.find((pt) => pt.name === selectedQueueKey);
+    }
+  } else {
+    matchedPartition =
+      templatePartition && availablePartitions
+        ? availablePartitions.find((pt) => pt.name === templatePartition)
+        : undefined;
+  }
+
+  if (templateQos && matchedPartition && !(matchedPartition.qos ?? []).includes(templateQos)) {
+    unavailableParams.push({
+      key: "qos",
+      label: t("paramQos"),
+      templateValue: templateQos,
+      recommendedValue: currentQos ?? "-",
+    });
+  }
+
+  const templateGpuCount = fd.gpuCount as number | undefined;
+  if (templateGpuCount && matchedPartition && matchedPartition.gpus > 0) {
+    const maxGpu = Math.min(matchedPartition.gpus, matchedPartition.maxAcceleratorsPerPod ?? Infinity);
+    if (templateGpuCount > maxGpu) {
+      unavailableParams.push({
+        key: "gpuCount",
+        label: t("paramGpuCount"),
+        templateValue: String(templateGpuCount),
+        recommendedValue: "1",
+      });
+    }
+  }
+
+  const templateCoreCount = fd.coreCount as number | undefined;
+  if (
+    templateCoreCount &&
+    matchedPartition &&
+    matchedPartition.gpus === 0 &&
+    templateCoreCount > matchedPartition.cores
+  ) {
+    unavailableParams.push({
+      key: "coreCount",
+      label: t("paramCoreCount"),
+      templateValue: String(templateCoreCount),
+      recommendedValue: "1",
+    });
+  }
+
+  const filteredParams = unavailableParams.filter((p) => p.templateValue !== p.recommendedValue);
+
+  return { unavailableParams: filteredParams, matchedPartition, effectiveAccount, effectiveCluster };
+}
+
+export function normalizeMountPoints(raw: unknown[] | undefined): { source: string; target: string }[] {
+  return (raw ?? [])
+    .map((item: any) => ({
+      source: (typeof item?.path === "string" ? item.path : "").trim(),
+      target: (typeof item?.target === "string" ? item.target : "").trim(),
+    }))
+    .filter((item) => item.source || item.target);
+}
+
+export function normalizeEnvVariables(raw: unknown[] | undefined): { key: string; value: string }[] {
+  return (raw ?? [])
+    .filter((env: any) => env?.key && env?.value)
+    .map((env: any) => ({ key: env.key, value: env.value }));
+}
+
+export function cleanFormData(
+  fd: Record<string, unknown>,
+  unavailableParams: { key: string }[],
+): Record<string, unknown> {
+  const cleaned = { ...fd };
+  unavailableParams.forEach((param) => {
+    delete cleaned[param.key];
+  });
+  return cleaned;
+}

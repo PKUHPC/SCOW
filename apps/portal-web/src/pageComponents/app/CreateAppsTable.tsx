@@ -46,30 +46,16 @@ const SearchContainer = styled(Space)`
   justify-content: space-between;
   background: ${({ theme }) => theme.token.colorBgContainer};
   border-radius: 12px;
-  padding: 12px 10px 16px 20px;
+  padding: 12px 10px 12px 20px;
 `;
 
-const AppSearch = styled(RoundedSearch)`
-  height: 36px !important;
-  overflow: hidden;
+const OuterContainer = styled.div`
+  width: 100%;
+  padding: 0 24px;
 
-  .ant-input-group,
-  .ant-input-wrapper {
-    height: 100%;
-  }
-
-  .ant-input {
-    height: 100%;
-    line-height: 34px;
-  }
-
-  .ant-input-search-button .ant-wave,
-  .ant-input-search-button [class*="ant-wave"],
-  .ant-input-search-button [class*="wave-motion"] {
-    display: none !important;
-    animation: none !important;
-    transition: none !important;
-    box-shadow: none !important;
+  .ant-spin-nested-loading,
+  .ant-spin-container {
+    width: 100%;
   }
 `;
 
@@ -136,114 +122,108 @@ export const CreateAppsTable: React.FC<Props> = ({
   }, [selectedCluster, filterForm]);
 
   return (
-    <Spin spinning={isLoading} tip={isLoading ? t(p("loading")) : ""} style={{ marginTop: "150px" }}>
-      <SearchContainer>
-        <Space wrap>
-          <span style={{ marginRight: "8px" }}>{t(p("cluster"))}</span>
-          <RoundedButton
-            size="middle"
-            type={selectedCluster === undefined ? "primary" : "default"}
-            $selected={!selectedCluster}
-            onClick={() => {
-              setSelectedCluster(undefined);
-            }}
-          >
-            {t(p("all"))}
-          </RoundedButton>
-          {currentClusters.map((cluster) => {
-            const button = (
-              <RoundedButton
-                size="middle"
-                key={cluster.id}
-                type={selectedCluster === cluster.id ? "primary" : "default"}
-                $selected={selectedCluster === cluster.id}
-                onClick={() => {
-                  setSelectedCluster(cluster.id);
-                }}
-              >
-                {getI18nConfigCurrentText(cluster.name, languageId)}
-              </RoundedButton>
-            );
+    <OuterContainer>
+      <Spin spinning={isLoading} tip={isLoading ? t(p("loading")) : ""} style={{ marginTop: "150px" }}>
+        <SearchContainer>
+          <Space wrap>
+            <span style={{ marginRight: "8px" }}>{t(p("cluster"))}</span>
+            {currentClusters.map((cluster) => {
+              const button = (
+                <RoundedButton
+                  size="middle"
+                  key={cluster.id}
+                  type={selectedCluster === cluster.id ? "primary" : "default"}
+                  $selected={selectedCluster === cluster.id}
+                  $height="32px"
+                  onClick={() => {
+                    setSelectedCluster(cluster.id);
+                  }}
+                >
+                  {getI18nConfigCurrentText(cluster.name, languageId)}
+                </RoundedButton>
+              );
 
-            return (
-              <Tooltip key={cluster.id} arrow={false} align={{ offset: [0, -12] }}>
-                <span>{button}</span>
-              </Tooltip>
-            );
-          })}
-        </Space>
-        <Form<FilterForm> layout="inline" form={filterForm} initialValues={initialFilterQuery}>
-          <Form.Item name="appName">
-            <AppSearch
-              placeholder={t(p("searchPlaceholder"))}
-              onSearch={async () => {
-                const { appName } = await filterForm.validateFields();
-                setQuery({ appName: appName === "" ? undefined : appName?.trim() });
-              }}
-              size="middle"
-              enterButton
-            />
-          </Form.Item>
-        </Form>
-      </SearchContainer>
-      <AppListContainer>
-        {!isLoading && filteredData?.length === 0 ? (
-          <div style={{ textAlign: "center", marginTop: "100px", fontSize: "16px" }}>
-            {query.appName ? t(p("noSearchResult"), [query.appName]) : t(p("notFoundMessage"))}
-          </div>
-        ) : (
-          <CardContainer>
-            <Row gutter={16} style={{ flex: 1, width: "100%" }}>
-              {filteredData?.map((app) => (
-                <Col xs={24} sm={12} md={8} lg={6} xl={4} xxl={4} key={app.id} style={{ marginBottom: "16px" }}>
-                  <Card
-                    styles={{
-                      body: { display: "flex", flexDirection: "column", height: "100%" },
-                    }}
-                  >
-                    <Tooltip title={`${t(p("create"))}${app.name}`} placement="bottom">
-                      <div
-                        onClick={() => {
-                          setSelectedAppInfo(app);
-                        }}
-                      >
-                        <AvatarContainer>
-                          {app.logoPath && imageErrorMap[app.id] !== true ? (
-                            <img
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                objectFit: "contain",
-                                width: "150px",
-                                height: "150px",
-                              }}
-                              src={join(publicConfig.PUBLIC_PATH, app.logoPath)}
-                              onError={() => handleImageError(app.id)}
-                            />
-                          ) : (
-                            <Avatar
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: "0",
-                              }}
-                              size={150}
-                              icon={<PictureOutlined />}
-                            />
-                          )}
-                        </AvatarContainer>
-                        <NameContainer>{app.name}</NameContainer>
-                      </div>
-                    </Tooltip>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </CardContainer>
-        )}
-      </AppListContainer>
-    </Spin>
+              return (
+                <Tooltip key={cluster.id} arrow={false} align={{ offset: [0, -12] }}>
+                  <span>{button}</span>
+                </Tooltip>
+              );
+            })}
+          </Space>
+          <Form<FilterForm> layout="inline" form={filterForm} initialValues={initialFilterQuery}>
+            <Form.Item name="appName">
+              <RoundedSearch
+                placeholder={t(p("searchPlaceholder"))}
+                onSearch={async () => {
+                  const { appName } = await filterForm.validateFields();
+                  setQuery({ appName: appName === "" ? undefined : appName?.trim() });
+                }}
+                size="large"
+                $height="32px"
+                enterButton
+              />
+            </Form.Item>
+          </Form>
+        </SearchContainer>
+        <AppListContainer>
+          {!isLoading && filteredData?.length === 0 ? (
+            <div style={{ textAlign: "center", marginTop: "100px", fontSize: "16px" }}>
+              {query.appName ? t(p("noSearchResult"), [query.appName]) : t(p("notFoundMessage"))}
+            </div>
+          ) : (
+            <CardContainer>
+              <Row gutter={16} style={{ flex: 1, width: "100%" }}>
+                {filteredData?.map((app) => (
+                  <Col xs={24} sm={12} md={8} lg={6} xl={4} xxl={4} key={app.id} style={{ marginBottom: "16px" }}>
+                    <Card
+                      styles={{
+                        body: { display: "flex", flexDirection: "column", height: "100%" },
+                      }}
+                    >
+                      <Tooltip title={`${t(p("create"))}${app.name}`} placement="bottom">
+                        <div
+                          onClick={() => {
+                            setSelectedAppInfo(app);
+                          }}
+                        >
+                          <AvatarContainer>
+                            {app.logoPath && imageErrorMap[app.id] !== true ? (
+                              <img
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  objectFit: "contain",
+                                  width: "150px",
+                                  height: "150px",
+                                }}
+                                src={join(publicConfig.PUBLIC_PATH, app.logoPath)}
+                                onError={() => handleImageError(app.id)}
+                              />
+                            ) : (
+                              <Avatar
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  borderRadius: "0",
+                                }}
+                                size={150}
+                                icon={<PictureOutlined />}
+                              />
+                            )}
+                          </AvatarContainer>
+                          <NameContainer>{app.name}</NameContainer>
+                        </div>
+                      </Tooltip>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            </CardContainer>
+          )}
+        </AppListContainer>
+      </Spin>
+    </OuterContainer>
   );
 };

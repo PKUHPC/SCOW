@@ -100,51 +100,6 @@ message ListRunningJobsResponse {
   repeated common.RunningJob results = 1;
 }
 
-message ListJobTemplatesRequest {
-  string user_id = 1;
-  string cluster = 2;
-}
-
-message JobTemplateInfo {
-  string id = 1;
-  string job_name = 2;
-  google.protobuf.Timestamp submit_time = 3;
-  optional string comment = 4;
-  optional string cluster = 5;
-}
-
-message ListJobTemplatesResponse {
-  repeated JobTemplateInfo results = 1;
-}
-
-message GetJobTemplateRequest {
-  string user_id = 1;
-  string cluster = 2;
-  string template_id = 3;
-}
-
-message GetJobTemplateResponse {
-  JobTemplate template = 1;
-}
-
-message DeleteJobTemplateRequest {
-  string user_id = 1;
-  string cluster = 2;
-  string template_id = 3;
-}
-
-message RenameJobTemplateResponse {
-}
-
-message RenameJobTemplateRequest {
-  string user_id = 1;
-  string cluster = 2;
-  string template_id = 3;
-  string job_name =4 ;
-}
-
-message DeleteJobTemplateResponse {
-}
 
 message SubmitJobRequest {
   string user_id = 1;
@@ -202,26 +157,6 @@ message CalculateJobPriceResponse {
   common.Money account_price = 1;
 }
 
-message SaveAsJobTemplateRequest {
-  string user_id = 1;
-  string job_name = 2;
-  string account = 3;
-  string cluster = 4;
-  string partition = 5;
-  string qos = 6;
-  uint32 node_count = 7;
-  uint32 core_count = 8;
-  optional uint32 gpu_count = 9;
-  string memory_mb = 10;
-  string command = 11;
-  uint32 max_time = 12; // 最长运行时间
-  TimeUnit max_time_unit = 13; // 最长运行时间单位，默认为MINUTES
-  reserved 14 to 17;
-}
-
-message SaveAsJobTemplateResponse {
-}
-
 service JobService {
   rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
 
@@ -230,16 +165,6 @@ service JobService {
   rpc ListAllJobs(ListAllJobsRequest) returns (ListAllJobsResponse);
 
   rpc ListRunningJobs(ListRunningJobsRequest) returns (ListRunningJobsResponse);
-
-  rpc ListJobTemplates(ListJobTemplatesRequest) returns (ListJobTemplatesResponse);
-
-  rpc GetJobTemplate(GetJobTemplateRequest) returns (GetJobTemplateResponse);
-
-  rpc DeleteJobTemplate(DeleteJobTemplateRequest) returns (DeleteJobTemplateResponse);
-
-  rpc RenameJobTemplate(RenameJobTemplateRequest) returns (RenameJobTemplateResponse);
-
-  rpc SaveAsJobTemplate(SaveAsJobTemplateRequest) returns (SaveAsJobTemplateResponse);
 
   rpc SubmitJob(SubmitJobRequest) returns (SubmitJobResponse);
 

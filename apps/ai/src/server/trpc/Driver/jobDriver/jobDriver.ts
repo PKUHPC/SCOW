@@ -69,6 +69,7 @@ export interface JobDriver {
   submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number>;
   getTrainParams(sessionId: string, jobId: number): Promise<TrainJobInput>;
   createDevHost(inputParams: CreateDevHostInput, extraParams: CreateDevHostExtraParams): Promise<number>;
+  getDevHostParams(sessionId: string, jobId: number): Promise<CreateDevHostInput>;
 }
 
 function createJobDriver(opts: {

@@ -2,12 +2,12 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
 import { OperationType } from "@scow/lib-operation-log";
-import { JobServiceClient } from "@scow/protos/build/portal/job";
+import { JobTemplateServiceClient } from "@scow/protos/build/server/job_template";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
-import { getClient } from "src/utils/client";
+import { getMisClient } from "src/utils/misClient";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
@@ -15,15 +15,16 @@ export const RenameJobTemplateSchema = typeboxRouteSchema({
   method: "POST",
 
   body: Type.Object({
-    cluster: Type.String(),
-    templateId: Type.String(),
-    jobName: Type.String(),
+    id: Type.Number(),
+    newName: Type.String(),
+    templateName: Type.String(),
   }),
 
   responses: {
     204: Type.Null(),
     404: Type.Object({ code: Type.Literal("TEMPLATE_NOT_FOUND") }),
-    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
+    409: Type.Object({ code: Type.Literal("ALREADY_EXISTS") }),
+    403: Type.Object({ code: Type.Literal("PERMISSION_DENIED") }),
   },
 });
 
@@ -36,26 +37,24 @@ export default /* #__PURE__*/ route(RenameJobTemplateSchema, async (req, res) =>
     return;
   }
 
-  const { cluster, templateId, jobName } = req.body;
+  const { id, newName, templateName } = req.body;
 
-  const client = getClient(JobServiceClient);
+  const client = getMisClient(JobTemplateServiceClient);
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.updateJobTemplate,
     operationTypePayload: {
-      jobTemplateId: templateId,
-      newJobTemplateId: jobName,
-      clusterId: cluster,
+      jobTemplateId: templateName,
+      newJobTemplateId: newName,
     },
   };
 
   return asyncUnaryCall(client, "renameJobTemplate", {
-    templateId,
     userId: info.identityId,
-    cluster,
-    jobName,
+    id,
+    newName,
   }).then(
     async () => {
       await callLog({ ...logInfo }, OperationResult.SUCCESS);
@@ -64,7 +63,8 @@ export default /* #__PURE__*/ route(RenameJobTemplateSchema, async (req, res) =>
     handlegRPCError(
       {
         [status.NOT_FOUND]: () => ({ 404: { code: "TEMPLATE_NOT_FOUND" } }) as const,
-        [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+        [status.ALREADY_EXISTS]: () => ({ 409: { code: "ALREADY_EXISTS" } }) as const,
+        [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" } }) as const,
       },
       async () => await callLog({ ...logInfo }, OperationResult.FAIL),
     ),

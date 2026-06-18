@@ -9,7 +9,7 @@ export const FixedFooter = styled.div`
   align-items: center;
   justify-content: flex-end;
   gap: 24px;
-  padding: 10.5px 32px;
+  padding: 10px 32px;
   margin-top: 12px;
   background: ${({ theme }) => theme.token.colorBgContainer};
   border-top: 1px solid ${({ theme }) => theme.token.colorSplit};

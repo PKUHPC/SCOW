@@ -3,10 +3,11 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { getClusterConfigs } from "@scow/config/build/cluster";
-import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
+import { moneyToNumber } from "@scow/lib-decimal";
+import { getUserAccountsClusterIds } from "@scow/lib-scow-resource/build/utils";
 import {
   convertClusterConfigsToServerProtoType,
-  libGetAccounts,
+  getClientFn,
   libGetCurrentActivatedClusters,
   libGetUserInfo,
   NO_CLUSTERS,
@@ -14,16 +15,62 @@ import {
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { ConfigServiceServer, ConfigServiceService, Partition } from "@scow/protos/build/common/config";
 import {
+  AccountUnavailableReason,
   ConfigServiceServer as runTimeConfigServiceServer,
   ConfigServiceService as runTimeConfigServiceService,
 } from "@scow/protos/build/portal/config";
-import { AccountStatusFilter } from "@scow/protos/build/portal/job";
+import { AccountState, AccountStatus, UserServiceClient, UserStatus } from "@scow/protos/build/server/user";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { callOnOne, checkActivatedClusters, getAdapterClient } from "src/utils/clusters";
+
+export const getAccountUnavailableReasons = (accountStatus: AccountStatus | undefined) => {
+  if (!accountStatus) {
+    return [];
+  }
+
+  const reasons: AccountUnavailableReason[] = [];
+
+  if (accountStatus.userStatus === UserStatus.BLOCKED) {
+    reasons.push(AccountUnavailableReason.USER_BLOCKED);
+  }
+
+  const jobChargeLimit = accountStatus.jobChargeLimit ? moneyToNumber(accountStatus.jobChargeLimit) : undefined;
+  const usedJobCharge = accountStatus.usedJobCharge ? moneyToNumber(accountStatus.usedJobCharge) : undefined;
+  if (jobChargeLimit !== undefined && usedJobCharge !== undefined) {
+    if (usedJobCharge >= jobChargeLimit) {
+      reasons.push(AccountUnavailableReason.USER_QUOTA_EXCEEDED);
+    }
+  }
+
+  //AccountState.ACCOUNT_FROZEN这个状态目前还未使用
+  // if (accountStatus.accountState === AccountState.ACCOUNT_FROZEN) {
+  //   reasons.push(AccountUnavailableReason.ACCOUNT_FROZEN);
+  // }
+
+  if (accountStatus.isInWhitelist) {
+    return reasons;
+  }
+
+  if (accountStatus.accountState === AccountState.ACCOUNT_BLOCKED_BY_ADMIN) {
+    reasons.push(AccountUnavailableReason.ACCOUNT_BLOCKED);
+  }
+
+  const balance = accountStatus.balance ? moneyToNumber(accountStatus.balance) : undefined;
+  const blockThresholdAmount = accountStatus.blockThresholdAmount
+    ? moneyToNumber(accountStatus.blockThresholdAmount)
+    : undefined;
+  if (balance !== undefined && blockThresholdAmount !== undefined) {
+    if (balance <= blockThresholdAmount) {
+      reasons.push(AccountUnavailableReason.ACCOUNT_DEBT);
+    }
+  }
+
+  return reasons;
+};
 
 export const staticConfigServiceServer = plugin((server) => {
   return server.addService<ConfigServiceServer>(ConfigServiceService, {
@@ -150,9 +197,9 @@ export const runtimeConfigServiceServer = plugin((server) => {
     },
 
     /**
-     * 获取可用账户下的可用集群
+     * 获取用户账户集群映射及账户不可用原因
      */
-    getAvailableAccountsAndClusters: async ({ request, logger }) => {
+    getAccountClustersWithUnavailableReasons: async ({ request, logger }) => {
       const { userId } = request;
 
       const activatedClusters = config.MIS_DEPLOYED
@@ -170,6 +217,35 @@ export const runtimeConfigServiceServer = plugin((server) => {
       if (currentClusterIds.length === 0) {
         return [{ accountClusters: [] }];
       }
+
+      const userInfo = config.MIS_DEPLOYED
+        ? await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)
+        : undefined;
+      const tenantName = userInfo?.tenantName;
+      const accounts = userInfo
+        ? (userInfo.affiliations ?? [])
+            .filter((affiliation) => affiliation.accountState !== AccountState.ACCOUNT_DELETED)
+            .map((affiliation) => affiliation.accountName)
+        : undefined;
+
+      if (config.MIS_DEPLOYED && accounts?.length === 0) {
+        return [{ accountClusters: [] }];
+      }
+
+      const accountStatuses =
+        config.MIS_DEPLOYED && tenantName && accounts
+          ? (
+              await asyncClientCall(
+                getClientFn(config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)(UserServiceClient),
+                "getUserStatus",
+                {
+                  userId,
+                  tenantName,
+                  accountNames: accounts,
+                },
+              )
+            ).accountStatuses
+          : {};
 
       const buildAccountClusters = async (
         clusterIds: string[],
@@ -214,28 +290,22 @@ export const runtimeConfigServiceServer = plugin((server) => {
       };
 
       const convertAccountClustersToGrpc = (accountClusters: Record<string, string[]>) => {
-        return Object.entries(accountClusters).map(([account, clusters]) => ({
-          accountName: account,
-          clusters,
-        }));
+        const accountNames = accounts ?? Object.keys(accountClusters);
+        return accountNames.map((account) => {
+          const unavailableReasons = getAccountUnavailableReasons(accountStatuses[account]);
+          return {
+            accountName: account,
+            clusters: accountClusters[account] ?? [],
+            available: unavailableReasons.length === 0,
+            unavailableReasons,
+          };
+        });
       };
 
       if (!commonConfig.scowResource?.enabled) {
-        let misAccounts: string[] | undefined;
-        if (config.MIS_DEPLOYED && commonConfig.scowApi?.auth?.token) {
-          const { accounts } = await libGetAccounts(
-            logger,
-            userId,
-            AccountStatusFilter.UNBLOCKED_ONLY,
-            config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token,
-          );
-          misAccounts = accounts;
-        }
-
         const accountClusters = await buildAccountClusters(currentClusterIds, async (clusterId) => {
-          if (misAccounts) {
-            return misAccounts;
+          if (config.MIS_DEPLOYED) {
+            return accounts;
           }
 
           const client = getAdapterClient(clusterId);
@@ -251,42 +321,18 @@ export const runtimeConfigServiceServer = plugin((server) => {
         return [{ accountClusters: convertAccountClustersToGrpc(accountClusters) }];
       }
 
-      const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
-      const tenantName = userInfo.tenantName;
-
-      const { accounts } = await libGetAccounts(
-        logger,
-        userId,
-        AccountStatusFilter.UNBLOCKED_ONLY,
-        config.MIS_SERVER_URL,
-        commonConfig.scowApi?.auth?.token,
-      );
-
-      const assignedClusterPartitionsByAccount = await getUserAccountsClusterPartitionsByAccount(
-        commonConfig.scowResource,
-        accounts,
-        tenantName,
-      );
-
       const currentClusterSet = new Set(currentClusterIds);
-      const clusterAccountMap = new Map<string, Set<string>>();
-
-      Object.entries(assignedClusterPartitionsByAccount).forEach(([accountName, clusterPartitions]) => {
-        Object.entries(clusterPartitions ?? {}).forEach(([clusterId, partitions]) => {
-          if (!currentClusterSet.has(clusterId) || partitions.length === 0) {
-            return;
-          }
-
-          if (!clusterAccountMap.has(clusterId)) {
-            clusterAccountMap.set(clusterId, new Set());
-          }
-          clusterAccountMap.get(clusterId)!.add(accountName);
-        });
-      });
-
-      const accountClusters = await buildAccountClusters(currentClusterIds, async (clusterId) => {
-        return Array.from(clusterAccountMap.get(clusterId) ?? []);
-      });
+      const accountClusters = Object.fromEntries(
+        await Promise.all(
+          (accounts ?? []).map(async (accountName) => {
+            const clusterIds = await getUserAccountsClusterIds(commonConfig.scowResource!, [accountName], tenantName);
+            return [
+              accountName,
+              Array.from(new Set(clusterIds)).filter((clusterId) => currentClusterSet.has(clusterId)),
+            ] as const;
+          }),
+        ),
+      ) as Record<string, string[]>;
 
       return [{ accountClusters: convertAccountClustersToGrpc(accountClusters) }];
     },

@@ -110,3 +110,12 @@ export const statusColors: Record<string, string> = {
   TIMEOUT: "#5FBDEC",
   ENDED: "#6A6A6A",
 };
+
+export enum AccountUnavailableReason {
+  ACCOUNT_UNAVAILABLE_REASON_UNSPECIFIED = 0,
+  USER_BLOCKED = 1,
+  ACCOUNT_FROZEN = 2,
+  ACCOUNT_BLOCKED = 3,
+  ACCOUNT_DEBT = 4,
+  USER_QUOTA_EXCEEDED = 5,
+}

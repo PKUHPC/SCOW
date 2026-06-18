@@ -3,13 +3,14 @@ import type { ReactNode } from "react";
 
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { focusedBorderAndShadowStyle } from "@scow/lib-web/build/components/styledAntdCom/common";
+import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { cascaderArrowIcon, selectionArrowIcon } from "@scow/lib-web/build/icons/commonIcons";
 import { Button, Cascader, Form, Tooltip } from "antd";
 import { isValidElement, useRef, useMemo } from "react";
 import { AutoScrollText } from "src/components/AutoScrollText";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { createGlobalStyle, styled, useTheme } from "styled-components";
-import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+
 import { createMountTargetRules } from "./common";
 import { CATEGORY_VALUE_PRIVATE } from "./LaunchJobForm.utils";
 
@@ -384,10 +385,10 @@ export const ResourceSelectorList = ({
   const options = useMemo(() => generateOptions(categories), [categories]);
   const listRules = emptyMessage
     ? [
-      {
-        validator: async (_: unknown, value: unknown[]) => validateListNotEmpty(_, value, emptyMessage),
-      },
-    ]
+        {
+          validator: async (_: unknown, value: unknown[]) => validateListNotEmpty(_, value, emptyMessage),
+        },
+      ]
     : [];
   const requiredMessageText = requiredMessage ?? t(p("defaultRequiredMessage"));
   const removeAriaLabel = t(p("removeAriaLabel"));
@@ -398,9 +399,8 @@ export const ResourceSelectorList = ({
     const isPrivateCategory = normalizedRootCategory === CATEGORY_VALUE_PRIVATE;
     const leafId = value?.[value.length - 1];
     const id = typeof leafId === "string" ? Number(leafId) : (leafId ?? undefined);
-    const privatePath = isPrivateCategory && id !== undefined && !Number.isNaN(id)
-      ? privatePathLookup?.get(id as number)
-      : undefined;
+    const privatePath =
+      isPrivateCategory && id !== undefined && !Number.isNaN(id) ? privatePathLookup?.get(id as number) : undefined;
     if (privatePath) {
       form.setFieldValue([name, fieldName, "target"], privatePath);
     } else {
@@ -450,10 +450,7 @@ export const ResourceSelectorList = ({
                     ),
                   ]}
                 >
-                  <RoundedInput
-                    size="large"
-                    placeholder={t(pMount("targetPlaceholder"))}
-                  />
+                  <RoundedInput size="large" placeholder={t(pMount("targetPlaceholder"))} />
                 </Form.Item>
 
                 <RowRemoveButton

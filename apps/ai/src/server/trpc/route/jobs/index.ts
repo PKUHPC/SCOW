@@ -29,6 +29,7 @@ import {
   getSubmitTrainParams,
   trainJob,
 } from "./jobs";
+import { deleteTemplate, listTemplates, renameTemplate, saveTemplate } from "./templates";
 
 export const jobsRouter = router({
   listAllAvailableAppsFromAllClusters,
@@ -57,4 +58,8 @@ export const jobsRouter = router({
   getJobDetails,
   listAppAvailableAccountsAndClusters,
   calculateJobPrice,
+  saveTemplate,
+  listTemplates,
+  deleteTemplate,
+  renameTemplate,
 });

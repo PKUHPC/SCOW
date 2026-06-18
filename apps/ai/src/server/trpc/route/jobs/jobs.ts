@@ -5,8 +5,10 @@ import { moneyToNumber } from "@scow/lib-decimal";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { libCalculateJobPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
 import { TRPCError } from "@trpc/server";
+import { JobType } from "src/models/Job";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
+import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -15,6 +17,7 @@ import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
+import { fetchSubmitRecord } from "src/server/utils/submitRecord";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { parseIp } from "src/utils/parse";
@@ -110,6 +113,12 @@ export const TrainJobInputSchema = z.object({
 });
 
 export type TrainJobInput = z.infer<typeof TrainJobInputSchema>;
+
+export const TrainSubmitRecordFormDataSchema = TrainJobInputSchema.omit({
+  clusterId: true,
+  account: true,
+  privateImageRepositoryCredentials: true,
+});
 
 export const MAX_JOB_NAME_LENGTH = 43;
 
@@ -247,6 +256,27 @@ export const trainJob = procedure
       logger,
     );
 
+    const { clusterId: _cid, account: _acc, privateImageRepositoryCredentials: _cred, ...rawFormData } = input;
+    const parsedFormData = TrainSubmitRecordFormDataSchema.safeParse(rawFormData);
+    if (!parsedFormData.success) {
+      logger.warn("Failed to parse train form data for jobId %s: %o", jobId, parsedFormData.error);
+    } else {
+      try {
+        await em.persistAndFlush(
+          new AiJobSubmitRecord({
+            userId,
+            jobType: JobType.TRAIN,
+            jobId,
+            cluster: clusterId,
+            account,
+            formData: parsedFormData.data,
+          }),
+        );
+      } catch (e) {
+        logger.warn("Failed to save train job submit record for jobId %s: %o", jobId, e);
+      }
+    }
+
     return { jobId };
   });
 
@@ -274,14 +304,14 @@ export const getSubmitTrainParams = procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    return await driver.withJobDriver(
-      {
-        clusterId,
-        user: userId,
-      },
-      async (jobDriver) => {
-        return await jobDriver.getTrainParams(sessionId, jobId);
-      },
+    const em = await forkEntityManager();
+    return fetchSubmitRecord(
+      em,
+      userId,
+      clusterId,
+      jobId,
+      TrainJobInputSchema,
+      () => driver.withJobDriver({ clusterId, user: userId }, (d) => d.getTrainParams(sessionId, jobId), logger),
       logger,
     );
   });

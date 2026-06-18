@@ -1,6 +1,7 @@
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Select } from "antd";
+import { App } from "antd";
 import { useCallback, useEffect, useMemo } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
@@ -79,11 +80,11 @@ export const CommandSelect: React.FC<CommandSelectProps> = ({
   }, [isLoading, options, value, onChange]);
 
   if (error || (!isLoading && !data)) {
-    return <Input placeholder={i18nPlaceholder} value={value} onChange={(e) => onChange?.(e.target.value)} />;
+    return <RoundedInput placeholder={i18nPlaceholder} value={value} onChange={(e) => onChange?.(e.target.value)} />;
   }
 
   return (
-    <Select
+    <RoundedSelect
       loading={isLoading}
       placeholder={i18nPlaceholder}
       options={options}

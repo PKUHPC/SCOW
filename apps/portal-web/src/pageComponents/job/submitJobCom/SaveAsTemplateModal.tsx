@@ -37,6 +37,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({ open, 
       await onSave(trimmedName);
       onClose();
       form.resetFields();
+    } catch {
+      // keep modal open on failure; caller is responsible for showing error message
     } finally {
       setLoading(false);
     }

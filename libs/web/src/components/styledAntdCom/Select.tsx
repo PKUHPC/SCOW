@@ -29,22 +29,23 @@ export const RoundedSelect: ComponentType<SelectProps> = styled(SelectContainer)
   .ant-select {
     font-size: 14px !important;
     font-weight: lighter;
-    height: 42px !important;
+    height: 36px !important;
     box-shadow: none !important;
     width: 100%;
   }
 
   .ant-select-selector {
     border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     box-shadow: none !important;
-    height: 42px !important;
+    height: 36px !important;
     display: flex;
     align-items: center;
   }
 
   .ant-select-selection-item {
     font-size: 14px !important;
+    border-radius: 4px !important;
     display: flex;
     align-items: center;
   }
@@ -62,6 +63,14 @@ export const RoundedSelect: ComponentType<SelectProps> = styled(SelectContainer)
   }
 
   ${focusedBorderAndShadowStyle}
+
+  .ant-select-dropdown {
+    border-radius: 4px !important;
+  }
+
+  .ant-select-dropdown .ant-select-item {
+    border-radius: 4px !important;
+  }
 
   .ant-select-item-option-selected {
     color: ${({ theme }) => theme.token.colorPrimary} !important;

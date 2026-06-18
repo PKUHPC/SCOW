@@ -1,38 +1,39 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
-import { JobServiceClient } from "@scow/protos/build/portal/job";
+import { JobTemplateServiceClient } from "@scow/protos/build/server/job_template";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { getClient } from "src/utils/client";
+import { getMisClient } from "src/utils/misClient";
 import { route } from "src/utils/route";
 
-// Cannot use JobTemplateInfo from protos
-export const JobTemplateInfo = Type.Object({
-  id: Type.String(),
-  jobName: Type.String(),
-  submitTime: Type.Optional(Type.String()),
-  comment: Type.Optional(Type.String()),
-  cluster: Type.Optional(Type.String()),
+export const JobTemplateDetail = Type.Object({
+  id: Type.Number(),
+  templateName: Type.String(),
+  cluster: Type.String(),
+  account: Type.String(),
+  partition: Type.String(),
+  qos: Type.String(),
+  nodeCount: Type.Number(),
+  coreCount: Type.Number(),
+  gpuCount: Type.Number(),
+  maxTime: Type.Number(),
+  maxTimeUnit: Type.Number(),
+  memoryMb: Type.Optional(Type.Number()),
+  command: Type.Optional(Type.String()),
+  createdAt: Type.String(),
 });
 
-export type JobTemplateInfo = Static<typeof JobTemplateInfo>;
+export type JobTemplateDetail = Static<typeof JobTemplateDetail>;
+
 export const ListJobTemplatesSchema = typeboxRouteSchema({
   method: "GET",
 
-  query: Type.Object({
-    clusters: Type.Union([Type.String(), Type.Array(Type.String())]),
-  }),
+  query: Type.Object({}),
 
   responses: {
     200: Type.Object({
-      results: Type.Array(JobTemplateInfo),
+      results: Type.Array(JobTemplateDetail),
     }),
-
-    400: Type.Object({
-      message: Type.String(),
-    }),
-
-    404: Type.Null(),
   },
 });
 
@@ -45,35 +46,30 @@ export default route(ListJobTemplatesSchema, async (req, res) => {
     return;
   }
 
-  const { clusters } = req.query;
-  const clusterIds = Array.from(new Set(Array.isArray(clusters) ? clusters : [clusters]));
+  const client = getMisClient(JobTemplateServiceClient);
 
-  const client = getClient(JobServiceClient);
+  const reply = await asyncUnaryCall(client, "listJobTemplates", {
+    userId: info.identityId,
+  });
 
-  const settledReplies = await Promise.allSettled(
-    clusterIds.map(async (cluster) => {
-      const { results } = await asyncUnaryCall(client, "listJobTemplates", {
-        userId: info.identityId,
-        cluster,
-      });
-      // 当后端模板记录没有cluster字段时，回填当前查询集群，便于前端多集群场景区分
-      return results.map((item) => ({ ...item, cluster: item.cluster ?? cluster }));
-    }),
-  );
-
-  const mergedResults = settledReplies.flatMap((item) => (item.status === "fulfilled" ? item.value : []));
-
-  const failedClusters = settledReplies
-    .map((item, index) => (item.status === "rejected" ? clusterIds[index] : undefined))
-    .filter((cluster): cluster is string => cluster !== undefined);
-
-  if (failedClusters.length > 0) {
-    console.warn(
-      "[listJobTemplates] failed clusters: %s, failed count: %d",
-      failedClusters.join(","),
-      failedClusters.length,
-    );
-  }
-
-  return { 200: { results: mergedResults } };
+  return {
+    200: {
+      results: reply.templates.map((t) => ({
+        id: t.id,
+        templateName: t.templateName,
+        cluster: t.cluster,
+        account: t.account,
+        partition: t.partition,
+        qos: t.qos,
+        nodeCount: t.nodeCount,
+        coreCount: t.coreCount,
+        gpuCount: t.gpuCount,
+        maxTime: t.maxTime,
+        maxTimeUnit: t.maxTimeUnit,
+        memoryMb: t.memoryMb ?? undefined,
+        command: t.command ?? undefined,
+        createdAt: t.createdAt ?? new Date().toISOString(),
+      })),
+    },
+  };
 });

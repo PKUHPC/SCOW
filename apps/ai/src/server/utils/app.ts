@@ -18,6 +18,7 @@ import { Logger } from "ts-log";
 import { z } from "zod";
 
 import { clusters } from "../trpc/route/config";
+import { CreateDevHostInput } from "../trpc/route/devHost/devHost";
 import { CreateAppInput, ExtraDisplayInputs } from "../trpc/route/jobs/apps";
 import { InferenceJobInput } from "../trpc/route/jobs/infer";
 import { TrainJobInput } from "../trpc/route/jobs/jobs";
@@ -368,7 +369,7 @@ export const checkEntityAuth = ({
 
 // 封装在作业详情增加的 input.json 中的额外展示内容
 export function formatJobDetailsExtraInputs(
-  inputParams: CreateAppInput | TrainJobInput | InferenceJobInput,
+  inputParams: CreateAppInput | TrainJobInput | InferenceJobInput | CreateDevHostInput,
   extraDisplayInputs: ExtraDisplayInputs,
 ): ExtraDisplayInputs {
   const hasTarget = (target: string | undefined) => Boolean(target?.trim());
@@ -386,13 +387,16 @@ export function formatJobDetailsExtraInputs(
       )
       .map((item) => ({ name: item.currentNameVersion, target: item.target })) ?? [];
 
+  const localImageName = "localImageName" in inputParams ? inputParams.localImageName : undefined;
+  const models = "models" in inputParams ? inputParams.models : undefined;
+
   const result = {
     ...extraDisplayInputs,
     ...inputParams,
     isDefaultImage: !inputParams.remoteImageUrl && !inputParams.image,
-    imageNameOrUrl: inputParams.image ? inputParams.localImageName : inputParams.remoteImageUrl,
-    modelNames: getResourceNames(inputParams.models),
-    modelMounts: getResourceMounts(inputParams.models),
+    imageNameOrUrl: inputParams.image ? localImageName : inputParams.remoteImageUrl,
+    modelNames: getResourceNames(models),
+    modelMounts: getResourceMounts(models),
     startCommand:
       "startCommand" in inputParams
         ? inputParams.startCommand

@@ -2,6 +2,7 @@
 
 import type { ColumnsType } from "antd/es/table";
 import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import type { TemplateFormData, TrainTemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import {
@@ -19,9 +20,13 @@ import { useRouter } from "next/navigation";
 import { join } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
+import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
+import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
-import { TrainJobInput } from "src/server/trpc/route/jobs/jobs";
+import { JobType } from "src/models/Job";
+import { type FrameworkType, TrainJobInput } from "src/server/trpc/route/jobs/jobs";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -30,10 +35,12 @@ import type {
   BaseFormValues,
   CommandCacheEntry,
   CPUQueueRow,
+  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
   MaxTimeUnit,
+  MountPointField,
   QueueKind,
   QueueRow,
   ResourceFormValues,
@@ -48,13 +55,17 @@ import {
   buildPrivatePathLookup,
   buildResubmitResourceSelections,
   buildSelectionPathLookup,
+  buildUnavailableParams,
   buildVersionLookup,
+  cleanFormData,
   convertDurationToHours,
   deriveQueueStats,
   getCommandCacheKey,
   initBuiltinEnvVariables,
   mapQueuesToRows,
   mergeResubmitEnvVariables,
+  normalizeEnvVariables,
+  normalizeMountPoints,
   renderCascaderLabels,
   sanitizeFormMountAndEnvValues,
   toIdPrivateList,
@@ -84,10 +95,10 @@ const IMAGE_SOURCE_TAB_CONFIG: readonly {
   labelKey: ImageSourceLabelKey;
   placeholderKey: ImagePlaceholderKey;
 }[] = [
-    { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
-    { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
-    { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
-  ];
+  { key: "mine", labelKey: "imageSourceTabs.mine", placeholderKey: "imagePlaceholders.mine" },
+  { key: "public", labelKey: "imageSourceTabs.public", placeholderKey: "imagePlaceholders.public" },
+  { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
+];
 
 const IMAGE_PLACEHOLDER_KEYS: Record<TrainImageSourceKey, ImagePlaceholderKey> = {
   mine: "imagePlaceholders.mine",
@@ -231,6 +242,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     hasInitializedBuiltinEnvVariablesRef.current = true;
   }, [appForm, createTrainParams]);
 
+  const trpcUtils = trpc.useUtils();
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
@@ -282,6 +294,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const hasClusterSelectionRef = useRef(false);
   const hasClusterSwitchedRef = useRef(false);
   const isClusterResettingRef = useRef(false);
+  const isApplyingTemplateRef = useRef(false);
   const resubmitImageAppliedRef = useRef(false);
   const resubmitResourceAppliedRef = useRef(false);
   const resubmitQueueAppliedRef = useRef(false);
@@ -295,6 +308,15 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const resubmitMountEnvAppliedRef = useRef(false);
   const resubmitTensorBoardAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
+
+  // createTrainParams is used directly by resubmit effects (no template merge)
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateListOpen, setTemplateListOpen] = useState(false);
+  const [templateSnapshot, setTemplateSnapshot] = useState<TrainTemplateFormData | null>(null);
+  const [unavailableParamsModal, setUnavailableParamsModal] = useState<{
+    params: UnavailableParam[];
+    applyFn: () => void | Promise<void>;
+  } | null>(null);
 
   // 账户集群关系
   const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
@@ -403,7 +425,8 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     if (previousCluster === undefined && selectedCluster === undefined) {
       return;
     }
-    if (hadClusterSelection) {
+    const applyingTemplate = isApplyingTemplateRef.current;
+    if (hadClusterSelection && !applyingTemplate) {
       hasClusterSwitchedRef.current = true;
     }
     const shouldReset = hadClusterSelection;
@@ -414,13 +437,15 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     if (!resubmitQueueEverAppliedRef.current) {
       resubmitQueueAppliedRef.current = false;
     }
-    resubmitCascaderAppliedRef.current = {
-      datasets: shouldReset,
-      algorithms: shouldReset,
-      models: shouldReset,
-    };
-    resubmitMountEnvAppliedRef.current = shouldReset;
-    if (shouldReset) {
+    if (!applyingTemplate) {
+      resubmitCascaderAppliedRef.current = {
+        datasets: shouldReset,
+        algorithms: shouldReset,
+        models: shouldReset,
+      };
+      resubmitMountEnvAppliedRef.current = shouldReset;
+    }
+    if (shouldReset && !applyingTemplate) {
       resourceForm.setFieldsValue({ priority: undefined });
       appForm.setFieldsValue({
         image: undefined,
@@ -788,8 +813,8 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       .map((env) => ({ key: env.key, value: env.value }));
 
     appForm.setFieldsValue({
-      mountPoints: mountPointsDraft,
-      envVariables: mergeResubmitEnvVariables(envVariablesDraft),
+      mountPoints: normalizeMountPoints(mountPointsDraft),
+      envVariables: mergeResubmitEnvVariables(normalizeEnvVariables(envVariablesDraft)),
     });
 
     resubmitMountEnvAppliedRef.current = true;
@@ -984,7 +1009,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
   useEffect(() => {
     // 当镜像来源或选项发生变化时，将缓存中的默认/自定义命令同步到表单
-    if (isClusterResettingRef.current) {
+    if (isClusterResettingRef.current || isApplyingTemplateRef.current) {
       return;
     }
     const currentKey = getCommandCacheKey(selectedImageSource, normalizedSelectedImageValue);
@@ -1259,6 +1284,9 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     if (!createTrainParams) {
       resubmitQueueAppliedRef.current = false;
       return;
@@ -1402,7 +1430,14 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
   // 队列数据变化时，保持或回退到可用的第一条记录
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
+
     if (!currentQueueOptions.length) {
+      if (selectedQueueKey !== undefined && getAvailablePartitionIsLoading) {
+        return;
+      }
       if (selectedQueueKey !== undefined) {
         setSelectedQueueKey(undefined);
       }
@@ -1429,7 +1464,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
         setSelectedQueueKey(undefined);
       }
     }
-  }, [createTrainParams, currentQueueOptions, selectedQueueKey]);
+  }, [createTrainParams, currentQueueOptions, getAvailablePartitionIsLoading, selectedQueueKey]);
 
   // 若用户尚未选择账户，自动填入第一条有效账户
   useEffect(() => {
@@ -1498,6 +1533,9 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
   // 切换镜像来源时恢复已保存的选项
   useEffect(() => {
+    if (isApplyingTemplateRef.current) {
+      return;
+    }
     const draft = imageSourceDraftsRef.current[selectedImageSource] ?? {};
 
     if (selectedImageSource === "remote") {
@@ -1695,6 +1733,83 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     }
   }, [createTrainParams, resourceForm, selectedQueueKey, selectedQueueOption]);
 
+  const buildTrainTemplateFormData = (): TrainTemplateFormData => {
+    const resourceValues = resourceForm.getFieldsValue();
+    const appValues = appForm.getFieldsValue();
+    const gpuTypeValue = selectedQueueOption?.type === "gpu" ? (selectedQueueOption as GPUQueueRow).gpuType : undefined;
+    const perNodeUnits = resourceValues.nodeUnitCount ?? 1;
+
+    const computeNodeCount = () => {
+      if (resourceValues.framework === "tensorflow") {
+        return (resourceValues.psNodeCount ?? 0) + (resourceValues.workerNodeCount ?? 1);
+      }
+      if (resourceValues.framework && ["pytorch", "mpi", "mindspore"].includes(resourceValues.framework)) {
+        return resourceValues.distributedNodeCount ?? 2;
+      }
+      return 1;
+    };
+
+    return {
+      account: selectedAccount ?? undefined,
+      partition: selectedQueueKey ?? undefined,
+      qos: resourceValues.priority ?? undefined,
+      nodeUnitCount: perNodeUnits,
+      coreCount: perNodeUnits,
+      nodeCount: computeNodeCount(),
+      gpuCount: selectedQueueOption?.type === "gpu" ? perNodeUnits : undefined,
+      gpuType: gpuTypeValue ?? undefined,
+      maxTime: resourceValues.maxTime ?? 60,
+      maxTimeUnit,
+      isImagePrivate: selectedImageSource === "mine" ? true : selectedImageSource === "public" ? false : undefined,
+      image:
+        selectedImageSource === "mine" || selectedImageSource === "public"
+          ? typeof appValues.image === "string"
+            ? Number(appValues.image) || undefined
+            : appValues.image
+          : undefined,
+      localImageName: selectedImageOption?.label,
+      remoteImageUrl:
+        selectedImageSource === "remote"
+          ? typeof appValues.image === "string"
+            ? appValues.image
+            : undefined
+          : undefined,
+      framework:
+        resourceValues.framework && ["tensorflow", "pytorch", "mindspore", "mpi"].includes(resourceValues.framework)
+          ? (resourceValues.framework as FrameworkType)
+          : undefined,
+      psNodes: resourceValues.psNodeCount ?? undefined,
+      workerNodes: resourceValues.workerNodeCount ?? undefined,
+      datasets: toIdPrivateList(
+        appValues.datasets,
+        buildVersionLookup(
+          datasets?.personal as VersionGroup[] | undefined,
+          datasets?.public as VersionGroup[] | undefined,
+        ),
+      ),
+      models: toIdPrivateList(
+        appValues.models,
+        buildVersionLookup(
+          models?.personal as VersionGroup[] | undefined,
+          models?.public as VersionGroup[] | undefined,
+        ),
+      ),
+      algorithms: toIdPrivateList(
+        appValues.algorithms,
+        buildVersionLookup(
+          algorithms?.personal as VersionGroup[] | undefined,
+          algorithms?.public as VersionGroup[] | undefined,
+        ),
+      ),
+      mountPoints: (appValues.mountPoints ?? [])
+        .filter((m: MountPointField | undefined) => m?.source && m?.target)
+        .map((m: MountPointField) => ({ path: m.source, target: m.target })),
+      envVariables: (appValues.envVariables ?? []).filter((e: EnvVariableField | undefined) => e?.key),
+      command: appValues.command ?? "",
+      tensorBoardDataPath: appValues.needTensorBoard ? appValues.tensorBoardDataPath : undefined,
+    };
+  };
+
   // ----- 提交逻辑：校验 + 组装 payload + 调用接口 -----
   // 聚合验证三个表单区域，确保必填项完整后续再接入真实提交
   const handleSubmit = async () => {
@@ -1761,15 +1876,15 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       const perNodeGpuCount = isGpuQueue ? perNodeUnits : 0;
       const perNodeCpuCount = isGpuQueue
         ? (() => {
-          if (cpuPerUnit && cpuPerUnit > 0) {
-            return Math.max(1, Math.round(cpuPerUnit * perNodeGpuCount));
-          }
-          const totalCpuFromForm = typeof cpuCores === "number" ? cpuCores : undefined;
-          if (totalCpuFromForm && totalCpuFromForm > 0) {
-            return Math.max(1, Math.round(totalCpuFromForm / Math.max(1, nodeCount)));
-          }
-          return 1;
-        })()
+            if (cpuPerUnit && cpuPerUnit > 0) {
+              return Math.max(1, Math.round(cpuPerUnit * perNodeGpuCount));
+            }
+            const totalCpuFromForm = typeof cpuCores === "number" ? cpuCores : undefined;
+            if (totalCpuFromForm && totalCpuFromForm > 0) {
+              return Math.max(1, Math.round(totalCpuFromForm / Math.max(1, nodeCount)));
+            }
+            return 1;
+          })()
         : perNodeUnits;
 
       const totalGpuUnits = perNodeGpuCount * nodeCount;
@@ -1876,15 +1991,315 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
         tensorBoardDataPath: appValues.needTensorBoard ? appValues.tensorBoardDataPath : undefined,
         ...(appValues.usePrivateImage
           ? {
-            privateImageRepositoryCredentials: {
-              userName: appValues.remoteUsername ?? "",
-              password: appValues.remotePassword ?? "",
-            },
-          }
+              privateImageRepositoryCredentials: {
+                userName: appValues.remoteUsername ?? "",
+                password: appValues.remotePassword ?? "",
+              },
+            }
           : {}),
       });
     } catch (error) {
       console.error("Failed to submit create train job form:", error);
+    }
+  };
+
+  const handleTemplateUse = async (formData: TemplateFormData, templateCluster: string) => {
+    const fd = formData;
+
+    const {
+      unavailableParams,
+      effectiveAccount: finalAccount,
+      effectiveCluster: finalCluster,
+    } = await buildUnavailableParams({
+      fd,
+      templateCluster,
+      isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
+      getAvailableAccounts: () => accountOptions.map((o) => o.value),
+      getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
+      selectedAccount,
+      selectedCluster,
+      selectedQueueKey,
+      currentQos: resourceForm.getFieldValue("priority"),
+      fetchPartitions: (acc, cluster) =>
+        trpcUtils.config.getAvailablePartitions.fetch({ accountName: acc, clusterId: cluster }).catch(() => undefined),
+      t: (key) => t(p(key as any)),
+      resolveClusterName: (id) => {
+        const clusterConfig = CLUSTERS.find((c) => c.id === id);
+        return clusterConfig ? getI18nConfigCurrentText(clusterConfig.name, languageId) : id;
+      },
+    });
+
+    const applyFn = async () => {
+      const cleanedFormData = cleanFormData(fd, unavailableParams);
+      isApplyingTemplateRef.current = true;
+      hasClusterSwitchedRef.current = false;
+      commandCacheRef.current = {};
+
+      resourceForm.setFieldsValue({ account: finalAccount, cluster: finalCluster });
+
+      const tplMaxTime = cleanedFormData.maxTime as number | undefined;
+      const tplMaxTimeUnit = cleanedFormData.maxTimeUnit as MaxTimeUnit | undefined;
+      if (tplMaxTimeUnit) {
+        setMaxTimeUnit(tplMaxTimeUnit);
+      }
+
+      const tplPartition = cleanedFormData.partition as string | undefined;
+      const tplCoreCount = cleanedFormData.coreCount as number | undefined;
+      const tplGpuCount = cleanedFormData.gpuCount as number | undefined;
+      const tplQos = cleanedFormData.qos as string | undefined;
+      const tplNodeUnitCount = (cleanedFormData.nodeUnitCount as number | undefined) ?? tplGpuCount ?? tplCoreCount;
+      let partitionMatched = false;
+
+      if (tplPartition) {
+        const partitionsForCluster = await trpcUtils.config.getAvailablePartitions
+          .fetch({ accountName: finalAccount, clusterId: finalCluster })
+          .catch(() => undefined);
+        if (partitionsForCluster) {
+          const matched = partitionsForCluster.find((pt) => pt.name === tplPartition);
+          if (matched) {
+            partitionMatched = true;
+            const rows = mapQueuesToRows(partitionsForCluster);
+            const allRows = [...rows.gpuRows, ...rows.cpuRows];
+            const matchedRow = allRows.find((r) => r.id === tplPartition);
+            if (matchedRow) {
+              setActiveResourceTab(matchedRow.type);
+            }
+            setSelectedQueueKey(tplPartition);
+            if (tplQos && matched.qos.includes(tplQos)) {
+              resourceForm.setFieldsValue({ priority: tplQos });
+            }
+            if (tplMaxTime != null) {
+              resourceForm.setFieldsValue({ maxTime: tplMaxTime });
+            }
+            if (tplNodeUnitCount != null) {
+              resourceForm.setFieldsValue({ nodeUnitCount: tplNodeUnitCount });
+            }
+          }
+        }
+      }
+
+      if (!partitionMatched) {
+        const inferredTab: QueueKind = tplGpuCount != null && tplGpuCount > 0 ? "gpu" : "cpu";
+        setActiveResourceTab(inferredTab);
+        if (tplMaxTime != null) {
+          resourceForm.setFieldsValue({ maxTime: tplMaxTime });
+        }
+        if (tplNodeUnitCount != null) {
+          resourceForm.setFieldsValue({ nodeUnitCount: tplNodeUnitCount });
+        }
+      }
+
+      const tplFramework = (cleanedFormData.framework ?? "single") as TrainFramework;
+      const tplNodeCount = Math.max(1, (cleanedFormData.nodeCount as number) ?? 1);
+      const frameworkUpdates: Partial<ResourceFormValues> = { framework: tplFramework };
+      if (tplFramework === "tensorflow") {
+        frameworkUpdates.psNodeCount = Math.max(0, (cleanedFormData.psNodes as number) ?? 0);
+        frameworkUpdates.workerNodeCount = Math.max(1, (cleanedFormData.workerNodes as number) ?? 1);
+      } else if (["pytorch", "mpi", "mindspore"].includes(tplFramework)) {
+        frameworkUpdates.distributedNodeCount = Math.max(2, tplNodeCount);
+      }
+      resourceForm.setFieldsValue(frameworkUpdates);
+
+      appForm.setFieldsValue({
+        mountPoints: normalizeMountPoints(cleanedFormData.mountPoints as unknown[] | undefined),
+        envVariables: normalizeEnvVariables(cleanedFormData.envVariables as unknown[] | undefined),
+      });
+
+      const savedTensorBoard =
+        typeof cleanedFormData.tensorBoardDataPath === "string"
+          ? cleanedFormData.tensorBoardDataPath.trim()
+          : undefined;
+      if (savedTensorBoard) {
+        appForm.setFieldsValue({ needTensorBoard: true, tensorBoardDataPath: savedTensorBoard });
+      }
+
+      const clusterChanged = templateCluster !== finalCluster;
+
+      const tplDatasets = (cleanedFormData.datasets ?? []) as { id: number; isPrivate: boolean }[];
+      const tplAlgorithms = (cleanedFormData.algorithms ?? []) as { id: number; isPrivate: boolean }[];
+      const tplModels = (cleanedFormData.models ?? []) as { id: number; isPrivate: boolean }[];
+      if (!clusterChanged && (tplDatasets.length || tplAlgorithms.length || tplModels.length)) {
+        const [fetchedDatasets, fetchedAlgorithms, fetchedModels] = await Promise.all([
+          tplDatasets.length
+            ? trpcUtils.dataset.getAllDatasetVersions.fetch({ clusterId: finalCluster }).catch(() => undefined)
+            : undefined,
+          tplAlgorithms.length
+            ? trpcUtils.algorithm.getAllAlgorithmVersions.fetch({ clusterId: finalCluster }).catch(() => undefined)
+            : undefined,
+          tplModels.length
+            ? trpcUtils.model.getAllModelVersions.fetch({ clusterId: finalCluster }).catch(() => undefined)
+            : undefined,
+        ]);
+
+        if (fetchedDatasets && tplDatasets.length) {
+          const categories: ResourceCategory[] = [];
+          const personal = (fetchedDatasets.personal ?? [])
+            .map((d) => ({
+              label: d.name,
+              value: d.id,
+              children: (d.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((d) => d.children.length > 0);
+          const pub = (fetchedDatasets.public ?? [])
+            .map((d) => ({
+              label: d.name,
+              value: d.id,
+              children: (d.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((d) => d.children.length > 0);
+          if (personal.length) categories.push({ label: "", value: 1, children: personal });
+          if (pub.length) categories.push({ label: "", value: 2, children: pub });
+          const lookup = buildSelectionPathLookup(categories);
+          const selections = buildResubmitResourceSelections(tplDatasets, lookup);
+          if (selections.length > 0) {
+            appForm.setFieldsValue({ datasets: selections });
+          }
+        }
+
+        if (fetchedAlgorithms && tplAlgorithms.length) {
+          const categories: ResourceCategory[] = [];
+          const personal = (fetchedAlgorithms.personal ?? [])
+            .map((a) => ({
+              label: a.name,
+              value: a.id,
+              children: (a.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((a) => a.children.length > 0);
+          const pub = (fetchedAlgorithms.public ?? [])
+            .map((a) => ({
+              label: a.name,
+              value: a.id,
+              children: (a.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((a) => a.children.length > 0);
+          if (personal.length) categories.push({ label: "", value: 1, children: personal });
+          if (pub.length) categories.push({ label: "", value: 2, children: pub });
+          const lookup = buildSelectionPathLookup(categories);
+          const selections = buildResubmitResourceSelections(tplAlgorithms, lookup);
+          if (selections.length > 0) {
+            appForm.setFieldsValue({ algorithms: selections });
+          }
+        }
+
+        if (fetchedModels && tplModels.length) {
+          const categories: ResourceCategory[] = [];
+          const personal = (fetchedModels.personal ?? [])
+            .map((m) => ({
+              label: m.name,
+              value: m.id,
+              children: (m.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((m) => m.children.length > 0);
+          const pub = (fetchedModels.public ?? [])
+            .map((m) => ({
+              label: m.name,
+              value: m.id,
+              children: (m.versions ?? []).map((v) => ({
+                label: v.versionName,
+                value: v.id,
+                children: [] as ResourceCategory[],
+              })),
+            }))
+            .filter((m) => m.children.length > 0);
+          if (personal.length) categories.push({ label: "", value: 1, children: personal });
+          if (pub.length) categories.push({ label: "", value: 2, children: pub });
+          const lookup = buildSelectionPathLookup(categories);
+          const selections = buildResubmitResourceSelections(tplModels, lookup);
+          if (selections.length > 0) {
+            appForm.setFieldsValue({ models: selections });
+          }
+        }
+      }
+
+      let finalImageSource: TrainImageSourceKey | undefined;
+      let finalImageValue: string | undefined;
+
+      if (!clusterChanged) {
+        const tplRemoteImageUrl = cleanedFormData.remoteImageUrl as string | undefined;
+        const tplImageId = cleanedFormData.image as number | undefined;
+        const tplIsImagePrivate = cleanedFormData.isImagePrivate as boolean | undefined;
+
+        if (tplRemoteImageUrl) {
+          finalImageSource = "remote";
+          finalImageValue = tplRemoteImageUrl;
+          imageSourceDraftsRef.current.remote = { image: tplRemoteImageUrl };
+          setSelectedImageSource("remote");
+          appForm.setFieldsValue({
+            image: tplRemoteImageUrl,
+            usePrivateImage: false,
+            remoteUsername: undefined,
+            remotePassword: undefined,
+          });
+        } else if (tplIsImagePrivate === true || tplIsImagePrivate === false) {
+          const imageSource = tplIsImagePrivate ? "mine" : "public";
+          finalImageSource = imageSource;
+          if (tplImageId != null) {
+            const fetchedImages = await trpcUtils.image.list
+              .fetch({
+                isPublic: tplIsImagePrivate ? parseBooleanParam(false) : parseBooleanParam(true),
+                clusterId: finalCluster,
+                withExternal: "true",
+                types: ImageType.TRAIN,
+              })
+              .catch(() => undefined);
+            if (fetchedImages) {
+              const found = fetchedImages.items.some((img) => img.id === tplImageId && img.status === Status.CREATED);
+              if (found) {
+                finalImageValue = String(tplImageId);
+                imageSourceDraftsRef.current[imageSource] = { image: String(tplImageId) };
+                setSelectedImageSource(imageSource);
+                appForm.setFieldsValue({ image: String(tplImageId) });
+              } else {
+                setSelectedImageSource(imageSource);
+              }
+            }
+          } else {
+            setSelectedImageSource(imageSource);
+          }
+        }
+      }
+
+      if (!clusterChanged) {
+        const tplCommand = cleanedFormData.command as string | undefined;
+        if (tplCommand) {
+          appForm.setFieldsValue({ command: tplCommand });
+          if (finalImageSource && finalImageValue) {
+            const cacheKey = getCommandCacheKey(finalImageSource, finalImageValue);
+            commandCacheRef.current[cacheKey] = { default: undefined, custom: tplCommand };
+          }
+        }
+      }
+
+      setTemplateListOpen(false);
+      requestAnimationFrame(() => {
+        isApplyingTemplateRef.current = false;
+      });
+    };
+
+    if (unavailableParams.length > 0) {
+      setUnavailableParamsModal({ params: unavailableParams, applyFn });
+    } else {
+      await applyFn();
     }
   };
 
@@ -1894,8 +2309,11 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
           title={
-            <HeaderRow align="center" size={16}>
+            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
               <HeaderTitle>{t(pTrain("createTrainTitle"))}</HeaderTitle>
+              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                {t(pTrain("templateButton"))}
+              </Button> */}
             </HeaderRow>
           }
         >
@@ -1956,6 +2374,24 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       </PageContainer>
 
       <FixedFooter>
+        {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
+          <FooterStatValue
+            $isPrimaryColor
+            style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
+            onClick={async () => {
+              try {
+                await resourceForm.validateFields();
+                await appForm.validateFields();
+                setTemplateSnapshot(buildTrainTemplateFormData());
+                setSaveTemplateOpen(true);
+              } catch {
+                message.warning(t(p("completeFormFirst")));
+              }
+            }}
+          >
+            {t(p("saveAsTemplate"))}
+          </FooterStatValue>
+        </div> */}
         <FooterStats>
           <span>
             {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
@@ -1984,6 +2420,28 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
           </Button>
         </FooterActions>
       </FixedFooter>
+      <SaveAsTemplateModal
+        open={saveTemplateOpen}
+        onClose={() => setSaveTemplateOpen(false)}
+        jobType={JobType.TRAIN}
+        cluster={selectedCluster ?? ""}
+        formData={templateSnapshot}
+      />
+      <TemplateListModal
+        open={templateListOpen}
+        onClose={() => setTemplateListOpen(false)}
+        onUse={handleTemplateUse}
+        jobType={JobType.TRAIN}
+      />
+      <UnavailableParamsModal
+        open={!!unavailableParamsModal}
+        params={unavailableParamsModal?.params ?? []}
+        onConfirm={async () => {
+          await unavailableParamsModal?.applyFn();
+          setUnavailableParamsModal(null);
+        }}
+        onCancel={() => setUnavailableParamsModal(null)}
+      />
     </>
   );
 };

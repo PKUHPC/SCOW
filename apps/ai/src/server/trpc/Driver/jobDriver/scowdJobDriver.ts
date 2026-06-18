@@ -24,7 +24,7 @@ import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
-import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
+import { CreateDevHostInput, CreateDevHostInputSchema } from "src/server/trpc/route/devHost/devHost";
 import {
   AppSession,
   CreateAppInput,
@@ -742,15 +742,6 @@ export class ScowdJobDriver implements JobDriver {
     );
     await this.upsertTotalSessionsFile(homeDir, metadata);
 
-    await wrap(
-      this.client.file.writeFile({
-        userId: this.userId,
-        filePath: join(homeDir, appJobsDirectory, `${reply.jobId}-input.json`),
-        content: JSON.stringify(inputParams),
-      }),
-      this.logger,
-    );
-
     return reply.jobId;
   }
   async getAppParams(sessionId: string, jobId: number): Promise<CreateAppInput> {
@@ -790,7 +781,14 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    const sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
+    const sessionMetadata = this.parseTotalSessionMetadata(
+      JSON.parse(contentRes.content.toString()),
+      this.logger,
+      metadataPath,
+    );
+    if (!sessionMetadata) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Invalid session metadata from ${metadataPath}` });
+    }
 
     if (sessionMetadata.jobType !== JobType.APP && sessionMetadata.jobType !== JobType.DEV_HOST) {
       throw new TRPCError({
@@ -1000,7 +998,14 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
-    const sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
+    const sessionMetadata = this.parseTotalSessionMetadata(
+      JSON.parse(contentRes.content.toString()),
+      this.logger,
+      metadataPath,
+    );
+    if (!sessionMetadata) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Invalid session metadata from ${metadataPath}` });
+    }
 
     const client = getAdapterClient(clusterId);
 
@@ -1211,15 +1216,6 @@ export class ScowdJobDriver implements JobDriver {
     );
     await this.upsertTotalSessionsFile(homeDir, metadata);
 
-    await wrap(
-      this.client.file.writeFile({
-        userId: this.userId,
-        filePath: join(homeDir, inferJobsDirectory, `${reply.jobId}-input.json`),
-        content: JSON.stringify(inputParams),
-      }),
-      this.logger,
-    );
-
     return reply.jobId;
   }
   async getInferParams(sessionId: string, jobId: number): Promise<InferenceJobInput> {
@@ -1258,7 +1254,14 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    const sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
+    const sessionMetadata = this.parseTotalSessionMetadata(
+      JSON.parse(contentRes.content.toString()),
+      this.logger,
+      metadataPath,
+    );
+    if (!sessionMetadata) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Invalid session metadata from ${metadataPath}` });
+    }
     if (sessionMetadata.jobType !== JobType.INFER) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -1503,15 +1506,6 @@ export class ScowdJobDriver implements JobDriver {
     );
     await this.upsertTotalSessionsFile(homeDir, metadata);
 
-    await wrap(
-      this.client.file.writeFile({
-        userId: this.userId,
-        filePath: join(homeDir, trainJobsDirectory, `${reply.jobId}-input.json`),
-        content: JSON.stringify(inputParams),
-      }),
-      this.logger,
-    );
-
     return reply.jobId;
   }
 
@@ -1550,7 +1544,14 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
-    const sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
+    const sessionMetadata = this.parseTotalSessionMetadata(
+      JSON.parse(contentRes.content.toString()),
+      this.logger,
+      metadataPath,
+    );
+    if (!sessionMetadata) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Invalid session metadata from ${metadataPath}` });
+    }
     if (sessionMetadata.jobType !== JobType.TRAIN) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -1706,15 +1707,48 @@ export class ScowdJobDriver implements JobDriver {
     );
     await this.upsertTotalSessionsFile(homeDir, metadata);
 
-    await wrap(
-      this.client.file.writeFile({
-        userId: this.userId,
-        filePath: join(homeDir, devHostDir, `${reply.jobId}-input.json`),
-        content: JSON.stringify(inputParams),
-      }),
+    return reply.jobId;
+  }
+
+  async getDevHostParams(sessionId: string, jobId: number): Promise<CreateDevHostInput> {
+    const { path: homeDir } = await wrap(this.client.file.getHomeDirectory({ userId: this.userId }), this.logger);
+    const jobsDirectory = join(aiConfig.appJobsDir, sessionId);
+    const metadataPath = join(homeDir, jobsDirectory, SESSION_METADATA_NAME);
+
+    const metadataPathExists = await wrap(
+      this.client.file.exists({ userId: this.userId, path: metadataPath }),
       this.logger,
     );
 
-    return reply.jobId;
+    if (!metadataPathExists.exists) {
+      this.logger.error("metadataPath %s not exists", metadataPath);
+      throw new TRPCError({ code: "NOT_FOUND", message: `metadataPath ${metadataPath} not exists` });
+    }
+
+    const contentRes = await wrap(
+      this.client.file.readFile({ userId: this.userId, filePath: metadataPath }),
+      this.logger,
+    );
+
+    const sessionMetadata = this.parseTotalSessionMetadata(
+      JSON.parse(contentRes.content.toString()),
+      this.logger,
+      metadataPath,
+    );
+    if (!sessionMetadata) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Invalid session metadata from ${metadataPath}` });
+    }
+    if (sessionMetadata.jobType !== JobType.DEV_HOST) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `Job type of job ${jobId} is not DevHost` });
+    }
+
+    const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
+    return await scowdFetchJobInputParams<CreateDevHostInput>(
+      this.userId,
+      inputParamsPath,
+      this.client,
+      CreateDevHostInputSchema,
+      this.logger,
+    );
   }
 }

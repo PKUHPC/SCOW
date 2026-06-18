@@ -148,13 +148,14 @@ export default /* #__PURE__*/ route(GetAppMetadataSchema, async (req, res) => {
         type: appCustomAttribute_AttributeTypeToJSON(item.type) as AppCustomAttribute["type"],
         label: getI18nTypeFormat(item.label),
         name: item.name,
-        fixedValue: item.fixedValue?.value
-          ? {
-              value:
-                item.fixedValue.value?.$case === "text" ? item.fixedValue.value.text : item.fixedValue.value.number,
-              hidden: item.fixedValue?.hidden,
-            }
-          : undefined,
+        fixedValue:
+          item.fixedValue?.value !== undefined
+            ? {
+                value:
+                  item.fixedValue.value?.$case === "text" ? item.fixedValue.value.text : item.fixedValue.value.number,
+                hidden: item.fixedValue?.hidden,
+              }
+            : undefined,
         select: item.options?.map((option) => {
           return {
             value: option.value,

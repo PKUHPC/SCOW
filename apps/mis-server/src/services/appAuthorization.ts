@@ -376,6 +376,10 @@ export const appAuthorizationServiceServer = plugin((server) => {
                 account.blockedInCluster !== UserStatus.BLOCKED,
             );
 
+            const allAuthorizedAccounts = accounts.filter(
+              (account) => !accountBlackAppsMap.get(account.accountName)?.has(id),
+            );
+
             return {
               id,
               name: appConfig.name,
@@ -384,6 +388,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
               image: imageConfig ? `${imageConfig.name}:${imageConfig.tag ?? "latest"}` : undefined,
               startCommand: webStartCommand ?? appConfig.vnc?.xstartup,
               availableAccounts: availableAccounts.map((a) => a.accountName),
+              allAuthorizedAccounts: allAuthorizedAccounts.map((a) => a.accountName),
             };
           });
 

@@ -2,28 +2,28 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
 import { OperationType } from "@scow/lib-operation-log";
-import { JobServiceClient, TimeUnit } from "@scow/protos/build/portal/job";
+import { JobTemplateServiceClient } from "@scow/protos/build/server/job_template";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
-import { getClient } from "src/utils/client";
+import { getMisClient } from "src/utils/misClient";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
 export const SaveAsJobTemplateInfo = Type.Object({
   cluster: Type.String(),
-  jobName: Type.String(),
+  templateName: Type.String(),
   account: Type.String(),
   partition: Type.String(),
   qos: Type.String(),
   nodeCount: Type.Number(),
   coreCount: Type.Number(),
-  gpuCount: Type.Optional(Type.Number()),
-  memoryMb: Type.String(),
-  command: Type.String(),
-  maxTime: Type.Number(), // 最长运行时间
-  maxTimeUnit: Type.Enum(TimeUnit), // 最长运行时间单位，默认为MINUTES
+  gpuCount: Type.Number(),
+  memoryMb: Type.Optional(Type.Number()),
+  maxTime: Type.Number(),
+  maxTimeUnit: Type.Optional(Type.Number()),
+  command: Type.Optional(Type.String()),
 });
 
 export type SaveAsJobTemplateInfo = Static<typeof SaveAsJobTemplateInfo>;
@@ -34,9 +34,8 @@ export const SaveAsJobTemplateSchema = typeboxRouteSchema({
   body: SaveAsJobTemplateInfo,
 
   responses: {
-    204: Type.Null(),
-    404: Type.Object({ code: Type.Literal("UNIMPLEMENTED"), message: Type.String() }),
-    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
+    200: Type.Object({ id: Type.Number() }),
+    409: Type.Object({ code: Type.Literal("ALREADY_EXISTS") }),
   },
 });
 
@@ -51,7 +50,7 @@ export default /* #__PURE__*/ route(SaveAsJobTemplateSchema, async (req, res) =>
 
   const {
     cluster,
-    jobName,
+    templateName,
     account,
     partition,
     qos,
@@ -59,46 +58,45 @@ export default /* #__PURE__*/ route(SaveAsJobTemplateSchema, async (req, res) =>
     coreCount,
     gpuCount,
     memoryMb,
-    command,
     maxTime,
     maxTimeUnit,
+    command,
   } = req.body;
 
-  const client = getClient(JobServiceClient);
+  const client = getMisClient(JobTemplateServiceClient);
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.addJobTemplate,
     operationTypePayload: {
-      jobTemplateId: jobName,
+      jobTemplateId: templateName,
       clusterId: cluster,
     },
   };
 
-  return asyncUnaryCall(client, "saveAsJobTemplate", {
+  return asyncUnaryCall(client, "saveJobTemplate", {
     userId: info.identityId,
     cluster,
-    jobName,
+    templateName,
     account,
     partition,
     qos,
     nodeCount,
     coreCount,
     gpuCount,
+    maxTime: maxTime,
+    maxTimeUnit: maxTimeUnit ?? 0,
     memoryMb,
     command,
-    maxTime,
-    maxTimeUnit: maxTimeUnit ?? TimeUnit.MINUTES,
   }).then(
-    async () => {
+    async (reply) => {
       await callLog({ ...logInfo }, OperationResult.SUCCESS);
-      return { 204: null };
+      return { 200: { id: reply.id } };
     },
     handlegRPCError(
       {
-        [status.UNIMPLEMENTED]: (err) => ({ 404: { code: "UNIMPLEMENTED", message: err.details } }) as const,
-        [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+        [status.ALREADY_EXISTS]: () => ({ 409: { code: "ALREADY_EXISTS" as const } }),
       },
       async () => await callLog({ ...logInfo }, OperationResult.FAIL),
     ),
