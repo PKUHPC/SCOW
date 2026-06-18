@@ -138,7 +138,7 @@ export default {
         action: "작업",
         createNewVersion: "새 버전 생성",
         selectFramework: "알고리즘 프레임워크를 선택하세요",
-        nameOrDesc: "이름 또는 설명",
+        nameOrDesc: "이름 또는 설명으로 검색",
       },
       algorithmVersionList: {
         notFound: "알고리즘 버전을 찾을 수 없습니다",
@@ -260,6 +260,7 @@ export default {
         versionName: "Version name",
         description: "버전 설명",
         select: "데이터셋 선택",
+        selectDatasetFolder: "데이터셋 폴더를 선택하세요",
       },
       datasetListTable: {
         notFound: "데이터셋을 찾을 수 없습니다",
@@ -269,7 +270,7 @@ export default {
         cluster: "Cluster",
         type: "데이터 타입",
         selectType: "데이터 타입을 선택하세요",
-        nameOrDesc: "이름 또는 설명",
+        nameOrDesc: "이름 또는 설명으로 검색",
         name: "Name",
         datasetType: "데이터셋 타입",
         description: "데이터셋 설명",
@@ -702,7 +703,7 @@ export default {
         notFound: "이미지를 찾을 수 없습니다",
         shareFailed: "이미지 공유 실패",
         cluster: "클러스터",
-        nameOrTagOrDesc: "이름, 태그, 또는 설명",
+        nameOrTagOrDesc: "이름, 태그 또는 설명으로 검색",
         name: "이름",
         tag: "태그",
         source: "이미지 소스",
@@ -793,7 +794,7 @@ export default {
         createTime: "생성 시간",
         action: "작업",
         createNewVersion: "새 버전 생성",
-        nameOrDes: "이름 또는 설명",
+        nameOrDes: "이름 또는 설명으로 검색",
       },
       modelVersionList: {
         notFound: "모델 버전을 찾을 수 없습니다",
@@ -1218,6 +1219,8 @@ export default {
     appNotAvailableForAccount: "계정 {0}은(는) 애플리케이션 {1}에 대한 권한이 없습니다",
     noChinese: "중국어 문자를 포함할 수 없습니다",
     resourceNameRuleTips: "길이는 50바이트를 초과할 수 없으며 '/' 문자를 포함할 수 없습니다",
+    pleaseInput: "{0}을(를) 입력하세요",
+    pleaseSelect: "{0}을(를) 선택하세요",
     aiJobExceptionReason: {
       imagePullError: "이미지 가져오기 오류",
       mountError: "마운트 오류",

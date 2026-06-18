@@ -140,7 +140,7 @@ export default {
         action: "Ação",
         createNewVersion: "Criar nova versão",
         selectFramework: "Por favor, selecione um framework de algoritmo",
-        nameOrDesc: "Nome ou descrição",
+        nameOrDesc: "Pesquisar por nome ou descrição",
       },
       algorithmVersionList: {
         notFound: "Versão do algoritmo não encontrada",
@@ -262,6 +262,7 @@ export default {
         versionName: "Nome da versão",
         description: "Descrição da versão",
         select: "Selecionar conjunto de dados",
+        selectDatasetFolder: "Selecione a pasta do conjunto de dados",
       },
       datasetListTable: {
         notFound: "Conjunto de dados não encontrado",
@@ -271,7 +272,7 @@ export default {
         cluster: "Cluster",
         type: "Tipo de dados",
         selectType: "Por favor selecione um tipo de dados",
-        nameOrDesc: "Nome ou descrição",
+        nameOrDesc: "Pesquisar por nome ou descrição",
         name: "Nome",
         datasetType: "Tipo de conjunto de dados",
         description: "Descrição do conjunto de dados",
@@ -709,7 +710,7 @@ export default {
         notFound: "Imagem Não Encontrada",
         shareFailed: "Falha ao Compartilhar Imagem",
         cluster: "Cluster",
-        nameOrTagOrDesc: "Nome, Tag, ou Descrição",
+        nameOrTagOrDesc: "Pesquisar por nome, tag ou descrição",
         name: "Nome",
         tag: "Tag",
         source: "Fonte da Imagem",
@@ -800,7 +801,7 @@ export default {
         createTime: "Tempo de Criação",
         action: "Ações",
         createNewVersion: "Criar Nova Versão",
-        nameOrDes: "Nome ou Descrição",
+        nameOrDes: "Pesquisar por nome ou descrição",
       },
       modelVersionList: {
         notFound: "Versão do modelo não encontrada",
@@ -1229,6 +1230,8 @@ export default {
     appNotAvailableForAccount: "A conta {0} não está autorizada para a aplicação {1}",
     noChinese: "Não pode conter caracteres chineses",
     resourceNameRuleTips: "O comprimento não pode exceder 50 bytes e não pode conter o caractere '/'",
+    pleaseInput: "Insira {0}",
+    pleaseSelect: "Selecione {0}",
     aiJobExceptionReason: {
       imagePullError: "Erro ao obter imagem",
       mountError: "Erro de montagem",

@@ -12,6 +12,10 @@ export const noWhiteSpaceRule = {
 
 export const createNoChineseValidator = (message?: string) => () => ({
   validator(_: RuleObject, value: string) {
+    if (!value) {
+      return Promise.resolve();
+    }
+
     // 使用正则表达式验证是否包含中文字符
     if (/[\u4e00-\u9fa5]/.test(value)) {
       return Promise.reject(message ?? "不能包含中文字符");
@@ -22,6 +26,10 @@ export const createNoChineseValidator = (message?: string) => () => ({
 
 export const createResourceNameValidator = (message?: string) => () => ({
   validator(_: RuleObject, value: string) {
+    if (!value) {
+      return Promise.resolve();
+    }
+
     // 校验长度（按字节长度计算）且不能包含 `/`
     // 数据库中分享路径由资源名称、版本名称和文件系统中的文件夹名组成等
     // 比如：/nfs/.shared/demo_admin2/algorithm/${资源名称}/${版本名称}/${文件系统中的文件夹名}

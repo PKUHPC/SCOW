@@ -188,12 +188,12 @@ export const CreateEditDatasetModal: React.FC<Props> = ({
           label={renderLabel(t(p("name")))}
           name="name"
           rules={[
-            { required: true },
+            { required: true, message: t(pCommon("pleaseInput"), [t(p("name"))]) },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
-          <RoundedInput allowClear />
+          <RoundedInput />
         </CustomFormItem>
         {isEdit && editData ? (
           <CustomFormItem label={renderLabel(t(p("cluster")))}>
@@ -204,7 +204,7 @@ export const CreateEditDatasetModal: React.FC<Props> = ({
           <CustomFormItem
             label={renderLabel(t(p("cluster")))}
             name="cluster"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("cluster"))]) }]}
             initialValue={defaultCluster}
           >
             <RoundedSingleClusterSelector />

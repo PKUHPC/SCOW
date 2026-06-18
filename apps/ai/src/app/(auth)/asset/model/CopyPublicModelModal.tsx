@@ -120,7 +120,7 @@ export const CopyPublicModelModal: React.FC<Props> = ({
           label={renderLabel(t(p("targetName")))}
           name="targetModelName"
           rules={[
-            { required: true },
+            { required: true, message: t(pCommon("pleaseInput"), [t(p("targetName"))]) },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
@@ -135,7 +135,7 @@ export const CopyPublicModelModal: React.FC<Props> = ({
           label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
-            { required: true },
+            { required: true, message: t(pCommon("pleaseInput"), [t(p("versionName"))]) },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
@@ -153,7 +153,11 @@ export const CopyPublicModelModal: React.FC<Props> = ({
         <CustomFormItem label={renderLabel(t(p("algorithmVersion")))} name="algorithmVersion">
           {data.algorithmVersion}
         </CustomFormItem>
-        <CustomFormItem label={renderLabel(t(p("address")))} name="path" rules={[{ required: true }]}>
+        <CustomFormItem
+          label={renderLabel(t(p("address")))}
+          name="path"
+          rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("address"))]) }]}
+        >
           <RoundedInput
             disabled={true}
             suffix={

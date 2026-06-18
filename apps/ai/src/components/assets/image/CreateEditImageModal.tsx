@@ -67,6 +67,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
 }: Props) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.createEditImageModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const sourceText = {
@@ -137,7 +138,6 @@ export const CreateEditImageModal: React.FC<Props> = ({
   });
 
   const onOk = async () => {
-    form.validateFields();
     const {
       name,
       cluster,
@@ -227,32 +227,41 @@ export const CreateEditImageModal: React.FC<Props> = ({
             <CustomFormItem
               label={renderLabel(t(p("imageName")))}
               name="name"
-              rules={[{ required: true }, { validator: imageNameValidation }]}
+              rules={[
+                { required: true, message: t(pCommon("pleaseInput"), [t(p("imageName"))]) },
+                { validator: imageNameValidation },
+              ]}
             >
-              <RoundedInput allowClear />
+              <RoundedInput />
             </CustomFormItem>
             <CustomFormItem
               label={renderLabel(t(p("imageTag")))}
               name="tag"
-              rules={[{ required: true }, { validator: imageTagValidation }]}
+              rules={[
+                { required: true, message: t(pCommon("pleaseInput"), [t(p("imageTag"))]) },
+                { validator: imageTagValidation },
+              ]}
             >
               <RoundedInput />
             </CustomFormItem>
             <CustomFormItem
               label={renderLabel(t(p("cluster")))}
               name="cluster"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("cluster"))]) }]}
               initialValue={defaultCluster}
             >
               <RoundedSingleClusterSelector />
             </CustomFormItem>
           </>
         )}
-        <CustomFormItem label={renderLabel(t(p("type")))} name="types" rules={[{ required: true }]}>
+        <CustomFormItem
+          label={renderLabel(t(p("type")))}
+          name="types"
+          rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("type"))]) }]}
+        >
           <RoundedSelect
             style={{ minWidth: "100px" }}
             mode="multiple"
-            allowClear
             options={Object.entries(TypeText).map(([key, value]) => ({ label: value, value: key }))}
           />
         </CustomFormItem>
@@ -263,6 +272,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
             rules={[
               {
                 required: true,
+                message: t(pCommon("pleaseInput"), [t(p("inferServicePort"))]),
                 transform: (v) => Number(v),
                 type: "integer",
               },
@@ -272,7 +282,11 @@ export const CreateEditImageModal: React.FC<Props> = ({
           </CustomFormItem>
         )}
         {!isEdit && (
-          <CustomFormItem label={renderLabel(t(p("source")))} name="source" rules={[{ required: true }]}>
+          <CustomFormItem
+            label={renderLabel(t(p("source")))}
+            name="source"
+            rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("source"))]) }]}
+          >
             <RoundedSelect
               style={{ minWidth: "100px" }}
               onChange={() => {
@@ -288,7 +302,10 @@ export const CreateEditImageModal: React.FC<Props> = ({
               label={renderLabel(source === Source.INTERNAL ? t(p("selectImage")) : t(p("imageAddress")))}
               name="sourcePath"
               rules={[
-                { required: true },
+                {
+                  required: true,
+                  message: source === Source.INTERNAL ? t(p("selectImagePlaceHolder")) : t(p("inputImagePlaceHolder")),
+                },
                 () => ({
                   validator(_, value) {
                     if (!value) return Promise.resolve(); // 为空时交由 required 校验处理

@@ -57,6 +57,7 @@ export const CopyImageModal: React.FC<Props> = ({
   const t = useI18nTranslateToString();
   const p = prefix("app.image.copyImageModal.");
   const pCreate = prefix("app.image.createEditImageModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const TypeText = getImageTypeText(t);
@@ -92,7 +93,6 @@ export const CopyImageModal: React.FC<Props> = ({
   });
 
   const onOk = async () => {
-    form.validateFields();
     const { newName, newTag, newTypes, newInferServicePort, newStartCommand, newDescription } =
       await form.validateFields();
     copyMutation.mutate({
@@ -140,18 +140,22 @@ export const CopyImageModal: React.FC<Props> = ({
         <CustomFormItem
           label={renderLabel(t(p("name")))}
           name="newName"
-          rules={[{ required: true }, { validator: imageNameValidation }]}
+          rules={[{ required: true, message: t(pCommon("pleaseInput"), [t(p("name"))]) }, { validator: imageNameValidation }]}
         >
           <RoundedInput allowClear />
         </CustomFormItem>
         <CustomFormItem
           label={renderLabel(t(p("tag")))}
           name="newTag"
-          rules={[{ required: true }, { validator: imageTagValidation }]}
+          rules={[{ required: true, message: t(pCommon("pleaseInput"), [t(p("tag"))]) }, { validator: imageTagValidation }]}
         >
           <RoundedInput />
         </CustomFormItem>
-        <CustomFormItem label={renderLabel(t(pCreate("type")))} name="newTypes" rules={[{ required: true }]}>
+        <CustomFormItem
+          label={renderLabel(t(pCreate("type")))}
+          name="newTypes"
+          rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(pCreate("type"))]) }]}
+        >
           <RoundedSelect
             style={{ minWidth: "100px" }}
             mode="multiple"
@@ -166,6 +170,7 @@ export const CopyImageModal: React.FC<Props> = ({
             rules={[
               {
                 required: true,
+                message: t(pCommon("pleaseInput"), [t(pCreate("inferServicePort"))]),
                 transform: (v) => Number(v),
                 type: "integer",
               },

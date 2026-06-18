@@ -139,7 +139,7 @@ export default {
         action: "Действие",
         createNewVersion: "Создать новую версию",
         selectFramework: "Пожалуйста, выберите фреймворк алгоритма",
-        nameOrDesc: "Имя или описание",
+        nameOrDesc: "Поиск по имени или описанию",
       },
       algorithmVersionList: {
         notFound: "Версия алгоритма не найдена",
@@ -261,6 +261,7 @@ export default {
         versionName: "Имя версии",
         description: "Описание версии",
         select: "Выбрать набор данных",
+        selectDatasetFolder: "Выберите папку набора данных",
       },
       datasetListTable: {
         notFound: "Набор данных не найден",
@@ -270,7 +271,7 @@ export default {
         cluster: "Кластер",
         type: "Тип данных",
         selectType: "Пожалуйста, выберите тип данных",
-        nameOrDesc: "Имя или описание",
+        nameOrDesc: "Поиск по имени или описанию",
         name: "Имя",
         datasetType: "Тип набора данных",
         description: "Описание набора данных",
@@ -704,7 +705,7 @@ export default {
         notFound: "Образ не найден",
         shareFailed: "Не удалось поделиться образом",
         cluster: "Кластер",
-        nameOrTagOrDesc: "Имя, тег или описание",
+        nameOrTagOrDesc: "Поиск по имени, тегу или описанию",
         name: "Имя",
         tag: "Тег",
         source: "Источник образа",
@@ -795,7 +796,7 @@ export default {
         createTime: "Время создания",
         action: "Действия",
         createNewVersion: "Создать новую версию",
-        nameOrDes: "Имя или описание",
+        nameOrDes: "Поиск по имени или описанию",
       },
       modelVersionList: {
         notFound: "Версия модели не найдена",
@@ -1224,6 +1225,8 @@ export default {
     appNotAvailableForAccount: "Cuenta {0} no está autorizada para la aplicación {1}",
     noChinese: "No puede contener caracteres chinos",
     resourceNameRuleTips: "La longitud no puede exceder 50 bytes y no puede contener el carácter '/'",
+    pleaseInput: "Введите {0}",
+    pleaseSelect: "Выберите {0}",
     aiJobExceptionReason: {
       imagePullError: "Ошибка загрузки образа",
       mountError: "Ошибка монтирования",

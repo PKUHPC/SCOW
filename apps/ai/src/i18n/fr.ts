@@ -139,7 +139,7 @@ export default {
         action: "Action",
         createNewVersion: "Créer une nouvelle version",
         selectFramework: "Veuillez sélectionner un framework d'algorithme",
-        nameOrDesc: "Nom ou description",
+        nameOrDesc: "Rechercher par nom ou description",
       },
       algorithmVersionList: {
         notFound: "Version d'algorithme introuvable",
@@ -261,6 +261,7 @@ export default {
         versionName: "Nom de la version",
         description: "Description de la version",
         select: "Sélectionner le jeu de données",
+        selectDatasetFolder: "Veuillez sélectionner le dossier du jeu de données",
       },
       datasetListTable: {
         notFound: "Jeu de données introuvable",
@@ -270,7 +271,7 @@ export default {
         cluster: "Cluster",
         type: "Type de données",
         selectType: "Veuillez sélectionner un type de données",
-        nameOrDesc: "Nom ou description",
+        nameOrDesc: "Rechercher par nom ou description",
         name: "Nom",
         datasetType: "Type de jeu de données",
         description: "Description du jeu de données",
@@ -708,7 +709,7 @@ export default {
         notFound: "Image introuvable",
         shareFailed: "Échec du partage de l'image",
         cluster: "Cluster",
-        nameOrTagOrDesc: "Nom, tag ou description",
+        nameOrTagOrDesc: "Rechercher par nom, tag ou description",
         name: "Nom",
         tag: "Tag",
         source: "Source de l'image",
@@ -799,7 +800,7 @@ export default {
         createTime: "Heure de création",
         action: "Actions",
         createNewVersion: "Créer une nouvelle version",
-        nameOrDes: "Nom ou description",
+        nameOrDes: "Rechercher par nom ou description",
       },
       modelVersionList: {
         notFound: "Version de modèle introuvable",
@@ -1229,6 +1230,8 @@ export default {
     appNotAvailableForAccount: "Le compte {0} n'est pas autorisé pour l'application {1}",
     noChinese: "Ne peut pas contenir de caractères chinois",
     resourceNameRuleTips: "La longueur ne peut pas dépasser 50 octets et ne peut pas contenir le caractère '/'",
+    pleaseInput: "Veuillez saisir {0}",
+    pleaseSelect: "Veuillez selectionner {0}",
     aiJobExceptionReason: {
       imagePullError: "Erreur de récupération de l'image",
       mountError: "Erreur de montage",

@@ -87,16 +87,14 @@ export const AppRouterStyledModal = styled(Modal)`
     }
 
     .ant-form-item-row {
-      align-items: center;
     }
 
     .ant-form-item-label {
       display: flex;
-      align-items: center;
     }
 
     .ant-form-item-label > label {
-      height: auto;
+      height: 42px;
     }
   }
 `;

@@ -112,7 +112,6 @@ export const CreateAndEditVersionModal: React.FC<Props> = ({
   });
 
   const onOk = async () => {
-    form.validateFields();
     const { versionName, versionDescription, algorithmVersion, path } = await form.validateFields();
     if (editData?.versionName && editData.versionId) {
       updateModelVersionMutation.mutate({
@@ -173,7 +172,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = ({
           label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
-            { required: true },
+            { required: true, message: t(pCommon("pleaseInput"), [t(p("versionName"))]) },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
@@ -196,10 +195,13 @@ export const CreateAndEditVersionModal: React.FC<Props> = ({
           <RoundedTextArea />
         </CustomFormItem>
         {!editData?.versionId ? (
-          <CustomFormItem label={renderLabel(t(p("select")))} name="path" rules={[{ required: true }]}>
+          <CustomFormItem
+            label={renderLabel(t(p("select")))}
+            name="path"
+            rules={[{ required: true, message: t(p("selectModelFolder")) }]}
+          >
             <RoundedInput
               disabled={true}
-              placeholder={t(p("selectModelFolder"))}
               suffix={
                 <FileSelectModal
                   allowedFileType={["DIR"]}

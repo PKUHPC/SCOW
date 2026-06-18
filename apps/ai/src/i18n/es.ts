@@ -140,7 +140,7 @@ export default {
         action: "Acción",
         createNewVersion: "Crear nueva versión",
         selectFramework: "Por favor seleccione un marco de algoritmo",
-        nameOrDesc: "Nombre o descripción",
+        nameOrDesc: "Buscar por nombre o descripción",
       },
       algorithmVersionList: {
         notFound: "Versión de algoritmo no encontrada",
@@ -262,6 +262,7 @@ export default {
         versionName: "Nombre de versión",
         description: "Descripción de versión",
         select: "Seleccionar conjunto de datos",
+        selectDatasetFolder: "Seleccione la carpeta del conjunto de datos",
       },
       datasetListTable: {
         notFound: "Conjunto de datos no encontrado",
@@ -271,7 +272,7 @@ export default {
         cluster: "Clúster",
         type: "Tipo de datos",
         selectType: "Por favor seleccione un tipo de datos",
-        nameOrDesc: "Nombre o descripción",
+        nameOrDesc: "Buscar por nombre o descripción",
         name: "Nombre",
         datasetType: "Tipo de conjunto de datos",
         description: "Descripción del conjunto de datos",
@@ -710,7 +711,7 @@ export default {
         notFound: "Imagen No Encontrada",
         shareFailed: "Error al Compartir Imagen",
         cluster: "Clúster",
-        nameOrTagOrDesc: "Nombre, Etiqueta o Descripción",
+        nameOrTagOrDesc: "Buscar por nombre, etiqueta o descripción",
         name: "Nombre",
         tag: "Etiqueta",
         source: "Fuente de Imagen",
@@ -801,7 +802,7 @@ export default {
         createTime: "Tiempo de Creación",
         action: "Acciones",
         createNewVersion: "Crear Nueva Versión",
-        nameOrDes: "Nombre o Descripción",
+        nameOrDes: "Buscar por nombre o descripción",
       },
       modelVersionList: {
         notFound: "Versión de Modelo No Encontrada",
@@ -1230,6 +1231,8 @@ export default {
     appNotAvailableForAccount: "Cuenta {0} no está autorizada para la aplicación {1}",
     noChinese: "No puede contener caracteres chinos",
     resourceNameRuleTips: "La longitud no puede exceder 50 bytes y no puede contener el carácter '/'",
+    pleaseInput: "Ingrese {0}",
+    pleaseSelect: "Seleccione {0}",
     aiJobExceptionReason: {
       imagePullError: "Image Pull Error",
       mountError: "Mount Error",

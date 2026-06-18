@@ -2,9 +2,8 @@
 
 import { PlusOutlined } from "@ant-design/icons";
 import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Input, Form, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateAndEditModalModal } from "src/components/assets/model/CreateAndEditModelModal";
 import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
@@ -43,6 +42,7 @@ interface PageInfo {
 const CreateModalModalButton = ModalButton(CreateAndEditModalModal, { type: "primary", icon: <PlusOutlined /> });
 const EditModalModalButton = ModalLink(CreateAndEditModalModal);
 const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
+const ALL_FILTER_VALUE = "ALL";
 
 export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
@@ -221,31 +221,29 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
           marginLeft: "-2px",
         }}
       >
-        <Form<FilterForm>
-          layout="inline"
-          form={form}
-          initialValues={query}
-          onFinish={async () => {
-            const { nameOrDesc } = await form.validateFields();
-            setQuery({ ...query, nameOrDesc: nameOrDesc?.trim() });
-            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
-            refetch();
-          }}
-        >
+        <Form<FilterForm> layout="inline" form={form} initialValues={{ ...query, clusterId: ALL_FILTER_VALUE }}>
           <Form.Item label={t(p("cluster"))} name="clusterId">
             <SingleClusterSelector
-              allowClear={true}
-              onChange={(val) => {
-                setQuery({ ...query, clusterId: val.id });
+              includeAllOption
+              style={{ minWidth: "120px" }}
+              onChange={(clusterId) => {
+                setQuery({ ...query, clusterId: clusterId === ALL_FILTER_VALUE ? undefined : clusterId });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
               }}
             />
           </Form.Item>
           <Form.Item name="nameOrDesc">
-            <Input allowClear placeholder={t(p("nameOrDes"))} />
+            <Input.Search
+              placeholder={t(p("nameOrDes"))}
+              onSearch={async () => {
+                const { nameOrDesc } = await form.validateFields();
+                setQuery({ ...query, nameOrDesc: nameOrDesc?.trim() });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+                refetch();
+              }}
+              enterButton
+            />
           </Form.Item>
-          <Button className="ant-form-item" type="primary" htmlType="submit">
-            {t("button.searchButton")}
-          </Button>
         </Form>
         {!isPublic && (
           <Space>

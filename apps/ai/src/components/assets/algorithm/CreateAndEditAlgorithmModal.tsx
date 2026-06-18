@@ -155,7 +155,7 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = ({ open, onClose, re
           label={renderLabel(t(p("name")))}
           name="name"
           rules={[
-            { required: true },
+            { required: true, message: t(pCommon("pleaseInput"), [t(p("name"))]) },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
@@ -171,7 +171,7 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = ({ open, onClose, re
           <CustomFormItem
             label={renderLabel(t(p("cluster")))}
             name="cluster"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("cluster"))]) }]}
             initialValue={defaultCluster}
           >
             <RoundedSingleClusterSelector />
@@ -181,7 +181,7 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = ({ open, onClose, re
         <CustomFormItem
           label={renderLabel(t(p("framework")))}
           name="type"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("framework"))]) }]}
           initialValue={editData?.algorithmFramework}
         >
           <RoundedSelect

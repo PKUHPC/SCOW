@@ -1,10 +1,9 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Modal, Select, Space, Table, Tooltip } from "antd";
+import { App, Input, Form, Modal, Select, Space, Table, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateEditDatasetModal } from "src/components/assets/dataset/CreateEditDatasetModal";
 import { CreateEditDSVersionModal } from "src/components/assets/dataset/CreateEditDSVersionModal";
@@ -37,7 +36,7 @@ const FilterTypeForKeys = {
 type FilterTypeKeys = Extract<keyof typeof FilterTypeForKeys, string>;
 
 interface FilterForm {
-  cluster?: Cluster | undefined;
+  clusterId?: string | undefined;
   type?: FilterTypeKeys | undefined;
   nameOrDesc?: string | undefined;
 }
@@ -50,6 +49,7 @@ interface PageInfo {
 const CreateDatasetModalButton = ModalButton(CreateEditDatasetModal, { type: "primary", icon: <PlusOutlined /> });
 const EditDatasetModalButton = ModalLink(CreateEditDatasetModal);
 const CreateEditVersionModalButton = ModalLink(CreateEditDSVersionModal);
+const ALL_FILTER_VALUE = "ALL";
 
 export const DatasetListTable: React.FC<Props> = ({ clusters }) => {
   const t = useI18nTranslateToString();
@@ -87,7 +87,7 @@ export const DatasetListTable: React.FC<Props> = ({ clusters }) => {
 
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
-      cluster: undefined,
+      clusterId: undefined,
       nameOrDesc: undefined,
       type: undefined,
     };
@@ -99,7 +99,7 @@ export const DatasetListTable: React.FC<Props> = ({ clusters }) => {
   const { data, refetch, isFetching, error } = trpc.dataset.list.useQuery({
     ...pageInfo,
     ...query,
-    clusterId: query.cluster?.id,
+    clusterId: query.clusterId,
     isPublic: "true",
     isPlatformOwned: true,
   }); // 保留isPublic获取已发布的数据集数量
@@ -154,40 +154,42 @@ export const DatasetListTable: React.FC<Props> = ({ clusters }) => {
         <Form<FilterForm>
           layout="inline"
           form={form}
-          initialValues={query}
-          onFinish={async () => {
-            const { nameOrDesc } = await form.validateFields();
-            setQuery({ ...query, nameOrDesc: nameOrDesc?.trim() });
-            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
-            refetch();
-          }}
+          initialValues={{ ...query, clusterId: ALL_FILTER_VALUE, type: ALL_FILTER_VALUE }}
         >
-          <Form.Item label={t(p("cluster"))} name="cluster">
+          <Form.Item label={t(p("cluster"))} name="clusterId">
             <SingleClusterSelector
-              allowClear={true}
-              onChange={(value) => {
-                setQuery({ ...query, cluster: value });
+              includeAllOption
+              style={{ minWidth: "120px" }}
+              onChange={(clusterId) => {
+                setQuery({ ...query, clusterId: clusterId === ALL_FILTER_VALUE ? undefined : clusterId });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
               }}
             />
           </Form.Item>
-          <Form.Item label={t(p("type"))} name="type">
+          <Form.Item label={t(p("datasetType"))} name="type" initialValue={ALL_FILTER_VALUE}>
             <Select
               style={{ minWidth: "100px" }}
-              allowClear
               onChange={(value: FilterTypeKeys) => {
-                setQuery({ ...query, type: value === "ALL" ? undefined : value });
+                setQuery({ ...query, type: value === ALL_FILTER_VALUE ? undefined : value });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
               }}
               placeholder={t(p("selectType"))}
-              defaultValue={FilterType.ALL}
               options={Object.entries(FilterType).map(([key, value]) => ({ label: value, value: key }))}
             />
           </Form.Item>
+
           <Form.Item name="nameOrDesc">
-            <Input allowClear placeholder={t(p("nameOrDesc"))} />
+            <Input.Search
+              placeholder={t(p("nameOrDesc"))}
+              onSearch={async () => {
+                const { nameOrDesc } = await form.validateFields();
+                setQuery({ ...query, nameOrDesc: nameOrDesc?.trim() });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+                refetch();
+              }}
+              enterButton
+            />
           </Form.Item>
-          <Button className="ant-form-item" type="primary" htmlType="submit">
-            {t("button.searchButton")}
-          </Button>
         </Form>
         <Space>
           <CreateDatasetModalButton refetch={refetch} isEdit={false} isPlatformOwned={true} clusters={clusters}>

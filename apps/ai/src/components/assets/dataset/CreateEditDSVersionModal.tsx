@@ -107,7 +107,6 @@ export const CreateEditDSVersionModal: React.FC<Props> = ({
   });
 
   const onOk = async () => {
-    form.validateFields();
     const { versionName, versionDescription, path } = await form.validateFields();
 
     if (isEdit && editData) {
@@ -167,22 +166,25 @@ export const CreateEditDSVersionModal: React.FC<Props> = ({
           label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
-            { required: true },
+            { required: true, message: t(pCommon("pleaseInput"), [t(p("versionName"))]) },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
-          <RoundedInput allowClear />
+          <RoundedInput />
         </CustomFormItem>
         <CustomFormItem label={renderLabel(t(p("description")))} name="versionDescription">
           <RoundedTextArea />
         </CustomFormItem>
         {!isEdit && (
           <>
-            <CustomFormItem label={renderLabel(t(p("select")))} name="path" rules={[{ required: true }]}>
+            <CustomFormItem
+              label={renderLabel(t(p("select")))}
+              name="path"
+              rules={[{ required: true, message: t(p("selectDatasetFolder")) }]}
+            >
               <RoundedInput
                 disabled={true}
-                placeholder={t(p("selectDatasetFolder"))}
                 suffix={
                   <FileSelectModal
                     allowedFileType={["DIR"]}

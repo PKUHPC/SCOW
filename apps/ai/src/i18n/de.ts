@@ -140,7 +140,7 @@ export default {
         action: "Aktion",
         createNewVersion: "Neue Version erstellen",
         selectFramework: "Bitte wählen Sie ein Algorithmus-Framework",
-        nameOrDesc: "Name oder Beschreibung",
+        nameOrDesc: "Nach Name oder Beschreibung suchen",
       },
       algorithmVersionList: {
         notFound: "Algorithmus-Version nicht gefunden",
@@ -262,6 +262,7 @@ export default {
         versionName: "Versionsname",
         description: "Versionsbeschreibung",
         select: "Datensatz auswählen",
+        selectDatasetFolder: "Bitte wählen Sie den Datensatzordner aus",
       },
       datasetListTable: {
         notFound: "Datensatz nicht gefunden",
@@ -271,7 +272,7 @@ export default {
         cluster: "Cluster",
         type: "Datentyp",
         selectType: "Bitte wählen Sie einen Datentyp",
-        nameOrDesc: "Name oder Beschreibung",
+        nameOrDesc: "Nach Name oder Beschreibung suchen",
         name: "Name",
         datasetType: "Datensatztyp",
         description: "Datensatz-Beschreibung",
@@ -711,7 +712,7 @@ export default {
         notFound: "Image nicht gefunden",
         shareFailed: "Image freigeben fehlgeschlagen",
         cluster: "Cluster",
-        nameOrTagOrDesc: "Name, Tag oder Beschreibung",
+        nameOrTagOrDesc: "Nach Name, Tag oder Beschreibung suchen",
         name: "Name",
         tag: "Tag",
         source: "Image-Quelle",
@@ -802,7 +803,7 @@ export default {
         createTime: "Erstellungszeit",
         action: "Aktionen",
         createNewVersion: "Neue Version erstellen",
-        nameOrDes: "Name oder Beschreibung",
+        nameOrDes: "Nach Name oder Beschreibung suchen",
       },
       modelVersionList: {
         notFound: "Modell-Version nicht gefunden",
@@ -1234,6 +1235,8 @@ export default {
     appNotAvailableForAccount: "Konto {0} ist nicht für die Anwendung {1} autorisiert",
     noChinese: "Darf keine chinesischen Zeichen enthalten",
     resourceNameRuleTips: "Die Länge darf 50 Byte nicht überschreiten und darf das '/' Zeichen nicht enthalten",
+    pleaseInput: "Bitte geben Sie {0} ein",
+    pleaseSelect: "Bitte waehlen Sie {0} aus",
     aiJobExceptionReason: {
       imagePullError: "Image Pull Error",
       mountError: "Mount Error",

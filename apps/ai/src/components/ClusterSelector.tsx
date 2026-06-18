@@ -3,6 +3,7 @@
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Select, type SelectProps } from "antd";
+import type { CSSProperties } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { defaultClusterContext } from "src/app/(auth)/defaultClusterContext";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
@@ -38,18 +39,31 @@ export const ClusterSelector: React.FC<Props> = ({ value, onChange }) => {
   );
 };
 
-interface SingleSelectionProps {
-  value?: Cluster;
-  defaultValue?: Cluster;
-  onChange?: (cluster: Cluster) => void;
+interface SingleSelectionBaseProps {
   label?: string;
   clusterIds?: string[];
   allowClear?: boolean;
+  style?: CSSProperties;
 }
+
+type SingleSelectionProps =
+  | (SingleSelectionBaseProps & {
+      includeAllOption?: false;
+      value?: Cluster;
+      defaultValue?: Cluster;
+      onChange?: (cluster: Cluster) => void;
+    })
+  | (SingleSelectionBaseProps & {
+      includeAllOption: true;
+      value?: string;
+      defaultValue?: string;
+      onChange?: (clusterId: string | undefined) => void;
+    });
 
 const SingleClusterSelectorBase: React.FC<
   SingleSelectionProps & { SelectComponent: React.ComponentType<SelectProps> }
-> = ({ value, SelectComponent, defaultValue, onChange, label, clusterIds, allowClear }) => {
+> = (props) => {
+  const { value, SelectComponent, defaultValue, onChange, label, clusterIds, allowClear, style } = props;
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
@@ -57,32 +71,47 @@ const SingleClusterSelectorBase: React.FC<
     publicConfig.CLUSTERS,
     currentAvailableClusterIds,
   );
+  const includeAllOption = props.includeAllOption;
+  const selectedValue = typeof value === "string" ? value : value?.id;
+  const selectedDefaultValue = typeof defaultValue === "string" ? defaultValue : defaultValue?.id;
+  const options: SelectProps["options"] = (label ? [{ value: label, label, disabled: true }] : [])
+    .concat(includeAllOption ? [{ value: "ALL", label: t("app.dataset.model.all"), disabled: false }] : [])
+    .concat((currentClusters.filter((x) => clusterIds?.includes(x.id) ?? true) || []).map((x) => ({
+      value: x.id,
+      label: getI18nConfigCurrentText(x.name, languageId),
+      disabled: false,
+    })));
 
   return (
     <SelectComponent
       placeholder={t("component.clusterSelector.select")}
-      value={value?.id}
-      defaultValue={defaultValue?.id}
+      value={selectedValue}
+      defaultValue={selectedDefaultValue}
       onChange={(value: unknown) => {
-        const clusterId = value as string;
-        onChange?.({
+        const clusterId = value as string | undefined;
+
+        if (includeAllOption && clusterId === "ALL") {
+          onChange?.(clusterId as never);
+          return;
+        }
+
+        if (!clusterId) {
+          onChange?.(undefined as never);
+          return;
+        }
+
+        const cluster = {
           id: clusterId,
           name: currentClusters.find((cluster) => cluster.id === clusterId)?.name ?? clusterId,
-        });
-        setDefaultCluster({
-          id: clusterId,
-          name: currentClusters.find((cluster) => cluster.id === clusterId)?.name ?? clusterId,
-        });
+        };
+
+        onChange?.((includeAllOption ? clusterId : cluster) as never);
+        setDefaultCluster(cluster);
       }}
-      options={(label ? [{ value: label, label, disabled: true }] : []).concat(
-        (currentClusters.filter((x) => clusterIds?.includes(x.id) ?? true) || []).map((x) => ({
-          value: x.id,
-          label: getI18nConfigCurrentText(x.name, languageId),
-          disabled: false,
-        })),
-      )}
+      options={options}
       popupMatchSelectWidth={false}
       allowClear={allowClear}
+      style={style}
     />
   );
 };

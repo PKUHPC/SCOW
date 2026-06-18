@@ -138,7 +138,7 @@ export default {
         action: "アクション",
         createNewVersion: "新しいバージョンを作成",
         selectFramework: "アルゴリズムフレームワークを選択してください",
-        nameOrDesc: "名前または説明",
+        nameOrDesc: "名前または説明で検索",
       },
       algorithmVersionList: {
         notFound: "アルゴリズムバージョンが見つかりません",
@@ -260,6 +260,7 @@ export default {
         versionName: "バージョン名",
         description: "バージョン説明",
         select: "データセットを選択",
+        selectDatasetFolder: "データセットフォルダーを選択してください",
       },
       datasetListTable: {
         notFound: "データセットが見つかりません",
@@ -269,7 +270,7 @@ export default {
         cluster: "クラスター",
         type: "データタイプ",
         selectType: "データタイプを選択してください",
-        nameOrDesc: "名前または説明",
+        nameOrDesc: "名前または説明で検索",
         name: "名前",
         datasetType: "データセットタイプ",
         description: "データセット説明",
@@ -705,7 +706,7 @@ export default {
         notFound: "イメージが見つかりません",
         shareFailed: "イメージの共有に失敗しました",
         cluster: "クラスター",
-        nameOrTagOrDesc: "名前、タグ、または説明",
+        nameOrTagOrDesc: "名前、タグまたは説明で検索",
         name: "名前",
         tag: "タグ",
         source: "イメージソース",
@@ -796,7 +797,7 @@ export default {
         createTime: "作成時刻",
         action: "アクション",
         createNewVersion: "新しいバージョンを作成",
-        nameOrDes: "名前または説明",
+        nameOrDes: "名前または説明で検索",
       },
       modelVersionList: {
         notFound: "モデルバージョンが見つかりません",
@@ -1222,6 +1223,8 @@ export default {
     appNotAvailableForAccount: "アカウント{0}はアプリケーション{1}の承認を受けていません",
     noChinese: "中国語の文字を含むことはできません",
     resourceNameRuleTips: "長さは50バイトを超えることはできず、'/'文字を含むことはできません",
+    pleaseInput: "{0}を入力してください",
+    pleaseSelect: "{0}を選択してください",
     aiJobExceptionReason: {
       imagePullError: "イメージ取得エラー",
       mountError: "マウントエラー",

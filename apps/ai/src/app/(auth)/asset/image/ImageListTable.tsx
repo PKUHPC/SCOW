@@ -2,10 +2,9 @@
 
 import { PlusOutlined } from "@ant-design/icons";
 import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Select, Space, Table, Tag, Tooltip } from "antd";
+import { App, Input, Form, Select, Space, Table, Tag, Tooltip } from "antd";
 import NextError from "next/error";
 import { type ReactNode, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
@@ -35,10 +34,10 @@ interface Props {
 }
 
 interface FilterForm {
-  cluster?: Cluster | undefined;
+  clusterId?: string | undefined;
   nameOrTagOrDesc?: string | undefined;
   isShared?: boolean;
-  types: ImageType[];
+  type?: ImageTypeFilter;
 }
 
 interface PageInfo {
@@ -57,6 +56,8 @@ interface ImageConfirmState {
 const CreateImageModalButton = ModalButton(CreateEditImageModal, { type: "primary", icon: <PlusOutlined /> });
 const EditImageModalButton = ModalLink(CreateEditImageModal);
 const CopyImageModalButton = ModalLink(CopyImageModal);
+const ALL_FILTER_VALUE = "ALL";
+type ImageTypeFilter = ImageType | typeof ALL_FILTER_VALUE;
 
 export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
@@ -76,10 +77,10 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
 
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
-      cluster: undefined,
+      clusterId: undefined,
       nameOrTagOrDesc: undefined,
       isPublic: isPublic,
-      types: [],
+      type: undefined,
     };
   });
 
@@ -110,14 +111,12 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
     refetchImageQuota();
   };
 
-  const cluster = Form.useWatch("cluster", form);
-
   const { data, refetch, isFetching, error } = trpc.image.list.useQuery({
     ...pageInfo,
     ...query,
     isPublic: parseBooleanParam(isPublic),
-    clusterId: cluster?.id,
-    types: query.types.join(","),
+    clusterId: query.clusterId,
+    types: query.type && query.type !== ALL_FILTER_VALUE ? query.type : "",
   });
 
   const { data: imageQuota, refetch: refetchImageQuota } = trpc.image.getImageQuota.useQuery();
@@ -169,32 +168,51 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
         <Form<FilterForm>
           layout="inline"
           form={form}
-          initialValues={query}
-          onFinish={async () => {
-            const { nameOrTagOrDesc, types } = await form.validateFields();
-            setQuery({ ...query, nameOrTagOrDesc: nameOrTagOrDesc?.trim(), types });
-            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
-            refetch();
-            refetchImageQuota();
-          }}
+          initialValues={{ ...query, clusterId: ALL_FILTER_VALUE, type: ALL_FILTER_VALUE }}
         >
-          <Form.Item label={t(p("cluster"))} name="cluster">
-            <SingleClusterSelector allowClear={true} />
+          <Form.Item label={t(p("cluster"))} name="clusterId">
+            <SingleClusterSelector
+              includeAllOption
+              style={{ minWidth: "120px" }}
+              onChange={(clusterId) => {
+                setQuery({ ...query, clusterId: clusterId === ALL_FILTER_VALUE ? undefined : clusterId });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+              }}
+            />
           </Form.Item>
-          <Form.Item label={t(p("type"))} name="types">
+          <Form.Item label={t(p("type"))} name="type">
             <Select
               style={{ minWidth: "100px" }}
-              mode="multiple"
-              allowClear
-              options={Object.entries(TypeText).map(([key, value]) => ({ label: value, value: key }))}
+              onChange={(value: ImageTypeFilter) => {
+                setQuery({
+                  ...query,
+                  type: value === ALL_FILTER_VALUE ? undefined : value,
+                });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+              }}
+              options={[
+                { label: t("app.dataset.model.all"), value: ALL_FILTER_VALUE },
+                ...Object.entries(TypeText).map(([key, value]) => ({ label: value, value: key })),
+              ]}
             />
           </Form.Item>
           <Form.Item name="nameOrTagOrDesc">
-            <Input allowClear placeholder={t(p("nameOrTagOrDesc"))} />
+            <Input.Search
+              placeholder={t(p("nameOrTagOrDesc"))}
+              onSearch={async () => {
+                const { nameOrTagOrDesc, type } = await form.validateFields();
+                setQuery({
+                  ...query,
+                  nameOrTagOrDesc: nameOrTagOrDesc?.trim(),
+                  type: type === ALL_FILTER_VALUE ? undefined : type,
+                });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+                refetch();
+                refetchImageQuota();
+              }}
+              enterButton
+            />
           </Form.Item>
-          <Button className="ant-form-item" type="primary" htmlType="submit">
-            {t("button.searchButton")}
-          </Button>
         </Form>
         {!isPublic && (
           <Space>

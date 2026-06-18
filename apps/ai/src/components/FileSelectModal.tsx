@@ -51,7 +51,6 @@ const FolderTriggerButton = styled(Button)`
   align-items: center;
   justify-content: center;
   padding: 0 !important;
-  margin-inline-end: 16px;
 
   .anticon {
     display: flex;

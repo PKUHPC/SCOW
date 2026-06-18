@@ -147,7 +147,7 @@ export default {
       public: "公共算法",
       title: "算法",
       model: {
-        all: "所有",
+        all: "全部",
         other: "其他",
       },
       algorithmTable: {
@@ -165,7 +165,7 @@ export default {
         action: "操作",
         createNewVersion: "新建版本",
         selectFramework: "请选择算法框架",
-        nameOrDesc: "名称或描述",
+        nameOrDesc: "按名称或者描述搜索",
         updatedTime: "更新时间",
       },
       algorithmVersionList: {
@@ -317,7 +317,7 @@ export default {
         cluster: "集群",
         type: "数据类型",
         selectType: "请选择数据类型",
-        nameOrDesc: "名称或描述",
+        nameOrDesc: "按名称或者描述搜索",
         name: "名称",
         datasetType: "数据集类型",
         description: "数据集描述",
@@ -936,7 +936,7 @@ export default {
         notFound: "找不到镜像",
         shareFailed: "分享镜像失败",
         cluster: "集群",
-        nameOrTagOrDesc: "名称、标签或描述",
+        nameOrTagOrDesc: "按名称、标签或者描述搜索",
         name: "名称",
         tag: "标签",
         source: "镜像来源",
@@ -1045,7 +1045,7 @@ export default {
         createTime: "创建时间",
         action: "操作",
         createNewVersion: "新建版本",
-        nameOrDes: "名称或描述",
+        nameOrDes: "按名称或者描述搜索",
         updatedTime: "更新时间",
       },
       modelVersionList: {
@@ -1499,6 +1499,8 @@ export default {
     appNotAvailableForAccount: "账户 {0} 没有该应用 {1} 的授权",
     noChinese: "不能包含中文字符",
     resourceNameRuleTips: "长度不能超过 50 字节且不能包含 '/' 字符",
+    pleaseInput: "请输入{0}",
+    pleaseSelect: "请选择{0}",
     aiJobExceptionReason: {
       imagePullError: "拉取镜像失败",
       mountError: "挂载失败",

@@ -164,7 +164,7 @@ export const CreateAndEditModalModal: React.FC<Props> = ({ open, onClose, refetc
           label={renderLabel(t(p("name")))}
           name="modelName"
           rules={[
-            { required: true },
+            { required: true, message: t(pCommon("pleaseInput"), [t(p("name"))]) },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
@@ -180,7 +180,7 @@ export const CreateAndEditModalModal: React.FC<Props> = ({ open, onClose, refetc
           <CustomFormItem
             label={renderLabel(t(p("cluster")))}
             name="cluster"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: t(pCommon("pleaseSelect"), [t(p("cluster"))]) }]}
             initialValue={defaultCluster}
           >
             <RoundedSingleClusterSelector />
