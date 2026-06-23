@@ -1,5 +1,5 @@
 import { isAccountAuthorizedInClusterPartition } from "@scow/lib-scow-resource/build/utils";
-import { libCheckAppIsDisabled, libCheckUserAccountPermission } from "@scow/lib-server";
+import { AppScope, libCheckAppIsDisabled, libCheckUserAccountPermission } from "@scow/lib-server";
 import { AccountStatusFilter } from "@scow/protos/build/portal/job";
 import { Logger } from "pino";
 import { commonConfig } from "src/server/config/common";
@@ -95,6 +95,7 @@ export async function validateSubmitAiJobInfoUnderMis({
       accountName,
       config.MIS_SERVER_URL,
       commonConfig.scowApi?.auth?.token,
+      AppScope.AI,
     );
 
     if (isAppDisabledToAccount) {

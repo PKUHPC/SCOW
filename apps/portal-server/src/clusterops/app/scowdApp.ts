@@ -595,14 +595,28 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
                 }
               }
 
-              const connectionInfo = await callOnOne(
-                cluster,
-                logger,
-                async (client) => await getAppConnectionInfoFromAdapter(client, sessionMetadata.jobId, logger),
-              );
-              if (connectionInfo?.response?.$case === "appConnectionInfo") {
-                host = connectionInfo.response.appConnectionInfo.host;
-                port = connectionInfo.response.appConnectionInfo.port;
+              // openscow#845: feat(portal-server): 使用调度器适配器的getAppConnectionInfo接口
+              // 原始设计中我们使用getAppConnectionInfoFromAdapter中的getAppConnectionInfo接口获取应用在的k8s等容器下的连接信息
+              // slurm/crane适配器下此接口不返回相关函数
+              // crane-ai支持超智算融合，当hpc应用调取相关接口时会因为没有ai作业在容器内的信息而报错
+              // 所以在hpc获取应用信息逻辑中拦截此错误，使用原来的从文件中获取连接信息的方式
+              // 不确定未来设计是否支持门户应用也使用getAppConnectionInfo接口获取连接信息，兼容原始设计
+              try {
+                const connectionInfo = await callOnOne(
+                  cluster,
+                  logger,
+                  async (client) => await getAppConnectionInfoFromAdapter(client, sessionMetadata.jobId, logger),
+                );
+                if (connectionInfo?.response?.$case === "appConnectionInfo") {
+                  host = connectionInfo.response.appConnectionInfo.host;
+                  port = connectionInfo.response.appConnectionInfo.port;
+                }
+              } catch (e) {
+                logger.warn(
+                  "Failed to get app connection info from adapter for HPC app job %s. Falling back to session files. Error: %o",
+                  sessionMetadata.jobId,
+                  e,
+                );
               }
             } else {
               // 如果不是 RUNNING 或 PENDING 的文件， 将文件写入 ended_sessions.json
@@ -713,19 +727,31 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
 
         const app = apps[sessionMetadata.appId];
 
-        const connectionInfo = await callOnOne(
-          cluster,
-          logger,
-          async (client) => await getAppConnectionInfoFromAdapter(client, sessionMetadata.jobId, logger),
-        );
+        // 原始设计中我们使用getAppConnectionInfoFromAdapter中的getAppConnectionInfo接口获取应用在的k8s等容器下的连接信息
+        // slurm/crane适配器下此接口不返回相关函数
+        // crane-ai支持超智算融合，当hpc应用调取相关接口时会因为没有ai作业在容器内的信息而报错
+        // HPC下拦截此报错，兼容原始设计
+        try {
+          const connectionInfo = await callOnOne(
+            cluster,
+            logger,
+            async (client) => await getAppConnectionInfoFromAdapter(client, sessionMetadata.jobId, logger),
+          );
 
-        if (connectionInfo?.response?.$case === "appConnectionInfo") {
-          return {
-            appId: sessionMetadata.appId,
-            host: connectionInfo.response.appConnectionInfo.host,
-            port: connectionInfo.response.appConnectionInfo.port,
-            password: connectionInfo.response.appConnectionInfo.password,
-          };
+          if (connectionInfo?.response?.$case === "appConnectionInfo") {
+            return {
+              appId: sessionMetadata.appId,
+              host: connectionInfo.response.appConnectionInfo.host,
+              port: connectionInfo.response.appConnectionInfo.port,
+              password: connectionInfo.response.appConnectionInfo.password,
+            };
+          }
+        } catch (e) {
+          logger.warn(
+            "Failed to get app connection info from adapter for HPC app job %s. Falling back to session files. Error: %o",
+            sessionMetadata.jobId,
+            e,
+          );
         }
 
         if (app.type === AppType.web || app.type === AppType.shadowDesk) {

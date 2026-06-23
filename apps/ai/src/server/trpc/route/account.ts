@@ -1,6 +1,6 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { getCommonConfig } from "@scow/config/src/common";
-import { libGetAccounts } from "@scow/lib-server";
+import { AppScope, libGetAccounts } from "@scow/lib-server";
 import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { AccountStatusFilter } from "@scow/protos/build/portal/job";
 import { config } from "src/server/config/env";
@@ -59,6 +59,7 @@ export const accountRouter = router({
           appId,
           config.MIS_SERVER_URL,
           commonConfig.scowApi?.auth?.token,
+          AppScope.AI,
         );
       }
 

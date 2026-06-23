@@ -1,6 +1,8 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
+import { AppAuthorizationServiceClient, AppScope } from "@scow/protos/build/server/app_authorization";
 import { getClientFn } from "src/utils/api";
+
+export { AppScope };
 
 // 获取应用禁用的账户列表
 export const libWebGetAppForbiddenAccounts = async (
@@ -8,6 +10,7 @@ export const libWebGetAppForbiddenAccounts = async (
   appId: string,
   misServerUrl: string,
   scowApiAuthToken?: string,
+  appScope?: AppScope,
 ): Promise<string[]> => {
   const config = {
     SERVER_URL: misServerUrl,
@@ -21,6 +24,7 @@ export const libWebGetAppForbiddenAccounts = async (
     const reply = await asyncClientCall(client, "getAppForbiddenAccounts", {
       clusterId,
       appId,
+      appScope,
     });
     return reply.accountNames;
   } catch (e: any) {

@@ -1,6 +1,6 @@
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { isAccountAuthorizedInClusterPartition } from "@scow/lib-scow-resource/build/utils";
-import { errorInfo, libCheckAppIsDisabled, libCheckUserAccountPermission } from "@scow/lib-server";
+import { AppScope, errorInfo, libCheckAppIsDisabled, libCheckUserAccountPermission } from "@scow/lib-server";
 import { AccountStatusFilter } from "@scow/protos/build/portal/job";
 import { DetailedError } from "@scow/rich-error-model";
 import { Logger } from "pino";
@@ -81,6 +81,7 @@ export async function validateSubmitJobInfoUnderMis({
       accountName,
       config.MIS_SERVER_URL,
       commonConfig.scowApi?.auth?.token,
+      AppScope.HPC,
     );
 
     if (isAppDisabledToAccount) {

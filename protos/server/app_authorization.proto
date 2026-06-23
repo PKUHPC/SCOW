@@ -4,6 +4,12 @@ package scow.server;
 
 import "common/i18n.proto";
 
+enum AppScope {
+  APP_SCOPE_UNSPECIFIED = 0;
+  HPC = 1;
+  AI = 2;
+}
+
 message GetTargetAppAuthorizationsRequest {
   uint32 page_size = 1;
   uint32 page = 2;
@@ -71,6 +77,7 @@ message AuthorizeAppResponse {
 message GetUserAvailableClusterAppsRequest {
   string cluster_id = 1;
   string user_id = 2;
+  optional AppScope app_scope = 3;
 }
 
 message GetUserAvailableClusterAppsResponse {
@@ -91,6 +98,7 @@ message GetUserAvailableClusterAppsResponse {
 message GetAppForbiddenAccountsRequest {
   string cluster_id = 1;
   string app_id = 2;
+  optional AppScope app_scope = 3;
 }
 
 message GetAppForbiddenAccountsResponse {
@@ -101,6 +109,7 @@ message CheckAppIsDisabledRequest {
   string cluster_id = 1;
   string app_id = 2;
   string account_name = 3;
+  optional AppScope app_scope = 4;
 }
 
 message CheckAppIsDisabledResponse {

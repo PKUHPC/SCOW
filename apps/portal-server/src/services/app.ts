@@ -5,6 +5,7 @@ import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType, AttributeType } from "@scow/config/build/app";
 import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
 import {
+  AppScope,
   getClientFn,
   getI18nSeverTypeFormat,
   libGetAccounts,
@@ -459,8 +460,11 @@ export const appServiceServer = plugin((server) => {
         const [allAssigned, { accounts: unblockedAccounts }] = await Promise.all([
           getUserAccountsClusterPartitionsByAccount(commonConfig.scowResource, allUserAccounts, userInfo.tenantName),
           libGetAccounts(
-            logger, userId, AccountStatusFilter.UNBLOCKED_ONLY,
-            config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token,
+            logger,
+            userId,
+            AccountStatusFilter.UNBLOCKED_ONLY,
+            config.MIS_SERVER_URL,
+            commonConfig.scowApi?.auth?.token,
           ),
         ]);
 
@@ -480,7 +484,12 @@ export const appServiceServer = plugin((server) => {
       // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的应用
       if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && userId) {
         const availableApps = await libGetUserAvailableClusterApps(
-          logger, cluster, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token,
+          logger,
+          cluster,
+          userId,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+          AppScope.HPC,
         );
 
         const clusterAccountSet = new Set(clusterAccounts);

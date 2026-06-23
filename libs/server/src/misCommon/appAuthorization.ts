@@ -3,6 +3,7 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import {
+  AppScope,
   AppAuthorizationServiceClient,
   GetUserAvailableClusterAppsResponse,
 } from "@scow/protos/build/server/app_authorization";
@@ -10,12 +11,15 @@ import {
 import { getClientFn } from "../api";
 import { scowErrorMetadata } from "../error";
 
+export { AppScope };
+
 export const libGetUserAvailableClusterApps = async (
   logger: Logger,
   clusterId: string,
   userId: string,
   misServerUrl: string,
   scowApiAuthToken?: string,
+  appScope?: AppScope,
 ): Promise<GetUserAvailableClusterAppsResponse> => {
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
@@ -23,6 +27,7 @@ export const libGetUserAvailableClusterApps = async (
   return await asyncClientCall(client, "getUserAvailableClusterApps", {
     clusterId,
     userId,
+    appScope,
   });
 };
 
@@ -33,6 +38,7 @@ export const libGetUserAvailableApps = async (
   userId: string,
   misServerUrl: string,
   scowApiAuthToken?: string,
+  appScope?: AppScope,
 ): Promise<GetUserAvailableClusterAppsResponse> => {
   if (clusterIds.length === 0) {
     logger.info("No clusters provided when querying available apps for user %s.", userId);
@@ -50,6 +56,7 @@ export const libGetUserAvailableApps = async (
       const reply = await asyncClientCall(client, "getUserAvailableClusterApps", {
         clusterId,
         userId,
+        appScope,
       });
 
       reply.apps?.forEach((app) => {
@@ -85,6 +92,7 @@ export const libCheckAppIsDisabled = async (
   accountName: string,
   misServerUrl: string,
   scowApiAuthToken?: string,
+  appScope?: AppScope,
 ): Promise<boolean> => {
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
@@ -93,6 +101,7 @@ export const libCheckAppIsDisabled = async (
     clusterId,
     appId,
     accountName,
+    appScope,
   });
 
   return reply.isDisabled;
@@ -140,6 +149,7 @@ export const libGetAppForbiddenAccounts = async (
   appId: string,
   misServerUrl: string,
   scowApiAuthToken?: string,
+  appScope?: AppScope,
 ): Promise<string[]> => {
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
@@ -148,6 +158,7 @@ export const libGetAppForbiddenAccounts = async (
     const reply = await asyncClientCall(client, "getAppForbiddenAccounts", {
       clusterId,
       appId,
+      appScope,
     });
     return reply.accountNames;
   } catch (e: any) {

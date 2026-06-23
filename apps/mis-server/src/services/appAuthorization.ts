@@ -7,6 +7,7 @@ import {
   AppAuthorizationInfo,
   AppAuthorizationServiceServer,
   AppAuthorizationServiceService,
+  AppScope,
   GetTargetAppAuthorizationsRequest_TargetType,
   GetTenantAppsResponse_TenantApp,
   UpdateDefaultAppRequest_UpdateAction,
@@ -32,6 +33,19 @@ import {
 } from "src/utils/appAuthorization";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
+
+const resolveClusterApps = (clusterId: string, appScope: AppScope | undefined) => {
+  const useAiApps = appScope === AppScope.AI || (appScope !== AppScope.HPC && configClusters[clusterId].ai?.enabled);
+
+  logger.trace(
+    "Resolving apps in cluster %s with appScope %s, using %s app configs.",
+    clusterId,
+    appScope === undefined ? "undefined" : AppScope[appScope],
+    useAiApps ? "AI" : "HPC",
+  );
+
+  return useAiApps ? getAiClusterAppConfigs(clusterId) : getClusterAppConfigs(clusterId);
+};
 
 export const appAuthorizationServiceServer = plugin((server) => {
   server.addService<AppAuthorizationServiceServer>(AppAuthorizationServiceService, {
@@ -62,6 +76,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
       const clusterConfigAppInfos: Record<string, AppAuthorizationInfo[]> = {};
       const clusterAppIds: Record<string, string[]> = {};
       // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+      // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
       const clusterApps = configClusters[clusterId].ai?.enabled
         ? getAiClusterAppConfigs(clusterId)
         : getClusterAppConfigs(clusterId);
@@ -247,6 +262,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
         // 验证appId是否在当前交互式应用列表中
         // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+        // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
         const clusterApps = configClusters[clusterId].ai?.enabled
           ? getAiClusterAppConfigs(clusterId)
           : getClusterAppConfigs(clusterId);
@@ -304,10 +320,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
           });
         }
 
-        // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-        const clusterApps = configClusters[clusterId].ai?.enabled
-          ? getAiClusterAppConfigs(clusterId)
-          : getClusterAppConfigs(clusterId);
+        const clusterApps = resolveClusterApps(clusterId, request.appScope);
 
         const currentClusterAppIds = Object.keys(clusterApps);
         if (currentClusterAppIds.length === 0) {
@@ -411,10 +424,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
-      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-      const clusterApps = configClusters[clusterId].ai?.enabled
-        ? getAiClusterAppConfigs(clusterId)
-        : getClusterAppConfigs(clusterId);
+      const clusterApps = resolveClusterApps(clusterId, request.appScope);
       const currentClusterAppIds = Object.keys(clusterApps);
       if (currentClusterAppIds.length === 0) {
         throw new ServiceError({
@@ -453,10 +463,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
-      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-      const clusterApps = configClusters[clusterId].ai?.enabled
-        ? getAiClusterAppConfigs(clusterId)
-        : getClusterAppConfigs(clusterId);
+      const clusterApps = resolveClusterApps(clusterId, request.appScope);
       const currentClusterAppIds = Object.keys(clusterApps);
       if (currentClusterAppIds.length === 0) {
         throw new ServiceError({
@@ -493,6 +500,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
       // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+      // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
       const clusterApps = configClusters[clusterId].ai?.enabled
         ? getAiClusterAppConfigs(clusterId)
         : getClusterAppConfigs(clusterId);
@@ -554,6 +562,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
       // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+      // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
       const clusterApps = configClusters[clusterId].ai?.enabled
         ? getAiClusterAppConfigs(clusterId)
         : getClusterAppConfigs(clusterId);

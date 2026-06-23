@@ -2,7 +2,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AppType } from "@scow/config/build/appForAi";
 import { getCommonConfig } from "@scow/config/src/common";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { libGetAccounts, libGetUserAvailableApps, libGetUserAvailableClusterApps } from "@scow/lib-server";
+import { AppScope, libGetAccounts, libGetUserAvailableApps, libGetUserAvailableClusterApps } from "@scow/lib-server";
 import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { getI18nTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
@@ -221,6 +221,7 @@ export const listAvailableApps = procedure
             user.identityId,
             config.MIS_SERVER_URL,
             commonConfig.scowApi?.auth?.token,
+            AppScope.AI,
           );
 
           return {
@@ -289,6 +290,7 @@ export const listAllAvailableAppsFromAllClusters = procedure
         user.identityId,
         config.MIS_SERVER_URL,
         commonConfig.scowApi?.auth?.token,
+        AppScope.AI,
       );
       return {
         apps: availableApps.map(mapAvailableAppFromMis),
@@ -362,6 +364,7 @@ export const listAppAvailableAccountsAndClusters = procedure
             appId,
             config.MIS_SERVER_URL,
             commonConfig.scowApi?.auth?.token,
+            AppScope.AI,
           );
         }
 

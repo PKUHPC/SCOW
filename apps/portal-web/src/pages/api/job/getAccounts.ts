@@ -1,7 +1,7 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
-import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
+import { AppScope, libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { JobServiceClient } from "@scow/protos/build/portal/job";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
@@ -59,6 +59,7 @@ export default route(GetAccountsSchema, async (req, res) => {
       appId,
       publicConfig.MIS_SERVER_URL,
       runtimeConfig.SCOW_API_AUTH_TOKEN,
+      AppScope.HPC,
     );
   }
 
