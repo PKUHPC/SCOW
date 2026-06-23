@@ -45,7 +45,7 @@ export default /* #__PURE__*/ route(EditUserProfileSchema, async (req, res) => {
   const auth = authenticate(
     (info) =>
       info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      (info.platformRoles.includes(TenantRole.TENANT_ADMIN) && tenantName === info.tenant),
+      (info.tenantRoles.includes(TenantRole.TENANT_ADMIN) && tenantName === info.tenant),
   );
 
   const info = await auth(req, res);
