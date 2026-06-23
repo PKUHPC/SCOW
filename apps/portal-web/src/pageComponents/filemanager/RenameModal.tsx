@@ -19,31 +19,71 @@ interface FormProps {
 }
 
 const p = prefix("pageComp.fileManagerComp.renameModal.");
+const pFileManager = prefix("pageComp.fileManagerComp.fileManager.");
 const pCommon = prefix("common.");
 
 export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, cluster }) => {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
 
   const [form] = Form.useForm<FormProps>();
   const [loading, setLoading] = useState(false);
 
   const t = useI18nTranslateToString();
 
-  const onSubmit = async () => {
-    const { newFileName } = await form.validateFields();
-    setLoading(true);
+  const handleRenameSuccess = () => {
+    message.success(t(p("successMessage")));
+    reload();
+    onClose();
+    form.resetFields();
+  };
+
+  const moveFileItem = async (toPath: string) => {
     await api
-      .moveFileItem({ body: { cluster, fromPath: path, toPath: join(dirname(path), newFileName) } })
+      .moveFileItem({ body: { cluster, fromPath: path, toPath } })
       .httpError(429, () => {
         message.error(t(pCommon("noSpaceError")));
-      })
-      .then(() => {
-        message.success(t(p("successMessage")));
-        reload();
-        onClose();
-        form.resetFields();
-      })
-      .finally(() => setLoading(false));
+      });
+  };
+
+  const confirmOverwrite = (fileName: string, toPath: string) =>
+    new Promise<boolean>((resolve, reject) => {
+      modal.confirm({
+        title: t(pFileManager("moveCopy.existModalTitle")),
+        content: t(pFileManager("moveCopy.existModalContent"), [fileName]),
+        okText: t(pFileManager("moveCopy.existModalOk")),
+        onOk: async () => {
+          try {
+            const fileType = await api.getFileType({ query: { cluster, path: toPath } });
+            const deleteOperation = fileType.type === "dir" || fileType.type === "DIR" ? api.deleteDir : api.deleteFile;
+            await deleteOperation({ query: { cluster, path: toPath } });
+            resolve(true);
+          } catch (e) {
+            reject(e);
+          }
+        },
+        onCancel: () => resolve(false),
+      });
+    });
+
+  const onSubmit = async () => {
+    const { newFileName } = await form.validateFields();
+    const toPath = join(dirname(path), newFileName);
+    setLoading(true);
+    try {
+      const { result: exists } = await api.fileExist({ query: { cluster, path: toPath } });
+
+      if (exists) {
+        const shouldOverwrite = await confirmOverwrite(newFileName, toPath);
+        if (!shouldOverwrite) {
+          return;
+        }
+      }
+
+      await moveFileItem(toPath);
+      handleRenameSuccess();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

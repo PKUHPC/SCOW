@@ -72,10 +72,6 @@ export class SshFileDriver implements FileDriver {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
 
-      if (await sftpExists(sftp, toPath)) {
-        throw new TRPCError({ code: "CONFLICT", message: `${toPath} already exists` });
-      }
-
       const error = await sftpRename(sftp)(fromPath, toPath).catch((e) => e);
       if (error) {
         throw new TRPCError({ code: "CONFLICT", message: "Rename or move failed. " + error });

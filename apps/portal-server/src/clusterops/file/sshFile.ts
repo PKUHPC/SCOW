@@ -110,6 +110,7 @@ export const sshFileServices = (host: string): FileOps => ({
 
     return await sshConnect(host, userId, logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
+
       await sftpRename(sftp)(fromPath, toPath).catch((e: unknown) => {
         logger.error(e, "rename %s to %s as %s failed", fromPath, toPath, userId);
         throw { code: status.INTERNAL, message: "rename failed", details: e } as ServiceError;
