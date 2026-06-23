@@ -168,27 +168,27 @@ func (s *ServerUser) DeleteUser(ctx context.Context, in *protos.DeleteUserReques
 	}
 	if !exist {
 		err = fmt.Errorf("user %s not found", in.UserId)
-		logrus.Errorf("DeleteUser failed: %v", err)
-		return nil, ce.RichError(codes.NotFound, "USER_NOT_FOUND", err.Error())
+		logrus.Warnf("DeleteUser failed: %v", err)
+		return &protos.DeleteUserResponse{}, nil
 	}
 
-	// 该用户作业的判断
+	// 判断用户是否有未完成的作业
 	hasJobs, err := utils.HasUnfinishedJobsByUserName(in.UserId)
 	if err != nil {
 		logrus.Errorf("DeleteUser failed: get jobs by user %v failed: %v", in.UserId, err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-
-	if !hasJobs {
-		if err = utils.DeleteUser(in.UserId); err != nil {
-			logrus.Errorf("DeleteUser: %v failed: %v", in.UserId, err)
-			return nil, err
-		}
-		logrus.Infof("Delete User: %v sucess!", in.UserId)
-		return &protos.DeleteUserResponse{}, nil
-	} else {
-		err = fmt.Errorf("DeleteUser failed: Exist running jobs")
+	logrus.Tracef("[DeleteUser] exist running jobs: %v", hasJobs)
+	if hasJobs {
+		err = fmt.Errorf("Exist running jobs")
 		logrus.Errorf("DeleteUser failed: %v", err)
 		return nil, err
 	}
+	// 删除用户数据
+	if err = utils.DeleteUser(in.UserId); err != nil {
+		logrus.Errorf("DeleteUser: %v failed: %v", in.UserId, err)
+		return nil, err
+	}
+	logrus.Infof("Delete user: %v sucess!", in.UserId)
+	return &protos.DeleteUserResponse{}, nil
 }

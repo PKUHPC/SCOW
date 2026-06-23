@@ -221,8 +221,22 @@ func (s *ServerAccount) DeleteAccount(ctx context.Context, in *protos.DeleteAcco
 
 	runningJobs := len(jobInfo)
 	if runningJobs != 0 {
-		logrus.Errorf("DeleteAccount failed: %v", fmt.Errorf("exist running jobs"))
-		return nil, err
+		err = fmt.Errorf("exist running jobs")
+		logrus.Errorf("DeleteAccount failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "RUNNING_JOB_EXISTS", err.Error())
+	}
+
+	userNames, err := utils.GetAccountUserNames(in.AccountName)
+	if err != nil {
+		logrus.Errorf("DeleteAccount query account users failed: %v", err)
+		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
+	}
+	if len(userNames) != 0 {
+		if err = utils.DeleteUsersFromAccount(userNames, in.AccountName); err != nil {
+			logrus.Errorf("DeleteAccount remove users %v from account %v failed: %v", userNames, in.AccountName, err)
+			return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
+		}
+		logrus.Infof("DeleteAccount remove users %v from account %v success", userNames, in.AccountName)
 	}
 
 	// 创建删除账户请求体
@@ -236,8 +250,8 @@ func (s *ServerAccount) DeleteAccount(ctx context.Context, in *protos.DeleteAcco
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 	}
 	if !response.GetOk() {
-		logrus.Errorf("DeleteAccount failed: %v", fmt.Errorf("ASSOCIATION_NOT_EXISTS"))
-		return nil, ce.RichError(codes.NotFound, "ASSOCIATION_NOT_EXISTS", response.RichErrorList[0].GetDescription())
+		logrus.Errorf("DeleteAccount %s failed, response get false, RichError code: %v", in.AccountName, response.GetRichErrorList()[0].GetCode())
+		return nil, ce.RichError(codes.Internal, "DELETE_ACCOUNT_FAILED", response.RichErrorList[0].GetDescription())
 	}
 	logrus.Infof("DeleteAccount: %v success", in.AccountName)
 	return &protos.DeleteAccountResponse{}, nil

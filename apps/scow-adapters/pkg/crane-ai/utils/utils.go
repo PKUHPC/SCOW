@@ -335,7 +335,7 @@ func GetTaskByPartitionAndStatus(partitionList []string, statusList []craneProto
 
 func GetTaskByAccountName(accountNames []string) ([]*craneProtos.JobInfo, error) {
 	req := craneProtos.QueryJobsInfoRequest{
-		OptionIncludeCompletedJobs: true,
+		OptionIncludeCompletedJobs: false,
 		FilterAccounts:             accountNames,
 		NumLimit:                   99999999,
 	}

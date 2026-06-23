@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -17,6 +18,38 @@ type jobCount struct {
 	JobCount        uint32
 	RunningJobCount uint32
 	PendingJobCount uint32
+}
+
+func formatRichErrors(richErrors []*craneProtos.RichError) string {
+	if len(richErrors) == 0 {
+		return "no rich error returned"
+	}
+
+	messages := make([]string, 0, len(richErrors))
+	for _, richError := range richErrors {
+		if richError == nil {
+			continue
+		}
+		messages = append(messages, fmt.Sprintf("code: %s, description: %s",
+			richError.GetCode().String(), richError.GetDescription()))
+	}
+	if len(messages) == 0 {
+		return "no rich error returned"
+	}
+	return strings.Join(messages, "; ")
+}
+
+func richErrorsAllHaveCode(richErrors []*craneProtos.RichError, code craneProtos.ErrCode) bool {
+	if len(richErrors) == 0 {
+		return false
+	}
+
+	for _, richError := range richErrors {
+		if richError == nil || richError.GetCode() != code {
+			return false
+		}
+	}
+	return true
 }
 
 func getUsersByAccountName(accountName string) ([]*craneProtos.UserInfo, error) {
@@ -298,10 +331,18 @@ func SelectUserExists(userName string) (bool, error) {
 }
 
 func DeleteUserFromAccount(userId, accountName string) error {
+	return DeleteUsersFromAccount([]string{userId}, accountName)
+}
+
+func DeleteUsersFromAccount(userIds []string, accountName string) error {
+	if len(userIds) == 0 {
+		return nil
+	}
+
 	request := &craneProtos.DeleteUserRequest{
 		Uid:      0,
 		Account:  accountName,
-		UserList: []string{userId},
+		UserList: userIds,
 	}
 
 	response, err := client.CraneCtld.DeleteUser(context.Background(), request)
@@ -309,7 +350,7 @@ func DeleteUserFromAccount(userId, accountName string) error {
 		return err
 	}
 	if !response.GetOk() {
-		return fmt.Errorf("failed to delete user %v in account %v", userId, accountName)
+		return fmt.Errorf("failed to delete users %v in account %v", userIds, accountName)
 	}
 	return nil
 }
@@ -322,10 +363,19 @@ func DeleteUser(userId string) error {
 
 	response, err := client.CraneCtld.DeleteUser(context.Background(), request)
 	if err != nil {
+		logrus.Errorf("[DeleteUser] delete user %s failed due to %s", userId, err)
 		return err
 	}
 	if !response.GetOk() {
-		return fmt.Errorf("the user has been deleted")
+		richErrors := response.GetRichErrorList()
+		richErrorMessage := formatRichErrors(richErrors)
+		if richErrorsAllHaveCode(richErrors, craneProtos.ErrCode_ERR_INVALID_USER) {
+			logrus.Warnf("[DeleteUser] user %s does not exist in crane, ignored: %v", userId, richErrorMessage)
+			return nil
+		}
+
+		logrus.Errorf("[DeleteUser] delete user %s failed: %v", userId, richErrorMessage)
+		return fmt.Errorf("delete user %s failed: %v", userId, richErrorMessage)
 	}
 	return nil
 }
@@ -413,6 +463,27 @@ func GetAccountAssociatedUser(accountName string, excludeUserList []string) ([]s
 	}
 
 	return userList, nil
+}
+
+func GetAccountUserNames(accountName string) ([]string, error) {
+	request := &craneProtos.QueryUserInfoRequest{
+		Uid:     0,
+		Account: accountName,
+	}
+	response, err := client.CraneCtld.QueryUserInfo(context.Background(), request)
+	if err != nil {
+		return nil, err
+	}
+	if !response.GetOk() {
+		logrus.Warnf("query account %v users failed, RichErrorList: %v", accountName, response.GetRichErrorList())
+		return nil, nil
+	}
+
+	userNames := make([]string, 0, len(response.GetUserList()))
+	for _, user := range response.GetUserList() {
+		userNames = append(userNames, user.GetName())
+	}
+	return userNames, nil
 }
 
 func GetAccountUserBlockedInfo(accountName string) (map[string]bool, error) {
