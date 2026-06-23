@@ -69,20 +69,65 @@ type clusterConfigFilesResponse struct {
 }
 
 type clusterConfig struct {
-	DisplayName json.RawMessage `json:"displayName"`
-	Priority    float64         `json:"priority"`
-	LoginNodes  []loginNode     `json:"loginNodes"`
+	DisplayName i18nText    `json:"displayName"`
+	Priority    float64     `json:"priority"`
+	LoginNodes  []loginNode `json:"loginNodes"`
+}
+
+type i18nText struct {
+	Value string
+}
+
+type i18nTextObject struct {
+	Default string `json:"default"`
+	I18n    struct {
+		Default string `json:"default"`
+		En      string `json:"en,omitempty"`
+		ZhCN    string `json:"zh_cn,omitempty"`
+		Ja      string `json:"ja,omitempty"`
+		Ko      string `json:"ko,omitempty"`
+		Fr      string `json:"fr,omitempty"`
+		De      string `json:"de,omitempty"`
+		Es      string `json:"es,omitempty"`
+		Pt      string `json:"pt,omitempty"`
+		Ru      string `json:"ru,omitempty"`
+	} `json:"i18n"`
+}
+
+func (t *i18nText) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err == nil {
+		t.Value = value
+		return nil
+	}
+
+	var obj i18nTextObject
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+
+	if obj.I18n.Default != "" {
+		t.Value = obj.I18n.Default
+		return nil
+	}
+
+	t.Value = obj.Default
+	return nil
+}
+
+func (t i18nText) String() string {
+	return t.Value
 }
 
 type loginNode struct {
-	Name    string `json:"name"`
-	Address string `json:"address"`
+	Name    i18nText `json:"name"`
+	Address string   `json:"address"`
 }
 
 func (n *loginNode) UnmarshalJSON(data []byte) error {
 	var address string
 	if err := json.Unmarshal(data, &address); err == nil {
-		n.Name = address
+		n.Name = i18nText{Value: address}
 		n.Address = address
 		return nil
 	}
@@ -118,7 +163,7 @@ func runShell(ctx context.Context, args []string) error {
 	}
 
 	if command == "" {
-		fmt.Fprintf(os.Stderr, "Connecting to login node %s (%s) on cluster %s...\n", loginNode.Name, loginNode.Address, clusterID)
+		fmt.Fprintf(os.Stderr, "Connecting to login node %s (%s) on cluster %s...\n", loginNode.DisplayName(), loginNode.Address, clusterID)
 	}
 
 	return connectShell(ctx, current, clusterID, loginNode.Address, command)
@@ -207,31 +252,11 @@ func listClustersAndError(clusters map[string]clusterConfig) error {
 func printClusterList(clusters map[string]clusterConfig) {
 	for id, config := range clusters {
 		fmt.Fprintf(os.Stderr, "  %s", id)
-		if name := extractDisplayName(config.DisplayName); name != "" && name != id {
+		if name := config.DisplayName.String(); name != "" && name != id {
 			fmt.Fprintf(os.Stderr, " (%s)", name)
 		}
 		fmt.Fprintln(os.Stderr)
 	}
-}
-
-func extractDisplayName(raw json.RawMessage) string {
-	if len(raw) == 0 {
-		return ""
-	}
-
-	var str string
-	if err := json.Unmarshal(raw, &str); err == nil {
-		return str
-	}
-
-	var obj struct {
-		Default string `json:"default"`
-	}
-	if err := json.Unmarshal(raw, &obj); err == nil {
-		return obj.Default
-	}
-
-	return ""
 }
 
 func fetchClusterConfigFiles(ctx context.Context, current *namedProfile) (map[string]clusterConfig, error) {
@@ -389,6 +414,13 @@ func runSingleCommandShell(ctx context.Context, conn *websocket.Conn, command st
 		return &CommandExitError{code: commandExitCode}
 	}
 	return nil
+}
+
+func (n loginNode) DisplayName() string {
+	if name := n.Name.String(); name != "" {
+		return name
+	}
+	return n.Address
 }
 
 // CommandExitError is returned when a single-command shell exits with a non-zero code.

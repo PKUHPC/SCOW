@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"net/url"
 	"testing"
 )
@@ -33,5 +34,43 @@ func TestBuildShellWebSocketURLWithRootBasePath(t *testing.T) {
 	want := "ws://scow.example.com/api/shell"
 	if got != want {
 		t.Fatalf("buildShellWebSocketURL() = %q, want %q", got, want)
+	}
+}
+
+func TestLoginNodeUnmarshalSupportsI18nName(t *testing.T) {
+	data := []byte(`{
+		"name": {
+			"i18n": {
+				"default": "login-default",
+				"zh_cn": "登录节点"
+			}
+		},
+		"address": "10.129.227.94"
+	}`)
+
+	var node loginNode
+	if err := json.Unmarshal(data, &node); err != nil {
+		t.Fatal(err)
+	}
+
+	if node.Address != "10.129.227.94" {
+		t.Fatalf("address = %q, want %q", node.Address, "10.129.227.94")
+	}
+	if got := node.DisplayName(); got != "login-default" {
+		t.Fatalf("DisplayName() = %q, want %q", got, "login-default")
+	}
+}
+
+func TestLoginNodeUnmarshalSupportsLegacyString(t *testing.T) {
+	var node loginNode
+	if err := json.Unmarshal([]byte(`"10.129.227.94"`), &node); err != nil {
+		t.Fatal(err)
+	}
+
+	if node.Address != "10.129.227.94" {
+		t.Fatalf("address = %q, want %q", node.Address, "10.129.227.94")
+	}
+	if got := node.DisplayName(); got != "10.129.227.94" {
+		t.Fatalf("DisplayName() = %q, want %q", got, "10.129.227.94")
 	}
 }
