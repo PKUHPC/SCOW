@@ -813,7 +813,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       .map((env) => ({ key: env.key, value: env.value }));
 
     appForm.setFieldsValue({
-      mountPoints: normalizeMountPoints(mountPointsDraft),
+      mountPoints: mountPointsDraft,
       envVariables: mergeResubmitEnvVariables(normalizeEnvVariables(envVariablesDraft)),
     });
 

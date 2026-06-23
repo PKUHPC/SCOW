@@ -55,7 +55,6 @@ import {
   mapQueuesToRows,
   mergeResubmitEnvVariables,
   sanitizeFormMountAndEnvValues,
-  normalizeMountPoints,
 } from "../LaunchJobForm.utils";
 import { PublicImageOption } from "../PublicImageOption";
 import { BaseInfoSection } from "./components/BaseInfoSection";
@@ -535,7 +534,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       .map((env) => ({ key: env.key, value: env.value }));
 
     appForm.setFieldsValue({
-      mountPoints: normalizeMountPoints(mountPointsDraft),
+      mountPoints: mountPointsDraft,
       envVariables: mergeResubmitEnvVariables(envVariablesDraft),
     });
 
