@@ -5,14 +5,15 @@ import { api } from "src/apis";
 import { requireAuth } from "src/auth/requireAuth";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { TenantRole } from "src/models/User";
+import { PlatformRole } from "src/models/User";
 import { BillTable } from "src/pageComponents/common/BillTable";
 import { Head } from "src/utils/head";
 
 const p = prefix("page.tenant.finance.bills.");
 
 export const BillPage: NextPage = requireAuth(
-  (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+  (i) =>
+    i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) || i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
 )(() => {
   const t = useI18nTranslateToString();
 
