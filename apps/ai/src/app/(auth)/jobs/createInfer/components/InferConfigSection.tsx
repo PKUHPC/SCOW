@@ -15,7 +15,10 @@ import {
 import { Form, type FormInstance, Space } from "antd";
 import { type ReactNode, useEffect, useRef } from "react";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
-import { InferInlineFormItem as InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
+import {
+  INFER_INLINE_FORM_LABEL_WIDTH,
+  InferInlineFormItem as InlineFormItem,
+} from "src/app/(auth)/jobs/CustomFormItem";
 import { EnvVariableFormSection } from "src/app/(auth)/jobs/EnvVariableFormSection";
 import {
   ImageDescriptionBox,
@@ -278,6 +281,7 @@ export const InferConfigSection = ({
         <EnvVariableFormSection
           clusterId={selectedCluster}
           homeDir={homeDir}
+          labelWidth={INFER_INLINE_FORM_LABEL_WIDTH}
         />
       </Form>
     </SectionCard>

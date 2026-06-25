@@ -438,7 +438,7 @@ export const ResourceConfigSection = ({
           rules={[{ required: true, message: t(p("maxRunTimeRequired")) }]}
           helpTip={t(p("maxRunTimeHelp"))}
         >
-          <div style={{ width: "408px", minHeight: controlHeightLg, display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: "408px", minHeight: controlHeightLg, display: "flex", alignItems: "flex-start", gap: 12 }}>
             <Tooltip
               title={
                 hasInferMaxTimeLimit
@@ -449,7 +449,7 @@ export const ResourceConfigSection = ({
               align={{ offset: [0, -12] }}
               color={theme.palette.gray[7]}
             >
-              <span>
+              <span style={{ minHeight: controlHeightLg, display: "inline-flex", alignItems: "center" }}>
                 <Form.Item
                   name="maxTimeUnlimited"
                   valuePropName="checked"

@@ -9,14 +9,16 @@ const p = prefix("app.jobs.appConfigSection.");
 interface EnvVariableFormSectionProps {
   clusterId?: string;
   homeDir?: string;
+  labelWidth?: number;
 }
 
-export const EnvVariableFormSection = ({ clusterId, homeDir }: EnvVariableFormSectionProps) => {
+export const EnvVariableFormSection = ({ clusterId, homeDir, labelWidth }: EnvVariableFormSectionProps) => {
   const t = useI18nTranslateToString();
   const allKeys = [...RESERVED_ENV_KEYS, ...RESOURCE_ENV_KEYS];
 
   return (
     <InlineFormItem
+      $labelWidth={labelWidth}
       label={<Label>{t(p("environmentVariables.label"))}</Label>}
       helpTip={<>{t(p("environmentVariables.extraTip"), [allKeys.join(", ")])}</>}
     >
