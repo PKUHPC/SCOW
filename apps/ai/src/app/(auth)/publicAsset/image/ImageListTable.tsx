@@ -1,12 +1,12 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Select, Space, Table, Tag, Tooltip } from "antd";
+import { App, Form, Input, Select, Space, Table, Tag, Tooltip } from "antd";
 import NextError from "next/error";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { ImageCreationLogModal } from "src/app/(auth)/asset/image/ImageCreationLogModal";
 import { CreateEditImageModal } from "src/components/assets/image/CreateEditImageModal";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
@@ -37,6 +37,14 @@ interface FilterForm {
 interface PageInfo {
   page: number;
   pageSize?: number;
+}
+
+interface ImageConfirmState {
+  force?: "true" | "false";
+  id?: number;
+  open: boolean;
+  title?: ReactNode;
+  content?: ReactNode;
 }
 
 const CreateImageModalButton = ModalButton(CreateEditImageModal, { type: "primary", icon: <PlusOutlined /> });
@@ -71,6 +79,7 @@ export const ImageListTable: React.FC<Props> = ({ clusters }) => {
   const [showLogModal, setShowLogModal] = useState(false);
   // 存储选中的镜像
   const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<ImageConfirmState>({ open: false });
 
   const handleOpenModal = (image: any) => {
     setSelectedImage(image);
@@ -142,16 +151,6 @@ export const ImageListTable: React.FC<Props> = ({ clusters }) => {
           layout="inline"
           form={form}
           initialValues={{ ...query, clusterId: ALL_FILTER_VALUE, type: ALL_FILTER_VALUE }}
-          onFinish={async () => {
-            const { nameOrTagOrDesc, type } = await form.validateFields();
-            setQuery({
-              ...query,
-              nameOrTagOrDesc: nameOrTagOrDesc?.trim(),
-              type: type === ALL_FILTER_VALUE ? undefined : type,
-            });
-            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
-            refetch();
-          }}
         >
           <Form.Item label={t(p("cluster"))} name="clusterId">
             <SingleClusterSelector
@@ -180,11 +179,21 @@ export const ImageListTable: React.FC<Props> = ({ clusters }) => {
             />
           </Form.Item>
           <Form.Item name="nameOrTagOrDesc">
-            <Input allowClear placeholder={t(p("nameOrTagOrDesc"))} />
+            <Input.Search
+              placeholder={t(p("nameOrTagOrDesc"))}
+              onSearch={async () => {
+                const { nameOrTagOrDesc, type } = await form.validateFields();
+                setQuery({
+                  ...query,
+                  nameOrTagOrDesc: nameOrTagOrDesc?.trim(),
+                  type: type === ALL_FILTER_VALUE ? undefined : type,
+                });
+                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+                refetch();
+              }}
+              enterButton
+            />
           </Form.Item>
-          <Button className="ant-form-item" type="primary" htmlType="submit">
-            {t("button.searchButton")}
-          </Button>
         </Form>
 
         <Space>
@@ -304,7 +313,10 @@ export const ImageListTable: React.FC<Props> = ({ clusters }) => {
                   <Tooltip title={t("button.deleteButton")}>
                     <DeleteIcon
                       onClick={() => {
-                        modal.confirm({
+                        setDeleteConfirm({
+                          id: r.id,
+                          force: parseBooleanParam(r.status === Status.CREATING),
+                          open: true,
                           title: t(p("delImage")),
                           content:
                             r.status === Status.CREATING ? (
@@ -314,13 +326,6 @@ export const ImageListTable: React.FC<Props> = ({ clusters }) => {
                                 <p>{`${t(p("confirmDel"))}${r.name}${t(p("tag"))}${r.tag}？${t(p("delText2"))}`}</p>
                               </>
                             ),
-                          onOk: async () => {
-                            await deleteImageMutation.mutateAsync({
-                              id: r.id,
-                              force: parseBooleanParam(r.status === Status.CREATING),
-                              isPlatformOwned: true,
-                            });
-                          },
                         });
                       }}
                     />
@@ -344,6 +349,27 @@ export const ImageListTable: React.FC<Props> = ({ clusters }) => {
         }
         scroll={{ x: true }}
       />
+      <AppRouterStyledModal
+        title={deleteConfirm.title}
+        open={deleteConfirm.open}
+        onOk={async () => {
+          if (deleteConfirm.id == null) {
+            return;
+          }
+          await deleteImageMutation.mutateAsync({
+            id: deleteConfirm.id,
+            force: deleteConfirm.force,
+            isPlatformOwned: true,
+          });
+          setDeleteConfirm({ open: false });
+        }}
+        onCancel={() => setDeleteConfirm({ open: false })}
+        confirmLoading={deleteImageMutation.isPending}
+        cancelButtonProps={{ disabled: deleteImageMutation.isPending }}
+        destroyOnClose
+      >
+        {deleteConfirm.content}
+      </AppRouterStyledModal>
 
       <ImageCreationLogModal
         imageId={selectedImage?.id}
