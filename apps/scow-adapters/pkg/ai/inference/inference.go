@@ -240,7 +240,7 @@ func SetInferenceEnv(workDir, paths string, port int32) []corev1.EnvVar {
 		if model != nil {
 			var paths []string
 			for _, m := range model {
-				paths = append(paths, m.Path)
+				paths = append(paths, utils.GetMountTargetPath(m))
 			}
 			modelPath := strings.Join(paths, ":")
 			env = append(env, corev1.EnvVar{

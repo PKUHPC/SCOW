@@ -3,7 +3,7 @@ package train
 import (
 	"context"
 	"fmt"
-	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -25,7 +25,6 @@ import (
 var (
 	TensorBoardPort       = int32(6006)
 	TensorBoardLogsVolume = "training-logs-volume"
-	TensorBoardScripts    = "tensorboard-scripts"
 )
 
 func (vj *VCJob) GetTensorboardName() string {
@@ -105,7 +104,12 @@ func (vj *VCJob) CreateTensorboard() (err error) {
 	labels := map[string]string{
 		utils.TensorBoard: vj.GetJobName(),
 	}
-	command = append(command, "bash", "/opt/tensorBoard_entry.sh", strconv.Itoa(vj.GetNodePort()), hostname)
+	command = append(command,
+		"tensorboard",
+		"--logdir", "/output/training_logs",
+		"--host", "0.0.0.0",
+		"--path_prefix", vj.GetTensorboardPathPrefix(hostname, vj.GetNodePort()),
+	)
 	logrus.Infof("tensorboard %s, command: %s", name, command)
 	deployment := &appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -135,14 +139,6 @@ func (vj *VCJob) CreateTensorboard() (err error) {
 								},
 							},
 						},
-						{
-							Name: TensorBoardScripts,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: vj.WorkDir,
-								},
-							},
-						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -163,10 +159,6 @@ func (vj *VCJob) CreateTensorboard() (err error) {
 									Name:      TensorBoardLogsVolume,
 									MountPath: "/output/training_logs",
 								},
-								{
-									Name:      TensorBoardScripts,
-									MountPath: "/opt/",
-								},
 							},
 						},
 					},
@@ -179,9 +171,23 @@ func (vj *VCJob) CreateTensorboard() (err error) {
 		logrus.Errorf("create tensorboard deploy %s failed due to %s", vj.GetJobName(), err)
 		return err
 	}
-	_ = SetTensorboardNodePortToDB(vj.JobName, vj.NodePort) // port 写库
+	_ = SetTensorboardNodePortToDB(vj.JobName, vj.GetNodePort()) // port 写库
 	logrus.Infof("create tensorboard deploy %s successfully", vj.GetJobName())
 	return nil
+}
+
+func (vj *VCJob) GetTensorboardPathPrefix(host string, port int) string {
+	pathPrefix := ""
+	if vj.In != nil {
+		pathPrefix = vj.In.GetTensorboardProxyPathPrefix()
+	}
+	if pathPrefix == "" {
+		logrus.Errorf("tensorboard path prefix is empty, please check the job %s input", vj.GetJobName())
+	}
+	if pathPrefix != "" && !strings.HasSuffix(pathPrefix, "/") {
+		pathPrefix += "/"
+	}
+	return fmt.Sprintf("%s%s/%d/", pathPrefix, host, port)
 }
 
 func (vj *VCJob) DeleteTensorboard() {

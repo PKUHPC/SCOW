@@ -28,7 +28,6 @@ import {
   SERVER_SESSION_INFO,
   SESSION_METADATA_NAME,
   SessionMetadata,
-  TENSORBOARD_ENTRY_COMMAND,
   VNC_ENTRY_COMMAND,
 } from "src/server/trpc/route/jobs/apps";
 import {
@@ -766,14 +765,8 @@ export class SshJobDriver implements JobDriver {
       const entryScript = command;
       await sftpWriteFile(sftp)(remoteEntryPath, entryScript);
 
-      // TensorBoard的命令
-      const remoteTensorBoardEntryPath = join(homeDir, trainJobsDirectory, "tensorBoard_entry.sh");
-      const tensorBoardPathPrefix = `/api/proxy/${clusterId}/absolute/\${HOST}/\${PORT}/`;
-      const tensorBoardScript =
-        "tensorboard --logdir /output/training_logs --host 0.0.0.0 " + `--path_prefix ${tensorBoardPathPrefix}`;
-      const tensorBoardEntryScript = TENSORBOARD_ENTRY_COMMAND + tensorBoardScript;
-
-      await sftpWriteFile(sftp)(remoteTensorBoardEntryPath, tensorBoardEntryScript);
+      // TensorBoard 运行时 url 前缀
+      const tensorBoardPathPrefix = `/api/proxy/${clusterId}/absolute/`;
 
       const client = getAdapterClient(clusterId);
       const reply = await asyncClientCall(client.job, "submitJob", {
@@ -836,6 +829,7 @@ export class SshJobDriver implements JobDriver {
         psNodeCount: psNodes,
         workerNodeCount: workerNodes,
         tensorBoardDataPath,
+        tensorboardProxyPathPrefix: tensorBoardPathPrefix,
       }).catch((e) => {
         const ex = e as ServiceError;
         throw new TRPCError({

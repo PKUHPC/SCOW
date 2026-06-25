@@ -32,8 +32,6 @@ import {
   SERVER_ENTRY_COMMAND,
   SERVER_SESSION_INFO,
   SESSION_METADATA_NAME,
-  SessionMetadata,
-  TENSORBOARD_ENTRY_COMMAND,
   TOTAL_SESSIONS,
   VNC_ENTRY_COMMAND,
 } from "src/server/trpc/route/jobs/apps";
@@ -1393,21 +1391,9 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    // TensorBoard的命令
-    const remoteTensorBoardEntryPath = join(homeDir, trainJobsDirectory, "tensorBoard_entry.sh");
-    const tensorBoardPathPrefix = join(BASE_PATH, `/api/proxy/${clusterId}/absolute/\${HOST}/\${PORT}/`);
-    const tensorBoardScript =
-      "tensorboard --logdir /output/training_logs --host 0.0.0.0 " + `--path_prefix ${tensorBoardPathPrefix}`;
-    const tensorBoardEntryScript = TENSORBOARD_ENTRY_COMMAND + tensorBoardScript;
-
-    await wrap(
-      this.client.file.writeFile({
-        userId: this.userId,
-        filePath: remoteTensorBoardEntryPath,
-        content: tensorBoardEntryScript,
-      }),
-      this.logger,
-    );
+    // TensorBoard 运行时 URL 前缀，需要拼接变量 HOST和 PORT
+    // 直接传递给适配器，适配器根据是否启动 tensorBoard 容器来判断是否使用
+    const tensorBoardPathPrefix = join(BASE_PATH, `/api/proxy/${clusterId}/absolute/`);
 
     const userIdmapInfo = await this.getCurrentUserIdmapInfo();
     const client = getAdapterClient(clusterId);
@@ -1474,6 +1460,7 @@ export class ScowdJobDriver implements JobDriver {
       psNodeCount: psNodes,
       workerNodeCount: workerNodes,
       tensorBoardDataPath,
+      tensorboardProxyPathPrefix: tensorBoardPathPrefix,
     }).catch((e) => {
       const ex = e as ServiceError;
       throw new TRPCError({

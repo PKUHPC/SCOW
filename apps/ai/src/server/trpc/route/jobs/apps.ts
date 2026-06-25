@@ -111,7 +111,6 @@ export interface SessionMetadata {
 
 export const SERVER_ENTRY_COMMAND = fs.readFileSync("assets/app/server_entry.sh", { encoding: "utf-8" });
 export const VNC_ENTRY_COMMAND = fs.readFileSync("assets/app/vnc_entry.sh", { encoding: "utf-8" });
-export const TENSORBOARD_ENTRY_COMMAND = fs.readFileSync("assets/app/tensorboard_entry.sh", { encoding: "utf-8" });
 
 export const SESSION_METADATA_NAME = "session.json";
 export const TOTAL_SESSIONS = "total_sessions.json";

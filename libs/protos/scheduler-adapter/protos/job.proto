@@ -310,6 +310,8 @@ message SubmitJobRequest {
   optional PrivateImageRepositoryCredentials private_image_repository_credentials = 20;
   // 用户 ID 映射信息，包含当前 CSI 的挂载策略
   optional UserIdmapInfo user_idmap_info = 21;
+  // 训练作业中 tensorBoard 运行时 URL 路径前缀
+  optional string tensorboard_proxy_path_prefix = 22;
 }
 
 message SubmitJobResponse {

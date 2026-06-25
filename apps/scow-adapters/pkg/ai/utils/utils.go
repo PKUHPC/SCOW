@@ -1085,7 +1085,7 @@ func setEnvByAddition(algorithm, dataSet, model []MountModel) []interface{} {
 	if algorithm != nil {
 		paths := make([]string, len(algorithm))
 		for i, mount := range algorithm {
-			paths[i] = mount.Path
+			paths[i] = GetMountTargetPath(mount)
 		}
 		algorithmValue := strings.Join(paths, ":")
 		env = append(env, map[string]interface{}{
@@ -1098,7 +1098,7 @@ func setEnvByAddition(algorithm, dataSet, model []MountModel) []interface{} {
 	if dataSet != nil {
 		paths := make([]string, len(dataSet))
 		for i, mount := range dataSet {
-			paths[i] = mount.Path
+			paths[i] = GetMountTargetPath(mount)
 		}
 		dataSetValue := strings.Join(paths, ":")
 		env = append(env, map[string]interface{}{
@@ -1111,7 +1111,7 @@ func setEnvByAddition(algorithm, dataSet, model []MountModel) []interface{} {
 	if model != nil {
 		paths := make([]string, len(model))
 		for i, mount := range model {
-			paths[i] = mount.Path
+			paths[i] = GetMountTargetPath(mount)
 		}
 		modelValue := strings.Join(paths, ":")
 		env = append(env, map[string]interface{}{
@@ -1120,6 +1120,13 @@ func setEnvByAddition(algorithm, dataSet, model []MountModel) []interface{} {
 		})
 	}
 	return env
+}
+
+func GetMountTargetPath(mount MountModel) string {
+	if mount.Target != "" {
+		return mount.Target
+	}
+	return mount.Path
 }
 
 func GetAlgorithmDataSetModelInfo(algorithmPath, dataSetPath, modelPath string) ([]MountModel, []MountModel, []MountModel, error) {
