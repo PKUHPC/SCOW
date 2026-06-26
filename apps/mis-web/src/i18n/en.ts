@@ -1246,10 +1246,6 @@ export default {
     },
   },
   page: {
-    noAccount: {
-      resultTitle: "No Manageable Accounts",
-      extraMessage: "Please visit http://hpc.pku.edu.cn/guide.html for account opening instructions.",
-    },
     _app: {
       multiClusterOpErrorTitle: "Operation Failed",
       multiClusterOpErrorContent:

@@ -1151,10 +1151,6 @@ export default {
     },
   },
   page: {
-    noAccount: {
-      resultTitle: "管理可能なアカウントがありません",
-      extraMessage: "アカウント開設手順は http://hpc.pku.edu.cn/guide.html をご参照ください。",
-    },
     _app: {
       multiClusterOpErrorTitle: "操作に失敗しました",
       multiClusterOpErrorContent: "複数クラスタの操作でエラーが発生し、一部クラスタに変更が同期されませんでした。",

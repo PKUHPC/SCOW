@@ -1227,10 +1227,6 @@ export default {
     },
   },
   page: {
-    noAccount: {
-      resultTitle: "Keine verwaltbaren Konten",
-      extraMessage: "Bitte besuchen Sie http://hpc.pku.edu.cn/guide.html für Hinweise zur Kontoeröffnung.",
-    },
     _app: {
       multiClusterOpErrorTitle: "Operation fehlgeschlagen",
       multiClusterOpErrorContent:

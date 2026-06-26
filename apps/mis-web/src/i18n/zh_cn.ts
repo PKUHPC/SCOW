@@ -1182,10 +1182,6 @@ export default {
     },
   },
   page: {
-    noAccount: {
-      resultTitle: "没有可以管理的账户",
-      extraMessage: "请访问 http://hpc.pku.edu.cn/guide.html 查看如何开户。",
-    },
     _app: {
       multiClusterOpErrorTitle: "操作失败",
       multiClusterOpErrorContent: "多集群操作出现错误，部分集群未同步修改",

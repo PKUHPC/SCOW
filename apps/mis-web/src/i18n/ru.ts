@@ -1211,10 +1211,6 @@ export default {
     },
   },
   page: {
-    noAccount: {
-      resultTitle: "Нет управляемых аккаунтов",
-      extraMessage: "Пожалуйста, посетите http://hpc.pku.edu.cn/guide.html для инструкции по открытию аккаунта.",
-    },
     _app: {
       multiClusterOpErrorTitle: "Операция не выполнена",
       multiClusterOpErrorContent:

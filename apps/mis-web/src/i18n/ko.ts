@@ -1148,10 +1148,6 @@ export default {
     },
   },
   page: {
-    noAccount: {
-      resultTitle: "관리 가능한 계정 없음",
-      extraMessage: "계정 개설 안내는 http://hpc.pku.edu.cn/guide.html 을 방문하세요.",
-    },
     _app: {
       multiClusterOpErrorTitle: "작업 실패",
       multiClusterOpErrorContent:

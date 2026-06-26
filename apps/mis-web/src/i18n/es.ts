@@ -1218,10 +1218,6 @@ export default {
     },
   },
   page: {
-    noAccount: {
-      resultTitle: "Sin cuentas gestionables",
-      extraMessage: "Por favor, visite http://hpc.pku.edu.cn/guide.html para instrucciones de apertura de cuenta.",
-    },
     _app: {
       multiClusterOpErrorTitle: "Operación fallida",
       multiClusterOpErrorContent:
