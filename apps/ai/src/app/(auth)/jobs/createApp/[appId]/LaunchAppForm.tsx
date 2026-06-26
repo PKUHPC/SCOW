@@ -2151,6 +2151,7 @@ export const LaunchAppForm = ({
           }
         }
         isImagePrivate = selectedImageSource === "mine";
+        localImageName = typeof selectedImageOption?.label === "string" ? selectedImageOption.label : undefined;
       } else if (selectedImageSource === "remote") {
         remoteImageUrl = appValues.image?.trim();
         if (!remoteImageUrl) {
