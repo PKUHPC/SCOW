@@ -1,5 +1,13 @@
 # @scow/scheduler-adapter-protos
 
+## 1.6.1
+
+### Patch Changes
+
+- 013d085: 在创建开发机作业接口 CreateDevHost 中增加环境变量 env_variables 请求参数
+- 9713fca: 1. GetJobsRequest 的 job_types 语义修改为：如果为空，返回 HPC 作业；如果有值，返回 AI 作业。如果适配器不支持对应作业类型，GetJobs 返回 UNIMPLEMENTED； 2. SubmitJob 的语义修改为：如果`extra_options[0]`为`app`或者`train`，则为提交 AI 作业了；其他情况为 HPC 作业
+- 1db2326: 在 submitJob 接口中增加训练作业可选的 tensorboard_proxy_path_prefix 参数，表示训练作业中 TensorBoard 运行时 URL 路径前缀
+
 ## 1.6.0
 
 ### Minor Changes

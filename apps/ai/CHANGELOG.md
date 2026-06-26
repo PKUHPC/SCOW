@@ -1,5 +1,53 @@
 # @scow/ai
 
+## 0.5.6
+
+### Patch Changes
+
+- 22a7f70: 修复文件重命名无提醒直接覆盖
+- 94ee545: AI 数据资产相关页面的弹窗及搜索交互相关优化
+- de13335: 推理最大运行时间开关上下对齐和环境变量 label 对齐
+- bfe6ffc: 在门户系统获取授权应用、检查应用时按门户 HPC/AI 分类获取
+  HPC 获取应用列表是拦截 getAppConnectionInfo 中捕获 AI 作业信息时返回的接口的错误
+- f51dc4d: 公共数据资产镜像页面弹窗及搜索交互漏改修复
+- 013d085: 支持 数据集/算法/模型 在 AI 提交作业页面中自定义挂载路径，在开发机作业中支持填写环境变量
+  在 AI 提交作业页面添加内置环境变量 WORK_DIR, XDL_IP, VC_GPU_NUM, SCOW_AI_MODEL_PATH, SCOW_AI_DATASET_PATH, SCOW_AI_ALGORITHM_PATH
+- e0f253b: 增加适配器连接超时选项和提示
+- e9c002a: 已失败 ai 开发机点击取消时不再报错
+- 68309f0: 增加 AI 作业模板功能
+- 9713fca: 鹤思 ai 适配器支持 HPC 作业
+- 59348c8: HPC 作业/应用， AI 应用/训练/推理/开发机作业 分别增加独立的作业最长运行时间配置
+- 1db2326: 删除写入 tensorBoard_entry.sh 的逻辑，提交训练作业时只向适配器传递 tensorBoard 运行时 URL 前缀
+- 68309f0: 重构 ai 再次提交：不再依赖参数文件而是迁移到数据库
+- 92de2c3: 修复再次提交时，自定义挂载点的源路径未填入
+- 0a1a819: UI 样式&交互整体走查
+- Updated dependencies [013d085]
+- Updated dependencies [94ee545]
+- Updated dependencies [68309f0]
+- Updated dependencies [bfe6ffc]
+- Updated dependencies [013d085]
+- Updated dependencies [68309f0]
+- Updated dependencies [e0f253b]
+- Updated dependencies [c40d387]
+- Updated dependencies [9713fca]
+- Updated dependencies [1db2326]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+- Updated dependencies [68309f0]
+- Updated dependencies [c23e1ac]
+- Updated dependencies [0a1a819]
+  - @scow/scheduler-adapter-protos@1.6.1
+  - @scow/lib-web@1.6.3
+  - @scow/lib-server@1.5.3
+  - @scow/lib-scheduler-adapter@1.1.40
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/lib-operation-log@2.2.17
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-notification@1.0.26
+  - @scow/lib-scow-resource@0.2.25
+
 ## 0.5.5
 
 ### Patch Changes

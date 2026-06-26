@@ -1,5 +1,20 @@
 # @scow/audit-server
 
+## 2.3.35
+
+### Patch Changes
+
+- c40d387: 修改注释、文案等账户拥有者概念为账户主管理
+- Updated dependencies [bfe6ffc]
+- Updated dependencies [c40d387]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/lib-server@1.5.3
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/lib-operation-log@2.2.17
+
 ## 2.3.34
 
 ### Patch Changes

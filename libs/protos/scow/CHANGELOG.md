@@ -1,5 +1,19 @@
 # @scow/protos
 
+## 1.1.2
+
+### Patch Changes
+
+- c40d387: 修改注释、文案等账户拥有者概念为账户主管理
+- Updated dependencies [c40d387]
+- Updated dependencies [68309f0]
+- Updated dependencies [8d247e7]
+- Updated dependencies [bfe6ffc]
+- Updated dependencies [68309f0]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/grpc-api@1.35.0
+
 ## 1.1.1
 
 ### Patch Changes

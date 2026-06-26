@@ -1,5 +1,18 @@
 # @scow/auth
 
+## 1.11.3
+
+### Patch Changes
+
+- 5f183e6: 优化登录页验证码及错误提示交互
+- 0a1a819: UI 样式&交互整体走查
+- Updated dependencies [bfe6ffc]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/lib-server@1.5.3
+  - @scow/config@1.16.0
+
 ## 1.11.2
 
 ### Patch Changes

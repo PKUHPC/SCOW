@@ -1,5 +1,25 @@
 # @scow/lib-web
 
+## 1.6.3
+
+### Patch Changes
+
+- 94ee545: AI 数据资产相关页面的弹窗及搜索交互相关优化
+- 68309f0: 增加 Modal 的最小高度
+- 013d085: 支持 数据集/算法/模型 在 AI 提交作业页面中自定义挂载路径，在开发机作业中支持填写环境变量
+  在 AI 提交作业页面添加内置环境变量 WORK_DIR, XDL_IP, VC_GPU_NUM, SCOW_AI_MODEL_PATH, SCOW_AI_DATASET_PATH, SCOW_AI_ALGORITHM_PATH
+- 68309f0: hpc 提交作业优化
+- 59348c8: HPC 作业/应用， AI 应用/训练/推理/开发机作业 分别增加独立的作业最长运行时间配置
+- 68309f0: 提交应用优化
+- 68309f0: 增加方形的 Input、Button、SegmentedButtons 公共组件，修改 Table 的圆角
+- c23e1ac: 操作日志功能整合到 header 右侧下拉菜单
+- 0a1a819: UI 样式&交互整体走查
+- Updated dependencies [c40d387]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+
 ## 1.6.2
 
 ### Patch Changes

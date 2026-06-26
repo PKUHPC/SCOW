@@ -1,5 +1,40 @@
 # @scow/portal-web
 
+## 1.11.3
+
+### Patch Changes
+
+- 8d247e7: 优化获取桌面获取速度；删除桌面后刷新列表和获取可用桌面类型调用时机优化
+- 22a7f70: 修复文件重命名无提醒直接覆盖
+- bfe6ffc: 在门户系统获取授权应用、检查应用时按门户 HPC/AI 分类获取
+  HPC 获取应用列表是拦截 getAppConnectionInfo 中捕获 AI 作业信息时返回的接口的错误
+- 68309f0: 将作业和应用模板迁移至 MIS 数据库统一管理
+- 68309f0: hpc 提交作业优化
+- e0f253b: 增加适配器连接超时选项和提示
+- c40d387: 修改注释、文案等账户拥有者概念为账户主管理
+- 59348c8: HPC 作业/应用， AI 应用/训练/推理/开发机作业 分别增加独立的作业最长运行时间配置
+- 68309f0: 提交应用优化
+- 1671ff1: 修复“门户系统获取用户详情接口未鉴权，普通用户可以获得任意用户信息”的问题
+- 0a1a819: UI 样式&交互整体走查
+- Updated dependencies [94ee545]
+- Updated dependencies [68309f0]
+- Updated dependencies [013d085]
+- Updated dependencies [68309f0]
+- Updated dependencies [c40d387]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+- Updated dependencies [68309f0]
+- Updated dependencies [c23e1ac]
+- Updated dependencies [0a1a819]
+  - @scow/lib-web@1.6.3
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/lib-operation-log@2.2.17
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-notification@1.0.26
+  - @scow/lib-scow-resource@0.2.25
+
 ## 1.11.2
 
 ### Patch Changes

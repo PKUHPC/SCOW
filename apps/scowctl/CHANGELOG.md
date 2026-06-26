@@ -1,5 +1,12 @@
 # @scow/scowctl
 
+## 1.11.3
+
+### Patch Changes
+
+- 1a15e0b: 修复 shell 功能无法识别国际化的集群名
+- d7e28d9: feat(scowctl): 添加 macos-arm64 构建
+
 ## 1.11.2
 
 ### Patch Changes

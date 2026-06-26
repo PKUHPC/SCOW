@@ -1,5 +1,31 @@
 # @scow/notification
 
+## 0.2.29
+
+### Patch Changes
+
+- c40d387: 修改注释、文案等账户拥有者概念为账户主管理
+- c23e1ac: 操作日志功能整合到 header 右侧下拉菜单
+- Updated dependencies [94ee545]
+- Updated dependencies [68309f0]
+- Updated dependencies [bfe6ffc]
+- Updated dependencies [013d085]
+- Updated dependencies [68309f0]
+- Updated dependencies [e0f253b]
+- Updated dependencies [c40d387]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+- Updated dependencies [68309f0]
+- Updated dependencies [c23e1ac]
+- Updated dependencies [0a1a819]
+  - @scow/lib-web@1.6.3
+  - @scow/lib-server@1.5.3
+  - @scow/lib-scheduler-adapter@1.1.40
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/lib-notification@1.0.26
+
 ## 0.2.28
 
 ### Patch Changes

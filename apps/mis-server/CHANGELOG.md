@@ -1,5 +1,35 @@
 # @scow/mis-server
 
+## 1.11.3
+
+### Patch Changes
+
+- bfe6ffc: 在门户系统获取授权应用、检查应用时按门户 HPC/AI 分类获取
+  HPC 获取应用列表是拦截 getAppConnectionInfo 中捕获 AI 作业信息时返回的接口的错误
+- 68309f0: 将作业和应用模板迁移至 MIS 数据库统一管理
+- 68309f0: hpc 提交作业优化
+- e0f253b: 增加适配器连接超时选项和提示
+- c40d387: 修改注释、文案等账户拥有者概念为账户主管理
+- 9713fca: 鹤思 ai 适配器支持 HPC 作业
+- 68309f0: 提交应用优化
+- Updated dependencies [013d085]
+- Updated dependencies [bfe6ffc]
+- Updated dependencies [e0f253b]
+- Updated dependencies [c40d387]
+- Updated dependencies [9713fca]
+- Updated dependencies [1db2326]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/scheduler-adapter-protos@1.6.1
+  - @scow/lib-server@1.5.3
+  - @scow/lib-scheduler-adapter@1.1.40
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/lib-hook@1.0.42
+  - @scow/lib-notification@1.0.26
+  - @scow/lib-scow-resource@0.2.25
+
 ## 1.11.2
 
 ### Patch Changes

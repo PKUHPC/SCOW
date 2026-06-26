@@ -1,6 +1,6 @@
 {
   "name": "@scow/docs",
-  "version": "1.4.27",
+  "version": "1.4.28",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",

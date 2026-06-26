@@ -1,5 +1,16 @@
 # @scow/cli
 
+## 1.11.3
+
+### Patch Changes
+
+- 59348c8: HPC 作业/应用， AI 应用/训练/推理/开发机作业 分别增加独立的作业最长运行时间配置
+- Updated dependencies [e0f253b]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/lib-scheduler-adapter@1.1.40
+  - @scow/config@1.16.0
+
 ## 1.11.2
 
 ### Patch Changes

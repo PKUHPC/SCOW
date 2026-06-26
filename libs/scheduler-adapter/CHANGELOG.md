@@ -1,5 +1,17 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.40
+
+### Patch Changes
+
+- e0f253b: 增加适配器连接超时选项和提示
+- Updated dependencies [013d085]
+- Updated dependencies [c40d387]
+- Updated dependencies [9713fca]
+- Updated dependencies [1db2326]
+  - @scow/scheduler-adapter-protos@1.6.1
+  - @scow/protos@1.1.2
+
 ## 1.1.39
 
 ### Patch Changes

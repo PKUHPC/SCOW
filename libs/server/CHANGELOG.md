@@ -1,5 +1,26 @@
 # @scow/lib-server
 
+## 1.5.3
+
+### Patch Changes
+
+- bfe6ffc: 在门户系统获取授权应用、检查应用时按门户 HPC/AI 分类获取
+  HPC 获取应用列表是拦截 getAppConnectionInfo 中捕获 AI 作业信息时返回的接口的错误
+- 59348c8: HPC 作业/应用， AI 应用/训练/推理/开发机作业 分别增加独立的作业最长运行时间配置
+- 68309f0: 提交应用优化
+- Updated dependencies [013d085]
+- Updated dependencies [e0f253b]
+- Updated dependencies [c40d387]
+- Updated dependencies [9713fca]
+- Updated dependencies [1db2326]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/scheduler-adapter-protos@1.6.1
+  - @scow/lib-scheduler-adapter@1.1.40
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/rich-error-model@2.0.4
+
 ## 1.5.2
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @scow/meta-server
 
+## 1.11.3
+
+### Patch Changes
+
+- d7e28d9: feat(scowctl): 添加 macos-arm64 构建
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+  - @scow/config@1.16.0
+
 ## 1.11.2
 
 ### Patch Changes

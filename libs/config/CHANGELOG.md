@@ -1,5 +1,21 @@
 # @scow/config
 
+## 1.16.0
+
+### Minor Changes
+
+- 59348c8: ** 删除 ai/config.yaml 下的 maxRunningTimeHours 配置 **
+  在集群下为各自不同的作业类别增加独立的作业最长运行时间配置
+
+  在集群 hpc 配置下增加 job.maxRunningTimeHours, app.maxRunningTimeHours
+  配置说明参考 docs/deploy/config/cluster-config.md 中集群下的 hpc 配置说明
+  在集群 ai 配置下增加 app.maxRunningTimeHours, train.maxRunningTimeHours, infer.maxRunningTimeHours
+  配置说明参考 docs/deploy/config/ai/intro.md 中集群下的 ai 配置说明
+
+### Patch Changes
+
+- 68309f0: 提交应用优化
+
 ## 1.15.0
 
 ### Minor Changes

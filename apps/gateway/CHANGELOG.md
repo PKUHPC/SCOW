@@ -1,5 +1,11 @@
 # @scow/gateway
 
+## 1.11.3
+
+### Patch Changes
+
+- 8d247e7: 修复连接桌面显示 403
+
 ## 1.11.2
 
 ### Patch Changes

@@ -1,5 +1,33 @@
 # @scow/mis-web
 
+## 1.11.3
+
+### Patch Changes
+
+- 4968ce0: 修复平台管理账单权限错误的 bug
+- e0f253b: 增加适配器连接超时选项和提示
+- c40d387: 修改注释、文案等账户拥有者概念为账户主管理
+- c23e1ac: 操作日志功能整合到 header 右侧下拉菜单
+- 6f325b5: 租户管理员无法修改用户信息
+- Updated dependencies [94ee545]
+- Updated dependencies [68309f0]
+- Updated dependencies [013d085]
+- Updated dependencies [68309f0]
+- Updated dependencies [c40d387]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+- Updated dependencies [68309f0]
+- Updated dependencies [c23e1ac]
+- Updated dependencies [0a1a819]
+  - @scow/lib-web@1.6.3
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/lib-operation-log@2.2.17
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-notification@1.0.26
+  - @scow/lib-scow-resource@0.2.25
+
 ## 1.11.2
 
 ### Patch Changes

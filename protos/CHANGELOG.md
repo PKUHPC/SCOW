@@ -1,5 +1,20 @@
 # @scow/grpc-api
 
+## 1.35.0
+
+### Minor Changes
+
+- 68309f0: 删除 portal 中作业模板相关接口
+- 8d247e7: ListUserDesktops 支持多集群
+- 68309f0: GetAvailableAccountsAndClustersResponse 中增加账户不可用的原因
+
+### Patch Changes
+
+- c40d387: 修改注释、文案等账户拥有者概念为账户主管理
+- bfe6ffc: GetUserAvailableClusterApps, CheckAppIsDisabled, GetAppForbiddenAccounts 中增加门户类别查询参数
+- 68309f0: ListAvailableApps 增加账户不可用原因；增加应用模板的增删改查;授权应用增加该应用的已授权的所有账户
+- 59348c8: 在获取集群配置参数中增加 HPC 作业及交互式应用的最长运行时间参数
+
 ## 1.34.1
 
 ### Patch Changes

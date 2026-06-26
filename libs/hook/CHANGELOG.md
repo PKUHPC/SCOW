@@ -1,5 +1,12 @@
 # @scow/lib-hook
 
+## 1.0.42
+
+### Patch Changes
+
+- Updated dependencies [c40d387]
+  - @scow/protos@1.1.2
+
 ## 1.0.41
 
 ### Patch Changes

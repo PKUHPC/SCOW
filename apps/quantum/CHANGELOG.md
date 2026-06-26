@@ -1,5 +1,35 @@
 # @scow/quantum
 
+## 0.1.17
+
+### Patch Changes
+
+- Updated dependencies [013d085]
+- Updated dependencies [94ee545]
+- Updated dependencies [68309f0]
+- Updated dependencies [bfe6ffc]
+- Updated dependencies [013d085]
+- Updated dependencies [68309f0]
+- Updated dependencies [e0f253b]
+- Updated dependencies [c40d387]
+- Updated dependencies [9713fca]
+- Updated dependencies [1db2326]
+- Updated dependencies [59348c8]
+- Updated dependencies [59348c8]
+- Updated dependencies [68309f0]
+- Updated dependencies [68309f0]
+- Updated dependencies [c23e1ac]
+- Updated dependencies [0a1a819]
+  - @scow/scheduler-adapter-protos@1.6.1
+  - @scow/lib-web@1.6.3
+  - @scow/lib-server@1.5.3
+  - @scow/lib-scheduler-adapter@1.1.40
+  - @scow/protos@1.1.2
+  - @scow/config@1.16.0
+  - @scow/lib-operation-log@2.2.17
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-scow-resource@0.2.25
+
 ## 0.1.16
 
 ### Patch Changes
