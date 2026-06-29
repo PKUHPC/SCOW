@@ -216,7 +216,6 @@ func GetJobInfo(jobs []models.JobTable, fields []string) (jobDetail []*pb.JobInf
 			startTimeTimestamp *timestamppb.Timestamp
 			endTimeTimestamp   *timestamppb.Timestamp
 			pods               []*pb.JobInfo_PodInfo
-			err                error
 		)
 		jobId := strconv.Itoa(int(job.JobDBInx))
 		if job.State != "PENDING" {
@@ -237,22 +236,20 @@ func GetJobInfo(jobs []models.JobTable, fields []string) (jobDetail []*pb.JobInf
 			startTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(job.TimeStart), 0).Unix())}
 		}
 		endTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(job.TimeEnd), 0).Unix())}
-		if job.IsPreempt == 1 { //抢占任务单独计算
-			elapsedSeconds = GetPreemptJobDurationByJobName(job.NewJobName)
+
+		podTables := GetPodsByJobName(job.NewJobName)
+		if job.State == PendingStatus && len(podTables) <= int(job.PODsReq) {
+			elapsedSeconds = 0
+		} else if job.JobType == Inference { // deploy 类型的作业，计费单独算
+			elapsedSeconds = GetElapsedSecondsByDeployPods(&job, podTables)
 		} else {
-			if job.State == PendingStatus {
-				elapsedSeconds = 0
-			} else if job.State == RunningStatus {
-				elapsedSeconds = time.Now().Unix() - int64(job.TimeStart)
-			} else {
-				elapsedSeconds = int64(job.TimeEnd) - int64(job.TimeStart)
-			}
+			elapsedSeconds = GetVCJobDurationByJobName(&job, podTables)
 		}
 
 		if job.State != QueuedStatus {
-			pods, err = GetPodInfoByJobName(job.NewJobName)
-			if err != nil || len(pods) == 0 {
-				logrus.Warnf("get job %s pod info failed, err : %v", job.NewJobName, err)
+			pods = GetPodInfoFromPodTables(podTables)
+			if len(pods) == 0 {
+				logrus.Warnf("get job %s pod info is empty", job.NewJobName)
 			}
 			nodeLists := make([]string, 0, len(pods))
 			seen := make(map[string]bool, len(pods))
@@ -1234,14 +1231,15 @@ func ParseHostList(hostStr string) ([]string, bool) {
 	var charQueue string
 
 	for _, c := range nameStr {
-		if c == '[' {
+		switch c {
+		case '[':
 			if charQueue == "" {
 				charQueue = string(c)
 			} else {
 				logrus.Errorf("Illegal node name string format: duplicate brackets")
 				return nil, false
 			}
-		} else if c == ']' {
+		case ']':
 			if charQueue == "" {
 				logrus.Errorf("Illegal node name string format: isolated bracket")
 				return nil, false
@@ -1250,14 +1248,14 @@ func ParseHostList(hostStr string) ([]string, bool) {
 				nameMeta += string(c)
 				charQueue = ""
 			}
-		} else if c == ',' {
+		case ',':
 			if charQueue == "" {
 				strList = append(strList, nameMeta)
 				nameMeta = ""
 			} else {
 				charQueue += string(c)
 			}
-		} else {
+		default:
 			if charQueue == "" {
 				nameMeta += string(c)
 			} else {

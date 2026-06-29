@@ -400,19 +400,17 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 		startTimeTimestamp = &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(jobInfo.TimeStart), 0).Unix())}
 	}
 	endTimeTimestamp := &timestamppb.Timestamp{Seconds: int64(time.Unix(int64(jobInfo.TimeEnd), 0).Unix())}
-	if jobInfo.IsPreempt == 1 {
-		elapsedSeconds = utils.GetPreemptJobDurationByJobName(jobInfo.NewJobName)
+
+	podTables := utils.GetPodsByJobName(jobInfo.NewJobName)
+	if jobInfo.State == utils.PendingStatus && len(podTables) <= int(jobInfo.PODsReq) {
+		elapsedSeconds = 0
+	} else if jobInfo.JobType == utils.Inference { // deploy 类型的作业，计费单独算
+		elapsedSeconds = utils.GetElapsedSecondsByDeployPods(&jobInfo, podTables)
 	} else {
-		if jobInfo.State == "RUNNING" {
-			elapsedSeconds = time.Now().Unix() - int64(jobInfo.TimeStart)
-		} else if jobInfo.State == "PENDING" {
-			elapsedSeconds = 0
-		} else {
-			elapsedSeconds = int64(jobInfo.TimeEnd) - int64(jobInfo.TimeStart)
-		}
+		elapsedSeconds = utils.GetVCJobDurationByJobName(&jobInfo, podTables)
 	}
-	if podInfo, err = utils.GetPodInfoByJobName(jobInfo.NewJobName); err != nil || len(podInfo) == 0 {
-		logrus.Errorf("GetPodInfo failed %v", err)
+	if podInfo = utils.GetPodInfoFromPodTables(podTables); len(podInfo) == 0 {
+		logrus.Warnf("GetPodInfo  is null")
 	}
 	events := utils.GetEventsById(jobId, Job)
 	logrus.Tracef("GetJobById, len fields %d, podInfo %v, events: %v", len(fields), podInfo, events)
@@ -536,7 +534,7 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb
 	}
 	if jobInfo == nil {
 		logrus.Errorf("CancelJob failed: job  %d not found", in.JobId)
-		return nil, ce.RichError(codes.NotFound, "JOB_NOT_FOUND", err.Error())
+		return nil, ce.RichError(codes.NotFound, "JOB_NOT_FOUND", fmt.Sprintf("job %d not found", in.JobId))
 	}
 
 	jobName := jobInfo.NewJobName
@@ -649,10 +647,15 @@ func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *pb.ChangeJobTime
 
 	state := job.State
 	timeLimit := int64(job.Timelimit)
+	pods := utils.GetPodsByJobName(job.NewJobName)
 	if state == "PENDING" || state == "RUNNING" {
 		var elapsedSeconds int64
 		if state == "RUNNING" {
-			elapsedSeconds = time.Now().Unix() - int64(job.TimeStart)
+			if job.JobType == utils.Inference { // deploy 类型的作业，计费单独算
+				elapsedSeconds = utils.GetElapsedSecondsByDeployPods(job, pods)
+			} else {
+				elapsedSeconds = utils.GetVCJobDurationByJobName(job, pods)
+			}
 			logrus.Infof("job %v elapsed seconds %v", job.NewJobName, elapsedSeconds)
 		}
 

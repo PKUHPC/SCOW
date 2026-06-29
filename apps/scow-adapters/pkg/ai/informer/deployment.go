@@ -59,7 +59,21 @@ func (i *K8sInformer) handleDeploymentUpdate(obj interface{}) {
 		// 首次进入 Running 时启动定时器
 		if job.State != utils.RunningStatus && job.Timelimit > 0 {
 			remaining := int64(job.Timelimit) * 60
-			i.timer.StartTimer(job, remaining)
+			if job.IsPreempt == 1 {
+				pods := utils.GetPodsByJobName(job.NewJobName)
+				// 新的定时器需要去掉已运行的时间
+				jobDuration := utils.GetElapsedSecondsByDeployPods(job, pods)
+				remaining = remaining - jobDuration
+				if remaining <= 0 {
+					logrus.Warnf("jobName %s has exceeded its timelimit, remaining time: %d seconds, set remaining time to 0", jobName, remaining)
+					remaining = 0
+				}
+				logrus.Infof("jobName %s is preempted, jobDuration: %d seconds, remaining time: %d seconds", jobName, jobDuration, remaining)
+				i.timer.StartTimer(job, remaining)
+			} else {
+				// 任务首次进入 Running，创建完整时长定时器
+				i.timer.StartTimer(job, remaining)
+			}
 		}
 	default:
 		logrus.Warnf("[handleDeploymentUpdate] deploy %s, unknown status %s", jobName, status)

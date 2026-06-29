@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	"volcano.sh/apis/pkg/apis/batch/v1alpha1"
 
 	"scow-adapters/pkg/ai/client"
@@ -40,6 +41,10 @@ func (i *K8sInformer) handleVcJobUpdate(obj interface{}) {
 		status = utils.PendingStatus
 	case v1alpha1.Running:
 		var remaining int64
+		if vcjobRunningPhaseShouldBePending(volcanoJob) {
+			status = utils.PendingStatus
+			break
+		}
 		status = utils.RunningStatus
 		// 1. 首次进入 Running 的任务，需要设置任务开始时间
 		//    被抢占的作业还没有 Running，TimeStart 还是 0
@@ -53,7 +58,8 @@ func (i *K8sInformer) handleVcJobUpdate(obj interface{}) {
 		// 2. 任务被抢占并且当前状态是 Pending，才需要重启定时器；其他情况按照正常的 timelimit 设置定时器
 		if job.Timelimit > 0 && job.State == utils.PendingStatus {
 			if job.IsPreempt == 1 {
-				jobDuration := utils.GetPreemptJobDurationByJobName(jobName)
+				pods := utils.GetPodsByJobName(job.NewJobName)
+				jobDuration := utils.GetVCJobDurationByJobName(job, pods)
 				remaining = int64(job.Timelimit)*60 - jobDuration
 				if remaining <= 0 {
 					logrus.Warnf("jobName %s has exceeded its timelimit, remaining time: %d seconds, set remaining time to 0", jobName, remaining)
@@ -101,6 +107,33 @@ func (i *K8sInformer) handleVcJobUpdate(obj interface{}) {
 		return
 	}
 	logrus.Infof("update job  %s status %s successful", jobName, status)
+}
+
+func vcjobRunningPhaseShouldBePending(volcanoJob *v1alpha1.Job) bool {
+	if volcanoJob.Status.Running > 0 {
+		return false
+	}
+	if volcanoJob.Status.Pending > 0 || volcanoJob.Status.Unknown > 0 {
+		logrus.Infof("vcjob %s phase is Running but pod count has no running pods, map status to Pending", volcanoJob.Name)
+		return true
+	}
+
+	hasRunningTask := false
+	hasWaitingTask := false
+	for _, taskStatus := range volcanoJob.Status.TaskStatusCount {
+		if taskStatus.Phase[v1.PodRunning] > 0 {
+			hasRunningTask = true
+			break
+		}
+		if taskStatus.Phase[v1.PodPending] > 0 || taskStatus.Phase[v1.PodUnknown] > 0 {
+			hasWaitingTask = true
+		}
+	}
+	if hasRunningTask || !hasWaitingTask {
+		return false
+	}
+	logrus.Infof("vcjob %s phase is Running but has no running tasks, map status to Pending", volcanoJob.Name)
+	return true
 }
 
 func (i *K8sInformer) handleVcJobDelete(obj interface{}) {

@@ -55,10 +55,11 @@ func (tm *Timer) recoverTimersOnStartup() {
 		}
 		logrus.Infof("Recover Timers For Job: %v On Startup", job.NewJobName)
 		// 计算剩余超时时间
-		if job.IsPreempt == 1 {
-			elapsed = utils.GetPreemptJobDurationByJobName(job.NewJobName)
+		pods := utils.GetPodsByJobName(job.NewJobName)
+		if job.JobType == utils.Inference {
+			elapsed = utils.GetElapsedSecondsByDeployPods(job, pods)
 		} else {
-			elapsed = time.Now().Unix() - int64(job.TimeStart)
+			elapsed = utils.GetVCJobDurationByJobName(job, pods)
 		}
 		remaining := int64(job.Timelimit)*60 - elapsed // job的Timelimit是存储的分钟
 		if remaining <= 0 {
@@ -95,6 +96,7 @@ func (tm *Timer) StartTimer(job *models.JobTable, timeout int64) {
 		defer timer.Stop()
 		select {
 		case <-timer.C:
+			tm.Timers.Delete(job.NewJobName)
 			// 超时后删除作业
 			if err := tm.timeoutDeletion(job); err != nil {
 				logrus.Errorf("Delete timeout job: %v failed: %v", job.NewJobName, err)
@@ -127,16 +129,32 @@ func (tm *Timer) timeoutDeletion(job *models.JobTable) error {
 	if !strings.EqualFold(nowJob.State, "RUNNING") {
 		return nil
 	}
-	jobName := job.NewJobName
-	namespace := job.Partition
-	if job.JobType == "inference" {
-		err := utils.LocalCancelInferenceJob(jobName, job.GpuType, namespace, tm.k8sClient)
+	pods := utils.GetPodsByJobName(nowJob.NewJobName)
+	var elapsed int64
+	if nowJob.JobType == utils.Inference {
+		elapsed = utils.GetElapsedSecondsByDeployPods(nowJob, pods)
+	} else {
+		elapsed = utils.GetVCJobDurationByJobName(nowJob, pods)
+	}
+	limit := int64(nowJob.Timelimit) * 60
+	if elapsed < limit {
+		remaining := limit - elapsed
+		logrus.Infof("job %s timer fired but actual elapsed %d < limit %d, restart timer with %d seconds",
+			nowJob.NewJobName, elapsed, limit, remaining)
+		tm.StartTimer(nowJob, remaining)
+		return nil
+	}
+
+	jobName := nowJob.NewJobName
+	namespace := nowJob.Partition
+	if nowJob.JobType == utils.Inference {
+		err := utils.LocalCancelInferenceJob(jobName, nowJob.GpuType, namespace, tm.k8sClient)
 		if err != nil {
 			logrus.Errorf("Delete inference job failed.")
 			return err
 		}
 	} else {
-		err := utils.LocalCancelVcJob(jobName, job.GpuType, namespace, tm.k8sClient, tm.vcClient)
+		err := utils.LocalCancelVcJob(jobName, nowJob.GpuType, namespace, tm.k8sClient, tm.vcClient)
 		if err != nil {
 			logrus.Errorf("CancelJob failed %v", err)
 			return err
@@ -144,8 +162,6 @@ func (tm *Timer) timeoutDeletion(job *models.JobTable) error {
 	}
 	// 更新pod 及 job 状态为TimeOut
 	tm.UpdateStatus(jobName)
-	// 从定时器map中移除
-	tm.Timers.Delete(jobName)
 
 	return nil
 }

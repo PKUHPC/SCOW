@@ -40,6 +40,10 @@ func GetPodInfoByJobName(jobName string) (podInfo []*pb.JobInfo_PodInfo, err err
 		logrus.Errorf("DB select pod failed by jobname %s, error: %v", jobName, err)
 		return nil, err
 	}
+	return GetPodInfoFromPodTables(modelsPod), nil
+}
+
+func GetPodInfoFromPodTables(modelsPod []*models.PodTable) (podInfo []*pb.JobInfo_PodInfo) {
 	podInfo = make([]*pb.JobInfo_PodInfo, 0, len(modelsPod))
 	for _, pod := range modelsPod {
 		status := pb.JobInfo_PodStatus_value[strings.ToUpper(pod.Status)]
@@ -60,7 +64,7 @@ func GetPodInfoByJobName(jobName string) (podInfo []*pb.JobInfo_PodInfo, err err
 		}
 		podInfo = append(podInfo, tmpPod)
 	}
-	return podInfo, nil
+	return podInfo
 }
 
 func GetPodByNodeName(nodeName string, status []string) (modelsPod []*models.PodTable, err error) {
@@ -96,7 +100,7 @@ func GetPodByLabels(namespace, labelSelector string) (pod *v1.Pod, err error) {
 		LabelSelector: labelSelector,
 		Limit:         1, // 限制返回一个
 	})
-	if err != nil || len(pods.Items) == 0 || &pods.Items[0] == nil {
+	if err != nil || len(pods.Items) == 0 {
 		logrus.Errorf("get tensorboard pods error: %v", err)
 		return nil, err
 	}
