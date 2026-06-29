@@ -270,6 +270,8 @@ export const mockApi: MockApi<typeof api> = {
 
   getAppMetadata: async () => ({
     appName: "test",
+    ignoreGpu: false,
+    appComment: undefined,
     appCustomFormAttributes: [
       {
         type: "NUMBER",

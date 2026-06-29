@@ -227,6 +227,7 @@ message GetAppMetadataResponse {
   repeated AppCustomAttribute attributes = 2;
   optional I18nStringProtoType app_comment = 3;
   repeated ReservedAppAttribute reserved_app_attributes = 4;
+  bool ignore_gpu = 5;
 }
 
 message ListAvailableAppsRequest {

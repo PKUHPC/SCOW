@@ -28,6 +28,9 @@ name: emacs
 # 指定应用类型为vnc
 type: vnc
 
+# 提交这个作业时所有分区都被认为是非GPU分区
+# ignoreGpu: false
+
 # VNC应用的配置
 vnc: 
 

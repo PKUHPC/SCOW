@@ -128,6 +128,12 @@ export const AppConfigSchema = Type.Object({
 
   logoPath: Type.Optional(Type.String({ description: "App应用图标的图片源路径" })),
   type: Type.Enum(AppType, { description: "应用类型" }),
+  ignoreGpu: Type.Optional(
+    Type.Boolean({
+      description: "是否忽略GPU分区，默认为false。开启后此应用所有分区均按非GPU分区提交",
+      default: false,
+    }),
+  ),
   slurm: Type.Optional(SlurmConfigSchema),
   web: Type.Optional(WebAppConfigSchema),
   vnc: Type.Optional(VncAppConfigSchema),

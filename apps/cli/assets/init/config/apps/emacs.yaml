@@ -7,6 +7,9 @@ name: emacs
 # 指定应用类型，vnc或者web
 type: vnc
 
+# 提交这个作业时所有分区都被认为是非GPU分区
+# ignoreGpu: false
+
 # 可以运行这个应用的节点地址
 # 如果不设置nodes，则所有节点都可以运行
 # nodes:

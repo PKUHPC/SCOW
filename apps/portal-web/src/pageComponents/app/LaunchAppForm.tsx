@@ -218,6 +218,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     !selectedCluster || appMetadataResult?.cluster === selectedCluster ? appMetadataResult : undefined;
 
   const { appComment, appCustomFormAttributes: attributes = [], reservedAppAttributes } = appMetadata ?? {};
+  const ignoreGpu = appMetadata?.ignoreGpu ?? false;
 
   const appCommentI18nText = appComment ? getI18nConfigCurrentText(appComment, languageId) : undefined;
 
@@ -338,7 +339,7 @@ export const LaunchAppForm: React.FC<Props> = ({
       const nodeTotal = summary?.nodeCount;
       const perNodeDivisor = nodeTotal && nodeTotal > 0 ? nodeTotal : 1;
       const nodeSpecParts = [
-        partition.gpus ? t(pResource("nodeSpecGpu"), [partition.gpus / perNodeDivisor]) : undefined,
+        !ignoreGpu && partition.gpus ? t(pResource("nodeSpecGpu"), [partition.gpus / perNodeDivisor]) : undefined,
         partition.cores ? t(pResource("nodeSpecCpu"), [partition.cores / perNodeDivisor]) : undefined,
         partition.memMb
           ? t(pResource("nodeSpecMemory"), [formatSize(partition.memMb / perNodeDivisor, ["MB", "GB", "TB"])])
@@ -352,7 +353,7 @@ export const LaunchAppForm: React.FC<Props> = ({
       const idleNodes = nodeTotal != null && idleNodeCount != null ? `${idleNodeCount}/${nodeTotal}` : "-";
       const idleCpu = cpuTotal != null && idleCpuCount != null ? `${idleCpuCount}/${cpuTotal}` : "-";
       const idleGpu = gpuTotal != null && idleGpuCount != null ? `${idleGpuCount}/${gpuTotal}` : "-";
-      const kind: PartitionTabKey = partition.gpus && partition.gpus > 0 ? "gpu" : "cpu";
+      const kind: PartitionTabKey = !ignoreGpu && partition.gpus && partition.gpus > 0 ? "gpu" : "cpu";
       const disabled =
         kind === "gpu"
           ? idleGpuCount != null
@@ -407,6 +408,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     availablePartitionsForAccountQuery.data?.cluster,
     availablePartitionsForAccountQuery.data?.partitions,
     clusterRunningInfoQuery.data?.clusterInfo.partitions,
+    ignoreGpu,
     languageId,
     selectedAccount,
     selectedCluster,
@@ -507,6 +509,11 @@ export const LaunchAppForm: React.FC<Props> = ({
     selectedCluster,
     selectedPartition,
   ]);
+  const currentPartitionIsWithGpu = !ignoreGpu && !!selectedPartitionInfo?.gpus;
+  const currentPartitionInfoForForm = useMemo(
+    () => (ignoreGpu && selectedPartitionInfo ? { ...selectedPartitionInfo, gpus: 0 } : selectedPartitionInfo),
+    [ignoreGpu, selectedPartitionInfo],
+  );
 
   const inputsDisabled = !selectedPartitionInfo;
 
@@ -677,6 +684,7 @@ export const LaunchAppForm: React.FC<Props> = ({
       getVisibleResourceTemplateFieldNames(reservedAppAttributes),
     );
     customFormKeyValue[templateCustomAttributesKey] = JSON.stringify(getVisibleCustomTemplateFieldNames(attributes));
+    const templateGpuCount = ignoreGpu ? undefined : resourceValues.gpuCount;
 
     try {
       setSavingTemplate(true);
@@ -689,11 +697,11 @@ export const LaunchAppForm: React.FC<Props> = ({
             partition: resourceValues.partition,
             qos: resourceValues.qos,
             nodeCount: resourceValues.nodeCount ?? 1,
-            coreCount: resourceValues.gpuCount
-              ? resourceValues.gpuCount *
+            coreCount: templateGpuCount
+              ? templateGpuCount *
                 Math.floor((selectedPartitionInfo?.cores ?? 1) / (selectedPartitionInfo?.gpus ?? 1))
               : (resourceValues.coreCount ?? 1),
-            gpuCount: resourceValues.gpuCount ?? 0,
+            gpuCount: templateGpuCount ?? 0,
             memoryMb: totalMemoryMb,
             maxTime: resourceValues.maxTime ?? 60,
             maxTimeUnit: selectedPresetUnit ?? maxTimeUnitValue,
@@ -765,6 +773,18 @@ export const LaunchAppForm: React.FC<Props> = ({
     }
 
     const cluster = template.cluster || selectedCluster;
+    const targetCluster = template.cluster ?? selectedCluster;
+    let targetAttributes = attributes;
+    let targetIgnoreGpu = ignoreGpu;
+    if (targetCluster && targetCluster !== selectedCluster) {
+      try {
+        const meta = await api.getAppMetadata({ query: { appId, cluster: targetCluster } });
+        targetAttributes = meta.appCustomFormAttributes ?? [];
+        targetIgnoreGpu = meta.ignoreGpu ?? false;
+      } catch {
+        /* fall back to current app metadata */
+      }
+    }
 
     let matchedPartition: Partition | undefined;
     if (template.partition && template.account && cluster) {
@@ -792,7 +812,7 @@ export const LaunchAppForm: React.FC<Props> = ({
         showTemplateExpiredConfirm(template);
         return;
       }
-      const useGpu = (matchedPartition.gpus ?? 0) > 0;
+      const useGpu = !targetIgnoreGpu && (matchedPartition.gpus ?? 0) > 0;
       if (useGpu && template.gpuCount && template.gpuCount > matchedPartition.gpus) {
         showTemplateExpiredConfirm(template);
         return;
@@ -803,26 +823,16 @@ export const LaunchAppForm: React.FC<Props> = ({
       }
     }
 
-    const templatePartitionIsWithGpu = matchedPartition ? !!matchedPartition.gpus : !!template.gpuCount;
+    const templatePartitionIsWithGpu =
+      !targetIgnoreGpu && (matchedPartition ? !!matchedPartition.gpus : !!template.gpuCount);
     if (!isTemplateResourceReservedConfigAvailable(template, reservedAppAttributes, templatePartitionIsWithGpu)) {
       showTemplateExpiredConfirm(template);
       return;
     }
 
-    const useGpuTab = matchedPartition
-      ? (matchedPartition.gpus ?? 0) > 0
-      : !!template.gpuCount && template.gpuCount > 0;
-
-    const targetCluster = template.cluster ?? selectedCluster;
-    let targetAttributes = attributes;
-    if (targetCluster && targetCluster !== selectedCluster) {
-      try {
-        const meta = await api.getAppMetadata({ query: { appId, cluster: targetCluster } });
-        targetAttributes = meta.appCustomFormAttributes ?? [];
-      } catch {
-        /* fall back to current attributes */
-      }
-    }
+    const useGpuTab =
+      !targetIgnoreGpu &&
+      (matchedPartition ? (matchedPartition.gpus ?? 0) > 0 : !!template.gpuCount && template.gpuCount > 0);
 
     if (!isTemplateCustomAttributesAvailable(template.customAttributes, targetAttributes)) {
       showTemplateExpiredConfirm(template);
@@ -890,6 +900,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     const appFormFields = await appForm.validateFields();
     const allFormFields = { ...baseFormFields, ...resourceFormFields, ...appFormFields };
     const { appJobName, nodeCount, coreCount, gpuCount, partition, qos, account, maxTime } = allFormFields;
+    const submitGpuCount = ignoreGpu ? undefined : gpuCount;
 
     const customFormKeyValue: Record<string, string> = {};
     attributes.forEach((customFormAttribute) => {
@@ -906,10 +917,10 @@ export const LaunchAppForm: React.FC<Props> = ({
           appName: appName || "",
           appJobName: appJobName,
           nodeCount: nodeCount,
-          coreCount: gpuCount
-            ? gpuCount * Math.floor(selectedPartitionInfo!.cores / selectedPartitionInfo!.gpus)
+          coreCount: submitGpuCount
+            ? submitGpuCount * Math.floor(selectedPartitionInfo!.cores / selectedPartitionInfo!.gpus)
             : coreCount,
-          gpuCount,
+          gpuCount: submitGpuCount,
           memoryMb: totalMemoryMb,
           partition,
           qos,
@@ -1170,7 +1181,7 @@ export const LaunchAppForm: React.FC<Props> = ({
                         ReservedAppAttributeName.APP_JOB_NAME,
                       )}
                       children={<RoundedInput />}
-                      currentPartitionIsWithGpu={!!selectedPartitionInfo?.gpus}
+                      currentPartitionIsWithGpu={currentPartitionIsWithGpu}
                       appId={appId}
                       clusterId={selectedCluster}
                     />
@@ -1201,7 +1212,7 @@ export const LaunchAppForm: React.FC<Props> = ({
               appId={appId}
               clusterId={selectedCluster}
               reservedAppAttributes={reservedAppAttributes}
-              currentPartitionInfo={selectedPartitionInfo}
+              currentPartitionInfo={currentPartitionInfoForForm}
               maxRunningTimeHours={maxRunningTimeHours}
             />
 
@@ -1211,7 +1222,7 @@ export const LaunchAppForm: React.FC<Props> = ({
               appId={appId}
               clusterId={selectedCluster}
               attributes={attributes}
-              currentPartitionInfo={selectedPartitionInfo}
+              currentPartitionInfo={currentPartitionInfoForForm}
             />
           </JobContainer>
         </JobMainContent>

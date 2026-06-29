@@ -117,6 +117,7 @@ export const GetAppMetadataSchema = typeboxRouteSchema({
       appCustomFormAttributes: Type.Array(AppCustomAttribute),
       appComment: Type.Optional(I18nStringSchemaType),
       reservedAppAttributes: Type.Array(ReservedAppAttribute),
+      ignoreGpu: Type.Boolean(),
     }),
 
     // appId not exists
@@ -224,6 +225,7 @@ export default /* #__PURE__*/ route(GetAppMetadataSchema, async (req, res) => {
           appCustomFormAttributes: attributes,
           appComment: comment,
           reservedAppAttributes,
+          ignoreGpu: reply.ignoreGpu,
         },
       };
     },

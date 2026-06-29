@@ -25,6 +25,9 @@ name: VSCode
 # 指定应用类型为web
 type: web
 
+# 提交这个作业时所有分区都被认为是非GPU分区
+# ignoreGpu: false
+
 # Web应用的配置
 web:
 

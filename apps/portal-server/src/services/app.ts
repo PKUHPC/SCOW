@@ -245,7 +245,7 @@ export const appServiceServer = plugin((server) => {
           userId,
           coreCount,
           nodeCount,
-          gpuCount,
+          gpuCount: app.ignoreGpu ? undefined : gpuCount,
           memoryMb,
           account,
           maxTime,
@@ -412,7 +412,13 @@ export const appServiceServer = plugin((server) => {
 
       const comment = app.appComment ? getI18nSeverTypeFormat(app.appComment) : undefined;
 
-      return [{ appName: app.name, attributes: attributes, appComment: comment, reservedAppAttributes }];
+      return [{
+        appName: app.name,
+        attributes: attributes,
+        appComment: comment,
+        reservedAppAttributes,
+        ignoreGpu: app.ignoreGpu ?? false,
+      }];
     },
 
     listAvailableApps: async ({ request }) => {
