@@ -35,6 +35,45 @@ data:
     PY
     }
 
+    function pip_install_with_fallback {
+      local pip_cmd=$1
+      shift
+
+      local -a pip_common_args=()
+      if "${pip_cmd}" install --help 2>/dev/null | grep -q -- '--default-timeout'; then
+        pip_common_args+=(--default-timeout 15)
+      fi
+      if "${pip_cmd}" install --help 2>/dev/null | grep -q -- '--retries'; then
+        pip_common_args+=(--retries 1)
+      fi
+
+      local -a pypi_sources=(
+        "https://mirrors.aliyun.com/pypi/simple/"
+        "https://mirrors.pku.edu.cn/pypi/web/simple/"
+        "https://pypi.tuna.tsinghua.edu.cn/simple/"
+        "https://mirrors.ustc.edu.cn/pypi/simple/"
+      )
+
+      local pypi_source
+      for pypi_source in "${pypi_sources[@]}"; do
+        echo "[INFO] 使用 PyPI 源: ${pypi_source}" >>/tmp/jupyterlab.log
+        if "${pip_cmd}" install "${pip_common_args[@]}" "$@" -i "${pypi_source}" >>/tmp/jupyterlab.log 2>&1; then
+          return 0
+        fi
+        echo "[WARN] 当前 PyPI 源安装失败: ${pypi_source}" >>/tmp/jupyterlab.log
+      done
+
+      return 1
+    }
+
+    function get_pip_break_system_packages_arg {
+      local pip_cmd=$1
+
+      if "${pip_cmd}" install --help 2>/dev/null | grep -q -- '--break-system-packages'; then
+        echo "--break-system-packages"
+      fi
+    }
+
     function start_jupyterlab {
       local PORT=$1
       local HOST=$2
@@ -51,7 +90,7 @@ data:
         PYTHON_CMD=python
       else
         echo "[ERROR] python3 和 python 均不存在，请检查 Python 环境" >>/tmp/jupyterlab.log
-        exit 1
+        return 1
       fi
 
       # -------------------------------
@@ -66,22 +105,29 @@ data:
         if [ "$PY_VERSION" = "3" ]; then
           echo "[INFO] 检测到 Python3, 使用 pip3 安装" >>/tmp/jupyterlab.log
           if command -v pip3 >/dev/null 2>&1; then
-            pip3 install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/
-            pip3 install --break-system-packages ipykernel jupyterlab -i https://mirrors.aliyun.com/pypi/simple/
+            pip_install_with_fallback pip3 --upgrade pip
+            local BREAK_SYSTEM_PACKAGES_ARG=$(get_pip_break_system_packages_arg pip3)
+            if ! pip_install_with_fallback pip3 ${BREAK_SYSTEM_PACKAGES_ARG} ipykernel jupyterlab; then
+              echo "[ERROR] pip3 安装 jupyterlab 失败" >>/tmp/jupyterlab.log
+              return 1
+            fi
             echo "[INFO] pip3 安装 jupyterlab 完成" >>/tmp/jupyterlab.log
           else
             echo "[ERROR] pip3 不存在，请检查 Python3 环境" >>/tmp/jupyterlab.log
-            exit 1
+            return 1
           fi
         else
           echo "[INFO] 检测到 Python2/默认Python, 使用 pip 安装" >>/tmp/jupyterlab.log
           if command -v pip >/dev/null 2>&1; then
-            pip install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/
-            pip install ipykernel jupyterlab -i https://mirrors.aliyun.com/pypi/simple/
-            echo "[INFO] pip3 安装 jupyterlab 完成" >>/tmp/jupyterlab.log
+            pip_install_with_fallback pip --upgrade pip
+            if ! pip_install_with_fallback pip ipykernel jupyterlab; then
+              echo "[ERROR] pip 安装 jupyterlab 失败" >>/tmp/jupyterlab.log
+              return 1
+            fi
+            echo "[INFO] pip 安装 jupyterlab 完成" >>/tmp/jupyterlab.log
           else
             echo "[ERROR] pip 不存在，请检查 Python 环境" >>/tmp/jupyterlab.log
-            exit 1
+            return 1
           fi
         fi
       else
@@ -91,7 +137,7 @@ data:
       local HASHED_PASSWORD
       if ! HASHED_PASSWORD="$(get_jupyter_password_hash "$PASSWORD" "$PYTHON_CMD")" || [ -z "$HASHED_PASSWORD" ]; then
         echo "[ERROR] JupyterLab 密码 hash 生成失败，请检查 jupyter_server/notebook/IPython 是否已安装" >>/tmp/jupyterlab.log
-        exit 1
+        return 1
       fi
 
       # -------------------------------
@@ -108,7 +154,7 @@ data:
         --ServerApp.base_url="${PROXY_BASE_PATH}/${HOST}/${SVCPORT}/" \
         --ServerApp.allow_origin='*' \
         --ServerApp.disable_check_xsrf=True \
-        --allow-root >>/tmp/jupyterlab.log
+        --allow-root >>/tmp/jupyterlab.log 2>&1
     }
 
     function start_vscode {
@@ -120,7 +166,7 @@ data:
       local PASSWORD=$(get_password 12)
 
       echo -e "{\"HOST\":\"$HOST\",\"PORT\":\"$SVCPORT\",\"PASSWORD\":\"$PASSWORD\"}" >$SERVER_SESSION_INFO
-      PASSWORD=$PASSWORD ${VSCODE} -vvv --bind-addr 0.0.0.0:$PORT --auth password >>/tmp/vscode.log
+      PASSWORD=$PASSWORD ${VSCODE} -vvv --bind-addr 0.0.0.0:$PORT --auth password >>/tmp/vscode.log 2>&1
     }
 
     # -------------------------------
