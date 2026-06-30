@@ -640,6 +640,7 @@ export default {
         timeLimit: "최대 실행 시간 (분)",
         timeUsed: "작업 실행 시간 (초)",
         timeWait: "작업 대기 시간 (초)",
+        timeWaitTip: "노드 간 시간 차이가 있을 수 있으며 이는 정상이고 작업 실행 및 과금에는 영향을 주지 않습니다.",
         recordTime: "기록 시간",
         workFee: "작업 과금 (CNY)",
         tenantFee: "테넌트 과금 (CNY)",
@@ -694,6 +695,9 @@ export default {
         reason: "사유",
         runningOrQueueTime: "실행/대기 시간",
         timeLimit: "최대 실행 시간",
+        timeUsed: "실행 시간",
+        timeWait: "대기 시간",
+        timeWaitTip: "노드 간 시간 차이가 있을 수 있으며 이는 정상이고 작업 실행 및 과금에는 영향을 주지 않습니다.",
         detail: "미완료 작업 상세",
       },
       runningJobTable: {

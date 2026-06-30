@@ -679,6 +679,7 @@ export default {
         timeLimit: "Temps d'exécution maximum (minutes)",
         timeUsed: "Durée d'exécution du job (secondes)",
         timeWait: "Temps d'attente du job (secondes)",
+        timeWaitTip: "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
         recordTime: "Heure d'enregistrement",
         workFee: "Facturation du job (CNY)",
         tenantFee: "Facturation du locataire (CNY)",
@@ -735,6 +736,9 @@ export default {
         reason: "Explication",
         runningOrQueueTime: "Temps d'exécution / en file",
         timeLimit: "Temps d'exécution maximum",
+        timeUsed: "Durée d'exécution",
+        timeWait: "Temps d'attente",
+        timeWaitTip: "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
         detail: "Détails du job non terminé",
       },
       runningJobTable: {

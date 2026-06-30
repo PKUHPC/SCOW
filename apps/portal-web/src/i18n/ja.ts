@@ -126,6 +126,7 @@ export default {
         state: "状態",
         reason: "説明",
         runningOrQueueTime: "実行/待機時間",
+        timeWaitTip: "ノード間で時刻差が生じる場合がありますが正常であり、ジョブの実行や課金には影響しません。",
         submissionTime: "提出時刻",
         timeLimit: "最大実行時間",
         drawerTitle: "ジョブ詳細",

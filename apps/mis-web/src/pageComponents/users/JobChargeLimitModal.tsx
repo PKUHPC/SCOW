@@ -87,7 +87,7 @@ export const JobChargeLimitModal: React.FC<Props> = ({
 
       if (userInfo.jobChargeLimit && userInfo.usedJobChargeLimit) {
         formalUserInfo.usedAndLimit.push(
-          `${moneyToString(userInfo.jobChargeLimit)} / ${moneyToString(userInfo.usedJobChargeLimit)}`,
+          `${moneyToString(userInfo.usedJobChargeLimit)} / ${moneyToString(userInfo.jobChargeLimit)}`,
         );
       } else {
         formalUserInfo.usedAndLimit.push(t(p("unset")));

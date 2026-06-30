@@ -128,6 +128,7 @@ export default {
         state: "Statut",
         reason: "Raison",
         runningOrQueueTime: "Temps d'exécution/attente",
+        timeWaitTip: "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
         submissionTime: "Heure de soumission",
         timeLimit: "Temps d'exécution maximal",
         drawerTitle: "Détails du job",

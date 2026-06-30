@@ -31,7 +31,7 @@ function calculateRunningOrQueueTime(r: RunningJob) {
 
   // calculate to format [{days}-][{Hours}:]{MM}:{SS}
   const diffMs = dayjs().diff(r.submissionTime);
-  return formatTime(diffMs);
+  return formatTime(diffMs < 0 ? 0 : diffMs);
 }
 
 export function runningJobId(r: RunningJobInfo) {

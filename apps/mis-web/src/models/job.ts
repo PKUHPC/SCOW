@@ -24,7 +24,8 @@ function calculateRunningOrQueueTime(r: RunningJob) {
   if (["PENDING", "QUEUED"].includes(r.state)) {
     // calculate to format [{days}-][{Hours}:]{MM}:{SS}
     const diffMs = dayjs().diff(r.submissionTime);
-    return formatTime(diffMs);
+    const nonNegativeDiffMs = diffMs < 0 ? 0 : diffMs;
+    return formatTime(nonNegativeDiffMs);
   }
 
   return r.runningTime;

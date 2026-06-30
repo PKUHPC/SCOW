@@ -92,6 +92,7 @@ const mockOriginalJobData = (account: string, user: string, jobId?: number, clus
       tenant: { billingItemId: "", price: new Decimal(20) },
       account: { billingItemId: "", price: new Decimal(10) },
     },
+    endTime ? 0 : 132,
   );
 
 it("export users", async () => {

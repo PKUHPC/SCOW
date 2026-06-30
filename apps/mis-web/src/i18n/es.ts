@@ -674,6 +674,7 @@ export default {
         timeLimit: "Tiempo máximo de ejecución (minutos)",
         timeUsed: "Tiempo de ejecución del trabajo (segundos)",
         timeWait: "Tiempo de espera del trabajo (segundos)",
+        timeWaitTip: "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
         recordTime: "Hora de registro",
         workFee: "Precio del trabajo (CNY)",
         tenantFee: "Precio del inquilino (CNY)",
@@ -731,6 +732,9 @@ export default {
         reason: "Explicación",
         runningOrQueueTime: "Tiempo de ejecución/pendiente",
         timeLimit: "Tiempo máximo de ejecución",
+        timeUsed: "Tiempo de ejecución",
+        timeWait: "Tiempo de espera",
+        timeWaitTip: "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
         detail: "Detalles de trabajos sin finalizar",
       },
       runningJobTable: {

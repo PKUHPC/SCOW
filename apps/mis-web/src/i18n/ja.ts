@@ -633,6 +633,7 @@ export default {
         timeLimit: "最大実行時間（分）",
         timeUsed: "ジョブ実行時間（秒）",
         timeWait: "ジョブ待機時間（秒）",
+        timeWaitTip: "ノード間で時刻差が生じる場合がありますが正常であり、ジョブの実行や課金には影響しません。",
         recordTime: "記録時刻",
         workFee: "ジョブ課金（CNY）",
         tenantFee: "テナント課金（CNY）",
@@ -689,6 +690,9 @@ export default {
         reason: "説明",
         runningOrQueueTime: "実行/待機時間",
         timeLimit: "最大実行時間",
+        timeUsed: "実行時間",
+        timeWait: "待機時間",
+        timeWaitTip: "ノード間で時刻差が生じる場合がありますが正常であり、ジョブの実行や課金には影響しません。",
         detail: "未完了ジョブ詳細",
       },
       runningJobTable: {

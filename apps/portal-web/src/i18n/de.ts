@@ -129,6 +129,7 @@ export default {
         state: "Status",
         reason: "Begründung",
         runningOrQueueTime: "Lauf-/Wartezeit",
+        timeWaitTip: "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
         submissionTime: "Abgabezeit",
         timeLimit: "Maximale Laufzeit",
         drawerTitle: "Jobdetails",

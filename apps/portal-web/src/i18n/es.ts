@@ -128,6 +128,7 @@ export default {
         state: "Estado",
         reason: "Motivo",
         runningOrQueueTime: "Tiempo de ejecución/espera",
+        timeWaitTip: "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
         submissionTime: "Hora de envío",
         timeLimit: "Tiempo máximo de ejecución",
         drawerTitle: "Detalles del trabajo",

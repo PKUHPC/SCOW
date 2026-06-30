@@ -137,6 +137,7 @@ it("jobs can be imported when jobs from other clusters already exist in the data
     },
     undefined,
     emptyJobPriceInfo(),
+    0,
   );
 
   const em = server.ext.orm.em.fork();

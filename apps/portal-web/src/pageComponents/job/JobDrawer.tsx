@@ -1,5 +1,8 @@
+import type { ReactNode } from "react";
+
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
-import { Descriptions, Drawer } from "antd";
+import { Descriptions, Drawer, Space, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -16,6 +19,15 @@ interface Props {
 
 const p = prefix("pageComp.job.jobDrawer.");
 const pCommon = prefix("common.");
+
+const labelWithTooltip = (label: string, tooltip: string): ReactNode => (
+  <Space size={4}>
+    {label}
+    <Tooltip title={tooltip}>
+      <QuestionCircleOutlined />
+    </Tooltip>
+  </Space>
+);
 
 export const JobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
   const t = useI18nTranslateToString();
@@ -48,8 +60,15 @@ export const JobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
     [t(pCommon("reason")), "reason"],
     [t(p("timeLimit")), "timeLimit"],
     [t(pCommon("timeUsed")), "runningTime", (t, r) => t ?? r.elapsed],
-    [t(pCommon("timeWait")), "startTime", (t, r) => formatTime(dayjs(t).diff(r.submitTime))],
-  ] as ([string, keyof RunningJobInfo] | [string, keyof RunningJobInfo, (v: any, r: RunningJobInfo) => string])[];
+    [
+      labelWithTooltip(t(pCommon("timeWait")), t(p("timeWaitTip"))),
+      "startTime",
+      (t, r) => {
+        const diffMs = dayjs(t).diff(r.submitTime);
+        return formatTime(diffMs < 0 ? 0 : diffMs);
+      },
+    ],
+  ] as ([ReactNode, keyof RunningJobInfo] | [ReactNode, keyof RunningJobInfo, (v: any, r: RunningJobInfo) => string])[];
   return (
     <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("drawerTitle"))}>
       {item ? (

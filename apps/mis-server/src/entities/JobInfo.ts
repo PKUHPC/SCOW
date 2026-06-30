@@ -102,7 +102,12 @@ export class JobInfo {
   @Property({ type: DecimalType, defaultRaw: DECIMAL_DEFAULT_RAW })
   accountPrice: Decimal = new Decimal(0);
 
-  constructor(job: { cluster: string } & ClusterJobInfo, tenant: string | undefined, jobPriceInfo: JobPriceInfo) {
+  constructor(
+    job: { cluster: string } & ClusterJobInfo,
+    tenant: string | undefined,
+    jobPriceInfo: JobPriceInfo,
+    timeWait: number,
+  ) {
     this.idJob = job.jobId;
 
     this.account = job.account;
@@ -122,9 +127,7 @@ export class JobInfo {
     this.nodesAlloc = job.nodesAlloc!;
     this.timelimit = job.timeLimitMinutes;
     this.timeUsed = job.elapsedSeconds!;
-    this.timeWait = job.startTime
-      ? (new Date(job.startTime).getTime() - new Date(job.submitTime!).getTime()) / 1000
-      : (new Date(job.endTime!).getTime() - new Date(job.submitTime!).getTime()) / 1000;
+    this.timeWait = timeWait;
     this.qos = job.qos;
 
     this.tenantPrice = jobPriceInfo.tenant?.price ?? new Decimal(0);

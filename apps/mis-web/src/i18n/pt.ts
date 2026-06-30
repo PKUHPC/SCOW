@@ -677,6 +677,7 @@ export default {
         timeLimit: "Tempo máximo de execução (minutos)",
         timeUsed: "Tempo de execução do job (segundos)",
         timeWait: "Tempo de espera do job (segundos)",
+        timeWaitTip: "Diferenças de horário entre nós são normais e não afetam a execução nem a cobrança do job.",
         recordTime: "Hora do registro",
         workFee: "Cobrança do job (CNY)",
         tenantFee: "Cobrança do inquilino (CNY)",
@@ -733,6 +734,9 @@ export default {
         reason: "Explicação",
         runningOrQueueTime: "Tempo de execução/espera",
         timeLimit: "Tempo máximo de execução",
+        timeUsed: "Tempo de execução",
+        timeWait: "Tempo de espera",
+        timeWaitTip: "Diferenças de horário entre nós são normais e não afetam a execução nem a cobrança do job.",
         detail: "Detalhes do job em execução",
       },
       runningJobTable: {

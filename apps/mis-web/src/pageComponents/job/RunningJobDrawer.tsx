@@ -1,6 +1,9 @@
+import type { ReactNode } from "react";
+
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
-import { Descriptions, Drawer } from "antd";
+import { Descriptions, Drawer, Space, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -19,6 +22,15 @@ interface Props {
 const p = prefix("pageComp.job.runningJobDrawer.");
 const pCommon = prefix("common.");
 
+const labelWithTooltip = (label: string, tooltip: string): ReactNode => (
+  <Space size={4}>
+    {label}
+    <Tooltip title={tooltip}>
+      <QuestionCircleOutlined />
+    </Tooltip>
+  </Space>
+);
+
 export const RunningJobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
@@ -32,8 +44,8 @@ export const RunningJobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
     [t(pCommon("workName")), "name"],
     [t(pCommon("workId")), "jobId"],
     [t(pCommon("status")), "state"],
-    [t(pCommon("userName")), "userName", (v) => isExternal ? nonPlatformUser : (v ?? "-")],
-    [t(pCommon("userId")), "user", (v) => isExternal ? nonPlatformUser : v],
+    [t(pCommon("userName")), "userName", (v) => (isExternal ? nonPlatformUser : (v ?? "-"))],
+    [t(pCommon("userId")), "user", (v) => (isExternal ? nonPlatformUser : v)],
     [t(pCommon("account")), "account"],
     [t(pCommon("accountOwnerName")), "accountOwnerName", (v) => v ?? "-"],
     [t(pCommon("accountOwnerId")), "accountOwnerId", (v) => v ?? "-"],
@@ -57,8 +69,15 @@ export const RunningJobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
     [t(p("accountPrice")), "accountPrice", (v) => nullableMoneyToString(v)],
     [t(p("tenantPrice")), "tenantPrice", (v) => nullableMoneyToString(v)],
     [t(p("chargingPeriod")), "chargingPeriod"],
-    [t(pCommon("timeWait")), "startTime", (t, r) => formatTime(dayjs(t).diff(r.submissionTime))],
-  ] as ([string, keyof RunningJobInfo] | [string, keyof JobInfo, (v: any, r: RunningJobInfo) => string])[];
+    [
+      labelWithTooltip(t(p("timeWait")), t(p("timeWaitTip"))),
+      "startTime",
+      (t, r) => {
+        const diffMs = dayjs(t).diff(r.submissionTime);
+        return formatTime(diffMs < 0 ? 0 : diffMs);
+      },
+    ],
+  ] as ([ReactNode, keyof RunningJobInfo] | [ReactNode, keyof JobInfo, (v: any, r: RunningJobInfo) => string])[];
 
   return (
     <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("detail"))}>

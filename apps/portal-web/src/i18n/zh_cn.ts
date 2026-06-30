@@ -8,8 +8,8 @@ export default {
     endTime: "结束时间",
     list: "使用节点列表",
     reason: "说明",
-    timeUsed: "作业执行时间",
-    timeWait: "作业等待时间",
+    timeUsed: "执行时间",
+    timeWait: "等待时间",
   },
   // baseLayout
   baseLayout: {
@@ -137,6 +137,7 @@ export default {
         reason: "说明",
         runningOrQueueTime: "运行/排队时间",
         submissionTime: "提交时间",
+        timeWaitTip: "不同节点间时间可能存在时差属于正常现象，不影响作业运行和计费",
         timeLimit: "最长运行时间",
         drawerTitle: "作业详细信息",
       },

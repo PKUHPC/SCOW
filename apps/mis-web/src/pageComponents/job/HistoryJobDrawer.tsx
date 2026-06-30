@@ -1,6 +1,8 @@
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
-import { Descriptions, Drawer } from "antd";
+import { Descriptions, Drawer, Space, Tooltip } from "antd";
+import type { ReactNode } from "react";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { formatTime } from "src/models/job";
@@ -17,6 +19,15 @@ interface Props {
 
 const p = prefix("pageComp.job.historyJobDrawer.");
 const pCommon = prefix("common.");
+
+const labelWithTooltip = (label: string, tooltip: string): ReactNode => (
+  <Space size={4}>
+    {label}
+    <Tooltip title={tooltip}>
+      <QuestionCircleOutlined />
+    </Tooltip>
+  </Space>
+);
 
 export const HistoryJobDrawer: React.FC<Props> = (props) => {
   const t = useI18nTranslateToString();
@@ -53,7 +64,7 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
     [t(p("memAlloc")), "memAlloc"],
     [t(p("timeLimit")), "timelimit"],
     [t(p("timeUsed")), "timeUsed", (t) => (t ? formatTime(t * 1000) : t)],
-    [t(p("timeWait")), "timeWait", (t) => (t ? formatTime(t * 1000) : t)],
+    [labelWithTooltip(t(p("timeWait")), t(p("timeWaitTip"))), "timeWait", (t) => (t ? formatTime(t * 1000) : t)],
     [t(p("recordTime")), "recordTime", formatDateTime],
     [
       (pr) => (pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("tenantFee"))),
@@ -67,7 +78,7 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
       moneyToString,
       (pr: Props) => pr.showedPrices.includes("tenant"),
     ],
-  ] as [string | ((pr: Props) => string), keyof JobInfo, (v: any) => string, (pr: Props) => boolean][];
+  ] as [ReactNode | ((pr: Props) => ReactNode), keyof JobInfo, (v: any) => string, (pr: Props) => boolean][];
 
   return (
     <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("detail"))}>
@@ -76,7 +87,7 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
           {drawerItems
             .map(([label, key, format, show]) =>
               !show || show(props) ? (
-                <Descriptions.Item key={item.idJob} label={typeof label === "string" ? label : label(props)}>
+                <Descriptions.Item key={item.idJob} label={typeof label === "function" ? label(props) : label}>
                   {/* 如果是集群项展示，则根据当前语言id获取集群名称 */}
                   {format
                     ? key === "cluster"

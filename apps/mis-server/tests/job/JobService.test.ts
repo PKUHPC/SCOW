@@ -76,6 +76,7 @@ const mockOriginalJobData = (ua: UserAccount, tenantPrice: Decimal, accountPrice
       tenant: { billingItemId: "", price: tenantPrice },
       account: { billingItemId: "", price: accountPrice },
     },
+    submitTime ? 0 : 132,
   );
 
 function createClient() {

@@ -683,6 +683,7 @@ export default {
         timeLimit: "Maximale Laufzeit (Minuten)",
         timeUsed: "Ausführungszeit des Jobs (Sekunden)",
         timeWait: "Wartezeit des Jobs (Sekunden)",
+        timeWaitTip: "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
         recordTime: "Erfassungszeit",
         workFee: "Job-Abrechnung (CNY)",
         tenantFee: "Mandantenabrechnung (CNY)",
@@ -739,6 +740,9 @@ export default {
         reason: "Erläuterung",
         runningOrQueueTime: "Lauf-/Wartezeit",
         timeLimit: "Maximale Laufzeit",
+        timeUsed: "Ausführungszeit",
+        timeWait: "Wartezeit",
+        timeWaitTip: "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
         detail: "Details laufender Jobs",
       },
       runningJobTable: {

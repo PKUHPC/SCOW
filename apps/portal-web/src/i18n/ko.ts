@@ -126,6 +126,7 @@ export default {
         state: "상태",
         reason: "사유",
         runningOrQueueTime: "실행/대기 시간",
+        timeWaitTip: "노드 간 시간 차이가 있을 수 있으며 이는 정상이고 작업 실행 및 과금에는 영향을 주지 않습니다.",
         submissionTime: "제출 시간",
         timeLimit: "최대 실행 시간",
         drawerTitle: "작업 상세 정보",

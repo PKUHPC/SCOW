@@ -58,6 +58,29 @@ const processGetJobsResult = (cluster: string, result: GetJobsResponse) => {
   return jobs;
 };
 
+function calculateTimeWait(job: { cluster: string } & ClusterJobInfo, logger: Logger) {
+  const submitTime = new Date(job.submitTime!).getTime();
+  const compareTime = job.startTime ? new Date(job.startTime).getTime() : new Date(job.endTime!).getTime();
+  const timeWait = (compareTime - submitTime) / 1000;
+
+  if (timeWait < 0) {
+    logger.warn(
+      {
+        cluster: job.cluster,
+        jobId: job.jobId,
+        submitTime: job.submitTime,
+        startTime: job.startTime,
+        endTime: job.endTime,
+        timeWait,
+      },
+      "Negative job wait_time detected, storing 0 instead.",
+    );
+    return 0;
+  }
+
+  return timeWait;
+}
+
 export let lastFetched: Date | null = null;
 
 export async function fetchJobs(em: SqlEntityManager<MySqlDriver>, logger: Logger, clusterPlugin: ClusterPlugin) {
@@ -120,7 +143,9 @@ export async function fetchJobs(em: SqlEntityManager<MySqlDriver>, logger: Logge
               })
             : emptyJobPriceInfo();
 
-          pricedJob = new JobInfo(job, tenant, price);
+          const timeWait = calculateTimeWait(job, logger);
+
+          pricedJob = new JobInfo(job, tenant, price, timeWait);
 
           em.persist(pricedJob);
 

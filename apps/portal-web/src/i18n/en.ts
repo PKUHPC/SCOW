@@ -8,8 +8,8 @@ export default {
     endTime: "End Time",
     list: "Node Used",
     reason: "Reason",
-    timeUsed: "Job Execution Time",
-    timeWait: "Job Wait Time",
+    timeUsed: "Execution Time",
+    timeWait: "Wait Time",
   },
   // baseLayout
   baseLayout: {
@@ -138,6 +138,8 @@ export default {
         reason: "Reason",
         runningOrQueueTime: "Running/Queue Time",
         submissionTime: "Submission Time",
+        timeWaitTip:
+          "Clock differences between nodes are normal and do not affect job execution or billing.",
         timeLimit: "Maximum Running Time",
         drawerTitle: "Job Details",
       },
