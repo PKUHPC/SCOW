@@ -36,9 +36,9 @@ import {
   VNC_SESSION_INFO,
   writeEndedSessionsFileContent,
 } from "src/utils/app";
-import { callOnOne, getAdapterClient } from "src/utils/clusters";
+import { callOnOne } from "src/utils/clusters";
 import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
-import { displayIdToPort, getTurboVNCBinPath, parseDisplayId, parseOtp } from "src/utils/turbovnc";
+import { displayIdToPort, getTurboVNCBinPath, parseDisplayId } from "src/utils/turbovnc";
 
 export const scowdAppServices = (cluster: string, getClient: (userId: string) => ScowdClient): AppOps => {
   return {
@@ -802,40 +802,18 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
                 // scowd 无需考虑代理网关节点，可以直接 ssh 到计算节点
                 const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
 
-                const adapterClient = getAdapterClient(cluster);
-
-                let password = "";
-                try {
-                  const { stdout, stderr } = await asyncClientCall(adapterClient.job, "runCommandOnJobNodes", {
+                const { password } = await client.app
+                  .refreshVncPassword({
                     jobId,
-                    nodes: [host],
-                    command: `${vncPasswdPath} -o -display :${displayId}`,
-                    timeoutSeconds: 10,
+                    userId,
+                    displayId,
+                    host,
+                    vncPasswdPath,
+                  })
+                  .catch((err: ConnectError) => {
+                    logger.error(`Refresh vnc password failed ${err.message}`);
+                    throw err;
                   });
-
-                  // slurm 适配器 srun 执行刷新密码命令输出到 stderr，但是 crane 输出到 stdout
-                  try {
-                    password = parseOtp(stderr);
-                  } catch {
-                    password = parseOtp(stdout);
-                  }
-                } catch (e) {
-                  logger.warn("Refresh vnc password via runCommandOnJobNodes failed, try to use scowd: %s", e);
-                  // 保留传统 ssh 刷新方式作为 backup
-                  const { password: p } = await client.app
-                    .refreshVncPassword({
-                      jobId,
-                      userId,
-                      displayId,
-                      host,
-                      vncPasswdPath,
-                    })
-                    .catch((err: ConnectError) => {
-                      logger.error(`Refresh vnc password failed ${err.message}`);
-                      throw err;
-                    });
-                  password = p;
-                }
 
                 return {
                   appId: sessionMetadata.appId,
