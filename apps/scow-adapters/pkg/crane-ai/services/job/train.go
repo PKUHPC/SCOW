@@ -1,34 +1,31 @@
 package job
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	protos "scow-adapters/gen/go"
 	"scow-adapters/pkg/crane-ai/utils"
-	"strings"
 )
 
-// MountModel 挂载点路径及模式，如公共数据集或者私有数据集
-type MountModel struct {
-	Path     string `json:"path"`
-	IsPublic bool   `json:"isPublic"`
-}
+// MountModel 复用统一挂载模型，保证训练入口和容器构建入口的 target 解析一致。
+type MountModel = utils.MountModel
 
 // TrainConfig 从ExtraOptions解析训练相关参数
 type TrainConfig struct {
-	ImageURL         string   // 镜像地址
-	AlgorithmPath    string   // 算法版本地址
-	DatasetPath      string   // 数据集版本地址
-	ModelPath        string   // 模型路径
-	RWVolumes        []string // 可读可写挂载点
-	GPUType          string   // GPU类型
-	Framework        string   // AI训练框架
-	ROVolumes        []string // 只读挂载点
-	WorkingDirectory string   // 工作目录，透传为容器环境变量 WORKING_DIRECTORY
+	ImageURL         string       // 镜像地址
+	AlgorithmPath    string       // 算法版本地址
+	DatasetPath      string       // 数据集版本地址
+	ModelPath        string       // 模型路径
+	RWVolumes        []MountModel // 可读可写挂载点
+	GPUType          string       // GPU类型
+	Framework        string       // AI训练框架
+	ROVolumes        []string     // 只读挂载点
+	WorkingDirectory string       // 工作目录，透传为容器环境变量 WORKING_DIRECTORY
 }
 
 // 解析ExtraOptions获取训练配置
@@ -48,7 +45,12 @@ func parseTrainConfig(extraOptions []string) (*TrainConfig, error) {
 
 	// 解析可读可写挂载点
 	if extraOptions[6] != "[]" {
-		config.RWVolumes = strings.Split(extraOptions[6], ",")
+		// 可读写挂载来自前端 MountModel JSON，支持容器内 target 与宿主机 path 不同。
+		rwVolumes, err := utils.ParseMountModel(extraOptions[6])
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse read-write mount points: %v", err)
+		}
+		config.RWVolumes = rwVolumes
 	}
 
 	// 解析只读挂载点
@@ -57,6 +59,38 @@ func parseTrainConfig(extraOptions []string) (*TrainConfig, error) {
 	}
 
 	return config, nil
+}
+
+func tensorBoardEnabled(req *protos.SubmitJobRequest) bool {
+	return strings.TrimSpace(req.GetTensorBoardDataPath()) != ""
+}
+
+func trainingCoreCount(req *protos.SubmitJobRequest, rank uint32) (uint32, error) {
+	if !tensorBoardEnabled(req) || rank != 0 {
+		return req.CoreCount, nil
+	}
+	if req.CoreCount <= uint32(utils.TensorBoardCpu) {
+		return 0, fmt.Errorf("enable TensorBoard requires more than %d CPU cores", utils.TensorBoardCpu)
+	}
+	return req.CoreCount - uint32(utils.TensorBoardCpu), nil
+}
+
+func trainingMemoryPerNodeMb(req *protos.SubmitJobRequest, rank uint32) (uint64, error) {
+	if req.MemoryMb == nil {
+		return 0, nil
+	}
+	nodeCount := req.NodeCount
+	if nodeCount == 0 {
+		nodeCount = 1
+	}
+	memoryPerNode := *req.MemoryMb / uint64(nodeCount)
+	if !tensorBoardEnabled(req) || rank != 0 {
+		return memoryPerNode, nil
+	}
+	if memoryPerNode <= uint64(utils.TensorBoardMemoryMb) {
+		return 0, fmt.Errorf("enable TensorBoard requires more than %d MB memory per node", utils.TensorBoardMemoryMb)
+	}
+	return memoryPerNode - uint64(utils.TensorBoardMemoryMb), nil
 }
 
 func getAlgorithmDataSetModelInfo(algorithmPath, dataSetPath, modelPath string) ([]MountModel, []MountModel, []MountModel, error) {
@@ -92,30 +126,16 @@ func getAlgorithmDataSetModelInfo(algorithmPath, dataSetPath, modelPath string) 
 }
 
 func parseMountModel(mount string) ([]MountModel, error) {
-	var info []MountModel
-
-	var rawStrings []string
-	err := json.Unmarshal([]byte(mount), &rawStrings)
+	info, err := utils.ParseMountModel(mount)
 	if err != nil {
-		logrus.Errorf("Outer JSON parsing failed: %v", err)
+		logrus.Errorf("Parse mount model failed: %v", err)
 		return info, err
 	}
-
-	for _, s := range rawStrings {
-		var mm MountModel
-		err = json.Unmarshal([]byte(s), &mm)
-		if err != nil {
-			logrus.Errorf("Unmarshal error: %v", err)
-			return info, err
-		}
-		info = append(info, mm)
-	}
-
 	return info, nil
 }
 
 // 组装挂载参数
-func buildMountArgs(rwVolumes, roVolumes []string, script, algorithmPath, datasetPath, modelPath string) []string {
+func buildMountArgs(rwVolumes []MountModel, roVolumes []string, script, workingDirectory, algorithmPath, datasetPath, modelPath string) []string {
 	var mountArgs []string
 
 	err := utils.CheckAndAddExecPermission(utils.GetDirPathWithSlash(script))
@@ -124,7 +144,11 @@ func buildMountArgs(rwVolumes, roVolumes []string, script, algorithmPath, datase
 	}
 
 	mountArgs = append(mountArgs,
-		"-v", fmt.Sprintf("%s:%s", utils.GetDirPathWithSlash(script), utils.GetDirPathWithSlash(script)))
+		"-v", fmt.Sprintf("%s:%s", utils.GetDirPathWithSlash(script), utils.ContainerScriptDir))
+
+	if strings.TrimSpace(workingDirectory) != "" {
+		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", workingDirectory, workingDirectory))
+	}
 
 	algorithm, dataSet, model, err := getAlgorithmDataSetModelInfo(algorithmPath, datasetPath, modelPath)
 	if err != nil {
@@ -132,26 +156,27 @@ func buildMountArgs(rwVolumes, roVolumes []string, script, algorithmPath, datase
 	}
 	// 添加算法路径挂载
 	for _, m := range algorithm {
-		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", m.Path, m.Path))
+		// path 是宿主机路径，target 是容器内路径；target 为空时解析阶段会回退到 path。
+		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", m.Path, m.Target))
 	}
 
 	// 添加数据集路径挂载
 	for _, m := range dataSet {
-		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", m.Path, m.Path))
+		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", m.Path, m.Target))
 	}
 
 	// 添加模型路径挂载
 	for _, m := range model {
-		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", m.Path, m.Path))
+		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", m.Path, m.Target))
 	}
 
 	// 添加可读可写挂载点
-	for _, volume := range rwVolumes {
+	for _, mount := range rwVolumes {
 		// 跳过空字符串
-		if strings.TrimSpace(volume) == "" {
+		if strings.TrimSpace(mount.Path) == "" {
 			continue
 		}
-		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", volume, volume))
+		mountArgs = append(mountArgs, "-v", fmt.Sprintf("%s:%s", mount.Path, mount.Target))
 	}
 
 	// 添加只读挂载点
@@ -173,7 +198,7 @@ func setEnvByAddition(algorithm, dataSet, model []MountModel) []string {
 	if algorithm != nil {
 		paths := make([]string, len(algorithm))
 		for i, mount := range algorithm {
-			paths[i] = mount.Path
+			paths[i] = mount.Target
 		}
 		algorithmValue := strings.Join(paths, ":")
 		env = append(env,
@@ -184,7 +209,7 @@ func setEnvByAddition(algorithm, dataSet, model []MountModel) []string {
 	if dataSet != nil {
 		paths := make([]string, len(dataSet))
 		for i, mount := range dataSet {
-			paths[i] = mount.Path
+			paths[i] = mount.Target
 		}
 		dataSetValue := strings.Join(paths, ":")
 		env = append(env,
@@ -195,7 +220,7 @@ func setEnvByAddition(algorithm, dataSet, model []MountModel) []string {
 	if model != nil {
 		paths := make([]string, len(model))
 		for i, mount := range model {
-			paths[i] = mount.Path
+			paths[i] = mount.Target
 		}
 		modelValue := strings.Join(paths, ":")
 		env = append(env,
@@ -212,7 +237,11 @@ func buildContainerCommandWithAddr(req *protos.SubmitJobRequest, config *TrainCo
 	cmdParts = append(cmdParts, "ccon")
 
 	// CPU：每容器核数
-	cmdParts = append(cmdParts, "-c", strconv.Itoa(int(req.CoreCount)))
+	coreCount, err := trainingCoreCount(req, rank)
+	if err != nil {
+		return "", err
+	}
+	cmdParts = append(cmdParts, "-c", strconv.Itoa(int(coreCount)))
 	// GPU：每容器 GPU 数量（若有）
 	if req.GpuCount > 0 {
 		deviceType, err := utils.GetPartitionDeviceType(req.Partition)
@@ -223,14 +252,18 @@ func buildContainerCommandWithAddr(req *protos.SubmitJobRequest, config *TrainCo
 	}
 	// Memory：每容器内存（单位 MB）
 	if req.MemoryMb != nil {
-		cmdParts = append(cmdParts, "--mem", fmt.Sprintf("%dM", *req.MemoryMb))
+		mem, err := trainingMemoryPerNodeMb(req, rank)
+		if err != nil {
+			return "", err
+		}
+		cmdParts = append(cmdParts, "--mem", fmt.Sprintf("%dM", mem))
 	}
 
 	// === Container run flags ===
 	cmdParts = append(cmdParts, "run", "-i -t -d")
 
 	mountArgs := buildMountArgs(config.RWVolumes, config.ROVolumes,
-		req.Script, config.AlgorithmPath, config.DatasetPath, config.ModelPath)
+		req.Script, config.WorkingDirectory, config.AlgorithmPath, config.DatasetPath, config.ModelPath)
 	cmdParts = append(cmdParts, mountArgs...)
 
 	envArgs := buildEnvArgsWithMasterAddr(req.NodeCount, rank, worldSize, masterAddr, config.WorkingDirectory,
@@ -238,7 +271,41 @@ func buildContainerCommandWithAddr(req *protos.SubmitJobRequest, config *TrainCo
 	cmdParts = append(cmdParts, envArgs...)
 
 	cmdParts = append(cmdParts, config.ImageURL)
-	cmdParts = append(cmdParts, req.Script)
+	cmdParts = append(cmdParts, "bash", utils.ContainerEntryScript)
+
+	return strings.Join(cmdParts, " "), nil
+}
+
+func buildTensorBoardCommand(req *protos.SubmitJobRequest, config *TrainConfig, tensorBoardProxyPort int) (string, error) {
+	var cmdParts []string
+	if tensorBoardProxyPort < utils.MinPort {
+		return "", fmt.Errorf("invalid tensorboard proxy port %d: expected a proxy port >= %d",
+			tensorBoardProxyPort, utils.MinPort)
+	}
+	adapterHostname, err := os.Hostname()
+	if err != nil {
+		return "", fmt.Errorf("get adapter hostname failed: %w", err)
+	}
+	// The entry script uses the external proxy port to build TensorBoard's base path.
+	cmdParts = append(cmdParts,
+		"ccon",
+		"-c", strconv.Itoa(utils.TensorBoardCpu),
+		"--mem", fmt.Sprintf("%dM", utils.TensorBoardMemoryMb),
+		"run", "-i -t -d",
+	)
+
+	mountArgs := buildMountArgs(config.RWVolumes, config.ROVolumes,
+		req.Script, config.WorkingDirectory, config.AlgorithmPath, config.DatasetPath, config.ModelPath)
+	cmdParts = append(cmdParts, mountArgs...)
+	cmdParts = append(cmdParts,
+		"-v", fmt.Sprintf("%s:%s", req.GetTensorBoardDataPath(), utils.TensorBoardLogMountDir),
+		"-v", fmt.Sprintf("%s:/opt", utils.GetDirPathWithSlash(req.Script)),
+		utils.TensorboardImage,
+		"bash",
+		fmt.Sprintf("/opt/%s", utils.TensorBoardEntryScript),
+		strconv.Itoa(tensorBoardProxyPort),
+		adapterHostname,
+	)
 
 	return strings.Join(cmdParts, " "), nil
 }
@@ -278,6 +345,16 @@ func buildEnvArgsWithMasterAddr(nNodes, rank, worldSize uint32, masterAddr, work
 // multiNodeHelperFunctions contains reusable bash functions injected at the top of the script body.
 const multiNodeHelperFunctions = `
 # ===== Helper Functions =====
+
+cleanup_tensorboard() {
+    if [ -n "$tensorboard_container_id" ]; then
+        echo "清理 TensorBoard 容器 $tensorboard_container_id"
+        ccon stop "$tensorboard_container_id" 2>/dev/null ||
+            ccon cancel "$tensorboard_container_id" 2>/dev/null ||
+            ccon rm -f "$tensorboard_container_id" 2>/dev/null ||
+            true
+    fi
+}
 
 # wait_for_container: 等待容器就绪（status=1）。
 #   $1 - 容器 ID（jobId.stepId）
@@ -346,9 +423,9 @@ parse_container_id() {
 # ===== End Helper Functions =====
 `
 
-// GenerateMultiNodeTrainScript generates a complete bash script body for multi-node container training.
+// GenerateMultiNodeTrainScript generates a complete bash script body for container training.
 // Returns the script body (after CBATCH headers) as a string.
-func GenerateMultiNodeTrainScript(req *protos.SubmitJobRequest) (string, error) {
+func GenerateMultiNodeTrainScript(req *protos.SubmitJobRequest, tensorBoardProxyPort int) (string, error) {
 	config, err := parseTrainConfig(req.ExtraOptions)
 	if err != nil {
 		return "", err
@@ -357,6 +434,11 @@ func GenerateMultiNodeTrainScript(req *protos.SubmitJobRequest) (string, error) 
 	config.WorkingDirectory = req.WorkingDirectory
 
 	nodeCount := req.NodeCount
+	tensorBoard := tensorBoardEnabled(req)
+	if tensorBoard && tensorBoardProxyPort < utils.MinPort {
+		return "", fmt.Errorf("invalid tensorboard proxy port %d: expected a proxy port >= %d",
+			tensorBoardProxyPort, utils.MinPort)
+	}
 
 	// Master: MASTER_ADDR=127.0.0.1，主节点监听本地地址
 	masterCmd, err := buildContainerCommandWithAddr(req, config, 0, nodeCount, "127.0.0.1")
@@ -383,8 +465,9 @@ func GenerateMultiNodeTrainScript(req *protos.SubmitJobRequest) (string, error) 
 	// Inject helper functions
 	sb.WriteString(multiNodeHelperFunctions)
 	sb.WriteString("\n")
-
-	// Start message
+	if tensorBoard {
+		sb.WriteString("tensorboard_container_id=\"\"\n")
+	}
 	sb.WriteString("echo \"Job started on $(hostname)\"\n\n")
 
 	// === Master container ===
@@ -420,6 +503,25 @@ func GenerateMultiNodeTrainScript(req *protos.SubmitJobRequest) (string, error) 
 	sb.WriteString("fi\n")
 	sb.WriteString("first_master_addr=\"job-${first_job_id}-${craned_node}\"\n")
 	sb.WriteString("echo \"主节点地址 (MASTER_ADDR): $first_master_addr\"\n\n")
+
+	if tensorBoard {
+		tensorBoardCmd, err := buildTensorBoardCommand(req, config, tensorBoardProxyPort)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString("# 启动 TensorBoard 容器\n")
+		sb.WriteString("echo \"===== 启动 TensorBoard 容器 =====\"\n")
+		sb.WriteString(fmt.Sprintf("tensorboard_output=$(%s)\n", tensorBoardCmd))
+		sb.WriteString("echo \"TensorBoard 容器输出:\"\n")
+		sb.WriteString("echo \"$tensorboard_output\"\n")
+		sb.WriteString("tensorboard_container_id=$(parse_container_id \"$tensorboard_output\")\n")
+		sb.WriteString("if [ -n \"$tensorboard_container_id\" ]; then\n")
+		sb.WriteString("    echo \"TensorBoard 容器ID: $tensorboard_container_id\"\n")
+		sb.WriteString("    wait_for_container \"$tensorboard_container_id\" \"false\"\n")
+		sb.WriteString("else\n")
+		sb.WriteString("    echo \"警告: 无法解析 TensorBoard 容器ID\"\n")
+		sb.WriteString("fi\n\n")
+	}
 
 	// === Worker containers ===
 	if len(workers) > 0 {
@@ -464,6 +566,11 @@ func GenerateMultiNodeTrainScript(req *protos.SubmitJobRequest) (string, error) 
 	sb.WriteString("echo \"===== 容器信息汇总 =====\"\n")
 	sb.WriteString("echo \"主节点容器 ID: $first_container_id\"\n")
 	sb.WriteString("echo \"主节点 MASTER_ADDR: $first_master_addr\"\n")
+	if tensorBoard {
+		sb.WriteString("echo \"TensorBoard 容器 ID: $tensorboard_container_id\"\n")
+		sb.WriteString(fmt.Sprintf("echo \"TensorBoard 容器端口: %d\"\n", utils.TensorBoardPort))
+		sb.WriteString(fmt.Sprintf("echo \"TensorBoard 代理端口: %d\"\n", tensorBoardProxyPort))
+	}
 	if len(workers) > 0 {
 		sb.WriteString("echo \"工作节点容器 IDs: ${worker_container_ids[@]}\"\n")
 	}
@@ -510,6 +617,7 @@ while true; do
 
     if [ "$all_done" = true ]; then
         echo "所有容器都已结束，作业完成"
+        cleanup_tensorboard
         break
     fi
 

@@ -1,5 +1,6 @@
 bind-port: 8972
 log-level: trace
+tensorboardImage: "crpi-u0hdpwcobdb87rnx.cn-beijing.personal.cr.aliyuncs.com/qsx/tensorboard:latest"
 
 ssl:
   enabled: false # 是否启用 SSL，默认为 false

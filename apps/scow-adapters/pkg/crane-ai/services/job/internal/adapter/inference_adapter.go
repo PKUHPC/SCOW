@@ -2,12 +2,12 @@ package adapters
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	protos "scow-adapters/gen/go"
 	"scow-adapters/pkg/crane-ai/services/job/internal/types"
+	"scow-adapters/pkg/crane-ai/utils"
 )
 
 // InferenceJobAdapter SubmitInferJobRequest 的适配器
@@ -90,22 +90,18 @@ func (a *InferenceJobAdapter) GetMounts() (map[string]string, error) {
 
 	logrus.Infof("public paths: %v, readOnly paths: %v", a.req.ExtraOptions[2], a.req.ExtraOptions[4])
 	mounts := make(map[string]string)
-	if a.req.ExtraOptions[2] != "[]" {
-		publicPaths := strings.Split(a.req.ExtraOptions[2], ",")
-		for _, mount := range publicPaths {
-			if mount != "" {
-				mounts[mount] = mount // + ":rw"   目前鹤思还不支持挂载模式
-			}
-		}
+	// 用户自定义挂载支持单独指定容器内 target，只读挂载仍保持 path:path。
+	userMounts, err := utils.ParseMountModelMap(a.req.ExtraOptions[2])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse user mounts: %v", err)
+	}
+	for source, target := range userMounts {
+		mounts[source] = target // + ":rw"   目前鹤思还不支持挂载模式
 	}
 
-	if a.req.ExtraOptions[4] != "[]" {
-		readOnlyPaths := strings.Split(a.req.ExtraOptions[4], ",")
-		for _, mount := range readOnlyPaths {
-			if mount != "" {
-				mounts[mount] = mount // + ":ro"  目前鹤思还不支持挂载模式
-			}
-		}
+	readOnlyMounts := utils.ParseCommaSeparatedMountMap(a.req.ExtraOptions[4])
+	for source, target := range readOnlyMounts {
+		mounts[source] = target // + ":ro"  目前鹤思还不支持挂载模式
 	}
 
 	return mounts, nil

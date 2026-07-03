@@ -145,8 +145,11 @@ func (b *ContainerJobBuilder) applySchedulingOptions(adapter types.ContainerJobR
 
 	// Time limit
 	if timeLimit := adapter.GetTimeLimit(); timeLimit != nil {
-		seconds := *timeLimit * 60
-		task.TimeLimit.Seconds = int64(seconds)
+		// SCOW 使用 0 表示不限时；Crane 不接受 0 秒，保留初始化时的最大时长。
+		if *timeLimit > 0 {
+			seconds := *timeLimit * 60
+			task.TimeLimit.Seconds = int64(seconds)
+		}
 	}
 
 	// Account
@@ -163,7 +166,7 @@ func (b *ContainerJobBuilder) applySchedulingOptions(adapter types.ContainerJobR
 	if nodeCount := adapter.GetNodeCount(); nodeCount > 0 {
 		task.NodeNum = nodeCount
 	} else {
-		task.NodeNum = 1
+		return fmt.Errorf("node_count must be greater than 0")
 	}
 
 	return nil
@@ -188,7 +191,7 @@ func (b *ContainerJobBuilder) buildContainerMeta(adapter types.ContainerJobReque
 	}
 
 	containerMeta.Command = b.setCommand(adapter)
-	if adapter.GetJobType() == types.JobTypeDevHost {
+	if adapter.GetJobType() == types.JobTypeDevHost || adapter.GetJobType() == types.JobTypeApp {
 		containerMeta.Args = b.setArgs(adapter)
 	}
 
@@ -203,13 +206,25 @@ func (b *ContainerJobBuilder) buildContainerMeta(adapter types.ContainerJobReque
 	containerMeta.Env["JOB_NAME"] = adapter.GetJobName()
 
 	// 处理挂载点
-	if mounts, err := adapter.GetMounts(); err == nil {
-		b.mergeMount(containerMeta.Mounts, mounts)
+	mounts, err := adapter.GetMounts()
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain mounts: %v", err)
+	}
+	b.mergeMount(containerMeta.Mounts, mounts)
+
+	if adapter.GetJobType() == types.JobTypeDevHost {
+		if err := utils.EnsureDevHostEntryScript(adapter.GetWorkingDirectory()); err != nil {
+			return nil, fmt.Errorf("failed to prepare dev host entry script: %v", err)
+		}
 	}
 
 	// 添加特殊路径
-	b.addExtraMount(adapter, containerMeta.Mounts)
-	b.addExtraEnv(adapter, containerMeta.Env)
+	if err := b.addExtraMount(adapter, containerMeta.Mounts); err != nil {
+		return nil, fmt.Errorf("failed to add extra mounts: %v", err)
+	}
+	if err := b.addExtraEnv(adapter, containerMeta.Env); err != nil {
+		return nil, fmt.Errorf("failed to add extra env: %v", err)
+	}
 	b.applyIOOptions(containerMeta)
 
 	return containerMeta, nil
@@ -217,18 +232,35 @@ func (b *ContainerJobBuilder) buildContainerMeta(adapter types.ContainerJobReque
 
 // setCommand 设置运行命令
 func (b *ContainerJobBuilder) setCommand(adapter types.ContainerJobRequest) string {
-	command := "/opt/entry.sh"
-	if adapter.GetJobType() == types.JobTypeDevHost {
-		command = "/opt/crane/entry.sh"
+	switch adapter.GetJobType() {
+	case types.JobTypeApp:
+		return "bash"
+	case types.JobTypeDevHost:
+		return utils.ContainerEntryScript
+	default:
+		return utils.ContainerEntryScript
 	}
-	return command
 }
 
 func (b *ContainerJobBuilder) setArgs(adapter types.ContainerJobRequest) []string {
 	var args []string
 
-	proxyBasePath := adapter.GetJupyterLabInfo().ProxyBasePath
-	vscodeBinPath := adapter.GetVSCodeInfo().VscodeBinPath
+	if adapter.GetJobType() == types.JobTypeApp {
+		ports := adapter.GetContainerPort()
+		if len(ports) == 0 {
+			return args
+		}
+		return []string{utils.ContainerEntryScript, strconv.Itoa(int(ports[0]))}
+	}
+
+	var proxyBasePath, vscodeBinPath string
+	if jupyterLabInfo := adapter.GetJupyterLabInfo(); jupyterLabInfo != nil {
+		proxyBasePath = jupyterLabInfo.ProxyBasePath
+	}
+	if vsCodeInfo := adapter.GetVSCodeInfo(); vsCodeInfo != nil {
+		vscodeBinPath = vsCodeInfo.VscodeBinPath
+	}
+
 	if proxyBasePath != "" && vscodeBinPath != "" {
 		vscodePort := utils.VscodePort
 		jupyterPort := utils.JupyterPort
@@ -245,21 +277,21 @@ func (b *ContainerJobBuilder) setArgs(adapter types.ContainerJobRequest) []strin
 		args = append(args, "--mode=both", host, jupyterPortStr,
 			jupyterSvcPort, jupyterProxy, vscodePortStr, vscodeSvcPort, vscodeBin)
 	} else if vscodeBinPath != "" {
-		strAppPort := adapter.GetContainerPort()
+		appPort := firstContainerPort(adapter)
 		hostname, _ := os.Hostname()
 
 		host := fmt.Sprintf("--host=%s", hostname)
-		vscodePortStr := fmt.Sprintf("--vscode-port=%d", strAppPort)
-		vscodeSvcPort := fmt.Sprintf("--vscode-svcport=%d", strAppPort)
+		vscodePortStr := fmt.Sprintf("--vscode-port=%d", appPort)
+		vscodeSvcPort := fmt.Sprintf("--vscode-svcport=%d", appPort)
 		vscodeBin := fmt.Sprintf("--vscode-bin=%s", vscodeBinPath)
 
 		args = append(args, "--mode=vscode", host, vscodePortStr, vscodeSvcPort, vscodeBin)
 	} else if proxyBasePath != "" {
-		strAppPort := adapter.GetContainerPort()
+		appPort := firstContainerPort(adapter)
 		hostname, _ := os.Hostname()
 		host := fmt.Sprintf("--host=%s", hostname)
-		jupyterPortStr := fmt.Sprintf("--jupyter-port=%d", strAppPort)
-		jupyterSvcPort := fmt.Sprintf("--jupyter-svcport=%d", strAppPort)
+		jupyterPortStr := fmt.Sprintf("--jupyter-port=%d", appPort)
+		jupyterSvcPort := fmt.Sprintf("--jupyter-svcport=%d", appPort)
 		jupyterProxy := fmt.Sprintf("--jupyter-proxy=%s", proxyBasePath)
 
 		args = append(args, "--mode=jupyterlab", host, jupyterPortStr,
@@ -271,46 +303,60 @@ func (b *ContainerJobBuilder) setArgs(adapter types.ContainerJobRequest) []strin
 	return args
 }
 
-// addSpecialPaths 添加特殊路径
-func (b *ContainerJobBuilder) addExtraMount(adapter types.ContainerJobRequest, mount map[string]string) {
+func firstContainerPort(adapter types.ContainerJobRequest) int {
+	ports := adapter.GetContainerPort()
+	if len(ports) == 0 {
+		return 0
+	}
+	return int(ports[0])
+}
+
+// addSpecialPaths 添加特殊路径：算法、数据集、模型
+func (b *ContainerJobBuilder) addExtraMount(adapter types.ContainerJobRequest, mount map[string]string) error {
 	mount[adapter.GetWorkingDirectory()] = adapter.GetWorkingDirectory()
-	//mount[adapter.GetScript()] = "/opt/entry.sh"
-	// 开发机会挂载用户Home目录上级目录（共享存储目录）下的crane目录到容器内/opt/crane/目录，然后容器启动脚本事先放在共享存储下的crane目录下
 	if adapter.GetJobType() == types.JobTypeDevHost {
-		path := utils.SplitBeforeUser(adapter.GetWorkingDirectory(), adapter.GetUserId())
-		mount[path+"crane/"] = "/opt/crane/"
+		mount[utils.GetDevHostScriptHostDir(adapter.GetWorkingDirectory())] = utils.ContainerScriptDir
 	} else {
-		mount[utils.GetDirPathWithSlash(adapter.GetScript())] = utils.GetDirPathWithSlash("/opt/entry.sh")
+		mount[utils.GetDirPathWithSlash(adapter.GetScript())] = utils.ContainerScriptDir
 	}
 
 	if algorithmPath, _ := adapter.GetAlgorithmPath(); algorithmPath != "" {
-		algorithms, _ := utils.ParseMountModel(algorithmPath)
+		algorithms, err := utils.ParseMountModel(algorithmPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse algorithm path: %v", err)
+		}
 		for _, a := range algorithms {
 			// readWriteMode := "ro"
 			// if a.IsPublic {
 			// 	readWriteMode = "rw"
 			// }
-			mount[a.Path] = a.Path // + ":" + readWriteMode
+			mount[a.Path] = a.Target // + ":" + readWriteMode
 		}
 	}
 	if datasetPath, _ := adapter.GetDatasetPath(); datasetPath != "" {
-		datasets, _ := utils.ParseMountModel(datasetPath)
+		datasets, err := utils.ParseMountModel(datasetPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse dataset path: %v", err)
+		}
 		for _, d := range datasets {
 			//readWriteMode := "ro"
 			//if d.IsPublic {
 			//	readWriteMode = "rw"
 			//}
-			mount[d.Path] = d.Path // + ":" + readWriteMode
+			mount[d.Path] = d.Target // + ":" + readWriteMode
 		}
 	}
 	if modelPath, _ := adapter.GetModelPath(); modelPath != "" {
-		models, _ := utils.ParseMountModel(modelPath)
+		models, err := utils.ParseMountModel(modelPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse model path: %v", err)
+		}
 		for _, m := range models {
 			//readWriteMode := "ro"
 			//if m.IsPublic {
 			//	readWriteMode = "rw"
 			//}
-			mount[m.Path] = m.Path // + ":" + readWriteMode
+			mount[m.Path] = m.Target // + ":" + readWriteMode
 		}
 	}
 
@@ -318,42 +364,55 @@ func (b *ContainerJobBuilder) addExtraMount(adapter types.ContainerJobRequest, m
 	if utils.AcceleratorIsAscend(acceleratorType) {
 		b.mergeMount(mount, getAscendMount())
 	}
+
+	return nil
 }
 
 // addSpecialPaths 添加特殊路径
-func (b *ContainerJobBuilder) addExtraEnv(adapter types.ContainerJobRequest, env map[string]string) {
+func (b *ContainerJobBuilder) addExtraEnv(adapter types.ContainerJobRequest, env map[string]string) error {
 	env["WORK_DIR"] = adapter.GetWorkingDirectory()
 
 	if algorithmPath, _ := adapter.GetAlgorithmPath(); algorithmPath != "" {
-		algorithms, _ := utils.ParseMountModel(algorithmPath)
+		algorithms, err := utils.ParseMountModel(algorithmPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse algorithm path: %v", err)
+		}
 		paths := make([]string, len(algorithms))
 		for i, mount := range algorithms {
-			paths[i] = mount.Path
+			paths[i] = mount.Target
 		}
 		algorithmValue := strings.Join(paths, ":")
 		key := utils.ContainerEnvPrefix + utils.AlgorithmPathEnv
 		env[key] = algorithmValue
 	}
 	if datasetPath, _ := adapter.GetDatasetPath(); datasetPath != "" {
-		dataset, _ := utils.ParseMountModel(datasetPath)
+		dataset, err := utils.ParseMountModel(datasetPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse dataset path: %v", err)
+		}
 		paths := make([]string, len(dataset))
 		for i, mount := range dataset {
-			paths[i] = mount.Path
+			paths[i] = mount.Target
 		}
 		datasetValue := strings.Join(paths, ":")
 		key := utils.ContainerEnvPrefix + utils.DataSetPathEnv
 		env[key] = datasetValue
 	}
 	if modelPath, _ := adapter.GetModelPath(); modelPath != "" {
-		model, _ := utils.ParseMountModel(modelPath)
+		model, err := utils.ParseMountModel(modelPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse model path: %v", err)
+		}
 		paths := make([]string, len(model))
 		for i, mount := range model {
-			paths[i] = mount.Path
+			paths[i] = mount.Target
 		}
 		modelValue := strings.Join(paths, ":")
 		key := utils.ContainerEnvPrefix + utils.ModelPathEnv
 		env[key] = modelValue
 	}
+
+	return nil
 }
 
 // buildPodMeta 构建 Pod 元数据
@@ -419,9 +478,16 @@ func (b *ContainerJobBuilder) setJobName(adapter types.ContainerJobRequest, task
 
 // setExtendedProperties 设置扩展属性
 func (b *ContainerJobBuilder) setExtendedProperties(adapter types.ContainerJobRequest, task *craneProtos.JobToCtld) {
-	err := utils.CheckAndAddExecPermission(adapter.GetWorkingDirectory())
+	scriptDir := adapter.GetWorkingDirectory()
+	if adapter.GetJobType() == types.JobTypeDevHost {
+		scriptDir = utils.GetDevHostScriptHostDir(adapter.GetWorkingDirectory())
+	} else if adapter.GetScript() != "" {
+		scriptDir = utils.GetDirPathWithSlash(adapter.GetScript())
+	}
+
+	err := utils.CheckAndAddExecPermission(scriptDir)
 	if err != nil {
-		logrus.Errorf("file %v add exec permission error: %v", filepath.Join(adapter.GetWorkingDirectory(), "entry.sh"), err)
+		logrus.Warnf("file %v add exec permission error: %v", filepath.Join(scriptDir, "entry.sh"), err)
 	}
 }
 

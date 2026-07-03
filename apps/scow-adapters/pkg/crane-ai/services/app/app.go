@@ -22,6 +22,23 @@ import (
 // 代理创建是低频操作（每作业仅首次触发），全局粗粒度锁开销可忽略。
 var proxySetupMu sync.Mutex
 
+type cachedAppConnectionInfo struct {
+	Host          string
+	Port          uint32
+	Password      string
+	ContainerPort int32
+	StepId        uint32
+	ExecutionNode string
+	UpdatedAt     int64
+}
+
+var appConnectionCache = struct {
+	sync.RWMutex
+	data map[string]*cachedAppConnectionInfo
+}{
+	data: make(map[string]*cachedAppConnectionInfo),
+}
+
 type ServerApp struct {
 	protos.UnimplementedAppServiceServer
 	JM *utils.JobManager
@@ -51,30 +68,18 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 		return nil, ce.RichError(codes.Internal, "CRANE_FAILED", err.Error())
 	}
 
-	submitJobProxyInfo := &utils.SubmitJobProxyInfo{
-		JobName: jobName,
-		JobId:   jobID,
+	jobType := jobInfo.JobType
+	if jobType != utils.APP && jobType != utils.DevHost && jobType != utils.Inference {
+		err = fmt.Errorf("not support")
+		logrus.Errorf("GetAppConnectionInfo failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "NOT_SUPPORT", err.Error())
 	}
-
-	forwardInfo, err := utils.BuildJobForwardInfo(taskInfo.PodMeta, taskInfo.StepInfoList)
-	if err != nil {
-		logrus.Errorf("build job forward info failed: %v", err)
-		return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", err.Error())
-	}
-	if len(forwardInfo) == 0 {
-		logrus.Errorf("[GetAppConnectionInfo] no forward info found for job %v", jobID)
-		return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", "no forward nodes found")
-	}
-	submitJobProxyInfo.ForwardInfo = forwardInfo
 
 	if len(taskInfo.PodMeta.Ports) == 0 {
 		logrus.Errorf("[GetAppConnectionInfo] no container ports found for job %v", jobID)
 		return nil, ce.RichError(codes.Internal, "CRANE_FAILED", "no container ports found")
 	}
 	hostname, _ := os.Hostname()
-	nodeName := forwardInfo[0].ExecutionNode
-
-	jobType := jobInfo.JobType
 
 	// 根据 AppType 确定本次连接使用的容器端口，同时确定 session 文件名
 	containerPort := taskInfo.PodMeta.Ports[0].ContainerPort
@@ -95,6 +100,51 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 		logrus.Errorf("load job proxy info failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "CRANE_FAILED", err.Error())
 	}
+	if proxyInfo != nil && !utils.GlobalProxyManager.IsProxyRunning(proxyInfo) {
+		logrus.Warnf("[GetAppConnectionInfo] proxy metadata exists but service is not running for job %d port %d, rebuild it", jobID, containerPort)
+		if err := utils.GlobalProxyManager.StopAndRemoveProxy(jobID); err != nil {
+			logrus.Warnf("[GetAppConnectionInfo] remove stale proxy metadata failed for job %d: %v", jobID, err)
+		}
+		proxyInfo = nil
+	}
+
+	if cachedInfo := loadConnectionInfoCache(jobID, containerPort); isUsableConnectionCache(cachedInfo, proxyInfo, containerPort) {
+		logrus.Infof("[GetAppConnectionInfo] use cached connection info for job %d, containerPort=%d", jobID, containerPort)
+		if containerPort == utils.AppVNCContainerPort {
+			stepId, nodeName, err := getConnectionStepAndNode(taskInfo, cachedInfo)
+			if err != nil {
+				return nil, ce.RichError(codes.Internal, "CRANE_FAILED", err.Error())
+			}
+			randomPassword, err := resetVNCPassword(taskInfo.JobId, stepId, taskInfo.Uid, nodeName)
+			if err != nil {
+				return nil, ce.RichError(codes.Internal, "MODIFY_VNC_PASSWORD_FAILED", err.Error())
+			}
+			responseMessage := buildAppConnectionInfoResponse(cachedInfo.Host, cachedInfo.Port, randomPassword)
+			logrus.Infof("GetAppConnectionInfo response from cache: %v", responseMessage)
+			return responseMessage, nil
+		}
+
+		responseMessage := buildAppConnectionInfoResponse(cachedInfo.Host, cachedInfo.Port, cachedInfo.Password)
+		logrus.Infof("GetAppConnectionInfo response from cache: %v", responseMessage)
+		return responseMessage, nil
+	}
+
+	submitJobProxyInfo := &utils.SubmitJobProxyInfo{
+		JobName: jobName,
+		JobId:   jobID,
+	}
+
+	forwardInfo, err := utils.BuildJobForwardInfo(taskInfo.PodMeta, taskInfo.StepInfoList)
+	if err != nil {
+		logrus.Errorf("build job forward info failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", err.Error())
+	}
+	if len(forwardInfo) == 0 {
+		logrus.Errorf("[GetAppConnectionInfo] no forward info found for job %v", jobID)
+		return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", "no forward nodes found")
+	}
+	submitJobProxyInfo.ForwardInfo = forwardInfo
+	nodeName := forwardInfo[0].ExecutionNode
 
 	if proxyInfo == nil {
 		// 双重检查锁：先乐观判断，拿锁后再次验证，防止并发请求重复创建同一代理。
@@ -108,8 +158,14 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 			if err != nil {
 				return nil, err
 			}
-			if meta != nil {
+			if meta != nil && utils.GlobalProxyManager.IsProxyRunning(meta) {
 				return meta, nil
+			}
+			if meta != nil {
+				logrus.Warnf("[GetAppConnectionInfo] proxy metadata exists but service is not running for job %d port %d, rebuild it", jobID, containerPort)
+				if err := utils.GlobalProxyManager.StopAndRemoveProxy(jobID); err != nil {
+					return nil, err
+				}
 			}
 
 			// 为相同容器（同一 StepId）只查询一次 IP，避免重复调用
@@ -167,38 +223,19 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 			return &protos.GetAppConnectionInfoResponse{}, nil
 		}
 		logrus.Tracef("copy container %s file %s successful", jobName, webFilePath)
-		if containerPort == 6901 { // vnc
-			// 生成随机密码
-			rand.Seed(time.Now().UnixNano())
-			charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-			result := make([]byte, 10)
-			for i := range result {
-				result[i] = charset[rand.Intn(len(charset))]
-			}
-			randomPassword := string(result)
-			cmd := fmt.Sprintf("echo -e %q | vncpasswd -f > ~/.vnc/passwd", randomPassword)
-			err = utils.ExecContainerCMD(taskInfo.JobId, step.StepId, taskInfo.Uid, nodeName, cmd)
+		if containerPort == utils.AppVNCContainerPort {
+			randomPassword, err := resetVNCPassword(taskInfo.JobId, step.StepId, step.Uid, nodeName)
 			if err != nil {
-				err = fmt.Errorf("modify vnc password failed, %v", err)
-				logrus.Errorf("GetAppConnectionInfo failed: %v", err)
 				return nil, ce.RichError(codes.Internal, "MODIFY_VNC_PASSWORD_FAILED", err.Error())
 			}
-			logrus.Info("modify vnc passwd successful")
 			err = os.Remove(webFileDestPath)
 			if err != nil {
 				err = fmt.Errorf("remove web file failed, %v", err)
 				logrus.Errorf("GetAppConnectionInfo failed: %v", err)
 			}
 
-			responseMessage := &protos.GetAppConnectionInfoResponse{
-				Response: &protos.GetAppConnectionInfoResponse_AppConnectionInfo_{
-					AppConnectionInfo: &protos.GetAppConnectionInfoResponse_AppConnectionInfo{
-						Host:     hostname,
-						Port:     uint32(proxyInfo.ProxyPort),
-						Password: randomPassword,
-					},
-				},
-			}
+			cacheConnectionInfo(jobID, hostname, uint32(proxyInfo.ProxyPort), "", containerPort, step.StepId, nodeName)
+			responseMessage := buildAppConnectionInfoResponse(hostname, uint32(proxyInfo.ProxyPort), randomPassword)
 			logrus.Infof("GetAppConnectionInfo response: %v", responseMessage)
 			return responseMessage, nil
 		} else {
@@ -208,33 +245,100 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 				return &protos.GetAppConnectionInfoResponse{}, nil
 			}
 			_ = os.Remove(webFileDestPath)
-			responseMessage := &protos.GetAppConnectionInfoResponse{
-				Response: &protos.GetAppConnectionInfoResponse_AppConnectionInfo_{
-					AppConnectionInfo: &protos.GetAppConnectionInfoResponse_AppConnectionInfo{
-						Host:     hostname,
-						Port:     uint32(proxyInfo.ProxyPort),
-						Password: webPassword,
-					},
-				},
-			}
+			cacheConnectionInfo(jobID, hostname, uint32(proxyInfo.ProxyPort), webPassword, containerPort, step.StepId, nodeName)
+			responseMessage := buildAppConnectionInfoResponse(hostname, uint32(proxyInfo.ProxyPort), webPassword)
 			logrus.Infof("GetAppConnectionInfo response: %v", responseMessage)
 			return responseMessage, nil
 		}
 	} else if jobType == utils.Inference {
-		responseMessage := &protos.GetAppConnectionInfoResponse{
-			Response: &protos.GetAppConnectionInfoResponse_AppConnectionInfo_{
-				AppConnectionInfo: &protos.GetAppConnectionInfoResponse_AppConnectionInfo{
-					Host: hostname,
-					Port: uint32(proxyInfo.ProxyPort),
-				},
-			},
-		}
+		cacheConnectionInfo(jobID, hostname, uint32(proxyInfo.ProxyPort), "", containerPort, step.StepId, nodeName)
+		responseMessage := buildAppConnectionInfoResponse(hostname, uint32(proxyInfo.ProxyPort), "")
 		logrus.Tracef("GetAppConnectionInfo response: %v", responseMessage)
 		return responseMessage, nil
-	} else {
-		// 目前只支持app的连接, 训练不支持连接
-		err = fmt.Errorf("not support")
-		logrus.Errorf("GetAppConnectionInfo failed: %v", err)
-		return nil, ce.RichError(codes.Internal, "NOT_SUPPORT", err.Error())
 	}
+
+	err = fmt.Errorf("not support")
+	logrus.Errorf("GetAppConnectionInfo failed: %v", err)
+	return nil, ce.RichError(codes.Internal, "NOT_SUPPORT", err.Error())
+}
+
+func isUsableConnectionCache(cachedInfo *cachedAppConnectionInfo, proxyInfo *utils.ProxyMeta, containerPort int32) bool {
+	return cachedInfo != nil &&
+		proxyInfo != nil &&
+		cachedInfo.ContainerPort == containerPort &&
+		proxyInfo.ContainerPort == containerPort &&
+		cachedInfo.Port == uint32(proxyInfo.ProxyPort) &&
+		cachedInfo.Host != ""
+}
+
+func buildAppConnectionInfoResponse(host string, port uint32, password string) *protos.GetAppConnectionInfoResponse {
+	return &protos.GetAppConnectionInfoResponse{
+		Response: &protos.GetAppConnectionInfoResponse_AppConnectionInfo_{
+			AppConnectionInfo: &protos.GetAppConnectionInfoResponse_AppConnectionInfo{
+				Host:     host,
+				Port:     port,
+				Password: password,
+			},
+		},
+	}
+}
+
+func connectionCacheKey(jobId uint32, containerPort int32) string {
+	return fmt.Sprintf("%d-%d", jobId, containerPort)
+}
+
+func loadConnectionInfoCache(jobId uint32, containerPort int32) *cachedAppConnectionInfo {
+	appConnectionCache.RLock()
+	defer appConnectionCache.RUnlock()
+	return appConnectionCache.data[connectionCacheKey(jobId, containerPort)]
+}
+
+func cacheConnectionInfo(jobId uint32, host string, port uint32, password string, containerPort int32, stepId uint32, nodeName string) {
+	appConnectionCache.Lock()
+	defer appConnectionCache.Unlock()
+
+	appConnectionCache.data[connectionCacheKey(jobId, containerPort)] = &cachedAppConnectionInfo{
+		Host:          host,
+		Port:          port,
+		Password:      password,
+		ContainerPort: containerPort,
+		StepId:        stepId,
+		ExecutionNode: nodeName,
+		UpdatedAt:     time.Now().Unix(),
+	}
+}
+
+func getConnectionStepAndNode(taskInfo *craneProtos.JobInfo, cachedInfo *cachedAppConnectionInfo) (uint32, string, error) {
+	if cachedInfo.StepId != 0 && cachedInfo.ExecutionNode != "" {
+		return cachedInfo.StepId, cachedInfo.ExecutionNode, nil
+	}
+
+	primarySteps := utils.GetJobPrimaryStep(taskInfo.StepInfoList)
+	if len(primarySteps) == 0 {
+		return 0, "", fmt.Errorf("no primary steps found for job %v", taskInfo.JobId)
+	}
+	step := primarySteps[0]
+	nodes := step.GetExecutionNode()
+	if len(nodes) == 0 {
+		return 0, "", fmt.Errorf("no execution node found for job %v step %v", taskInfo.JobId, step.StepId)
+	}
+	return step.StepId, nodes[0], nil
+}
+
+func resetVNCPassword(jobId, stepId, uid uint32, nodeName string) (string, error) {
+	rand.Seed(time.Now().UnixNano())
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	result := make([]byte, 10)
+	for i := range result {
+		result[i] = charset[rand.Intn(len(charset))]
+	}
+	randomPassword := string(result)
+	cmd := fmt.Sprintf("echo -e %q | vncpasswd -f > ~/.vnc/passwd", randomPassword)
+	if err := utils.ExecContainerCMD(jobId, stepId, uid, nodeName, cmd); err != nil {
+		err = fmt.Errorf("modify vnc password failed, %v", err)
+		logrus.Errorf("GetAppConnectionInfo failed: %v", err)
+		return "", err
+	}
+	logrus.Info("modify vnc passwd successful")
+	return randomPassword, nil
 }

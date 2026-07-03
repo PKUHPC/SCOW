@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	craneProtos "scow-adapters/gen/crane-ai"
@@ -28,9 +29,43 @@ import (
 
 const maxUint = 4294967295
 
+func getScowTimeLimitMinutes(timeLimit *durationpb.Duration) int64 {
+	if timeLimit == nil || (timeLimit.GetSeconds() == 0 && timeLimit.GetNanos() == 0) {
+		return maxUint
+	}
+
+	if timeLimit.GetSeconds() >= utils.MaxJobTimeLimit {
+		return 0
+	}
+
+	timeLimitMinutes := timeLimit.GetSeconds() / 60
+	// 因为scow数据库中该值是uint类型的，当作业的TimeLimit大于该值时会插入该作业数据到数据库失败
+	if timeLimitMinutes > maxUint {
+		return maxUint
+	}
+	return timeLimitMinutes
+}
+
 type ServerJob struct {
 	protos.UnimplementedJobServiceServer
 	JM *utils.JobManager
+}
+
+func collectPodEvents(pods []*protos.JobInfo_PodInfo) []*protos.PodEvent {
+	events := make([]*protos.PodEvent, 0)
+	for _, pod := range pods {
+		events = append(events, pod.GetEvents()...)
+	}
+	return events
+}
+
+func jobInfoFieldRequested(fields []string, field string) bool {
+	for _, f := range fields {
+		if f == field {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *ServerJob) CancelJob(ctx context.Context, in *protos.CancelJobRequest) (*protos.CancelJobResponse, error) {
@@ -39,9 +74,6 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *protos.CancelJobRequest) 
 	defer func() {
 		if err := utils.GlobalProxyManager.StopAndRemoveProxy(in.JobId); err != nil {
 			logrus.Warnf("[CancelJob] delete job proxy file failed: %v", err)
-		}
-		if err := s.JM.DeleteJobInfo(in.JobId); err != nil {
-			logrus.Warnf("[CancelJob] delete job info file failed: %v", err)
 		}
 	}()
 
@@ -66,7 +98,7 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *protos.CancelJobRequest) 
 }
 
 func (s *ServerJob) QueryJobTimeLimit(ctx context.Context, in *protos.QueryJobTimeLimitRequest) (*protos.QueryJobTimeLimitResponse, error) {
-	var seconds uint64
+	var timeLimitMinutes uint64
 
 	logrus.Infof("Received request QueryJobTimeLimit: %v", in)
 	filterIds := make(map[uint32]*craneProtos.JobStepIds)
@@ -88,11 +120,10 @@ func (s *ServerJob) QueryJobTimeLimit(ctx context.Context, in *protos.QueryJobTi
 	}
 	if response.GetOk() {
 		for _, taskInfo := range taskInfoList {
-			timeLimit := taskInfo.GetTimeLimit()
-			seconds = uint64(timeLimit.GetSeconds())
+			timeLimitMinutes = uint64(getScowTimeLimitMinutes(taskInfo.GetTimeLimit()))
 		}
-		logrus.Tracef("QueryJobTimeLimit job: %v, TimeLimitMinutes: %v", in.JobId, seconds/60)
-		return &protos.QueryJobTimeLimitResponse{TimeLimitMinutes: seconds / 60}, nil
+		logrus.Tracef("QueryJobTimeLimit job: %v, TimeLimitMinutes: %v", in.JobId, timeLimitMinutes)
+		return &protos.QueryJobTimeLimitResponse{TimeLimitMinutes: timeLimitMinutes}, nil
 	}
 	return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "Get job timelimit failed.")
 }
@@ -156,6 +187,10 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 		elapsedSeconds int64
 		state          string
 		reason         string
+		stdoutPath     string
+		stderrPath     string
+		startTime      *timestamppb.Timestamp
+		endTime        *timestamppb.Timestamp
 	)
 
 	logrus.Infof("[GetJobById] Received request: %v", in)
@@ -167,17 +202,14 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 	}
 
 	if taskInfo.GetStatus() == craneProtos.JobStatus_Running {
-		elapsedSeconds = time.Now().Unix() - taskInfo.GetStartTime().Seconds
-	} else if taskInfo.GetStatus() == craneProtos.JobStatus_Pending {
-		elapsedSeconds = 0
-	}
-	// 获取作业时长
-	// elapsedSeconds = TaskInfoList.GetEndTime().Seconds - TaskInfoList.GetStartTime().Seconds
-	if taskInfo.GetStatus() == craneProtos.JobStatus_Running {
+		startTime = taskInfo.GetStartTime()
 		elapsedSeconds = time.Now().Unix() - taskInfo.GetStartTime().Seconds
 	} else if taskInfo.GetStatus() == craneProtos.JobStatus_Pending {
 		elapsedSeconds = 0
 	} else {
+		if taskInfo.GetNodeNum() != 0 {
+			startTime = taskInfo.GetStartTime()
+		}
 		elapsedSeconds = taskInfo.GetEndTime().Seconds - taskInfo.GetStartTime().Seconds
 	}
 
@@ -185,27 +217,62 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 	// cpusAlloc := TaskInfoList.GetAllocCpus()
 	cpusAlloc := taskInfo.GetAllocatedResView().GetCpuCount()
 	cpusAllocInt32 := int32(cpusAlloc)
+	cpusReq := taskInfo.GetReqTotalResView().GetCpuCount()
+	cpusReqInt32 := int32(cpusReq)
+	memAllocMb := int64(taskInfo.GetAllocatedResView().GetMemoryBytes() / (1024 * 1024))
+	memReqMb := int64(taskInfo.GetReqTotalResView().GetMemoryBytes() / (1024 * 1024))
+	gpusAlloc := utils.GetGpuNumsFromJob(taskInfo.GetAllocatedResView().GetGresMap())
+	gpusReq := utils.GetGpuNumsFromJob(taskInfo.GetReqTotalResView().GetGresMap())
+	nodesReq := int32(taskInfo.GetNodeNum())
+	nodesAlloc := int32(taskInfo.GetNodeNum())
+	uniqueJobName := taskInfo.GetName()
 	// 获取节点列表
 	nodeList := taskInfo.GetCranedList()
+	tensorBoardInfo := s.getTensorBoardInfo(taskInfo.GetJobId(), taskInfo.GetStatus(), nodeList, taskInfo.GetStepInfoList())
 
 	if taskInfo.GetStatus().String() == "Completed" {
 		state = "COMPLETED"
 		reason = "ENDED"
+		endTime = taskInfo.GetEndTime()
 	} else if taskInfo.GetStatus().String() == "Failed" {
 		state = "FAILED"
 		reason = "ENDED"
+		endTime = taskInfo.GetEndTime()
 	} else if taskInfo.GetStatus().String() == "Cancelled" {
-		state = "CANCELLED"
+		state = "CANCELED"
 		reason = "ENDED"
+		endTime = taskInfo.GetEndTime()
 	} else if taskInfo.GetStatus().String() == "Running" {
 		state = "RUNNING"
 		reason = "Running"
 	} else if taskInfo.GetStatus().String() == "Pending" {
 		state = "PENDING"
 		reason = "Pending"
+	} else if taskInfo.GetStatus().String() == "ExceedTimeLimit" {
+		state = "TIMEOUT"
+		reason = "Timeout"
+		endTime = taskInfo.GetEndTime()
 	}
 
-	pods := utils.ConvertStepInfoToPodInfo(taskInfo.Partition, taskInfo.GetStepInfoList())
+	// pending 作业直接被 cancel 时，鹤思不会设置 startTime，导致 startTime 为 epoch(1970)。
+	// 此时将 startTime 置为 endTime，elapsedSeconds 置为 0，避免前端展示异常。
+	if startTime == nil && endTime != nil {
+		logrus.Warnf("[crane-adapter] jobId=%v name=%v user=%v partition=%v status=%v endTime=%v: startTime is nil (possibly pending cancelled), fallback startTime to endTime",
+			taskInfo.GetJobId(), taskInfo.GetName(), taskInfo.GetUsername(), taskInfo.GetPartition(), taskInfo.GetStatus(), endTime.AsTime().Format(time.RFC3339))
+		startTime = endTime
+		elapsedSeconds = 0
+	}
+
+	needSupervisorEvents := len(in.Fields) == 0 ||
+		jobInfoFieldRequested(in.Fields, "pods") ||
+		jobInfoFieldRequested(in.Fields, "events")
+	var pods []*protos.JobInfo_PodInfo
+	if needSupervisorEvents {
+		pods = utils.ConvertStepInfoToPodInfoWithSupervisorEvents(taskInfo.Partition, taskInfo.Uid, taskInfo.GetUsername(), taskInfo.GetStepInfoList())
+	} else {
+		pods = utils.ConvertStepInfoToPodInfo(taskInfo.Partition, taskInfo.Uid, taskInfo.GetUsername(), taskInfo.GetStepInfoList())
+	}
+	events := collectPodEvents(pods)
 
 	if len(in.Fields) == 0 {
 		jobInfo := &protos.JobInfo{
@@ -214,18 +281,30 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 			Account:          taskInfo.GetAccount(),
 			User:             taskInfo.GetUsername(),
 			Partition:        taskInfo.GetPartition(),
+			Qos:              taskInfo.GetQos(),
+			State:            state,
+			CpusReq:          cpusReqInt32,
+			MemReqMb:         memReqMb,
+			NodesReq:         nodesReq,
+			SubmitTime:       taskInfo.GetSubmitTime(),
+			StdoutPath:       &stdoutPath,
+			StderrPath:       &stderrPath,
 			NodeList:         &nodeList,
-			StartTime:        taskInfo.GetStartTime(),
-			EndTime:          taskInfo.GetEndTime(),
-			TimeLimitMinutes: taskInfo.GetTimeLimit().Seconds / 60, // 转换成分钟数
+			StartTime:        startTime,
+			EndTime:          endTime,
+			TimeLimitMinutes: getScowTimeLimitMinutes(taskInfo.GetTimeLimit()),
 			WorkingDirectory: taskInfo.GetCwd(),
 			CpusAlloc:        &cpusAllocInt32,
-			State:            state,
+			GpusAlloc:        &gpusAlloc,
+			MemAllocMb:       &memAllocMb,
+			NodesAlloc:       &nodesAlloc,
 			ElapsedSeconds:   &elapsedSeconds,
 			Reason:           &reason,
-			Qos:              taskInfo.GetQos(),
-			SubmitTime:       taskInfo.GetStartTime(),
 			Pods:             pods,
+			Events:           events,
+			GpusReq:          gpusReq,
+			TensorBoardInfo:  tensorBoardInfo,
+			UniqueJobName:    uniqueJobName,
 		}
 		return &protos.GetJobByIdResponse{Job: jobInfo}, nil
 	}
@@ -245,15 +324,31 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 		case "node_list":
 			jobInfo.NodeList = &nodeList
 		case "start_time":
-			jobInfo.StartTime = taskInfo.GetStartTime()
+			jobInfo.StartTime = startTime
 		case "end_time":
-			jobInfo.EndTime = taskInfo.GetEndTime()
+			jobInfo.EndTime = endTime
 		case "time_limit_minutes":
-			jobInfo.TimeLimitMinutes = taskInfo.GetTimeLimit().Seconds / 60
+			jobInfo.TimeLimitMinutes = getScowTimeLimitMinutes(taskInfo.GetTimeLimit())
 		case "working_directory":
 			jobInfo.WorkingDirectory = taskInfo.GetCwd()
+		case "cpus_req":
+			jobInfo.CpusReq = cpusReqInt32
+		case "mem_req_mb":
+			jobInfo.MemReqMb = memReqMb
+		case "nodes_req":
+			jobInfo.NodesReq = nodesReq
+		case "stdout_path":
+			jobInfo.StdoutPath = &stdoutPath
+		case "stderr_path":
+			jobInfo.StderrPath = &stderrPath
 		case "cpus_alloc":
 			jobInfo.CpusAlloc = &cpusAllocInt32
+		case "gpus_alloc":
+			jobInfo.GpusAlloc = &gpusAlloc
+		case "mem_alloc_mb":
+			jobInfo.MemAllocMb = &memAllocMb
+		case "nodes_alloc":
+			jobInfo.NodesAlloc = &nodesAlloc
 		case "state":
 			jobInfo.State = state
 		case "elapsed_seconds":
@@ -264,8 +359,16 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 			jobInfo.Qos = taskInfo.GetQos()
 		case "pods":
 			jobInfo.Pods = pods
+		case "events":
+			jobInfo.Events = events
+		case "gpus_req":
+			jobInfo.GpusReq = gpusReq
+		case "tensor_board_info":
+			jobInfo.TensorBoardInfo = tensorBoardInfo
+		case "unique_job_name":
+			jobInfo.UniqueJobName = uniqueJobName
 		case "submit_time":
-			jobInfo.SubmitTime = taskInfo.GetStartTime()
+			jobInfo.SubmitTime = taskInfo.GetSubmitTime()
 		}
 	}
 	logrus.Tracef("[GetJobById] job info: %v", jobInfo)
@@ -335,7 +438,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 
 	logrus.Tracef("request: %v", request)
 	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
-	logrus.Tracef("response: %v", response)
+	// logrus.Tracef("response: %v", response)
 
 	if err != nil {
 		logrus.Errorf("GetJobs failed: %v", fmt.Errorf("CRANE_CALL_FAILED"))
@@ -406,8 +509,8 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 			state = "FAILED"
 			reason = "ENDED"
 			endTime = job.GetEndTime()
-		} else if job.GetStatus().String() == "Cancelled" {
-			state = "CANCELLED"
+		} else if job.GetStatus().String() == "Cancelled" { // crane的取消用的是Cancelled，scow用的是Canceled
+			state = "CANCELED"
 			reason = "ENDED"
 			endTime = job.GetEndTime()
 		} else if job.GetStatus().String() == "Running" {
@@ -426,20 +529,21 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		}
 		nodeNum = int32(job.GetNodeNum())
 
-		if job.GetTimeLimit() == nil || (job.GetTimeLimit().Seconds == 0 && job.GetTimeLimit().Nanos == 0) {
-			timeLimitMinutes = maxUint
-		} else {
-			timeLimitMinutes = job.GetTimeLimit().Seconds / 60
-			// 因为scow数据库中该值是uint类型的，当作业的TimeLimit大于该值时会插入该作业数据到数据库失败
-			if timeLimitMinutes > maxUint {
-				timeLimitMinutes = maxUint
-			}
+		// pending 作业直接被 cancel 时，鹤思不会设置 startTime，导致 startTime 为 epoch(1970)。
+		// 此时将 startTime 置为 endTime，elapsedSeconds 置为 0，避免前端展示异常。
+		if startTime == nil && endTime != nil {
+			logrus.Warnf("[crane-adapter] jobId=%v name=%v user=%v partition=%v status=%v endTime=%v: startTime is nil (possibly pending→cancelled), fallback startTime to endTime",
+				job.GetJobId(), job.GetName(), job.GetUsername(), job.GetPartition(), job.GetStatus(), endTime.AsTime().Format(time.RFC3339))
+			startTime = endTime
+			elapsedSeconds = 0
 		}
 
-		logrus.Tracef("GetJobs: job pod Info %v", job.GetPodMeta())
-		logrus.Tracef("GetJobs: job step Info %v", job.GetStepInfoList())
-		pods := utils.ConvertStepInfoToPodInfo(job.Partition, job.GetStepInfoList())
+		timeLimitMinutes = getScowTimeLimitMinutes(job.GetTimeLimit())
+
 		if len(in.Fields) == 0 {
+			logrus.Tracef("GetJobs: job pod Info %v", job.GetPodMeta())
+			logrus.Tracef("GetJobs: job step Info %v", job.GetStepInfoList())
+			pods := utils.ConvertStepInfoToPodInfo(job.Partition, job.Uid, job.GetUsername(), job.GetStepInfoList())
 			subJobInfo := &protos.JobInfo{}
 			subJobInfo = &protos.JobInfo{
 				JobId:            job.GetJobId(),
@@ -514,6 +618,9 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				case "mem_req_mb":
 					subJobInfo.MemReqMb = memAllocMb
 				case "pods":
+					logrus.Tracef("GetJobs: job pod Info %v", job.GetPodMeta())
+					logrus.Tracef("GetJobs: job step Info %v", job.GetStepInfoList())
+					pods := utils.ConvertStepInfoToPodInfo(job.Partition, job.Uid, job.GetUsername(), job.GetStepInfoList())
 					subJobInfo.Pods = pods
 				case "mem_alloc_mb":
 					subJobInfo.MemAllocMb = &memAllocMb
@@ -548,6 +655,31 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 
 func isAiSubmitJob(in *protos.SubmitJobRequest) bool {
 	return len(in.ExtraOptions) > 0 && (in.ExtraOptions[0] == "app" || in.ExtraOptions[0] == "train")
+}
+
+func validateAiSubmitJob(in *protos.SubmitJobRequest) error {
+	switch in.ExtraOptions[0] {
+	case utils.APP:
+		if len(in.ExtraOptions) != 9 {
+			return fmt.Errorf("app job extra_options length must be 9")
+		}
+		if in.ExtraOptions[1] != utils.AppTypeVNC && in.ExtraOptions[1] != utils.AppTypeWeb {
+			return fmt.Errorf("invalid app type %q, only %q and %q are supported",
+				in.ExtraOptions[1], utils.AppTypeVNC, utils.AppTypeWeb)
+		}
+	case utils.Train:
+		if len(in.ExtraOptions) < 10 {
+			return fmt.Errorf("train job extra_options length must be at least 10")
+		}
+	}
+	return nil
+}
+
+func getTrainingFramework(in *protos.SubmitJobRequest) (string, error) {
+	if len(in.ExtraOptions) < 10 {
+		return "", fmt.Errorf("train job extra_options length must be at least 10")
+	}
+	return in.ExtraOptions[8], nil
 }
 
 func getCraneJobTypesForGetJobs(jobTypes []protos.JobType) []craneProtos.JobType {
@@ -664,18 +796,60 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		return nil, ce.RichError(codes.Internal, "SUBMIT_JOB_FAILED", err.Error())
 	}
 
+	if in.NodeCount == 0 {
+		err := fmt.Errorf("node_count must be greater than 0")
+		logrus.Errorf("[SubmitJob] invalid node count: %v", err)
+		return nil, ce.RichError(codes.InvalidArgument, "INVALID_NODE_COUNT", err.Error())
+	}
+
 	if !isAiSubmitJob(in) {
 		return s.submitHpcJob(in)
 	}
 
-	// todo 目前只支持pytorch
-	// 多机训练
-	if in.ExtraOptions[0] == "train" && in.NodeCount >= 2 {
-		logrus.Tracef("[SubmitJob] Starting Multi-machine training")
+	if err := validateAiSubmitJob(in); err != nil {
+		logrus.Errorf("[SubmitJob] invalid ai submit job options: %v", err)
+		return nil, ce.RichError(codes.InvalidArgument, "INVALID_EXTRA_OPTIONS", err.Error())
+	}
+
+	// 多机训练或需要 TensorBoard 的训练使用脚本在同一个 Crane 作业内启动容器 step。
+	if in.ExtraOptions[0] == utils.Train && (in.NodeCount >= 2 || tensorBoardEnabled(in)) {
+		framework, err := getTrainingFramework(in)
+		if err != nil {
+			logrus.Errorf("[SubmitJob] invalid train job options: %v", err)
+			return nil, ce.RichError(codes.InvalidArgument, "INVALID_EXTRA_OPTIONS", err.Error())
+		}
+		if in.NodeCount >= 2 && framework != utils.PyTorch {
+			err = fmt.Errorf("multi-node training only supports %s, got %s", utils.PyTorch, framework)
+			logrus.Errorf("[SubmitJob] unsupported train framework: %v", err)
+			return nil, ce.RichError(codes.InvalidArgument, "UNSUPPORTED_TRAIN_FRAMEWORK", err.Error())
+		}
+
+		logrus.Tracef("[SubmitJob] Starting script-based training")
 		var (
-			stdout, timeLimitString string
-			scriptString            = "#!/bin/bash\n"
+			stdout, timeLimitString        string
+			tensorBoardProxyPort           int
+			releaseReservedTensorBoardPort bool
+			scriptString                   = "#!/bin/bash\n"
 		)
+		if tensorBoardEnabled(in) {
+			if utils.TensorboardImage == "" {
+				return nil, ce.RichError(codes.InvalidArgument, "TENSORBOARD_IMAGE_NOT_CONFIGURED", "tensorboardImage is not configured.")
+			}
+			tensorBoardProxyPort, err = utils.ReserveAvailableProxyPort()
+			if err != nil {
+				logrus.Errorf("[SubmitJob] reserve tensorboard proxy port failed: %v", err)
+				return nil, ce.RichError(codes.Aborted, "CREATE_SCRIPT_FAILED", "Create submit script failed.")
+			}
+			releaseReservedTensorBoardPort = true
+			defer func() {
+				if !releaseReservedTensorBoardPort || tensorBoardProxyPort <= 0 {
+					return
+				}
+				if err := utils.GlobalProxyManager.ReleaseReservedProxyPort(tensorBoardProxyPort); err != nil {
+					logrus.Warnf("[SubmitJob] release tensorboard reserved proxy port %d failed: %v", tensorBoardProxyPort, err)
+				}
+			}()
+		}
 
 		if in.Stdout != nil {
 			stdout = *in.Stdout
@@ -690,8 +864,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		}
 		scriptString += "#CBATCH " + "-J " + in.JobName + "\n"
 		// -N 使用实际节点数，每节点运行一个容器（ntasks-per-node=1）
-		// scriptString += "#CBATCH " + "-N " + strconv.Itoa(int(in.NodeCount)) + "\n"
-		scriptString += "#CBATCH " + "-N " + strconv.Itoa(1) + "\n"
+		scriptString += "#CBATCH " + "-N " + strconv.Itoa(int(in.NodeCount)) + "\n"
 		scriptString += "#CBATCH " + "--ntasks-per-node " + strconv.Itoa(1) + "\n"
 		if in.GpuCount != 0 {
 			deviceType, err := utils.GetPartitionDeviceType(in.Partition)
@@ -699,9 +872,9 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 				logrus.Errorf("[SubmitJob] get partition device type failed: %v", fmt.Errorf("CREATE_SCRIPT_FAILED"))
 				return nil, ce.RichError(codes.Aborted, "CREATE_SCRIPT_FAILED", "Create submit script failed.")
 			}
-			scriptString += "#CBATCH " + "--gres " + deviceType + ":" + strconv.Itoa(int(in.GpuCount)*int(in.NodeCount)) + "\n"
+			scriptString += "#CBATCH " + "--gres " + deviceType + ":" + strconv.Itoa(int(in.GpuCount)) + "\n"
 		}
-		scriptString += "#CBATCH " + "-c " + strconv.Itoa(int(in.CoreCount)*int(in.NodeCount)) + "\n"
+		scriptString += "#CBATCH " + "-c " + strconv.Itoa(int(in.CoreCount)) + "\n"
 		if in.TimeLimitMinutes != nil {
 			if *in.TimeLimitMinutes < 60 {
 				timeLimitString = fmt.Sprintf("00:%s:00", strconv.Itoa(int(*in.TimeLimitMinutes)))
@@ -720,7 +893,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 
 		if in.MemoryMb != nil {
 			// --mem 是每节点内存限制，传入值已是单容器（单节点）所需内存，直接使用
-			scriptString += "#CBATCH " + "--mem " + strconv.Itoa(int(*in.MemoryMb)*int(in.NodeCount)) + "M" + "\n"
+			scriptString += "#CBATCH " + "--mem " + strconv.Itoa(int(*in.MemoryMb)/int(in.NodeCount)) + "M" + "\n"
 		}
 
 		scriptString += "#CBATCH " + "--export ALL" + "\n"
@@ -728,9 +901,12 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		// 表示运行容器任务，此处通过容器来运行训练任务
 		scriptString += "#CBATCH " + "--pod" + "\n"
 		scriptString += "#CBATCH " + "--pod-userns true" + "\n"
+		if tensorBoardEnabled(in) {
+			scriptString += "#CBATCH " + "--pod-port " + fmt.Sprintf("%d:%d", utils.TensorBoardPort, utils.TensorBoardPort) + "\n"
+		}
 
 		// 生成多节点训练脚本主体（包含容器启动、等待就绪、获取IP、监控等逻辑）
-		scriptBody, err := GenerateMultiNodeTrainScript(in)
+		scriptBody, err := GenerateMultiNodeTrainScript(in, tensorBoardProxyPort)
 		if err != nil {
 			logrus.Errorf("[SubmitJob] generate train job script failed: %v", err)
 			return nil, ce.RichError(codes.Aborted, "CREATE_SCRIPT_FAILED", "Create submit script failed.")
@@ -779,12 +955,18 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 			logrus.Errorf("[SubmitJob] failed to parse job id from submit result: %q, err: %v", submitResult, err)
 			return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "failed to parse job id from submit result")
 		}
-		logrus.Infof("[SubmitJob] submit Multi-machine training job success: %v", jobId)
+		logrus.Infof("[SubmitJob] submit script-based training job success: %v", jobId)
+		if tensorBoardProxyPort > 0 {
+			utils.GlobalProxyManager.BindReservedProxyPort(tensorBoardProxyPort, uint32(jobId))
+			releaseReservedTensorBoardPort = false
+		}
 
 		submitJobInfo := &utils.SubmitJobInfo{
-			JobName: in.JobName,
-			JobId:   uint32(jobId),
-			JobType: in.ExtraOptions[0],
+			JobName:            in.JobName,
+			JobId:              uint32(jobId),
+			JobType:            in.ExtraOptions[0],
+			TensorBoardLogPath: in.GetTensorBoardDataPath(),
+			TensorBoardPort:    tensorBoardProxyPort,
 		}
 		if err = s.JM.SaveJobInfo(submitJobInfo); err != nil {
 			logrus.Warnf("save job submit info failed: %v", err)
@@ -816,10 +998,11 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		containerPorts = append(containerPorts, port.ContainerPort)
 	}
 	submitJobInfo := &utils.SubmitJobInfo{
-		JobName:        in.JobName,
-		JobId:          jobID,
-		JobType:        in.ExtraOptions[0],
-		ContainerPorts: containerPorts,
+		JobName:            in.JobName,
+		JobId:              jobID,
+		JobType:            in.ExtraOptions[0],
+		ContainerPorts:     containerPorts,
+		TensorBoardLogPath: in.GetTensorBoardDataPath(),
 	}
 	if err = s.JM.SaveJobInfo(submitJobInfo); err != nil {
 		logrus.Warnf("save job submit info failed: %v", err)

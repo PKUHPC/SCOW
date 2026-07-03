@@ -138,6 +138,8 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 		elapsedSeconds int64
 		state          string
 		reason         string
+		startTime      *timestamppb.Timestamp
+		endTime        *timestamppb.Timestamp
 	)
 	logrus.Infof("Received request GetJobById: %v", in)
 	request := &craneProtos.QueryTasksInfoRequest{
@@ -160,17 +162,14 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 	// 获取作业信息
 	TaskInfoList := response.GetTaskInfoList()[0]
 	if TaskInfoList.GetStatus() == craneProtos.TaskStatus_Running {
-		elapsedSeconds = time.Now().Unix() - TaskInfoList.GetStartTime().Seconds
-	} else if TaskInfoList.GetStatus() == craneProtos.TaskStatus_Pending {
-		elapsedSeconds = 0
-	}
-	// 获取作业时长
-	// elapsedSeconds = TaskInfoList.GetEndTime().Seconds - TaskInfoList.GetStartTime().Seconds
-	if TaskInfoList.GetStatus() == craneProtos.TaskStatus_Running {
+		startTime = TaskInfoList.GetStartTime()
 		elapsedSeconds = time.Now().Unix() - TaskInfoList.GetStartTime().Seconds
 	} else if TaskInfoList.GetStatus() == craneProtos.TaskStatus_Pending {
 		elapsedSeconds = 0
 	} else {
+		if TaskInfoList.GetNodeNum() != 0 {
+			startTime = TaskInfoList.GetStartTime()
+		}
 		elapsedSeconds = TaskInfoList.GetEndTime().Seconds - TaskInfoList.GetStartTime().Seconds
 	}
 
@@ -184,18 +183,34 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 	if TaskInfoList.GetStatus().String() == "Completed" {
 		state = "COMPLETED"
 		reason = "ENDED"
+		endTime = TaskInfoList.GetEndTime()
 	} else if TaskInfoList.GetStatus().String() == "Failed" {
 		state = "FAILED"
 		reason = "ENDED"
+		endTime = TaskInfoList.GetEndTime()
 	} else if TaskInfoList.GetStatus().String() == "Cancelled" {
 		state = "CANCELLED"
 		reason = "ENDED"
+		endTime = TaskInfoList.GetEndTime()
 	} else if TaskInfoList.GetStatus().String() == "Running" {
 		state = "RUNNING"
 		reason = "Running"
 	} else if TaskInfoList.GetStatus().String() == "Pending" {
 		state = "PENDING"
 		reason = "Pending"
+	} else if TaskInfoList.GetStatus().String() == "ExceedTimeLimit" {
+		state = "TIMEOUT"
+		reason = "Timeout"
+		endTime = TaskInfoList.GetEndTime()
+	}
+
+	// pending 作业直接被 cancel 时，鹤思不会设置 startTime，导致 startTime 为 epoch(1970)。
+	// 此时将 startTime 置为 endTime，elapsedSeconds 置为 0，避免前端展示异常。
+	if startTime == nil && endTime != nil {
+		logrus.Warnf("[crane-adapter] jobId=%v name=%v user=%v partition=%v status=%v endTime=%v: startTime is nil (possibly pending cancelled), fallback startTime to endTime",
+			TaskInfoList.GetTaskId(), TaskInfoList.GetName(), TaskInfoList.GetUsername(), TaskInfoList.GetPartition(), TaskInfoList.GetStatus(), endTime.AsTime().Format(time.RFC3339))
+		startTime = endTime
+		elapsedSeconds = 0
 	}
 
 	if len(in.Fields) == 0 {
@@ -206,8 +221,8 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 			User:             TaskInfoList.GetUsername(),
 			Partition:        TaskInfoList.GetPartition(),
 			NodeList:         &nodeList,
-			StartTime:        TaskInfoList.GetStartTime(),
-			EndTime:          TaskInfoList.GetEndTime(),
+			StartTime:        startTime,
+			EndTime:          endTime,
 			TimeLimitMinutes: TaskInfoList.GetTimeLimit().Seconds / 60, // 转换成分钟数
 			WorkingDirectory: TaskInfoList.GetCwd(),
 			CpusAlloc:        &cpusAllocInt32,
@@ -235,9 +250,9 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 		case "node_list":
 			jobInfo.NodeList = &nodeList
 		case "start_time":
-			jobInfo.StartTime = TaskInfoList.GetStartTime()
+			jobInfo.StartTime = startTime
 		case "end_time":
-			jobInfo.EndTime = TaskInfoList.GetEndTime()
+			jobInfo.EndTime = endTime
 		case "time_limit_minutes":
 			jobInfo.TimeLimitMinutes = TaskInfoList.GetTimeLimit().Seconds / 60
 		case "working_directory":
@@ -253,7 +268,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 		case "qos":
 			jobInfo.Qos = TaskInfoList.GetQos()
 		case "submit_time":
-			jobInfo.SubmitTime = TaskInfoList.GetStartTime()
+			jobInfo.SubmitTime = startTime
 		}
 	}
 	logrus.Tracef("GetJobById job: %v", jobInfo)

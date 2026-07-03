@@ -51,6 +51,8 @@ type ClusterNodesInfo struct {
 type MountModel struct {
 	Path     string `json:"path"`
 	IsPublic bool   `json:"isPublic"`
+	// Target 表示容器内挂载路径；为空时兼容旧数据，默认与 Path 一致。
+	Target string `json:"target"`
 }
 
 // GetUidByUserName 通过os/user包去获取用户的uid
@@ -559,6 +561,36 @@ func LocalRunCommandOnNodes(nodeList string, command string, username string, ti
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			return stdout.String(), stderr.String(), fmt.Errorf("command timed out after %v", timeout)
+		}
+		return stdout.String(), stderr.String(), err
+	}
+
+	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), nil
+}
+
+func RunCommandOnNodeBySSH(nodeName string, command string, timeout time.Duration) (string, string, error) {
+	logrus.Debugf("RunCommandOnNodeBySSH params: nodeName=%s, command=%s, timeout=%v", nodeName, command, timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	safeCommand := strings.ReplaceAll(command, "'", "'\\''")
+	remoteCommand := fmt.Sprintf("sh -lc '%s'", safeCommand)
+	cmd := exec.CommandContext(ctx, "ssh",
+		"-o", "BatchMode=yes",
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "ConnectTimeout=5",
+		nodeName,
+		remoteCommand,
+	)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return stdout.String(), stderr.String(), fmt.Errorf("ssh command timed out after %v", timeout)
 		}
 		return stdout.String(), stderr.String(), err
 	}
@@ -1092,22 +1124,71 @@ func ParseGres(gres string) *craneProtos.GresMap {
 func ParseMountModel(mount string) ([]MountModel, error) {
 	var info []MountModel
 
-	var rawStrings []string
-	err := json.Unmarshal([]byte(mount), &rawStrings)
+	var rawItems []json.RawMessage
+	err := json.Unmarshal([]byte(mount), &rawItems)
 	if err != nil {
 		return info, err
 	}
 
-	for _, s := range rawStrings {
+	for _, rawItem := range rawItems {
 		var mm MountModel
-		err = json.Unmarshal([]byte(s), &mm)
-		if err != nil {
+
+		var rawString string
+		if err = json.Unmarshal(rawItem, &rawString); err == nil {
+			if strings.TrimSpace(rawString) == "" {
+				continue
+			}
+			if err = json.Unmarshal([]byte(rawString), &mm); err != nil {
+				return info, err
+			}
+		} else if err = json.Unmarshal(rawItem, &mm); err != nil {
 			return info, err
+		}
+
+		if strings.TrimSpace(mm.Path) == "" {
+			continue
+		}
+		if strings.TrimSpace(mm.Target) == "" {
+			mm.Target = mm.Path
 		}
 		info = append(info, mm)
 	}
 
 	return info, nil
+}
+
+// ParseMountModelMap 将用户挂载配置转换为 source -> target，便于后续统一合并挂载表。
+func ParseMountModelMap(mount string) (map[string]string, error) {
+	mounts := make(map[string]string)
+	if strings.TrimSpace(mount) == "" || mount == "[]" {
+		return mounts, nil
+	}
+
+	mountModels, err := ParseMountModel(mount)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, mountModel := range mountModels {
+		mounts[mountModel.Path] = mountModel.Target
+	}
+	return mounts, nil
+}
+
+// ParseCommaSeparatedMountMap 兼容旧的逗号分隔只读挂载配置，source 和 target 保持一致。
+func ParseCommaSeparatedMountMap(mount string) map[string]string {
+	mounts := make(map[string]string)
+	if strings.TrimSpace(mount) == "" || mount == "[]" {
+		return mounts
+	}
+
+	for _, path := range strings.Split(mount, ",") {
+		path = strings.TrimSpace(path)
+		if path != "" {
+			mounts[path] = path
+		}
+	}
+	return mounts
 }
 
 // GetUIDGIDByName 支持返回字符串格式
@@ -1215,6 +1296,10 @@ func CheckAndAddExecPermission(dirPath string) error {
 		return fmt.Errorf("entry.sh is a directory, not an executable file")
 	}
 
+	if err := ensureEntryScriptShebang(entryPath); err != nil {
+		return err
+	}
+
 	// 4. 检查文件是否有可执行权限（判断用户、组、其他任意一方是否有可执行权限）
 	// Unix权限位说明：0100(用户可执行)、0010(组可执行)、0001(其他可执行)，组合为0111
 	perm := fileInfo.Mode().Perm()
@@ -1229,6 +1314,34 @@ func CheckAndAddExecPermission(dirPath string) error {
 	newPerm := perm | 0111 // 按位或操作，添加所有用户的可执行权限
 	if err := os.Chmod(entryPath, newPerm); err != nil {
 		return fmt.Errorf("failed to add executable permissions for entry.sh: %w", err)
+	}
+
+	return nil
+}
+
+func ensureEntryScriptShebang(entryPath string) error {
+	content, err := os.ReadFile(entryPath)
+	if err != nil {
+		return fmt.Errorf("failed to read entry.sh: %w", err)
+	}
+
+	trimmedStartContent := bytes.TrimLeft(content, " \t\r\n")
+	if len(trimmedStartContent) == 0 {
+		return nil
+	}
+
+	// 用户只填写命令时，entry.sh 没有解释器声明，直接 exec 会报 exec format error。
+	if !bytes.HasPrefix(trimmedStartContent, []byte("#!")) {
+		content = append([]byte("#!/bin/sh\n"), content...)
+	} else if len(trimmedStartContent) != len(content) {
+		// shebang 必须位于文件开头；如果用户前面误填空白，去掉前导空白保证脚本可执行。
+		content = trimmedStartContent
+	} else {
+		return nil
+	}
+
+	if err := os.WriteFile(entryPath, content, 0); err != nil {
+		return fmt.Errorf("failed to update entry.sh shebang: %w", err)
 	}
 
 	return nil

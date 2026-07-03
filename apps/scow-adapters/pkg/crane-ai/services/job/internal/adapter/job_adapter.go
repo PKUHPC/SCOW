@@ -2,12 +2,12 @@ package adapters
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	protos "scow-adapters/gen/go"
 	"scow-adapters/pkg/crane-ai/services/job/internal/types"
+	"scow-adapters/pkg/crane-ai/utils"
 )
 
 // JobAdapter SubmitJobRequest 的适配器
@@ -76,7 +76,7 @@ func (a *JobAdapter) GetCoreCount() uint32 {
 
 func (a *JobAdapter) GetImage() (string, error) {
 	if len(a.req.ExtraOptions) < 3 {
-		return "", fmt.Errorf("extra_options 长度不足，无法获取镜像地址")
+		return "", fmt.Errorf("extra_options is too short to get image URL")
 	}
 	return a.req.ExtraOptions[2], nil
 }
@@ -90,6 +90,17 @@ func (a *JobAdapter) GetWorkingDirectory() string {
 }
 
 func (a *JobAdapter) GetContainerPort() []uint32 {
+	if a.GetJobType() != types.JobTypeApp || len(a.req.ExtraOptions) < 2 {
+		return []uint32{}
+	}
+
+	switch a.req.ExtraOptions[1] {
+	case utils.AppTypeVNC:
+		return []uint32{utils.AppVNCContainerPort}
+	case utils.AppTypeWeb:
+		return []uint32{utils.AppWebContainerPort}
+	}
+
 	return []uint32{} // 训练作业无固定端口
 }
 
@@ -101,48 +112,40 @@ func (a *JobAdapter) GetMounts() (map[string]string, error) {
 		if len(a.req.ExtraOptions) < 9 {
 			return nil, nil
 		}
-		if a.req.ExtraOptions[6] != "[]" {
-			publicPaths := strings.Split(a.req.ExtraOptions[6], ",")
-			logrus.Tracef("public paths: %v", publicPaths)
-			for _, mount := range publicPaths {
-				if mount != "" {
-					mounts[mount] = mount // + ":rw"
-				}
-			}
+		// 用户自定义挂载支持单独指定容器内 target，只读挂载仍保持 path:path。
+		userMounts, err := utils.ParseMountModelMap(a.req.ExtraOptions[6])
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse user mounts: %v", err)
+		}
+		logrus.Tracef("user mounts: %v", userMounts)
+		for source, target := range userMounts {
+			mounts[source] = target
 		}
 
-		if a.req.ExtraOptions[8] != "[]" {
-			readOnlyPaths := strings.Split(a.req.ExtraOptions[8], ",")
-			logrus.Tracef("readOnly paths: %v", readOnlyPaths)
-			for _, mount := range readOnlyPaths {
-				if mount != "" {
-					mounts[mount] = mount // + ":ro"
-				}
-			}
+		readOnlyMounts := utils.ParseCommaSeparatedMountMap(a.req.ExtraOptions[8])
+		logrus.Tracef("readOnly mounts: %v", readOnlyMounts)
+		for source, target := range readOnlyMounts {
+			mounts[source] = target // + ":ro"
 		}
 	} else if jobType == types.JobTypeTraining {
 		if len(a.req.ExtraOptions) < 10 {
 			return nil, nil
 		}
 
-		if a.req.ExtraOptions[6] != "[]" {
-			publicPaths := strings.Split(a.req.ExtraOptions[6], ",")
-			logrus.Tracef("public paths: %v", publicPaths)
-			for _, mount := range publicPaths {
-				if mount != "" {
-					mounts[mount] = mount // + ":rw"
-				}
-			}
+		// 用户自定义挂载支持单独指定容器内 target，只读挂载仍保持 path:path。
+		userMounts, err := utils.ParseMountModelMap(a.req.ExtraOptions[6])
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse user mounts: %v", err)
+		}
+		logrus.Tracef("user mounts: %v", userMounts)
+		for source, target := range userMounts {
+			mounts[source] = target
 		}
 
-		if a.req.ExtraOptions[9] != "[]" {
-			readOnlyPaths := strings.Split(a.req.ExtraOptions[9], ",")
-			logrus.Tracef("readOnly paths: %v", readOnlyPaths)
-			for _, mount := range readOnlyPaths {
-				if mount != "" {
-					mounts[mount] = mount // + ":ro"
-				}
-			}
+		readOnlyMounts := utils.ParseCommaSeparatedMountMap(a.req.ExtraOptions[9])
+		logrus.Tracef("readOnly mounts: %v", readOnlyMounts)
+		for source, target := range readOnlyMounts {
+			mounts[source] = target // + ":ro"
 		}
 	}
 	return mounts, nil
@@ -175,28 +178,28 @@ func (a *JobAdapter) GetExtraOptions() []string {
 
 func (a *JobAdapter) GetGpuType() (string, error) {
 	if len(a.req.ExtraOptions) < 8 {
-		return "", fmt.Errorf("extra_options 长度不足，无法获取 GPU 类型")
+		return "", fmt.Errorf("extra_options is too short to get GPU type")
 	}
 	return a.req.ExtraOptions[7], nil
 }
 
 func (a *JobAdapter) GetAlgorithmPath() (string, error) {
 	if len(a.req.ExtraOptions) < 4 {
-		return "", fmt.Errorf("extra_options 长度不足，无法获取算法路径")
+		return "", fmt.Errorf("extra_options is too short to get algorithm path")
 	}
 	return a.req.ExtraOptions[3], nil
 }
 
 func (a *JobAdapter) GetDatasetPath() (string, error) {
 	if len(a.req.ExtraOptions) < 5 {
-		return "", fmt.Errorf("extra_options 长度不足，无法获取数据集路径")
+		return "", fmt.Errorf("extra_options is too short to get dataset path")
 	}
 	return a.req.ExtraOptions[4], nil
 }
 
 func (a *JobAdapter) GetModelPath() (string, error) {
 	if len(a.req.ExtraOptions) < 6 {
-		return "", fmt.Errorf("extra_options 长度不足，无法获取模型路径")
+		return "", fmt.Errorf("extra_options is too short to get model path")
 	}
 	return a.req.ExtraOptions[5], nil
 }
@@ -206,7 +209,7 @@ func (a *JobAdapter) GetFramework() (string, error) {
 		return "", nil
 	}
 	if len(a.req.ExtraOptions) < 9 {
-		return "", fmt.Errorf("extra_options 长度不足，无法获取框架")
+		return "", fmt.Errorf("extra_options is too short to get framework")
 	}
 	return a.req.ExtraOptions[8], nil
 }

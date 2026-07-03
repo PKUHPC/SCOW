@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"os"
+	"path/filepath"
+)
+
 const (
 	DefaultUserConfigPrefix = ".config/crane"
 	MaxJobTimeLimit         = 315576000000 // 10000 years
@@ -29,13 +34,46 @@ const (
 	DevHost   = "devHost"
 	APP       = "app"
 
+	AppTypeVNC = "vnc"
+	AppTypeWeb = "web"
+
+	PyTorch = "pytorch"
+
+	AppVNCContainerPort = 6901
+	AppWebContainerPort = 20000
+
 	Jupyterlab  = "jupyterlab"
 	Vscode      = "vscode"
 	VscodePort  = 20002
 	JupyterPort = 20003
 
-	AdapterPath = "/adapter/"
+	TensorBoard            = "tensorboard"
+	TensorBoardPort        = 6006
+	TensorBoardLogMountDir = "/output/training_logs"
+	TensorBoardCpu         = 1
+	TensorBoardMemoryMb    = 512
+	TensorBoardEntryScript = "tensorBoard_entry.sh"
 
-	JobsInfos  = "/adapter/jobs/jobs.json"
-	ProxyInfos = "/adapter/jobs/proxy.json"
+	ContainerScriptDir   = "/opt/crane/"
+	ContainerEntryScript = "/opt/crane/entry.sh"
+	DevHostEntryFileName = "devhost_entry.sh"
+	DevHostScriptDirName = "crane"
+
+	DefaultAdapterPath = "/adapter"
 )
+
+var (
+	AdapterPath      = resolveAdapterPath()
+	JobsInfos        = filepath.Join(AdapterPath, "jobs", "jobs.json")
+	ProxyInfos       = filepath.Join(AdapterPath, "jobs", "proxy.json")
+	DevHostEntryPath = filepath.Join(AdapterPath, DevHostEntryFileName)
+	TensorboardImage = ""
+)
+
+func resolveAdapterPath() string {
+	workingDir, err := os.Getwd()
+	if err != nil || workingDir == "" {
+		return DefaultAdapterPath
+	}
+	return workingDir
+}

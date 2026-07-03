@@ -48,18 +48,25 @@ type ProxyManager struct {
 	// 每条记录对应一个正在运行的反向代理服务（ProxyService），将外部请求转发到容器内的指定端口。
 	// 同一作业若有多个容器端口（如 devHost 同时开 VSCode 和 Jupyter），则有多条记录。
 	// 进程重启后该 map 为空；持久化状态由 proxy.json 保存，通过 CleanInvalidProxies 定时补偿清理。
-	proxyMap    map[string]*ProxyService
-	persistence *FilePersistence // 持久化实例
-	ticker      *time.Ticker     // 定时巡检的Ticker
-	stopChan    chan struct{}    // 停止定时任务的信号通道
+	proxyMap               map[string]*ProxyService
+	reservedProxyListeners map[int]*reservedProxyListener
+	persistence            *FilePersistence // 持久化实例
+	ticker                 *time.Ticker     // 定时巡检的Ticker
+	stopChan               chan struct{}    // 停止定时任务的信号通道
+}
+
+type reservedProxyListener struct {
+	listener net.Listener
+	jobId    uint32
 }
 
 // NewProxyManager 创建代理管理器
 func NewProxyManager(persistence *FilePersistence) *ProxyManager {
 	return &ProxyManager{
-		proxyMap:    make(map[string]*ProxyService),
-		persistence: persistence,
-		stopChan:    make(chan struct{}),
+		proxyMap:               make(map[string]*ProxyService),
+		reservedProxyListeners: make(map[int]*reservedProxyListener),
+		persistence:            persistence,
+		stopChan:               make(chan struct{}),
 	}
 }
 
@@ -195,7 +202,7 @@ func NewProxyService(jobId uint32, targetAddr string) (*ProxyService, error) {
 		return nil, fmt.Errorf("failed to parse target address: %w", err)
 	}
 
-	port, err := findAvailablePort()
+	listener, port, err := listenAvailablePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for available ports: %w", err)
 	}
@@ -205,7 +212,53 @@ func NewProxyService(jobId uint32, targetAddr string) (*ProxyService, error) {
 	return &ProxyService{
 		ctx:        ctx,
 		cancel:     cancel,
+		listener:   listener,
 		proxyPort:  port,
+		targetAddr: targetAddr,
+		JobId:      jobId,
+	}, nil
+}
+
+func NewProxyServiceWithPort(jobId uint32, targetAddr string, proxyPort int) (*ProxyService, error) {
+	_, err := url.Parse(targetAddr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse target address: %w", err)
+	}
+
+	listenAddr := fmt.Sprintf("0.0.0.0:%d", proxyPort)
+	listener, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return nil, fmt.Errorf("[job %d] Listening on port %d failed: %w", jobId, proxyPort, err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	return &ProxyService{
+		ctx:        ctx,
+		cancel:     cancel,
+		listener:   listener,
+		proxyPort:  proxyPort,
+		targetAddr: targetAddr,
+		JobId:      jobId,
+	}, nil
+}
+
+func NewProxyServiceWithListener(jobId uint32, targetAddr string, proxyPort int, listener net.Listener) (*ProxyService, error) {
+	if listener == nil {
+		return nil, fmt.Errorf("[job %d] reserved listener for port %d is nil", jobId, proxyPort)
+	}
+	_, err := url.Parse(targetAddr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse target address: %w", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	return &ProxyService{
+		ctx:        ctx,
+		cancel:     cancel,
+		listener:   listener,
+		proxyPort:  proxyPort,
 		targetAddr: targetAddr,
 		JobId:      jobId,
 	}, nil
@@ -227,12 +280,9 @@ func (p *ProxyService) Start() error {
 		req.Header.Set("X-Forwarded-Host", req.Host)
 	}
 
-	listenAddr := fmt.Sprintf("0.0.0.0:%d", p.proxyPort)
-	listener, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		return fmt.Errorf("[job %d] Listening on port %d failed: %w", p.JobId, p.proxyPort, err)
+	if p.listener == nil {
+		return fmt.Errorf("[job %d] proxy listener is not initialized", p.JobId)
 	}
-	p.listener = listener
 
 	p.server = &http.Server{
 		Handler:      proxy,
@@ -243,7 +293,7 @@ func (p *ProxyService) Start() error {
 
 	go func() {
 		logrus.Tracef("[job %d] Proxy service started successfully: crane-master:%d -> %s", p.JobId, p.proxyPort, p.targetAddr)
-		if err := p.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := p.server.Serve(p.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logrus.Errorf("[job %d] Proxy service abnormal exit: %v", p.JobId, err)
 		}
 	}()
@@ -271,19 +321,66 @@ func (p *ProxyService) Stop() error {
 	return nil
 }
 
-// findAvailablePort 查找可用端口（支持指定固定端口恢复）
-func findAvailablePort() (int, error) {
+// listenAvailablePort 查找并监听一个可用端口。返回的 listener 会一直占住端口，避免探测后释放导致的并发抢占。
+func listenAvailablePort() (net.Listener, int, error) {
 	for port := MinPort; port <= MaxPort; port++ {
 		listenAddr := fmt.Sprintf("0.0.0.0:%d", port)
 		listener, err := net.Listen("tcp", listenAddr)
 		if err == nil {
-			_ = listener.Close()
-			return port, nil
+			return listener, port, nil
 		}
 		logrus.Warnf("Port %d is already occupied, try the next one", port)
 	}
 
-	return 0, fmt.Errorf("no available ports found (%d-%d)", MinPort, MaxPort)
+	return nil, 0, fmt.Errorf("no available ports found (%d-%d)", MinPort, MaxPort)
+}
+
+func (m *ProxyManager) ReserveAvailableProxyPort() (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	listener, port, err := listenAvailablePort()
+	if err != nil {
+		return 0, err
+	}
+	m.reservedProxyListeners[port] = &reservedProxyListener{listener: listener}
+	return port, nil
+}
+
+func (m *ProxyManager) BindReservedProxyPort(port int, jobId uint32) {
+	if port <= 0 || jobId == 0 {
+		return
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if reserved := m.reservedProxyListeners[port]; reserved != nil {
+		reserved.jobId = jobId
+	}
+}
+
+func (m *ProxyManager) ReleaseReservedProxyPort(port int) error {
+	if port <= 0 {
+		return nil
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	reserved, exists := m.reservedProxyListeners[port]
+	if !exists {
+		return nil
+	}
+	delete(m.reservedProxyListeners, port)
+	if err := reserved.listener.Close(); err != nil {
+		return fmt.Errorf("release reserved port %d failed: %w", port, err)
+	}
+	return nil
+}
+
+func ReserveAvailableProxyPort() (int, error) {
+	return GlobalProxyManager.ReserveAvailableProxyPort()
 }
 
 // RecoverProxies 程序启动时恢复所有代理服务（不依赖IsRunning，仅以作业/容器实际状态为准）
@@ -308,16 +405,13 @@ func (m *ProxyManager) RecoverProxies() error {
 	failCount := 0
 	cleanCount := 0
 	for _, meta := range metas {
-		// 重新创建代理实例
-		proxy, err := NewProxyService(meta.JobId, meta.TargetAddr)
+		// 重新创建代理实例，复用原有端口，保证 Web 服务调用地址不变。
+		proxy, err := NewProxyServiceWithPort(meta.JobId, meta.TargetAddr, meta.ProxyPort)
 		if err != nil {
 			logrus.Errorf("[job %s] Failed to create proxy instance: %v", meta.JobName, err)
 			failCount++
 			continue
 		}
-
-		// 强制复用原有端口，保证Web服务调用地址不变
-		proxy.proxyPort = meta.ProxyPort
 
 		// 4. 启动代理服务
 		if err := proxy.Start(); err != nil {
@@ -402,6 +496,84 @@ func (m *ProxyManager) CreateAndStartProxy(proxyInfo *SubmitJobProxyInfo) error 
 	return nil
 }
 
+func (m *ProxyManager) CreateAndStartProxyWithPort(jobName string, jobId uint32, containerIP string, containerPort int32, proxyPort int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	name := proxyKey(jobId, containerIP, containerPort)
+	if _, exists := m.proxyMap[name]; exists {
+		logrus.Infof("job %s proxy already exists", name)
+		return nil
+	}
+
+	targetAddr := fmt.Sprintf("http://%s:%d", containerIP, containerPort)
+	reserved := m.reservedProxyListeners[proxyPort]
+	if reserved != nil && reserved.jobId != 0 && reserved.jobId != jobId {
+		return fmt.Errorf("proxy port %d is reserved for job %d", proxyPort, reserved.jobId)
+	}
+	var reservedListener net.Listener
+	if reserved != nil {
+		reservedListener = reserved.listener
+		delete(m.reservedProxyListeners, proxyPort)
+	}
+
+	var proxy *ProxyService
+	var err error
+	if reservedListener != nil {
+		proxy, err = NewProxyServiceWithListener(jobId, targetAddr, proxyPort, reservedListener)
+	} else {
+		proxy, err = NewProxyServiceWithPort(jobId, targetAddr, proxyPort)
+	}
+	if err != nil {
+		if reserved != nil {
+			m.reservedProxyListeners[proxyPort] = reserved
+		}
+		return fmt.Errorf("failed to create proxy: %v", err)
+	}
+	if err := proxy.Start(); err != nil {
+		if reserved != nil {
+			m.reservedProxyListeners[proxyPort] = reserved
+		}
+		return fmt.Errorf("failed to start proxy: %v", err)
+	}
+
+	logrus.Infof("Create proxy service for job %s success, target: %s", name, targetAddr)
+	m.proxyMap[name] = proxy
+
+	meta := &ProxyMeta{
+		JobName:       jobName,
+		JobId:         jobId,
+		ContainerPort: containerPort,
+		ProxyPort:     proxy.proxyPort,
+		TargetNode:    containerIP,
+		TargetAddr:    targetAddr,
+	}
+	if err := m.persistence.Save(meta); err != nil {
+		_ = proxy.Stop()
+		delete(m.proxyMap, name)
+		return fmt.Errorf("failed to persist proxy metadata for job %d port %d: %w", jobId, containerPort, err)
+	}
+
+	return nil
+}
+
+func (m *ProxyManager) IsProxyRunning(meta *ProxyMeta) bool {
+	if meta == nil {
+		return false
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	host, port, err := ParseTargetAddr(meta.TargetAddr)
+	if err != nil {
+		logrus.Warnf("[job %d] parse proxy target addr %s failed: %v", meta.JobId, meta.TargetAddr, err)
+		return false
+	}
+	key := proxyKey(meta.JobId, host, int32(port))
+	_, exists := m.proxyMap[key]
+	return exists
+}
+
 // StopAndRemoveProxy 停止并移除指定作业的所有代理（一个作业可能有多个端口的代理）。
 func (m *ProxyManager) StopAndRemoveProxy(jobId uint32) error {
 	m.mu.Lock()
@@ -418,6 +590,15 @@ func (m *ProxyManager) StopAndRemoveProxy(jobId uint32) error {
 			logrus.Errorf("[job %d] stop proxy %s failed: %v", jobId, name, err)
 		}
 		delete(m.proxyMap, name)
+	}
+	for port, reserved := range m.reservedProxyListeners {
+		if reserved == nil || reserved.jobId != jobId {
+			continue
+		}
+		if err := reserved.listener.Close(); err != nil {
+			logrus.Errorf("[job %d] release reserved proxy port %d failed: %v", jobId, port, err)
+		}
+		delete(m.reservedProxyListeners, port)
 	}
 
 	// 从持久化存储中删除该作业的所有代理记录
@@ -465,6 +646,27 @@ func (m *ProxyManager) CleanInvalidProxies() error {
 	defer m.mu.Unlock()
 
 	logrus.Infof("Start executing scheduled cleaning of invalid proxy tasks...")
+
+	for port, reserved := range m.reservedProxyListeners {
+		if reserved == nil || reserved.jobId == 0 {
+			continue
+		}
+		jobInfo, err := GetJobById(reserved.jobId, "")
+		if err != nil {
+			logrus.Errorf("[job %d] Reserved proxy status query failed, skipping cleanup: %v", reserved.jobId, err)
+			continue
+		}
+		jobStatus := jobInfo.Status
+		if jobStatus == craneProtos.JobStatus_Pending || jobStatus == craneProtos.JobStatus_Running {
+			logrus.Tracef("[job %d] Status is %v, keep reserved proxy port %d", reserved.jobId, jobStatus, port)
+			continue
+		}
+		if err := reserved.listener.Close(); err != nil {
+			logrus.Errorf("[job %d] release reserved proxy port %d failed: %v", reserved.jobId, port, err)
+		}
+		delete(m.reservedProxyListeners, port)
+		logrus.Tracef("[job %d] Reserved proxy port %d has been released (job status:%v)", reserved.jobId, port, jobStatus)
+	}
 
 	// 加载所有持久化的代理元信息
 	metas, err := m.persistence.LoadAll()

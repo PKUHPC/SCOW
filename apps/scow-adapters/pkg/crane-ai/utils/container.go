@@ -2,15 +2,18 @@ package utils
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"scow-adapters/pkg/crane-ai/client"
 	"strconv"
 	"strings"
@@ -26,6 +29,13 @@ import (
 	craneProtos "scow-adapters/gen/crane-ai"
 	pb "scow-adapters/gen/go"
 )
+
+const (
+	supervisorLogScanLines  = 5000
+	supervisorEventMaxCount = 200
+)
+
+var supervisorLogPattern = regexp.MustCompile(`^\[([IE]) (\d{2}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\.(\d{3}) [^\]]+\]\[[^\]]*\]\s*(.*)$`)
 
 func ValidateContainerJob(task *craneProtos.JobToCtld) error {
 	containerMeta := task.ContainerMeta
@@ -231,6 +241,10 @@ func CopyFromPod(jobId, stepId, uid uint32, srcPath, localPath, nodeName string)
 			Tty:    false,
 		})
 		if streamErr != nil {
+			if errors.Is(streamErr, context.Canceled) || strings.Contains(streamErr.Error(), context.Canceled.Error()) {
+				log.Debugf("goroutine StreamWithContext canceled after CopyFromPod finished, stderr: %s", stderr.String())
+				return
+			}
 			log.Errorf("goroutine StreamWithContext failed: %v, stderr: %s", streamErr, stderr.String())
 			_ = writer.CloseWithError(fmt.Errorf("stream failed: %v, stderr: %s", streamErr, stderr.String()))
 		} else {
@@ -326,6 +340,113 @@ func GetContainerIPByExec(jobId, stepId, uid uint32, nodeName string) (string, e
 		return "", fmt.Errorf("invalid IP address for job %d step %d: %s", jobId, stepId, ip)
 	}
 	return ip, nil
+}
+
+// GetContainerIDByNerdctl 通过在目标节点执行 nerdctl 命令查询 containerd 容器 ID。
+func GetContainerIDByNerdctl(jobId, stepId uint32, nodeName, username string) (string, error) {
+	if nodeName == "" {
+		return "", fmt.Errorf("node name is empty")
+	}
+
+	command := fmt.Sprintf(
+		"nerdctl -n k8s.io ps -a --filter label=job_id=%d --filter label=step_id=%d --format {{.ID}} | head -n 1",
+		jobId, stepId,
+	)
+
+	stdout, stderr, err := RunCommandOnNodeBySSH(nodeName, command, 10*time.Second)
+	if err != nil {
+		log.Warnf("Query container ID on node %s by ssh failed: %v, stderr: %s; fallback to crun", nodeName, err, strings.TrimSpace(stderr))
+		if username == "" {
+			return "", fmt.Errorf("query container id on node %s by ssh failed: %w, stderr: %s; username is empty, cannot fallback to crun",
+				nodeName, err, strings.TrimSpace(stderr))
+		}
+		stdout, stderr, err = LocalRunCommandOnNodes(nodeName, command, username, 10*time.Second)
+	}
+	if err != nil {
+		return "", fmt.Errorf("query container id on node %s failed: %w, stderr: %s", nodeName, err, strings.TrimSpace(stderr))
+	}
+
+	containerID := strings.TrimSpace(stdout)
+	if containerID == "" {
+		return "", fmt.Errorf("container id not found for job %d step %d on node %s", jobId, stepId, nodeName)
+	}
+
+	return containerID, nil
+}
+
+func GetSupervisorEventsForContainer(jobId, stepId uint32, nodeName, username, podName, namespace string) []*pb.PodEvent {
+	if nodeName == "" {
+		return nil
+	}
+
+	logPath := fmt.Sprintf("/var/crane/supervisor/%d.%d.log", jobId, stepId)
+	command := fmt.Sprintf(
+		"if [ -r %q ]; then tail -n %d %q 2>/dev/null || true; fi",
+		logPath, supervisorLogScanLines, logPath,
+	)
+
+	stdout, stderr, err := RunCommandOnNodeBySSH(nodeName, command, 10*time.Second)
+	if err != nil {
+		log.Warnf("Read supervisor log %s on node %s by ssh failed: %v, stderr: %s; fallback to crun",
+			logPath, nodeName, err, strings.TrimSpace(stderr))
+		if username == "" {
+			log.Warnf("Read supervisor log %s on node %s failed: username is empty, cannot fallback to crun",
+				logPath, nodeName)
+			return nil
+		}
+		stdout, stderr, err = LocalRunCommandOnNodes(nodeName, command, username, 10*time.Second)
+	}
+	if err != nil {
+		log.Warnf("Read supervisor log %s on node %s failed: %v, stderr: %s",
+			logPath, nodeName, err, strings.TrimSpace(stderr))
+		return nil
+	}
+
+	return parseSupervisorLogEvents(stdout, podName, namespace)
+}
+
+func parseSupervisorLogEvents(logContent, podName, namespace string) []*pb.PodEvent {
+	scanner := bufio.NewScanner(strings.NewReader(logContent))
+	scanner.Buffer(make([]byte, 1024), 1024*1024)
+
+	events := make([]*pb.PodEvent, 0)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		matches := supervisorLogPattern.FindStringSubmatch(line)
+		if len(matches) != 5 {
+			continue
+		}
+
+		eventTime, err := time.ParseInLocation("06-01-02 15:04:05.000", matches[2]+"."+matches[3], time.Local)
+		if err != nil {
+			log.Warnf("Parse supervisor log time failed: line=%q, err=%v", line, err)
+			continue
+		}
+
+		eventType := "INFO"
+		if matches[1] == "E" {
+			eventType = "ERROR"
+		}
+		count := int32(1)
+		events = append(events, &pb.PodEvent{
+			ObjName:            &podName,
+			ObjNamespace:       &namespace,
+			ObjKind:            "Container",
+			Type:               eventType,
+			Message:            line,
+			ReportingComponent: "supervisor",
+			Count:              &count,
+			Time:               timestamppb.New(eventTime),
+		})
+	}
+	if err := scanner.Err(); err != nil {
+		log.Warnf("Scan supervisor log events failed: %v", err)
+	}
+
+	if len(events) > supervisorEventMaxCount {
+		return events[len(events)-supervisorEventMaxCount:]
+	}
+	return events
 }
 
 func ResolveTargetNode(step *craneProtos.StepInfo) (string, error) {
@@ -439,8 +560,18 @@ func GetContainerIDAndStepId(reply protoreflect.ProtoMessage) (uint32, uint32, e
 	return jobId, stepId, nil
 }
 
-func ConvertStepInfoToPodInfo(partition string, stepList []*craneProtos.StepInfo) []*pb.JobInfo_PodInfo {
+func ConvertStepInfoToPodInfo(partition string, uid uint32, username string, stepList []*craneProtos.StepInfo) []*pb.JobInfo_PodInfo {
+	return convertStepInfoToPodInfo(partition, uid, username, stepList, false)
+}
+
+func ConvertStepInfoToPodInfoWithSupervisorEvents(partition string, uid uint32, username string, stepList []*craneProtos.StepInfo) []*pb.JobInfo_PodInfo {
+	return convertStepInfoToPodInfo(partition, uid, username, stepList, true)
+}
+
+func convertStepInfoToPodInfo(partition string, uid uint32, username string, stepList []*craneProtos.StepInfo, withSupervisorEvents bool) []*pb.JobInfo_PodInfo {
 	var podInfoList []*pb.JobInfo_PodInfo
+	podIPCache := make(map[string]string)
+	containerIDCache := make(map[string]string)
 
 	log.Infof("Converting StepInfo to PodInfo for partition %s, total steps: %d", partition, len(stepList))
 	log.Infof("StepInfo steps: %v", stepList)
@@ -481,9 +612,36 @@ func ConvertStepInfoToPodInfo(partition string, stepList []*craneProtos.StepInfo
 				podStatus = pb.JobInfo_FAILED
 			}
 
+			podIP := ""
+			containerID := ""
+			if step.Status == craneProtos.JobStatus_Running {
+				cacheKey := strconv.FormatInt(int64(step.JobId), 10) + StepToPodNameEscape +
+					strconv.FormatInt(int64(step.StepId), 10) + StepToPodNameEscape +
+					node
+				var ok bool
+				podIP, ok = podIPCache[cacheKey]
+				if !ok {
+					var err error
+					podIP, err = GetContainerIPByExec(step.JobId, step.StepId, uid, node)
+					if err != nil {
+						log.Warnf("Failed to get pod IP for job %d step %d node %s: %v", step.JobId, step.StepId, node, err)
+					}
+					podIPCache[cacheKey] = podIP
+				}
+
+				containerID, ok = containerIDCache[cacheKey]
+				if !ok {
+					var err error
+					containerID, err = GetContainerIDByNerdctl(step.JobId, step.StepId, node, username)
+					if err != nil {
+						log.Warnf("Failed to get container ID for job %d step %d node %s: %v", step.JobId, step.StepId, node, err)
+					}
+					containerIDCache[cacheKey] = containerID
+				}
+			}
+
 			// 转换时间戳（seconds转timestamppb.Timestamp）
 			createdTime := timestamppb.New(time.Unix(step.StartTime.Seconds, 0))
-			endTime := timestamppb.New(time.Unix(step.EndTime.Seconds, 0))
 
 			// 构造PodInfo对象
 			podInfo := &pb.JobInfo_PodInfo{
@@ -491,9 +649,16 @@ func ConvertStepInfoToPodInfo(partition string, stepList []*craneProtos.StepInfo
 				Namespace:      partition,
 				PodName:        podName,
 				PodId:          podName,
+				ContainerId:    containerID,
+				PodIp:          podIP,
 				PodStatus:      podStatus,
 				PodCreatedTime: createdTime,
-				PodEndTime:     endTime,
+			}
+			if step.EndTime != nil && step.EndTime.Seconds != 0 {
+				podInfo.PodEndTime = timestamppb.New(time.Unix(step.EndTime.Seconds, 0))
+			}
+			if withSupervisorEvents {
+				podInfo.Events = GetSupervisorEventsForContainer(step.JobId, step.StepId, node, username, podName, partition)
 			}
 
 			podInfoList = append(podInfoList, podInfo)

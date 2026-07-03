@@ -74,6 +74,7 @@ func NewAdapterCommand() *cobra.Command {
 		if err := unmarshalWithYamlTag(viper.AllSettings(), &GConfig); err != nil {
 			logrus.Fatalf("Error parsing config file: %s", err)
 		}
+		utils.TensorboardImage = GConfig.TensorboardImage
 
 		logrus.Debugf("Using config:\n%+v", GConfig)
 	})
