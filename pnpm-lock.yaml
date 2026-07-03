@@ -319,12 +319,21 @@ importers:
       react-is:
         specifier: 19.0.0
         version: 19.0.0
+      react-markdown:
+        specifier: 10.1.0
+        version: 10.1.0(@types/react@18.3.3)(react@18.3.1)
       react-typed-i18n:
         specifier: 2.6.1
         version: 2.6.1(react@18.3.1)
       recharts:
         specifier: 2.15.0
         version: 2.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      rehype-raw:
+        specifier: 7.0.0
+        version: 7.0.0
+      remark-gfm:
+        specifier: 4.0.1
+        version: 4.0.1
       replace-in-file:
         specifier: 8.3.0
         version: 8.3.0
@@ -1495,12 +1504,21 @@ importers:
       react-is:
         specifier: 19.0.0
         version: 19.0.0
+      react-markdown:
+        specifier: 10.1.0
+        version: 10.1.0(@types/react@18.3.3)(react@18.3.1)
       react-typed-i18n:
         specifier: 2.6.1
         version: 2.6.1(react@18.3.1)
       recharts:
         specifier: 2.15.0
         version: 2.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      rehype-raw:
+        specifier: 7.0.0
+        version: 7.0.0
+      remark-gfm:
+        specifier: 4.0.1
+        version: 4.0.1
       replace-in-file:
         specifier: 8.3.0
         version: 8.3.0
@@ -15788,7 +15806,7 @@ snapshots:
       remark-gfm: 4.0.1
       stringify-object: 3.3.0
       tslib: 2.8.1
-      unified: 11.0.5
+      unified: 11.0.4
       unist-util-visit: 5.0.0
       url-loader: 4.1.1(file-loader@6.2.0(webpack@5.97.1))(webpack@5.97.1)
       vfile: 6.0.3
@@ -17120,7 +17138,7 @@ snapshots:
       remark-parse: 11.0.0
       remark-rehype: 11.1.2
       source-map: 0.7.6
-      unified: 11.0.5
+      unified: 11.0.4
       unist-util-position-from-estree: 2.0.0
       unist-util-stringify-position: 4.0.0
       unist-util-visit: 5.0.0
@@ -26156,7 +26174,7 @@ snapshots:
       micromark-extension-gfm: 3.0.0
       remark-parse: 11.0.0
       remark-stringify: 11.0.0
-      unified: 11.0.4
+      unified: 11.0.5
     transitivePeerDependencies:
       - supports-color
 
@@ -26188,7 +26206,7 @@ snapshots:
     dependencies:
       '@types/mdast': 4.0.4
       mdast-util-to-markdown: 2.1.2
-      unified: 11.0.4
+      unified: 11.0.5
 
   remarkable@2.0.1:
     dependencies:

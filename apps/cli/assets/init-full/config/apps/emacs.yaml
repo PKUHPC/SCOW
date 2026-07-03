@@ -48,5 +48,10 @@ web:
 #     placeholder: "比如：--gpus gres:2 --time 10"
 
 # 交互式应用说明，选填。
-# 此文本支持国际化
-# appComment: "对上方交互式应用进行说明<pre style='width: 40%'><code># 利用代码块说明</code></pre>"
+# 此文本支持国际化，支持 Markdown/GFM，并兼容 HTML 标签。
+# appComment: |
+#   对上方交互式应用进行说明
+#
+#   ```
+#   # 利用代码块说明
+#   ```

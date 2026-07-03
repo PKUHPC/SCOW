@@ -10,6 +10,9 @@ import {
   TitledSectionCard as SectionCard,
 } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Form, type FormInstance, Space } from "antd";
+import Markdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { EnvVariableFormSection } from "src/app/(auth)/jobs/EnvVariableFormSection";
@@ -182,7 +185,15 @@ export const AppConfigSection = ({
                   />
                 </Form.Item>
                 {selectedImageOption?.description && (
-                  <ImageDescriptionBox>{selectedImageOption?.description}</ImageDescriptionBox>
+                  <ImageDescriptionBox>
+                    {selectedImageSource === "preset" ? (
+                      <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {selectedImageOption.description}
+                      </Markdown>
+                    ) : (
+                      selectedImageOption.description
+                    )}
+                  </ImageDescriptionBox>
                 )}
               </>
             )}

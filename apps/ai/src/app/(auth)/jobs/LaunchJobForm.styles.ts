@@ -56,6 +56,34 @@ export const ImageDescriptionBox = styled.div`
   background: rgba(250, 250, 250, 1);
   color: rgba(136, 143, 163, 1);
   line-height: 1.6;
+
+  table {
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    border: 1px solid ${({ theme }) => theme.token.colorBorder};
+    padding: 8px 12px;
+  }
+
+  pre {
+    background-color: ${({ theme }) => theme.token.colorFillTertiary};
+    border-radius: 4px;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  code {
+    background-color: ${({ theme }) => theme.token.colorFillTertiary};
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
 `;
 
 export const AllocationLine = styled(Typography.Text)`

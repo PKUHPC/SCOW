@@ -23,12 +23,15 @@ import {
   JobSidePanelScrollBox,
 } from "@scow/lib-web/build/layouts/base/JobContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Avatar, Button, Form, Typography } from "antd";
+import { App, Avatar, Button, Form } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
 import { join } from "path";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
+import Markdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -73,7 +76,50 @@ interface App {
   accountAvailabilities?: AccountAvailabilityInfo[];
 }
 
-const Text = styled(Typography.Paragraph)``;
+const AppCommentContainer = styled.div`
+  max-width: 100%;
+  overflow-x: auto;
+  color: ${({ theme }) => theme.palette.gray[8]};
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: max-content;
+    max-width: 100%;
+    margin: 8px 0;
+  }
+
+  th,
+  td {
+    border: 1px solid ${({ theme }) => theme.token.colorBorder};
+    padding: 8px 12px;
+  }
+
+  pre {
+    background-color: ${({ theme }) => theme.token.colorFillTertiary};
+    border-radius: 4px;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  code {
+    background-color: ${({ theme }) => theme.token.colorFillTertiary};
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+`;
 
 const HeaderAvatar = styled(Avatar)`
   background-color: rgba(240, 240, 240, 1) !important;
@@ -88,7 +134,7 @@ const SidePanelGroupWrapper = styled.div`
 
 const SidePanelDivider = styled.div`
   height: 1px;
-  margin: 24px 0px;
+  margin: 16px 0px;
   background: ${({ theme }) => theme.palette.gray[4]};
   flex-shrink: 0;
 `;
@@ -1233,9 +1279,11 @@ export const LaunchAppForm: React.FC<Props> = ({
               {appCommentI18nText && (
                 <>
                   <JobSidePanelScrollBox>
-                    <Text>
-                      <div dangerouslySetInnerHTML={{ __html: appCommentI18nText }} />
-                    </Text>
+                    <AppCommentContainer>
+                      <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {appCommentI18nText}
+                      </Markdown>
+                    </AppCommentContainer>
                   </JobSidePanelScrollBox>
                   <SidePanelDivider />
                 </>
