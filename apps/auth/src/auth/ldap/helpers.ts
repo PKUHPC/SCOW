@@ -267,7 +267,7 @@ export const extractUserInfoFromEntry = (
   const mail = config.attrs.mail ? takeOne(extractAttr(entry, config.attrs.mail)) : undefined;
   const loginShell = config.attrs.loginShell ? takeOne(extractAttr(entry, config.attrs.loginShell)) : undefined;
   const pwdAccountLockedTime = takeOne(extractAttr(entry, "pwdAccountLockedTime"));
-  return { identityId, name, mail, loginShell, pwdAccountLockedTime };
+  return { identityId, name, mail, loginShell, pwdAccountLockedTime, blocked: loginShell === "/sbin/nologin" };
 };
 
 export function takeOne(val: string | string[] | undefined) {

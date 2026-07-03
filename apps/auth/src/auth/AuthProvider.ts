@@ -23,6 +23,7 @@ export interface UserInfo {
   identityId: string;
   name?: string;
   mail?: string;
+  blocked: boolean;
 }
 
 export interface AuthProvider {

@@ -7,6 +7,7 @@ import { useLdap } from "src/auth/ldap/helpers";
 import { checkPPolicyModule } from "src/auth/ldap/helpers";
 import { modifyPPolicy } from "src/auth/ldap/updatePPolicy";
 import { authConfig } from "src/config/auth";
+import { AuthType } from "src/config/AuthType";
 import { config } from "src/config/env";
 import { plugins } from "src/plugins";
 import { routes } from "src/routes";
@@ -55,16 +56,20 @@ export function buildApp(pluginOverrides?: PluginOverrides) {
     registerCaptchaRoute(server);
   }
 
-  const { ldap } = ensureNotUndefined(authConfig, ["ldap"]);
-  void useLdap(
-    logger as FastifyBaseLogger,
-    ldap,
-  )(async () => {
-    const isPpolicyLoaded = await checkPPolicyModule(logger, ldap);
-    if (isPpolicyLoaded) {
-      await modifyPPolicy(logger as FastifyBaseLogger, ldap);
-    }
-  });
+  const authType = config.AUTH_TYPE || authConfig.authType;
+
+  if (authType === AuthType.ldap) {
+    const { ldap } = ensureNotUndefined(authConfig, ["ldap"]);
+    void useLdap(
+      logger as FastifyBaseLogger,
+      ldap,
+    )(async () => {
+      const isPpolicyLoaded = await checkPPolicyModule(logger, ldap);
+      if (isPpolicyLoaded) {
+        await modifyPPolicy(logger as FastifyBaseLogger, ldap);
+      }
+    });
+  }
   return server;
 }
 

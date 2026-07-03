@@ -199,10 +199,12 @@ it("creates user and group if groupStrategy is newGroupPerUser", async () => {
 
   expect(responseUser).toEqual({
     dn: userDn,
+    blocked: false,
     identityId: user.identityId,
     loginShell: "/bin/bash",
     mail: savedUserMail,
     name: user.name,
+    pwdAccountLockedTime: undefined,
   });
 
   const ldapUser = await searchByDn(client, userDn);

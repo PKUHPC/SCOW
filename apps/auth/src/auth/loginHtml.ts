@@ -10,6 +10,9 @@ import { uiConfig } from "src/config/ui";
 import { AuthTextsType, loadLanguageDefinitions } from "src/i18n";
 import { getHostname } from "src/utils/getHostname";
 
+export const BUILTIN_LOGIN_MODE = "builtin";
+export const OIDC_LOGIN_MODE = "oidc";
+
 export async function serveLoginHtml(
   errParamrs: {
     err: boolean;
@@ -28,6 +31,10 @@ export async function serveLoginHtml(
     username?: string;
     password?: string;
   },
+  oidcUserValidationError?: {
+    identityId: string;
+    reason: "notFound" | "blocked";
+  },
 ) {
   const hostname = getHostname(req);
   const authUiHostnameConfig = (hostname && authConfig.ui?.hostnameMap?.[hostname]) || undefined;
@@ -35,6 +42,7 @@ export async function serveLoginHtml(
 
   const enableCaptcha = authConfig.captcha.enabled;
   const enableTotp = authConfig.otp?.enabled;
+  const showOidcLoginButton = !!authConfig.oidc && authConfig.loginType === "oidc";
   const logoPreferDarkParam =
     (authUiHostnameConfig?.logo?.scowLogoType || authUiDefaultConfig?.logo.scowLogoType) === ScowLogoType.light
       ? "false"
@@ -65,7 +73,17 @@ export async function serveLoginHtml(
       ? undefined
       : getI18nConfigCurrentText(authUiHostnameConfig?.footerText ?? authUiDefaultConfig?.footerText, languageId);
 
-  return rep.status(verifyCaptchaFail ? 400 : errParamrs.err ? 401 : 200).view("login.liquid", {
+  const statusCode = oidcUserValidationError
+    ? oidcUserValidationError.reason === "notFound"
+      ? 404
+      : 403
+    : verifyCaptchaFail
+      ? 400
+      : errParamrs.err
+        ? 401
+        : 200;
+
+  return rep.status(statusCode).view("login.liquid", {
     authTexts: authTexts,
     cssUrl: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/tailwind.min.css"),
     eyeImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye.png"),
@@ -106,11 +124,16 @@ export async function serveLoginHtml(
     verifyCaptchaFail,
     enableCaptcha,
     enableTotp,
+    showOidcLoginButton,
     showBindOtpButton,
     verifyOtpFail,
     remainCount,
     changePasswordPamars: changePasswordPamars || {},
+    oidcUserValidationError,
+    authPath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/auth"),
     otpBasePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/otp"),
+    builtinLoginMode: BUILTIN_LOGIN_MODE,
+    oidcLoginMode: OIDC_LOGIN_MODE,
     refreshCaptchaPath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/refreshCaptcha"),
     changePasswordUserSelf: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/passwordUserSelf"),
   });

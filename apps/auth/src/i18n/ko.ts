@@ -18,6 +18,17 @@ export default {
     invalidPassword: "비밀번호가 올바르지 않습니다, 다시 입력하세요",
     invalidOtp: "OTP 코드가 유효하지 않습니다. 다시 입력하세요.",
     bindOtp: "OTP 연결",
+    oidcLogin: "OIDC Login",
+    userNotFound: "User Not Found",
+    userBlocked: "User Blocked",
+    oidcUserNotFound1: "OIDC login user ",
+    oidcUserNotFound2:
+      " does not exist in the SCOW auth provider. Contact an administrator to create the user, or use username and password login.",
+    oidcUserBlocked1: "OIDC login user ",
+    oidcUserBlocked2:
+      " is blocked in the SCOW auth provider and cannot sign in. Contact an administrator to unblock the user, or use username and password login.",
+    retryOidcLogin: "Retry OIDC Login",
+    useBuiltinLogin: "Use Username and Password",
   },
   bindOtp: {
     bindOtp: "OTP 연결",

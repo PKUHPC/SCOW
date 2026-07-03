@@ -15,6 +15,11 @@ export enum OtpStatusOptions {
   "remote" = "remote",
 }
 
+export enum LoginType {
+  builtin = "builtin",
+  oidc = "oidc",
+}
+
 export enum ScowLogoType {
   "dark" = "dark",
   "light" = "light",
@@ -191,6 +196,24 @@ export const SshConfigSchema = Type.Object(
   { description: "SSH配置", default: {} },
 );
 
+export const OidcConfigSchema = Type.Object(
+  {
+    issuerUrl: Type.String({ description: "OIDC issuer URL" }),
+    clientId: Type.String({ description: "OIDC client ID" }),
+    clientSecret: Type.Optional(Type.String({ description: "OIDC client secret" })),
+    redirectUri: Type.String({ description: "认证系统的 OIDC 回调地址" }),
+    scope: Type.String({ description: "OIDC 授权 scope", default: "openid profile email" }),
+    allowInsecureRequests: Type.Boolean({ description: "是否允许使用非 HTTPS 的 OIDC endpoint", default: false }),
+    claims: Type.Object(
+      {
+        identityId: Type.String({ description: "用作 SCOW 用户 ID 的 OIDC claim", default: "preferred_username" }),
+      },
+      { description: "OIDC claim 映射", default: {} },
+    ),
+  },
+  { description: "OIDC 配置" },
+);
+
 export const OtpLdapSchema = Type.Object(
   {
     bindLimitMinutes: Type.Integer({ description: "限制绑定otp要在多少分钟内完成", default: 10 }),
@@ -308,6 +331,7 @@ export const OtpConfigSchema = Type.Object(
 );
 
 export type SshConfigSchema = Static<typeof SshConfigSchema>;
+export type OidcConfigSchema = Static<typeof OidcConfigSchema>;
 export type OtpLdapSchema = Static<typeof OtpLdapSchema>;
 export type OtpConfigSchema = Static<typeof OtpConfigSchema>;
 export type UiConfigSchema = Static<typeof UiConfigSchema>;
@@ -316,7 +340,9 @@ export const AuthConfigSchema = Type.Object({
   redisUrl: Type.String({ description: "存放token的redis地址", default: "redis:6379" }),
   tokenTimeoutSeconds: Type.Integer({ description: "token未使用的失效时间", default: 3600 }),
   authType: Type.Enum(AuthType, { description: "认证类型", default: "ssh" }),
+  loginType: Type.Optional(Type.Enum(LoginType, { description: "登录类型。不填写时默认为builtin" })),
   ldap: Type.Optional(LdapConfigSchema),
+  oidc: Type.Optional(OidcConfigSchema),
   ssh: Type.Optional(SshConfigSchema),
   allowedCallbackHostnames: Type.Array(Type.String({ description: "信任的回调域名" }), { default: [] }),
   mockUsers: Type.Optional(
@@ -340,6 +366,8 @@ export const AUTH_CONFIG_FILE = "auth";
 
 export const getAuthConfig = () => {
   const config = getConfigFromFile(AuthConfigSchema, AUTH_CONFIG_FILE, DEFAULT_CONFIG_BASE_PATH);
+
+  config.loginType ??= LoginType.builtin;
 
   // validate
   if (config.authType === AuthType.ldap) {
@@ -372,6 +400,10 @@ export const getAuthConfig = () => {
     throw new Error("authType is set to ssh, but ssh config is not set");
   }
 
+  if (config.loginType === LoginType.oidc && !config.oidc) {
+    throw new Error("loginType is set to oidc, but oidc config is not set");
+  }
+
   if (config.otp?.enabled) {
     if (!config.otp.type) {
       throw new Error("config.otp.enabled is set to true, but config.otp.type is not to set");
@@ -385,8 +417,8 @@ export const getAuthConfig = () => {
     if (config.otp?.type === OtpStatusOptions.remote && !config.otp?.remote) {
       throw new Error("otp status is set to remote, but otp.remote config is not set");
     }
-    if (config.authType === AuthType.ssh && config.otp?.type === OtpStatusOptions.ldap) {
-      throw new Error("When authType is set to ssh, otp.type can only be set to remote");
+    if (config.authType !== AuthType.ldap && config.otp?.type === OtpStatusOptions.ldap) {
+      throw new Error("When authType is not set to ldap, otp.type can only be set to remote");
     }
   }
 

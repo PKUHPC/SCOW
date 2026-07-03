@@ -160,6 +160,38 @@
     <div class="login-main">
       <div class="login-col login-left">
         <div class="w-72 max-w-md min-w-max bg-white rounded-xl pt-12 pb-4">
+          {% if oidcUserValidationError %}
+          <div class="px-10 flex flex-col items-center text-center">
+            <div class="mb-6 text-2xl font-semibold">
+              {% if oidcUserValidationError.reason == "blocked" %}
+              {{ authTexts.login.userBlocked }}
+              {% else %}
+              {{ authTexts.login.userNotFound }}
+              {% endif %}
+            </div>
+            <div class="w-72 mb-8 text-sm leading-6 text-gray-600 break-words">
+              {% if oidcUserValidationError.reason == "blocked" %}
+              {{ authTexts.login.oidcUserBlocked1 }}{{ oidcUserValidationError.identityId | escape }}{{ authTexts.login.oidcUserBlocked2 }}
+              {% else %}
+              {{ authTexts.login.oidcUserNotFound1 }}{{ oidcUserValidationError.identityId | escape }}{{ authTexts.login.oidcUserNotFound2 }}
+              {% endif %}
+            </div>
+            <form method="get" action="{{ authPath }}" class="mb-4">
+              <input type="hidden" name="callbackUrl" value="{{ callbackUrl | escape }}" />
+              <input type="hidden" name="mode" value="{{ oidcLoginMode }}" />
+              <button type="submit" class="w-72 py-2 rounded-lg button-primary text-gray-100 focus:outline-none">
+                {{ authTexts.login.retryOidcLogin }}
+              </button>
+            </form>
+            <form method="get" action="{{ authPath }}" class="mb-8">
+              <input type="hidden" name="callbackUrl" value="{{ callbackUrl | escape }}" />
+              <input type="hidden" name="mode" value="{{ builtinLoginMode }}" />
+              <button type="submit" class="w-72 py-2 rounded-lg border text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                {{ authTexts.login.useBuiltinLogin }}
+              </button>
+            </form>
+          </div>
+          {% else %}
           <form id="loginForm" method="post" action="">
             <div class="mb-14 text-2xl font-semibold text-center">{{ authTexts.login.accountPasswordLogin }}</div>
             <div class="px-10 flex flex-col items-center">
@@ -238,6 +270,17 @@
               </button>
             </div>
           </form>
+          {% if showOidcLoginButton %}
+            <div class="px-10 flex flex-col items-center">
+              <form method="get" action="">
+                <input type="hidden" name="callbackUrl" value="{{ callbackUrl | escape }}" />
+                <input type="hidden" name="mode" value="{{ oidcLoginMode }}" />
+                <button type="submit" class="w-72 py-2 mb-6 rounded-lg border text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                  {{ authTexts.login.oidcLogin }}
+                </button>
+              </form>
+            </div>
+          {% endif %}
           {% if showBindOtpButton %}
             <div class="px-12 mt-4">
               <form action="{{ otpBasePath }}/bind" method="get">
@@ -247,6 +290,7 @@
                 <input type="hidden" name="callbackUrl" value="{{ callbackUrl | escape }}" />
               </form>
             </div>
+          {% endif %}
           {% endif %}
         </div>
       </div>

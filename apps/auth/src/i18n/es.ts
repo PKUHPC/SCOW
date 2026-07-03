@@ -18,6 +18,17 @@ export default {
     invalidPassword: "Contraseña incorrecta, vuelva a introducirla",
     invalidOtp: "Código OTP inválido, vuelva a introducirlo.",
     bindOtp: "Vincular OTP",
+    oidcLogin: "OIDC Login",
+    userNotFound: "User Not Found",
+    userBlocked: "User Blocked",
+    oidcUserNotFound1: "OIDC login user ",
+    oidcUserNotFound2:
+      " does not exist in the SCOW auth provider. Contact an administrator to create the user, or use username and password login.",
+    oidcUserBlocked1: "OIDC login user ",
+    oidcUserBlocked2:
+      " is blocked in the SCOW auth provider and cannot sign in. Contact an administrator to unblock the user, or use username and password login.",
+    retryOidcLogin: "Retry OIDC Login",
+    useBuiltinLogin: "Use Username and Password",
   },
   bindOtp: {
     bindOtp: "Vincular OTP",

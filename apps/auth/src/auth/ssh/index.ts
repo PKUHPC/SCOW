@@ -57,6 +57,7 @@ export const createSshAuthProvider = async (f: FastifyInstance) => {
         return {
           identityId,
           name: fullName,
+          blocked: false,
         };
       });
     },

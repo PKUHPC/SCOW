@@ -549,6 +549,9 @@ importers:
       nodemailer:
         specifier: 6.9.14
         version: 6.9.14
+      openid-client:
+        specifier: 6.8.1
+        version: 6.8.1
       pino:
         specifier: 8.16.2
         version: 8.16.2

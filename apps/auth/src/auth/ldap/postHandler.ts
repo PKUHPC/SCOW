@@ -49,11 +49,8 @@ export function registerPostHandler(f: FastifyInstance, ldapConfig: LdapConfigSc
       )(async (client) => {
         const user = await findUser(logger, ldapConfig, client, username);
 
-        if (!user || user.loginShell === "/sbin/nologin") {
-          const logMessage = !user
-            ? `Didn't find user with ${ldapConfig.attrs.uid}=${username}`
-            : `User with ${ldapConfig.attrs.uid}=${username} has been marked as deleted`;
-
+        if (!user || user.blocked) {
+          const logMessage = `User with ${ldapConfig.attrs.uid}=${username} doesn't exist or has been marked as deleted`;
           logger.info(logMessage);
           await serveLoginHtml({ err: true, errMessage: "invalidUserId" }, callbackUrl, req, res);
           return;

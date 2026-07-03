@@ -1,4 +1,8 @@
 authType: ldap
+# 登录类型。不填写时默认为 builtin。
+# 可选值：builtin、oidc。
+# builtin 使用原有登录行为，根据 authType 使用 ldap 或 ssh 登录；oidc 只作为登录入口。
+# loginType: builtin
 
 redisUrl: localhost:6379
 
@@ -90,6 +94,18 @@ ldap:
 
 ssh:
   baseNode: localhost:22222
+
+# OIDC 登录配置。当 loginType 为 oidc 时必须填写。
+# oidc:
+#   issuerUrl: https://example.com
+#   clientId: scow
+#   clientSecret: change-me
+#   # 需要和 OIDC Provider 中注册的 redirect_uri 一致。
+#   redirectUri: http://localhost:5000/public/oidc/callback
+#   scope: openid profile email
+#   allowInsecureRequests: false
+#   claims:
+#     identityId: preferred_username
 
 # auth 界面 ui 配置
 ui:

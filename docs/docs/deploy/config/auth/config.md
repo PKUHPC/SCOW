@@ -15,6 +15,60 @@ tokenTimeoutSecond: 3600
 - 完全关闭浏览器访问SCOW的所有同类型窗口（常规或者无痕）会立刻登出SCOW。
 - 在没有关闭所有同类型窗口的情况下，用户不操作SCOW一段时间后将会被退出登录，这个时间由tokenTimeoutSeconds配置定义。在有效时间内操作会重置登录有效期。
 
+## 登录方式
+
+内置认证系统通过`authType`决定完整的认证系统能力，例如用户登录、获取用户信息、创建用户、修改密码等。`authType`目前可配置为`ldap`或`ssh`，对应说明请参考[LDAP认证系统](./ldap.md)和[SSH认证系统](./ssh.md)。
+
+`loginType`只决定网页登录入口。不填写时默认为`builtin`，即保持原有行为：根据`authType`展示内置账号密码登录页面，并使用LDAP或SSH完成登录。
+
+```yaml title="config/auth.yml"
+# 登录类型。不填写时默认为 builtin。
+# builtin：使用原有登录行为，根据 authType 使用 ldap 或 ssh 登录
+# oidc：使用 OIDC 登录入口，authType 仍配置为 ldap 或 ssh
+loginType: builtin
+```
+
+### 使用OIDC登录入口
+
+如果需要让用户通过OIDC Provider登录SCOW，可以将`loginType`设置为`oidc`，并配置`oidc`。此时`authType`仍然必须配置为`ldap`或`ssh`，用于提供认证系统的其他能力；OIDC只负责网页登录入口和登录成功后的用户ID映射。
+
+OIDC登录成功后，认证系统会从OIDC返回的claim中读取用户ID，生成SCOW登录token，并跳转回业务系统。该用户ID必须与SCOW中使用的`identityId`一致，也就是用户在集群上的登录名。
+
+```yaml title="config/auth.yml"
+# authType 仍决定完整认证系统能力，不能配置为 oidc
+authType: ldap
+
+loginType: oidc
+
+oidc:
+  # OIDC Provider 的 issuer URL
+  issuerUrl: https://idp.example.com
+
+  # 在 OIDC Provider 中注册的 client 信息
+  clientId: scow
+  clientSecret: change-me
+
+  # 在 OIDC Provider 中注册的回调地址
+  # 地址需指向认证系统的 /public/oidc/callback
+  redirectUri: https://scow.example.com/auth/public/oidc/callback
+
+  # 默认为 openid profile email
+  scope: openid profile email
+
+  # 仅建议在本地测试非 HTTPS OIDC Provider 时开启
+  allowInsecureRequests: false
+
+  # claim 映射。identityId 的值必须能映射到 SCOW 用户ID/集群登录名
+  claims:
+    identityId: preferred_username
+```
+
+:::note
+
+`loginType: oidc`不会让OIDC成为一个完整的SCOW认证系统。管理系统中的创建用户、查询用户、修改密码等能力仍由`authType`对应的LDAP或SSH认证系统提供。
+
+:::
+
 ## UI 配置
 认证系统支持对登录界面部分 UI 进行修改
 
