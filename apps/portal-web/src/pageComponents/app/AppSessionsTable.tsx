@@ -1,3 +1,5 @@
+import type { AppSession } from "src/pages/api/app/getAppSessions";
+
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
@@ -6,8 +8,7 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { App, Button, Checkbox, Form, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/router";
 import { join } from "path";
-import React, { useCallback, useMemo, useState } from "react";
-import { useAsync } from "react-async";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
@@ -27,6 +28,10 @@ interface FilterForm {
 
 const p = prefix("pageComp.app.appSessionTable.");
 
+type DisplayAppSession = AppSession & {
+  remainingTime: string;
+};
+
 export const AppSessionsTable = () => {
   const { currentClusters, defaultCluster, activatedClusters } = useStore(ClusterInfoStore);
 
@@ -45,24 +50,56 @@ export const AppSessionsTable = () => {
 
   const [onlyNotEnded, setOnlyNotEnded] = useState(false);
 
-  const { data, isLoading, reload } = useAsync({
-    promiseFn: useCallback(async () => {
-      // List all desktop
-      const clusters = currentClusters.map((cluster) => cluster.id);
-      const { sessions } = await api.getAppSessions({ query: { clusters } });
+  const [sessionsByCluster, setSessionsByCluster] = useState<Record<string, DisplayAppSession[]>>({});
 
-      return sessions.map((x) => ({
-        ...x,
-        jobName: x.jobName ? x.jobName : x.sessionId,
-        remainingTime:
-          x.state === "RUNNING"
-            ? calculateAppRemainingTime(x.runningTime, x.timeLimit)
-            : x.state === "PENDING"
-              ? ""
-              : x.timeLimit,
+  const [isLoading, setIsLoading] = useState(false);
+
+  const initialLoadRef = useRef(false);
+  const getClusterSessions = useCallback(async (clusterId: string) => {
+    setIsLoading(true);
+
+    try {
+      const { sessions } = await api.getAppSessions({ query: { clusters: [clusterId] } });
+
+      setSessionsByCluster((prev) => ({
+        ...prev,
+        [clusterId]: sessions.map((x) => ({
+          ...x,
+          jobName: x.jobName ? x.jobName : x.sessionId,
+          remainingTime:
+            x.state === "RUNNING"
+              ? calculateAppRemainingTime(x.runningTime, x.timeLimit)
+              : x.state === "PENDING"
+                ? ""
+                : x.timeLimit,
+        })),
       }));
-    }, [currentClusters]),
-  });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadClusterSessions = useCallback(
+    async (clusterId: string, force = false) => {
+      if (!force && sessionsByCluster[clusterId]) {
+        return;
+      }
+
+      await getClusterSessions(clusterId);
+    },
+    [getClusterSessions, sessionsByCluster],
+  );
+
+  useEffect(() => {
+    if (initialLoadRef.current || !query.cluster) {
+      return;
+    }
+
+    initialLoadRef.current = true;
+    loadClusterSessions(query.cluster.id);
+  }, [loadClusterSessions, query.cluster]);
+
+  const data = query.cluster ? sessionsByCluster[query.cluster.id] : undefined;
 
   const filteredData = useMemo(() => {
     if (!data) {
@@ -169,7 +206,7 @@ export const AppSessionsTable = () => {
                     })
                     .then(() => {
                       message.success(t(p("table.popFinishConfirmMessage")));
-                      reload();
+                      loadClusterSessions(record.clusterId, true);
                     })
                 }
               >
@@ -192,7 +229,7 @@ export const AppSessionsTable = () => {
                   })
                   .then(() => {
                     message.success(t(p("table.popCancelConfirmMessage")));
-                    reload();
+                    loadClusterSessions(record.clusterId, true);
                   })
               }
             >
@@ -206,10 +243,12 @@ export const AppSessionsTable = () => {
     },
   ];
 
-  const reloadTable = useCallback(() => {
-    reload();
+  const reloadTable = useCallback(async () => {
+    const { appJobName, cluster } = await form.validateFields();
+    setQuery({ appJobName: appJobName?.trim(), cluster: cluster });
+    await loadClusterSessions(cluster.id, true);
     setConnectivityRefreshToken((f) => !f);
-  }, [reload, setConnectivityRefreshToken]);
+  }, [form, loadClusterSessions, setConnectivityRefreshToken]);
 
   return (
     <div>
@@ -221,6 +260,7 @@ export const AppSessionsTable = () => {
           onFinish={async () => {
             const { appJobName, cluster } = await form.validateFields();
             setQuery({ appJobName: appJobName?.trim(), cluster: cluster });
+            await loadClusterSessions(cluster.id);
           }}
         >
           <Form.Item label={t(p("filterForm.cluster"))} name="cluster">
@@ -231,14 +271,14 @@ export const AppSessionsTable = () => {
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" loading={isLoading} htmlType="submit">
                 {t("button.searchButton")}
               </Button>
             </Space>
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button loading={isLoading} onClick={() => reloadTable()}>
+              <Button loading={isLoading} onClick={reloadTable}>
                 {t("button.refreshButton")}
               </Button>
             </Space>
@@ -255,7 +295,7 @@ export const AppSessionsTable = () => {
         dataSource={onlyNotEnded ? filteredData?.filter((x) => x.state !== "ENDED") : filteredData}
         columns={columns}
         rowKey={(record) => record.sessionId}
-        loading={!filteredData && isLoading}
+        loading={isLoading}
         scroll={{ x: filteredData?.length ? 1200 : true }}
         pagination={{
           showSizeChanger: true,
