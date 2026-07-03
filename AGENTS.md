@@ -83,6 +83,7 @@ pnpm dev:server
 - 大范围变更使用 `pnpm test` 跑全量测试；否则在受影响 package 目录下运行 `pnpm test`。
 - 修改共享契约、生成代码、配置 schema 或公共 API 时，应构建受影响的 app 或库。
 - 测试使用 Jest + ts-jest。需要数据库配置的测试使用 `env/.env.test`。
+- 涉及 VNC/noVNC 相关改动时，生成自测用例、测试建议、PR 说明或 review 结论必须提醒覆盖 noVNC 连接链路测试，例如 noVNC 页面打开、静态资源加载、WebSocket/VNC 连接建立和实际连接到已有桌面。若改动涉及 nginx/反向代理、路径转发、WebSocket upgrade、noVNC 镜像或 URL，也必须把这些作为重点验证项；无法覆盖时在自测说明中明确未测原因。
 
 ## PR 和提交约定
 
