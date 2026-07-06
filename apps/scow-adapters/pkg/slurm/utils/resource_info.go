@@ -501,12 +501,17 @@ func GetSummaryClusterNodesInfo(parts []*pb.PartitionInfo, authorizedPartitionsN
 		pendingJobCount       uint32
 	)
 
-	nodesResult, err := GetNodesInfo(authorizedPartitionsNodes)
-	if err != nil {
-		return nil, err
-	}
+	var nodeInfos []*pb.NodeInfo
+	if len(authorizedPartitionsNodes) > 0 {
+		nodesResult, err := GetNodesInfo(authorizedPartitionsNodes)
+		if err != nil {
+			return nil, err
+		}
 
-	nodeInfos := GetClusterNodeConcurrently(nodesResult)
+		nodeInfos = GetClusterNodeConcurrently(nodesResult)
+	} else {
+		logrus.Warnf("authorized partition nodes is empty, skip node summary query")
+	}
 
 	// 聚合节点统计信息
 	for _, nodeInfo := range nodeInfos {

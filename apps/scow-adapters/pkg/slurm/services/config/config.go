@@ -231,11 +231,16 @@ func (s *ServerConfig) GetSummaryClusterInfo(ctx context.Context, in *pb.GetSumm
 		return nil, ce.RichError(codes.Internal, "ACCOUNT_WITHOUT_ALLOW_PARTITIONS", err.Error())
 	}
 
-	// assoc_table 中分区名为小写，需还原为 scontrol 中的真实大小写
-	authorizedPartitions, err = utils.NormalizePartitionNames(authorizedPartitions)
+	// assoc_table 中分区名可能滞后于 Slurm，需还原真实大小写并丢弃已不存在的分区。
+	authorizedPartitions, err = utils.NormalizeExistingPartitionNames(authorizedPartitions)
 	if err != nil {
 		logrus.Errorf("GetSummaryClusterInfo failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+	if len(authorizedPartitions) == 0 {
+		err = fmt.Errorf("the accounts without existing authorized partitions")
+		logrus.Errorf("GetSummaryClusterInfo failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "ACCOUNT_WITHOUT_ALLOW_PARTITIONS", err.Error())
 	}
 
 	authorizedPartitionsNodes, err := utils.GetAuthorizedPartitionsNodes(authorizedPartitions)

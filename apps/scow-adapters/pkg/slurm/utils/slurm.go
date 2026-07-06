@@ -427,13 +427,44 @@ func GetNodesInfo(nodeName []string) (string, error) {
 		if exitCode == -1 {
 			// 命令执行前就失败了
 			return "", fmt.Errorf("system error: %v", err)
-		} else {
-			// 命令执行但失败了
-			return "", fmt.Errorf("show nodes failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 		}
+		if len(nodeName) > 1 {
+			logrus.Warnf("show nodes %v failed (exit %d), stdout: %s, stderr: %s, fallback to query one by one",
+				nodeName, exitCode, stdout, strings.TrimSpace(stderr))
+			return getNodesInfoOneByOne(nodeName)
+		}
+
+		// 命令执行但失败了
+		return "", fmt.Errorf("show nodes failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 	}
 
 	return stdout, nil
+}
+
+func getNodesInfoOneByOne(nodeNames []string) (string, error) {
+	var result strings.Builder
+	for _, name := range nodeNames {
+		args := []string{"show", "node", name, "--oneliner"}
+		exitCode, stdout, stderr, err := ExecuteCommand(client.SCONTROL, args...)
+		if err != nil {
+			if exitCode == -1 {
+				return "", fmt.Errorf("system error: %v", err)
+			}
+			logrus.Warnf("show node %s failed (exit %d), stdout: %s, stderr: %s, skip it",
+				name, exitCode, stdout, strings.TrimSpace(stderr))
+			continue
+		}
+		if strings.TrimSpace(stdout) == "" {
+			logrus.Warnf("show node %s returned empty output, skip it", name)
+			continue
+		}
+		result.WriteString(stdout)
+		if !strings.HasSuffix(stdout, "\n") {
+			result.WriteString("\n")
+		}
+	}
+
+	return result.String(), nil
 }
 
 // GetNodeInfoByName 获取节点信息

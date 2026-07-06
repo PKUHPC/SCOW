@@ -880,7 +880,8 @@ func GetAuthorizedPartitionsNodes(partitions []string) ([]string, error) {
 	for _, partition := range partitions {
 		partitionsResult, err := GetPartitionsByName(partition)
 		if err != nil {
-			return nil, fmt.Errorf("get partitions %s info failed: %s", partition, err)
+			logrus.Warnf("get partitions %s info failed, skip it: %v", partition, err)
+			continue
 		}
 		nodesName := extractValue(partitionsResult, nodesRe)
 		nodeList, ok := ParseHostList(nodesName)
@@ -964,6 +965,35 @@ func NormalizePartitionNames(partitions []string) ([]string, error) {
 		} else {
 			result[i] = p
 		}
+	}
+	return result, nil
+}
+
+// NormalizeExistingPartitionNames 将分区名还原为 scontrol 中的真实大小写，并丢弃
+// 当前 Slurm 中不存在的分区，适用于数据库授权分区可能滞后的读路径。
+func NormalizeExistingPartitionNames(partitions []string) ([]string, error) {
+	realNames, err := GetPartitionsName()
+	if err != nil {
+		return nil, err
+	}
+	lowerToReal := make(map[string]string, len(realNames))
+	for _, name := range realNames {
+		lowerToReal[strings.ToLower(name)] = name
+	}
+
+	seen := make(map[string]struct{})
+	result := make([]string, 0, len(partitions))
+	for _, p := range partitions {
+		realName, ok := lowerToReal[strings.ToLower(p)]
+		if !ok {
+			logrus.Warnf("authorized partition %s does not exist in slurm, skip it", p)
+			continue
+		}
+		if _, ok := seen[realName]; ok {
+			continue
+		}
+		seen[realName] = struct{}{}
+		result = append(result, realName)
 	}
 	return result, nil
 }
