@@ -89,13 +89,14 @@ imageTag: ai-beta.1
 ```yaml title="config/clusters/{K8S集群的ID}.yml"
 # 其他配置省略
 # ...
-# 集群在HPC或是否启用，默认为true
+# 集群在HPC中是否启用，默认为true。
+# 纯 AI 集群（如 k8s 集群）请显式配置为 false，避免管理系统对该集群调用 HPC 相关逻辑。
 hpc:
-  enabled: true
-
-# 集群在AI或是否启用，默认为false
-ai:
   enabled: false
+
+# 集群在AI中是否启用，默认为false
+ai:
+  enabled: true
 
   # 选配：AI 应用作业个性化配置
   # app:
@@ -130,6 +131,12 @@ ai:
   # 配置后，不可修改
   # sharedTopDir: "/nfs"
 ```
+
+:::tip
+
+`hpc.enabled` 未配置时默认为 `true`。如果该集群是纯 AI 集群（如 k8s 集群），请显式配置 `hpc.enabled: false`；如果同一个超智算集群同时承载 HPC 和 AI 业务，可以同时配置 `hpc.enabled: true` 和 `ai.enabled: true`。
+
+:::
 
 其中，`ai.app.maxRunningTimeHours`、`ai.train.maxRunningTimeHours`、`ai.infer.maxRunningTimeHours` 用于分别限制 AI 应用、训练、推理作业的最长运行时间；不配置时表示不限制。`ai.devHost.maxRunningTimeHours` 用于限制开发机最长运行时间，详细配置方式请参见[开发机功能介绍和配置](./devhost.md)。
 

@@ -73,7 +73,9 @@ crossClusterFileTransfer:
   # 传输节点的地址(ip地址:端口号)
   transferNode: localhost:22222
 
-# 集群在HPC或是否启用，默认为true
+# 集群在HPC中是否启用，默认为true
+# 纯 AI 集群（如 k8s 集群）请显式配置为 false，避免管理系统对该集群调用 HPC 相关逻辑。
+# 同一个超智算集群如同时承载 HPC 和 AI 业务，可同时配置 hpc.enabled 和 ai.enabled 为 true。
 hpc:
   enabled: true
   # 普通作业个性化配置，可选
@@ -87,7 +89,7 @@ hpc:
   #   # 单位：小时。超过此时间则不能成功提交交互式应用
   #   maxRunningTimeHours: 24
 
-# 集群在AI或是否启用，默认为false
+# 集群在AI中是否启用，默认为false
 ai:
   enabled: false
 
@@ -106,7 +108,7 @@ ai:
 description: 集群描述
 ```
 
-其中，`hpc.job.maxRunningTimeHours` 用于限制 HPC 普通作业的最长运行时间，`hpc.app.maxRunningTimeHours` 用于限制 HPC 交互式应用的最长运行时间；两者都以小时为单位，不配置时表示不限制。
+其中，`hpc.enabled` 用于控制该集群是否参与 HPC 相关业务，未配置时默认为 `true`。对于仅承载 AI 业务的 K8S 集群，建议显式配置 `hpc.enabled: false`，否则管理系统可能会按 HPC 集群处理并调用调度器等 HPC 相关逻辑；对于同时承载 HPC 和 AI 业务的超智算集群，可同时配置 `hpc.enabled: true` 和 `ai.enabled: true`。`hpc.job.maxRunningTimeHours` 用于限制 HPC 普通作业的最长运行时间，`hpc.app.maxRunningTimeHours` 用于限制 HPC 交互式应用的最长运行时间；两者都以小时为单位，不配置时表示不限制。
 
 ## 注意
 集群配置里的登录节点桌面功能和TurboVNC的安装路径配置为该集群特有，如不需要特殊配置该集群的这些功能，可在[门户系统](./portal/intro.md)进行统一配置；若在集群下配置以上功能，在该集群内将会覆盖门户系统下的配置。

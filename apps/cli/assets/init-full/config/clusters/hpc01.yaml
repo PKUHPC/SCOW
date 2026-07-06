@@ -24,7 +24,9 @@ adapterUrl: localhost:8972
 #   # 是否在这个机器上自动配置nginx
 #   autoSetupNginx: true
 
-# 集群在HPC或是否启用，默认为true
+# 集群在HPC中是否启用，默认为true
+# 纯 AI 集群（如 k8s 集群）请显式配置为 false，避免管理系统对该集群调用 HPC 相关逻辑。
+# 同一个超智算集群如同时承载 HPC 和 AI 业务，可同时配置 hpc.enabled 和 ai.enabled 为 true。
 hpc:
   enabled: true
   # 选配：HPC 普通作业个性化配置
@@ -38,7 +40,7 @@ hpc:
   #   # 单位：小时。超过此时间则不能成功提交交互式应用
   #   maxRunningTimeHours: 24
 
-# 集群在AI或是否启用，默认为false
+# 集群在AI中是否启用，默认为false
 ai:
   enabled: false
   # 选配：AI 应用作业个性化配置
