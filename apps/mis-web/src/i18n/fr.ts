@@ -353,6 +353,12 @@ export default {
         tenant: "Locataire",
         availableAccounts: "Comptes disponibles",
         roles: "Rôles de la plateforme",
+        platformRoleTooltipTitle: "Description des rôles de la plateforme",
+        platformAdminTooltip:
+          "Administrateur de la plateforme : dispose des permissions de consultation et d'opération pour toutes les pages de menu de la gestion de la plateforme",
+        platformFinanceTooltip:
+          "Responsable financier de la plateforme : dispose uniquement des permissions de consultation et d'opération " +
+          "pour toutes les pages de sous-menu du menu de gestion financière dans la gestion de la plateforme",
         notExist: "L'utilisateur n'existe pas",
         forceChangePasswordFailed: "Échec de l'obligation de changer le mot de passe",
         notAvailable: "Cette fonctionnalité n'est pas disponible dans la configuration actuelle",
@@ -819,10 +825,16 @@ export default {
       adminUserTable: {
         allUsers: "Tous les utilisateurs",
         tenantAdmin: "Administrateur du locataire",
-        tenantFinance: "Personnel financier",
+        tenantFinance: "Personnel financier du locataire",
         idOrName: "ID ou nom d'utilisateur",
         name: "Nom",
         tenantRole: "Rôle du locataire",
+        tenantRoleTooltipTitle: "Description des rôles du locataire",
+        tenantAdminTooltip:
+          "Administrateur du locataire : dispose des permissions de consultation et d'opération pour toutes les pages de menu de la gestion du locataire",
+        tenantFinanceTooltip:
+          "Responsable financier du locataire : dispose uniquement des permissions de consultation et d'opération " +
+          "pour toutes les pages de sous-menu du menu de gestion financière dans la gestion du locataire",
         affiliatedAccountName: "Comptes affiliés",
         notExist: "L'utilisateur n'existe pas",
         forceChangePasswordFailed: "Échec de l'obligation de changer le mot de passe",
@@ -2012,7 +2024,7 @@ export default {
     platformAdmin: "Administrateur de la plateforme",
     platformFinance: "Responsable financier de la plateforme",
     tenantAdmin: "Administrateur du locataire",
-    tenantFinance: "Responsable financier",
+    tenantFinance: "Responsable financier du locataire",
     user: "Utilisateur",
     owner: "Administrateur principal",
     admin: "Admin",

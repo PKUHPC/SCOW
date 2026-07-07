@@ -1,8 +1,9 @@
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Space, Table } from "antd";
+import { App, Button, Divider, Form, Popover, Space, Table } from "antd";
 import { SortOrder } from "antd/es/table/interface";
 import React, { useCallback, useMemo, useState } from "react";
 import { api } from "src/apis";
@@ -283,7 +284,23 @@ export const AdminUserTable: React.FC<Props> = ({ data, isLoading, reload, user 
         />
         <Table.Column<FullUserInfo>
           dataIndex="tenantRoles"
-          title={t(p("tenantRole"))}
+          title={
+            <Space>
+              {t(p("tenantRole"))}
+              <Popover
+                title={t(p("tenantRoleTooltipTitle"))}
+                content={
+                  <>
+                    <span>{t(p("tenantAdminTooltip"))}</span>
+                    <br />
+                    <span>{t(p("tenantFinanceTooltip"))}</span>
+                  </>
+                }
+              >
+                <ExclamationCircleOutlined />
+              </Popover>
+            </Space>
+          }
           render={(_, r) => (
             <TenantRoleSelector
               reload={reload}

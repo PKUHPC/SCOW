@@ -350,6 +350,12 @@ export default {
         tenant: "Inquilino",
         availableAccounts: "Contas disponíveis",
         roles: "Funções da plataforma",
+        platformRoleTooltipTitle: "Descrição das funções da plataforma",
+        platformAdminTooltip:
+          "Administrador da plataforma: tem permissões de visualização e operação para todas as páginas de menu da gestão da plataforma",
+        platformFinanceTooltip:
+          "Responsável financeiro da plataforma: tem apenas permissões de visualização e operação para todas as páginas de submenu " +
+          "do menu de gestão financeira na gestão da plataforma",
         notExist: "Usuário não existe",
         forceChangePasswordFailed: "Falha ao forçar alteração de senha do usuário",
         notAvailable: "Este recurso não está disponível na configuração atual",
@@ -817,10 +823,16 @@ export default {
       adminUserTable: {
         allUsers: "Todos os usuários",
         tenantAdmin: "Administrador do inquilino",
-        tenantFinance: "Equipe financeira",
+        tenantFinance: "Equipe financeira do inquilino",
         idOrName: "ID ou nome do usuário",
         name: "Nome",
         tenantRole: "Papel no inquilino",
+        tenantRoleTooltipTitle: "Descrição dos papéis do inquilino",
+        tenantAdminTooltip:
+          "Administrador do inquilino: tem permissões de visualização e operação para todas as páginas de menu da gestão do inquilino",
+        tenantFinanceTooltip:
+          "Responsável financeiro do inquilino: tem apenas permissões de visualização e operação para todas as páginas de submenu " +
+          "do menu de gestão financeira na gestão do inquilino",
         affiliatedAccountName: "Contas associadas",
         notExist: "Usuário não existe",
         forceChangePasswordFailed: "Falha ao forçar usuário a alterar senha",
@@ -1996,7 +2008,7 @@ export default {
     platformAdmin: "Administrador da plataforma",
     platformFinance: "Responsável financeiro da plataforma",
     tenantAdmin: "Administrador do inquilino",
-    tenantFinance: "Responsável financeiro",
+    tenantFinance: "Responsável financeiro do inquilino",
     user: "Usuário",
     owner: "Administrador principal",
     admin: "Admin",

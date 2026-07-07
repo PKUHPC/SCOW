@@ -354,6 +354,12 @@ export default {
         tenant: "Mandant",
         availableAccounts: "Verfügbare Konten",
         roles: "Plattformrollen",
+        platformRoleTooltipTitle: "Beschreibung der Plattformrollen",
+        platformAdminTooltip:
+          "Plattformadministrator: Hat Anzeige- und Bedienberechtigungen für alle Menüseiten der Plattformverwaltung",
+        platformFinanceTooltip:
+          "Plattform-Finanzbeauftragter: Hat nur Anzeige- und Bedienberechtigungen für alle Untermenüseiten " +
+          "der Finanzverwaltung in der Plattformverwaltung",
         notExist: "Benutzer existiert nicht",
         forceChangePasswordFailed: "Erzwingen der Passwortänderung fehlgeschlagen",
         notAvailable: "Diese Funktion ist in der aktuellen Konfiguration nicht verfügbar",
@@ -823,10 +829,16 @@ export default {
       adminUserTable: {
         allUsers: "Alle Benutzer",
         tenantAdmin: "Mandantenadministrator",
-        tenantFinance: "Finanzmitarbeiter",
+        tenantFinance: "Mandanten-Finanzmitarbeiter",
         idOrName: "Benutzer-ID oder Name",
         name: "Name",
         tenantRole: "Mandantenrolle",
+        tenantRoleTooltipTitle: "Beschreibung der Mandantenrollen",
+        tenantAdminTooltip:
+          "Mandantenadministrator: Hat Anzeige- und Bedienberechtigungen für alle Menüseiten der Mandantenverwaltung",
+        tenantFinanceTooltip:
+          "Mandanten-Finanzbeauftragter: Hat nur Anzeige- und Bedienberechtigungen für alle Untermenüseiten " +
+          "der Finanzverwaltung in der Mandantenverwaltung",
         affiliatedAccountName: "Zugehörige Konten",
         notExist: "Benutzer existiert nicht",
         forceChangePasswordFailed: "Erzwingen der Passwortänderung fehlgeschlagen",
@@ -2028,7 +2040,7 @@ export default {
     platformAdmin: "Plattformadministrator",
     platformFinance: "Plattform-Finanzbeauftragter",
     tenantAdmin: "Mandantenadministrator",
-    tenantFinance: "Finanzbeauftragter",
+    tenantFinance: "Mandanten-Finanzbeauftragter",
     user: "Benutzer",
     owner: "Hauptadministrator",
     admin: "Admin",

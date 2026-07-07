@@ -351,6 +351,11 @@ export default {
         tenant: "Tenant",
         availableAccounts: "Available Accounts",
         roles: "Platform Roles",
+        platformRoleTooltipTitle: "Platform Role Description",
+        platformAdminTooltip: "Platform Admin: Has view and operation permissions for all menu pages under Platform Management",
+        platformFinanceTooltip:
+          "Platform Financial Officer: Only has view and operation permissions for all submenu pages " +
+          "under Financial Management in Platform Management",
         notExist: "User does not exist",
         forceChangePasswordFailed: "Failed to force user to change password",
         notAvailable: "This feature is not available in the current configuration",
@@ -828,10 +833,15 @@ export default {
       adminUserTable: {
         allUsers: "All Users",
         tenantAdmin: "Tenant Administrator",
-        tenantFinance: "Financial Staff",
+        tenantFinance: "Tenant Financial Staff",
         idOrName: "User ID or Name",
         name: "Name",
         tenantRole: "Tenant Role",
+        tenantRoleTooltipTitle: "Tenant Role Description",
+        tenantAdminTooltip: "Tenant Admin: Has view and operation permissions for all menu pages under Tenant Management",
+        tenantFinanceTooltip:
+          "Tenant Financial Officer: Only has view and operation permissions for all submenu pages " +
+          "under Financial Management in Tenant Management",
         affiliatedAccountName: "Affiliated Accounts",
         notExist: "User does not exist",
         forceChangePasswordFailed: "Failed to force user to change password",
@@ -2078,7 +2088,7 @@ export default {
     platformAdmin: "Platform Admin",
     platformFinance: "Platform Financial Officer",
     tenantAdmin: "Tenant Admin",
-    tenantFinance: "Financial Officer",
+    tenantFinance: "Tenant Financial Officer",
     user: "User",
     owner: "Primary Admin",
     admin: "Admin",

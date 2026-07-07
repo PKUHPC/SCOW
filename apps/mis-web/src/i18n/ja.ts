@@ -339,6 +339,11 @@ export default {
         tenant: "テナント",
         availableAccounts: "利用可能アカウント",
         roles: "プラットフォームロール",
+        platformRoleTooltipTitle: "プラットフォームロールの説明",
+        platformAdminTooltip:
+          "プラットフォーム管理者：プラットフォーム管理配下のすべてのメニューページの閲覧および操作権限を持ちます",
+        platformFinanceTooltip:
+          "プラットフォーム財務担当：プラットフォーム管理配下の財務管理メニュー内のすべてのサブメニューページの閲覧および操作権限のみを持ちます",
         notExist: "ユーザーが存在しません",
         forceChangePasswordFailed: "ユーザーの強制パスワード変更に失敗しました",
         notAvailable: "現在の構成ではこの機能は利用できません",
@@ -773,10 +778,15 @@ export default {
       adminUserTable: {
         allUsers: "全ユーザー",
         tenantAdmin: "テナント管理者",
-        tenantFinance: "財務担当",
+        tenantFinance: "テナント財務担当",
         idOrName: "ユーザーIDまたは氏名",
         name: "氏名",
         tenantRole: "テナントロール",
+        tenantRoleTooltipTitle: "テナントロールの説明",
+        tenantAdminTooltip:
+          "テナント管理者：テナント管理配下のすべてのメニューページの閲覧および操作権限を持ちます",
+        tenantFinanceTooltip:
+          "テナント財務担当：テナント管理配下の財務管理メニュー内のすべてのサブメニューページの閲覧および操作権限のみを持ちます",
         affiliatedAccountName: "所属アカウント",
         notExist: "ユーザーは存在しません",
         forceChangePasswordFailed: "強制パスワード変更に失敗しました",
@@ -1911,7 +1921,7 @@ export default {
     platformAdmin: "プラットフォーム管理者",
     platformFinance: "プラットフォーム財務担当",
     tenantAdmin: "テナント管理者",
-    tenantFinance: "財務担当",
+    tenantFinance: "テナント財務担当",
     user: "ユーザー",
     owner: "主管理者",
     admin: "管理者",

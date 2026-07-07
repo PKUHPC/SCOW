@@ -1,8 +1,9 @@
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { PlatformUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Space, Table } from "antd";
+import { App, Button, Divider, Form, Popover, Space, Table } from "antd";
 import React, { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
@@ -334,7 +335,23 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
         <Table.Column<PlatformUserInfo>
           dataIndex="roles"
           width="15%"
-          title={t(p("roles"))}
+          title={
+            <Space>
+              {t(p("roles"))}
+              <Popover
+                title={t(p("platformRoleTooltipTitle"))}
+                content={
+                  <>
+                    <span>{t(p("platformAdminTooltip"))}</span>
+                    <br />
+                    <span>{t(p("platformFinanceTooltip"))}</span>
+                  </>
+                }
+              >
+                <ExclamationCircleOutlined />
+              </Popover>
+            </Space>
+          }
           render={(_, r) => (
             <PlatformRoleSelector
               reload={reload}
