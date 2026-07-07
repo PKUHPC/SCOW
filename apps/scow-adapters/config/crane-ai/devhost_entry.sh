@@ -44,7 +44,7 @@ function pip_install_with_fallback {
 
   local -a pypi_sources=(
     "https://mirrors.aliyun.com/pypi/simple/"
-    "https://mirrors.pku.edu.cn/pypi/web/simple/"
+    "https://mirrors.ustc.edu.cn/pypi/web/simple/"
     "https://pypi.tuna.tsinghua.edu.cn/simple/"
     "https://mirrors.ustc.edu.cn/pypi/simple/"
   )

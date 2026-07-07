@@ -559,10 +559,10 @@ Singularity用于构建和运行RStudio Server容器镜像，建议安装在共�
 module load anaconda/3-2023.03
 eval "$($(which conda) shell.bash hook)"
 
-# 添加北大镜像源，查找相应版本的R进行安装
-conda config --add channels https://mirrors.pku.edu.cn/anaconda/pkgs/free/
-conda config --add channels https://mirrors.pku.edu.cn/anaconda/pkgs/main/
-conda config --add channels https://mirrors.pku.edu.cn/anaconda/cloud/conda-forge/
+# 添加中科大镜像源，查找相应版本的R进行安装
+conda config --add channels https://mirrors.ustc.edu.cn/anaconda/pkgs/free/
+conda config --add channels https://mirrors.ustc.edu.cn/anaconda/pkgs/main/
+conda config --add channels https://mirrors.ustc.edu.cn/anaconda/cloud/conda-forge/
 conda search R
 
 

@@ -16,19 +16,19 @@ channels:
   - defaults
 show_channel_urls: true
 default_channels:
-  - https://mirrors.pku.edu.cn/anaconda/pkgs/main
-  - https://mirrors.pku.edu.cn/anaconda/pkgs/r
+  - https://mirrors.ustc.edu.cn/anaconda/pkgs/main
+  - https://mirrors.ustc.edu.cn/anaconda/pkgs/r
 custom_channels:
-  conda-forge: https://mirrors.pku.edu.cn/anaconda/cloud
-  pytorch: https://mirrors.pku.edu.cn/anaconda/cloud
-  bioconda: https://mirrors.pku.edu.cn/anaconda/cloud
+  conda-forge: https://mirrors.ustc.edu.cn/anaconda/cloud
+  pytorch: https://mirrors.ustc.edu.cn/anaconda/cloud
+  bioconda: https://mirrors.ustc.edu.cn/anaconda/cloud
 EOF
 
 # Setup pypi config
 mkdir -p /root/.pip
 cat >/root/.pip/pip.conf <<EOF
 [global]
-index-url = https://mirrors.pku.edu.cn/pypi/web/simple
+index-url = https://mirrors.ustc.edu.cn/pypi/web/simple
 EOF
 
 # Clean up conda

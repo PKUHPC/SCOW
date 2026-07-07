@@ -77,8 +77,8 @@ yum install -y epel-release
 
 sed -e 's!^metalink=!#metalink=!g' \
     -e 's!^#baseurl=!baseurl=!g' \
-    -e 's!https\?://download\.fedoraproject\.org/pub/epel!https://mirrors.pku.edu.cn/epel!g' \
-    -e 's!https\?://download\.example/pub/epel!https://mirrors.pku.edu.cn/epel!g' \
+    -e 's!https\?://download\.fedoraproject\.org/pub/epel!https://mirrors.ustc.edu.cn/epel!g' \
+    -e 's!https\?://download\.example/pub/epel!https://mirrors.ustc.edu.cn/epel!g' \
     -i /etc/yum.repos.d/epel{,-testing}.repo
 
 dnf config-manager --set-enabled powertools
