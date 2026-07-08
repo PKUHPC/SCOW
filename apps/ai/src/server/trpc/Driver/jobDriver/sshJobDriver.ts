@@ -12,16 +12,14 @@ import {
   sftpWriteFile,
 } from "@scow/lib-ssh";
 import { AppType } from "@scow/scheduler-adapter-protos/build/app";
-import { JobInfo } from "@scow/scheduler-adapter-protos/build/job";
 import { JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { join } from "path";
 import { quote } from "shell-quote";
-import { JobType } from "src/models/Job";
+import { JobType, UNKNOWN_JOB_TYPE } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import {
-  AppSession,
   CreateAppInput,
   CreateAppInputSchema,
   SERVER_ENTRY_COMMAND,
@@ -54,11 +52,14 @@ import { isParentOrSameFolder } from "src/utils/file";
 import { Logger } from "ts-log";
 
 import {
+  AiJobsQueryOptions,
+  AiJobsResult,
   ConnectToAppResponse,
   CreateAppExtraParams,
   JobDriver,
   SubmitInferJobExtraParams,
   SubmitTrainJobExtraParams,
+  sortSessionsByJobOrder,
 } from "./jobDriver";
 import { getPublicMountPoints } from "./scowdJobDriver";
 
@@ -328,7 +329,12 @@ export class SshJobDriver implements JobDriver {
     });
   }
 
-  async getAiJobs(clusterId: string, isRunning: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]> {
+  async getAiJobs(
+    clusterId: string,
+    isRunning?: boolean,
+    jobTypes?: ProtoJobType[],
+    options: AiJobsQueryOptions = {},
+  ): Promise<AiJobsResult> {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const apps = getClusterAppConfigs(clusterId);
       const terminatedStates = [
@@ -347,12 +353,15 @@ export class SshJobDriver implements JobDriver {
 
       // If a job is not running, it cannot be ready
       const client = getAdapterClient(clusterId);
-      const runningJobsInfo = await asyncClientCall(client.job, "getJobs", {
+      const { page, pageSize, jobName, sortField = "job_id", sortOrder = "DESC" } = options;
+      const jobsResponse = await asyncClientCall(client.job, "getJobs", {
         fields: [
           "job_id",
+          "name",
           "state",
           "elapsed_seconds",
           "time_limit_minutes",
+          "submit_time",
           "reason",
           "partition",
           "gpus_alloc",
@@ -363,89 +372,105 @@ export class SshJobDriver implements JobDriver {
           "cpus_req",
           "mem_req_mb",
           "nodes_req",
+          "end_time",
+          "working_directory",
         ],
         filter: {
           users: [this.userId],
           accounts: [],
-          states: isRunning ? runningStates : terminatedStates,
+          states:
+            isRunning === undefined
+              ? runningStates.concat(terminatedStates)
+              : isRunning
+                ? runningStates
+                : terminatedStates,
+          jobName: jobName?.trim() || undefined,
         },
+        pageInfo: page !== undefined && pageSize !== undefined ? { page, pageSize } : undefined,
+        sort: { field: sortField, order: sortOrder === "ASC" ? 0 : 1 },
         jobTypes: jobTypes?.length ? jobTypes : allProtoAiJobTypes,
-      }).then((resp) => resp.jobs);
-
-      const runningJobInfoMap = runningJobsInfo.reduce(
-        (prev, curr) => {
-          prev[curr.jobId] = curr;
-          return prev;
-        },
-        {} as Record<number, JobInfo>,
-      );
+      });
+      const runningJobsInfo = jobsResponse.jobs;
+      const totalCount = jobsResponse.totalCount ?? runningJobsInfo.length;
 
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const appJobsDirectory = join(homeDir, aiConfig.appJobsDir);
       const sftp = await ssh.requestSFTP();
+      const appJobsDirectoryExists = await sftpExists(sftp, appJobsDirectory);
+      const sessionMetadataByJobId = new Map<number, { metadata: SessionMetadata; dataPath: string }>();
 
-      if (!(await sftpExists(sftp, appJobsDirectory))) {
+      if (!appJobsDirectoryExists) {
         logger.error("appJobsDirectory %s not exists", appJobsDirectory);
-        return [];
+      } else {
+        const list = await sftpReaddir(sftp)(appJobsDirectory);
+
+        await Promise.all(
+          list.map(async ({ filename }) => {
+            const jobDir = join(appJobsDirectory, filename);
+            const metadataPath = join(jobDir, SESSION_METADATA_NAME);
+
+            if (!(await sftpExists(sftp, metadataPath))) {
+              return;
+            }
+
+            const content = await sftpReadFile(sftp)(metadataPath);
+            const metadata = JSON.parse(content.toString()) as SessionMetadata;
+            sessionMetadataByJobId.set(metadata.jobId, {
+              metadata,
+              dataPath: await sftpRealPath(sftp)(jobDir),
+            });
+          }),
+        );
       }
-      const list = await sftpReaddir(sftp)(appJobsDirectory);
-      const sessions = [] as AppSession[];
 
-      await Promise.all(
-        list.map(async ({ filename }) => {
-          const jobDir = join(appJobsDirectory, filename);
-          const metadataPath = join(jobDir, SESSION_METADATA_NAME);
+      const sessions = runningJobsInfo.map((runningJobInfo) => {
+        const sessionMetadataWithPath = sessionMetadataByJobId.get(runningJobInfo.jobId);
+        const sessionMetadata = sessionMetadataWithPath?.metadata;
+        const statesNeedReason = new Set(["PENDING", "QUEUED", ...terminatedStates]);
+        const needReason = statesNeedReason.has(runningJobInfo.state);
+        const sessionId = sessionMetadata?.sessionId || runningJobInfo.jobId.toString();
+        const appId = sessionMetadata?.appId;
 
-          if (!(await sftpExists(sftp, metadataPath))) {
-            return;
-          }
+        return {
+          jobId: runningJobInfo.jobId,
+          appId,
+          appName: appId ? apps[appId]?.name : undefined,
+          sessionId,
+          jobName: runningJobInfo.name || sessionMetadata?.jobName || "",
+          submitTime: runningJobInfo.submitTime || sessionMetadata?.submitTime || "",
+          endTime: runningJobInfo.endTime,
+          jobType: sessionMetadata?.jobType ?? UNKNOWN_JOB_TYPE,
+          image: sessionMetadata?.image ?? { name: "" },
+          state: runningJobInfo.state ?? "ENDED",
+          dataPath: sessionMetadataWithPath?.dataPath ?? join(appJobsDirectory, sessionId),
+          workDir: runningJobInfo.workingDirectory,
+          runningTime:
+            runningJobInfo.elapsedSeconds !== undefined ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
+          timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
+          reason: needReason ? (runningJobInfo.reason ?? "") : undefined,
+          partition: runningJobInfo.partition ?? "",
+          cpusAlloc: runningJobInfo.cpusAlloc ?? 0,
+          gpusAlloc: runningJobInfo.gpusAlloc ?? 0,
+          memAlloc: runningJobInfo.memAllocMb ?? 0,
+          nodesAlloc: runningJobInfo.nodesAlloc ?? 0,
+          cpusReq: runningJobInfo.cpusReq ?? 0,
+          gpusReq: runningJobInfo.gpusReq ?? 0,
+          memReq: runningJobInfo.memReqMb ?? 0,
+          nodesReq: runningJobInfo.nodesReq ?? 0,
+        };
+      });
 
-          const content = await sftpReadFile(sftp)(metadataPath);
-          const sessionMetadata = JSON.parse(content.toString()) as SessionMetadata;
-
-          const runningJobInfo: JobInfo | undefined = runningJobInfoMap[sessionMetadata.jobId];
-
-          if (!runningJobInfo) {
-            return;
-          }
-
-          const statesNeedReason = new Set(["PENDING", "QUEUED", ...terminatedStates]);
-          const needReason = statesNeedReason.has(runningJobInfo.state);
-
-          sessions.push({
-            jobId: sessionMetadata.jobId,
-            appId: sessionMetadata.appId,
-            appName: sessionMetadata?.appId ? apps[sessionMetadata?.appId]?.name : undefined,
-            sessionId: sessionMetadata.sessionId,
-            jobName: sessionMetadata.jobName ?? "",
-            submitTime: sessionMetadata.submitTime,
-            jobType: sessionMetadata.jobType,
-            image: sessionMetadata.image,
-            state: runningJobInfo.state ?? "ENDED",
-            dataPath: await sftpRealPath(sftp)(jobDir),
-            runningTime:
-              runningJobInfo.elapsedSeconds !== undefined ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
-            timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
-            reason: needReason ? (runningJobInfo.reason ?? "") : undefined,
-            partition: runningJobInfo.partition,
-            cpusAlloc: runningJobInfo.cpusAlloc ?? 0,
-            gpusAlloc: runningJobInfo.gpusAlloc ?? 0,
-            memAlloc: runningJobInfo.memAllocMb ?? 0,
-            nodesAlloc: runningJobInfo.nodesAlloc ?? 0,
-            cpusReq: runningJobInfo.cpusReq,
-            gpusReq: runningJobInfo.gpusReq,
-            memReq: runningJobInfo.memReqMb,
-            nodesReq: runningJobInfo.nodesReq,
-          });
-        }),
+      const filteredSessions = sortSessionsByJobOrder(
+        sessions.filter((session) =>
+          isRunning === undefined
+            ? true
+            : isRunning
+              ? runningStates.includes(session.state)
+              : !runningStates.includes(session.state),
+        ),
+        runningJobsInfo,
       );
-
-      const filteredSessions = sessions
-        .filter((session) =>
-          isRunning ? runningStates.includes(session.state) : !runningStates.includes(session.state),
-        )
-        .sort((a, b) => b.submitTime.localeCompare(a.submitTime));
-      return filteredSessions;
+      return { sessions: filteredSessions, count: totalCount };
     });
   }
 

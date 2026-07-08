@@ -9,24 +9,18 @@ import {
   isCurrentClusterSession as isCurrentClusterSessionUtil,
 } from "@scow/lib-server";
 import { AppType } from "@scow/scheduler-adapter-protos/build/app";
-import {
-  JobInfo,
-  JobType as ProtoJobType,
-  UserIdmapInfo,
-  UserIdmapMode,
-} from "@scow/scheduler-adapter-protos/build/job";
+import { JobType as ProtoJobType, UserIdmapInfo, UserIdmapMode } from "@scow/scheduler-adapter-protos/build/job";
 import { FileType } from "@scow/scowd-protos/build/storage/file_pb";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { join } from "path";
 import { quote } from "shell-quote";
-import { JobType } from "src/models/Job";
+import { JobType, UNKNOWN_JOB_TYPE } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { CreateDevHostInput, CreateDevHostInputSchema } from "src/server/trpc/route/devHost/devHost";
 import {
-  AppSession,
   CreateAppInput,
   CreateAppInputSchema,
   SERVER_ENTRY_COMMAND,
@@ -56,12 +50,15 @@ import { Logger } from "ts-log";
 import { z } from "zod";
 
 import {
+  AiJobsQueryOptions,
+  AiJobsResult,
   ConnectToAppResponse,
   CreateAppExtraParams,
   CreateDevHostExtraParams,
   JobDriver,
   SubmitInferJobExtraParams,
   SubmitTrainJobExtraParams,
+  sortSessionsByJobOrder,
 } from "./jobDriver";
 
 const ImageSchema = z.object({
@@ -806,7 +803,12 @@ export class ScowdJobDriver implements JobDriver {
     );
   }
 
-  async getAiJobs(clusterId: string, isRunning?: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]> {
+  async getAiJobs(
+    clusterId: string,
+    isRunning?: boolean,
+    jobTypes?: ProtoJobType[],
+    options: AiJobsQueryOptions = {},
+  ): Promise<AiJobsResult> {
     const apps = getClusterAppConfigs(clusterId);
     const terminatedStates = [
       "BOOT_FAIL",
@@ -824,12 +826,15 @@ export class ScowdJobDriver implements JobDriver {
 
     // If a job is not running, it cannot be ready
     const client = getAdapterClient(clusterId);
-    const jobsInfo = await asyncClientCall(client.job, "getJobs", {
+    const { page, pageSize, jobName, sortField = "job_id", sortOrder = "DESC" } = options;
+    const jobsResponse = await asyncClientCall(client.job, "getJobs", {
       fields: [
         "job_id",
+        "name",
         "state",
         "elapsed_seconds",
         "time_limit_minutes",
+        "submit_time",
         "reason",
         "partition",
         "gpus_alloc",
@@ -840,6 +845,8 @@ export class ScowdJobDriver implements JobDriver {
         "cpus_req",
         "mem_req_mb",
         "nodes_req",
+        "end_time",
+        "working_directory",
       ],
       filter: {
         users: [this.userId],
@@ -851,17 +858,14 @@ export class ScowdJobDriver implements JobDriver {
             : isRunning
               ? runningStates
               : terminatedStates,
+        jobName: jobName?.trim() || undefined,
       },
+      pageInfo: page !== undefined && pageSize !== undefined ? { page, pageSize } : undefined,
+      sort: { field: sortField, order: sortOrder === "ASC" ? 0 : 1 },
       jobTypes: jobTypes?.length ? jobTypes : allProtoAiJobTypes,
-    }).then((resp) => resp.jobs);
-
-    const runningJobInfoMap = jobsInfo.reduce(
-      (prev, curr) => {
-        prev[curr.jobId] = curr;
-        return prev;
-      },
-      {} as Record<number, JobInfo>,
-    );
+    });
+    const jobsInfo = jobsResponse.jobs;
+    const totalCount = jobsResponse.totalCount ?? jobsInfo.length;
 
     const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
@@ -881,87 +885,68 @@ export class ScowdJobDriver implements JobDriver {
 
     if (!appJobsDirectoryExists.exists) {
       this.logger.error("appJobsDirectory %s not exists", appJobsDirectory);
-      return [];
     }
 
-    let totalSessions = await this.readTotalSessionsFile(homeDir);
+    let totalSessions = appJobsDirectoryExists.exists ? await this.readTotalSessionsFile(homeDir) : [];
 
-    if (!totalSessions || totalSessions.length === 0) {
+    if (appJobsDirectoryExists.exists && (!totalSessions || totalSessions.length === 0)) {
       totalSessions = await this.readSessionsFromDirectories(homeDir);
       await this.writeTotalSessionsFile(homeDir, totalSessions);
     }
 
-    totalSessions = this.filterSessionsByJobIdClusterPreference(totalSessions);
+    const totalSessionsByJobId = new Map(
+      this.filterSessionsByJobIdClusterPreference(totalSessions ?? []).map((sessionMetadata) => [
+        sessionMetadata.jobId,
+        sessionMetadata,
+      ]),
+    );
 
-    const sessions = [] as AppSession[];
-
-    totalSessions.forEach((sessionMetadata) => {
-      const runningJobInfo: JobInfo | undefined = runningJobInfoMap[sessionMetadata.jobId];
-
-      if (!runningJobInfo) {
-        return;
-      }
-
+    const sessions = jobsInfo.map((runningJobInfo) => {
+      const sessionMetadata = totalSessionsByJobId.get(runningJobInfo.jobId);
       const statesNeedReason = new Set(["PENDING", "QUEUED", ...terminatedStates]);
       const needReason = statesNeedReason.has(runningJobInfo.state);
-      const jobDir = join(appJobsDirectory, sessionMetadata.sessionId);
-      const appId = "appId" in sessionMetadata ? sessionMetadata.appId : undefined;
+      const sessionId = sessionMetadata?.sessionId || runningJobInfo.jobId.toString();
+      const jobDir = join(appJobsDirectory, sessionId);
+      const appId = sessionMetadata && "appId" in sessionMetadata ? sessionMetadata.appId : undefined;
       const appName = appId ? apps[appId]?.name : undefined;
 
-      sessions.push({
-        jobId: sessionMetadata.jobId,
+      return {
+        jobId: runningJobInfo.jobId,
         appId: appId,
         appName,
-        sessionId: sessionMetadata.sessionId,
-        jobName: sessionMetadata.jobName ?? "",
-        submitTime: sessionMetadata.submitTime,
-        jobType: sessionMetadata.jobType,
-        image: sessionMetadata.image,
+        sessionId,
+        jobName: runningJobInfo.name || sessionMetadata?.jobName || "",
+        submitTime: runningJobInfo.submitTime || sessionMetadata?.submitTime || "",
+        endTime: runningJobInfo.endTime,
+        jobType: sessionMetadata?.jobType ?? UNKNOWN_JOB_TYPE,
+        image: sessionMetadata?.image ?? { name: "" },
         state: runningJobInfo.state ?? "ENDED",
         dataPath: jobDir,
+        workDir: runningJobInfo.workingDirectory,
         runningTime:
           runningJobInfo.elapsedSeconds !== undefined ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
         timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
         reason: needReason ? (runningJobInfo.reason ?? "") : undefined,
-        partition: runningJobInfo.partition,
+        partition: runningJobInfo.partition ?? "",
         cpusAlloc: runningJobInfo.cpusAlloc ?? 0,
         gpusAlloc: runningJobInfo.gpusAlloc ?? 0,
         memAlloc: runningJobInfo.memAllocMb ?? 0,
         nodesAlloc: runningJobInfo.nodesAlloc ?? 0,
-        cpusReq: runningJobInfo.cpusReq,
-        gpusReq: runningJobInfo.gpusReq,
-        memReq: runningJobInfo.memReqMb,
-        nodesReq: runningJobInfo.nodesReq,
-      });
+        cpusReq: runningJobInfo.cpusReq ?? 0,
+        gpusReq: runningJobInfo.gpusReq ?? 0,
+        memReq: runningJobInfo.memReqMb ?? 0,
+        nodesReq: runningJobInfo.nodesReq ?? 0,
+      };
     });
 
-    // 如果 isRunning 为 undefined，返回所有会话
-    let filteredSessions =
+    const filteredSessions =
       isRunning === undefined
         ? sessions
         : sessions.filter((session) =>
             isRunning ? runningStates.includes(session.state) : !runningStates.includes(session.state),
           );
 
-    // 对于 DevHost 类型的作业，特殊排序：RUNNING 和 PENDING 状态优先，然后按 submitTime 从新到旧排序
-    if (jobTypes?.length === 1 && jobTypes[0] === ProtoJobType.JOB_TYPE_DEV_HOST) {
-      filteredSessions = filteredSessions.sort((a, b) => {
-        const aIsActive = a.state === "RUNNING" || a.state === "PENDING";
-        const bIsActive = b.state === "RUNNING" || b.state === "PENDING";
-
-        // 如果一个是活跃状态，另一个不是，活跃状态排在前面
-        if (aIsActive && !bIsActive) return -1;
-        if (!aIsActive && bIsActive) return 1;
-
-        // 如果都是活跃状态或都不是活跃状态，按 submitTime 从新到旧排序
-        return b.submitTime.localeCompare(a.submitTime);
-      });
-    } else {
-      // 其他类型的作业按原有逻辑排序
-      filteredSessions = filteredSessions.sort((a, b) => b.submitTime.localeCompare(a.submitTime));
-    }
-
-    return filteredSessions;
+    return { sessions: sortSessionsByJobOrder(filteredSessions, jobsInfo), count: totalCount };
   }
 
   async connectToApp(clusterId: string, sessionId: string, appType?: AppType): Promise<ConnectToAppResponse> {

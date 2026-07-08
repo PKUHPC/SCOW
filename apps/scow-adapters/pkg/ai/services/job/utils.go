@@ -2,6 +2,7 @@ package job
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -9,6 +10,16 @@ import (
 	"scow-adapters/pkg/ai/utils"
 	ce "scow-adapters/pkg/common/error"
 )
+
+func EscapeLikePattern(pattern string) string {
+	replacer := strings.NewReplacer(
+		`\`, `\\`,
+		`%`, `\%`,
+		`_`, `\_`,
+	)
+
+	return replacer.Replace(pattern)
+}
 
 func CheckUserInfo(accountName, userName string) (err error) {
 	// 检查账号名是否存在

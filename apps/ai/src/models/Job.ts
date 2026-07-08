@@ -5,6 +5,8 @@ export enum JobType {
   DEV_HOST = "dev_host",
 }
 
+export const UNKNOWN_JOB_TYPE = "-";
+
 export enum ImageSource {
   DEFAULT = "default",
   LOCAL = "local",

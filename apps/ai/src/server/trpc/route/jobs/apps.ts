@@ -15,7 +15,7 @@ import fs from "fs";
 import { join } from "path";
 import { AppName } from "src/models/App";
 import { ImageType } from "src/models/Image";
-import { JobType } from "src/models/Job";
+import { JobType, UNKNOWN_JOB_TYPE } from "src/models/Job";
 import { AccountStatusFilter } from "src/models/Resource";
 import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
@@ -46,7 +46,7 @@ import { createHarborImageUrl } from "src/server/utils/image";
 import { isPortReachableThroughUrl } from "src/server/utils/isPortReachable";
 import { logger } from "src/server/utils/logger";
 import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
-import { paginate, paginationSchema } from "src/server/utils/pagination";
+import { paginationSchema } from "src/server/utils/pagination";
 import { getUserAssignedResourceDetails } from "src/server/utils/resource";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { getClusterLoginNode } from "src/server/utils/ssh";
@@ -71,18 +71,21 @@ const ImageSchema = z.object({
 export type Image = z.infer<typeof ImageSchema>;
 
 const JobTypeSchema = z.enum(JobType);
+const AppSessionJobTypeSchema = z.union([JobTypeSchema, z.literal(UNKNOWN_JOB_TYPE)]);
 
 const AppSessionSchema = z.object({
   sessionId: z.string(),
   jobName: z.string(),
   jobId: z.number(),
   submitTime: z.string(),
-  jobType: JobTypeSchema,
+  endTime: z.string().optional(),
+  jobType: AppSessionJobTypeSchema,
   image: ImageSchema,
   appId: z.string().optional(),
   appName: z.string().optional(),
   state: z.string(),
   dataPath: z.string(),
+  workDir: z.string(),
   runningTime: z.string(),
   timeLimit: z.string(),
   reason: z.string().optional(),
@@ -1005,12 +1008,15 @@ export const listAppSessions = procedure
       clusterId: z.string(),
       isRunning: booleanQueryParam().optional(),
       jobTypes: z.array(z.enum(JobType)).optional(),
+      jobName: z.string().optional(),
+      sortField: z.enum(["job_id", "submit_time", "end_time"]).optional(),
+      sortOrder: z.enum(["ASC", "DESC"]).optional(),
       ...paginationSchema.shape,
     }),
   )
   .output(z.object({ sessions: z.array(AppSessionSchema), count: z.number() }))
   .query(async ({ input, ctx: { user } }) => {
-    const { clusterId, isRunning, jobTypes, page, pageSize } = input;
+    const { clusterId, isRunning, jobTypes, page, pageSize, jobName, sortField, sortOrder } = input;
 
     const userId = user.identityId;
 
@@ -1023,21 +1029,23 @@ export const listAppSessions = procedure
       throw clusterNotFound(clusterId);
     }
 
-    const filteredSessions = await driver.withJobDriver(
+    return await driver.withJobDriver(
       {
         clusterId,
         user: userId,
       },
       async (jobDriver) => {
         const protoJobTypes = jobTypes?.length ? getProtoJobTypes(jobTypes) : allProtoAiJobTypes;
-        return await jobDriver.getAiJobs(clusterId, isRunning, protoJobTypes);
+        return await jobDriver.getAiJobs(clusterId, isRunning, protoJobTypes, {
+          page,
+          pageSize,
+          jobName,
+          sortField,
+          sortOrder,
+        });
       },
       logger,
     );
-
-    const { paginatedItems: paginatedSessions, totalCount } = paginate(filteredSessions, page, pageSize);
-
-    return { sessions: paginatedSessions, count: totalCount };
   });
 
 const podInfoSchema = z.object({
@@ -1183,6 +1191,7 @@ export const getJobDetails = procedure
         "events",
         "tensor_board_info",
         "unique_job_name",
+        "working_directory",
       ],
       jobId,
     });

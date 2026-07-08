@@ -1,6 +1,6 @@
 import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { AppType } from "@scow/scheduler-adapter-protos/build/app";
-import { JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
+import { JobInfo, JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
 import { clusters } from "src/server/config/clusters";
 import { AlgorithmVersion } from "src/server/entities/AlgorithmVersion";
@@ -59,10 +59,43 @@ export interface CreateDevHostExtraParams {
   existImage: ImageEntity | undefined
 }
 
+export interface AiJobsQueryOptions {
+  page?: number;
+  pageSize?: number;
+  jobName?: string;
+  sortField?: "job_id" | "submit_time" | "end_time";
+  sortOrder?: "ASC" | "DESC";
+}
+
+export interface AiJobsResult {
+  sessions: AppSession[];
+  count: number;
+}
+
+export const sortSessionsByJobOrder = (sessions: AppSession[], jobsInfo: JobInfo[]) => {
+  const jobOrderMap = jobsInfo.reduce(
+    (prev, curr, index) => {
+      prev[curr.jobId] = index;
+      return prev;
+    },
+    {} as Record<number, number>,
+  );
+
+  return [...sessions].sort(
+    (a, b) =>
+      (jobOrderMap[a.jobId] ?? Number.MAX_SAFE_INTEGER) - (jobOrderMap[b.jobId] ?? Number.MAX_SAFE_INTEGER),
+  );
+};
+
 export interface JobDriver {
   createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number>;
   getAppParams(sessionId: string, jobId: number): Promise<CreateAppInput>;
-  getAiJobs(clusterId: string, isRunning?: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]>;
+  getAiJobs(
+    clusterId: string,
+    isRunning?: boolean,
+    jobTypes?: ProtoJobType[],
+    options?: AiJobsQueryOptions,
+  ): Promise<AiJobsResult>;
   connectToApp(clusterId: string, sessionId: string, appType?: AppType): Promise<ConnectToAppResponse>;
   submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number>;
   getInferParams(sessionId: string, jobId: number): Promise<InferenceJobInput>;
