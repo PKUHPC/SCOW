@@ -389,7 +389,7 @@ export default {
         specifyOwner: "Specify a primary admin for each account.",
         incorrectFormat: "Incorrect data format.",
         importSuccess: "Import successful.",
-        selectCluster: "Select a cluster to import accounts into the default tenant on a per-account basis.",
+        selectCluster: "Cluster:",
         alreadyExist: "Account already exists in SCOW.",
         notExist: "Account does not exist in SCOW and will be imported into SCOW.",
         partNotExist: "Some users in the account do not exist in SCOW and will be imported as new users.",
@@ -1456,6 +1456,10 @@ export default {
       },
       importUsers: {
         importUserInfo: "Import User",
+        importUserAlertInfo1:
+          "Import user and account data from the cluster into the platform default tenant by account.",
+        importUserAlertInfo2:
+          "If permission management is enabled, the account's authorized clusters, partitions, and applications will be reset according to the related platform permission configuration after a successful import.",
       },
       lockedUsers: {
         userUnlock: "User login unlocking",

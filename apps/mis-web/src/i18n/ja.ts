@@ -375,7 +375,7 @@ export default {
         specifyOwner: "各アカウントの主管理者を指定してください。",
         incorrectFormat: "データ形式が正しくありません。",
         importSuccess: "インポートに成功しました。",
-        selectCluster: "デフォルトテナントへインポートするクラスタを選択してください（アカウント単位）。",
+        selectCluster: "クラスター:",
         alreadyExist: "アカウントは既にSCOWに存在します。",
         notExist: "アカウントはSCOWに存在しないため、SCOWにインポートされます。",
         partNotExist: "アカウントの一部ユーザーがSCOWに存在しないため、新規ユーザーとしてインポートされます。",
@@ -1342,6 +1342,10 @@ export default {
       },
       importUsers: {
         importUserInfo: "ユーザーをインポート",
+        importUserAlertInfo1:
+          "クラスターのユーザーとアカウントデータを、アカウント単位でプラットフォームの default テナントにインポートします。",
+        importUserAlertInfo2:
+          "権限管理機能が有効な場合、インポート成功後にアカウントの許可クラスター、パーティション、アプリケーション情報はプラットフォームの関連権限設定に従って再設定されます。",
       },
       lockedUsers: {
         userUnlock: "ユーザーログインのロック解除",

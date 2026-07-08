@@ -394,7 +394,7 @@ export default {
         specifyOwner: "Geben Sie für jedes Konto einen Hauptadministrator an.",
         incorrectFormat: "Fehlerhaftes Datenformat.",
         importSuccess: "Import erfolgreich.",
-        selectCluster: "Wählen Sie einen Cluster, um Konten mandantenweise in den Standardmandanten zu importieren.",
+        selectCluster: "Cluster:",
         alreadyExist: "Konto existiert bereits in SCOW.",
         notExist: "Konto existiert nicht in SCOW und wird in SCOW importiert.",
         partNotExist: "Einige Benutzer im Konto existieren nicht in SCOW und werden als neue Benutzer importiert.",
@@ -1433,6 +1433,10 @@ export default {
       },
       importUsers: {
         importUserInfo: "Benutzer importieren",
+        importUserAlertInfo1:
+          "Importieren Sie Benutzer- und Kontodaten aus dem Cluster kontoweise in den default-Tenant der Plattform.",
+        importUserAlertInfo2:
+          "Wenn die Berechtigungsverwaltung aktiviert ist, werden die autorisierten Cluster, Partitionen und Anwendungen des Kontos nach einem erfolgreichen Import gemäß der Plattform-Berechtigungskonfiguration zurückgesetzt.",
       },
       lockedUsers: {
         userUnlock: "Benutzeranmeldung entsperren",

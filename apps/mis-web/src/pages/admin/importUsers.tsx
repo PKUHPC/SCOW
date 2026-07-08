@@ -1,3 +1,4 @@
+import { Alert } from "antd";
 import { NextPage } from "next";
 import { requireAuth } from "src/auth/requireAuth";
 import { PageTitle } from "src/components/PageTitle";
@@ -15,6 +16,17 @@ export const ImportUsersPage: NextPage = requireAuth((u) => u.platformRoles.incl
       <div>
         <Head title={t(p("importUserInfo"))} />
         <PageTitle titleText={t(p("importUserInfo"))} />
+        <Alert
+          type="info"
+          style={{ marginBottom: "4px" }}
+          showIcon
+          message={
+            <>
+              <div>{t(p("importUserAlertInfo1"))}</div>
+              <div>{t(p("importUserAlertInfo2"))}</div>
+            </>
+          }
+        />
         <ImportUsersTable />
       </div>
     );

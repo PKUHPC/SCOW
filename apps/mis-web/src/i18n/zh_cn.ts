@@ -380,7 +380,7 @@ export default {
         specifyOwner: "请为每个账户指定主管理员",
         incorrectFormat: "数据格式不正确",
         importSuccess: "导入成功",
-        selectCluster: "选择集群，以账户为单位导入到默认租户中",
+        selectCluster: "集群:",
         alreadyExist: "账户已经存在于SCOW中",
         notExist: "账户不存在于SCOW中，将会导入SCOW",
         partNotExist: "账户中部分用户不存在于SCOW中，将会导入新的用户",
@@ -1376,6 +1376,9 @@ export default {
       },
       importUsers: {
         importUserInfo: "导入用户",
+        importUserAlertInfo1: "将用户和账户数据以账户为单位从集群导入到平台default租户中",
+        importUserAlertInfo2:
+          "如果平台开启了权限管理功能，导入成功后账户的授权集群、分区和应用信息将按照平台中相关权限配置参数重新设置",
       },
       lockedUsers: {
         userUnlock: "用户登录解封",

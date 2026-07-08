@@ -387,7 +387,7 @@ export default {
         specifyOwner: "Especifique un administrador principal para cada cuenta.",
         incorrectFormat: "Formato de datos incorrecto.",
         importSuccess: "Importación exitosa.",
-        selectCluster: "Seleccione un clúster para importar cuentas al inquilino por defecto por cuenta.",
+        selectCluster: "Clúster:",
         alreadyExist: "La cuenta ya existe en SCOW.",
         notExist: "La cuenta no existe en SCOW y será importada.",
         partNotExist: "Algunos usuarios de la cuenta no existen en SCOW y se importarán como nuevos usuarios.",
@@ -1418,6 +1418,10 @@ export default {
       },
       importUsers: {
         importUserInfo: "Importar usuario",
+        importUserAlertInfo1:
+          "Importa los datos de usuarios y cuentas del clúster al tenant default de la plataforma por cuenta.",
+        importUserAlertInfo2:
+          "Si la gestión de permisos está activada, los clústeres, particiones y aplicaciones autorizados de la cuenta se restablecerán según la configuración de permisos de la plataforma tras una importación correcta.",
       },
       lockedUsers: {
         userUnlock: "Desbloqueo de inicio de sesión de usuario",

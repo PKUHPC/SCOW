@@ -392,8 +392,7 @@ export default {
         specifyOwner: "Indiquez un administrateur principal pour chaque compte.",
         incorrectFormat: "Format de données incorrect.",
         importSuccess: "Importation réussie.",
-        selectCluster:
-          "Sélectionnez un cluster pour importer les comptes dans le locataire par défaut, compte par compte.",
+        selectCluster: "Cluster :",
         alreadyExist: "Le compte existe déjà dans SCOW.",
         notExist: "Le compte n'existe pas dans SCOW et sera importé dans SCOW.",
         partNotExist:
@@ -1427,6 +1426,10 @@ export default {
       },
       importUsers: {
         importUserInfo: "Importer des utilisateurs",
+        importUserAlertInfo1:
+          "Importer les données des utilisateurs et des comptes du cluster vers le tenant default de la plateforme, par compte.",
+        importUserAlertInfo2:
+          "Si la gestion des permissions est activée, les clusters, partitions et applications autorisés du compte seront réinitialisés selon la configuration des permissions de la plateforme après l'importation.",
       },
       lockedUsers: {
         userUnlock: "Déverrouillage de la connexion utilisateur",

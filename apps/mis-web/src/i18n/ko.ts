@@ -376,7 +376,7 @@ export default {
         specifyOwner: "각 계정의 주 관리자를 지정하세요.",
         incorrectFormat: "데이터 형식이 올바르지 않습니다.",
         importSuccess: "가져오기 성공",
-        selectCluster: "기본 테넌트로 계정별로 가져오기할 클러스터를 선택하세요.",
+        selectCluster: "클러스터:",
         alreadyExist: "계정이 SCOW에 이미 존재합니다.",
         notExist: "계정이 SCOW에 존재하지 않으며 SCOW로 가져오기됩니다.",
         partNotExist: "계정의 일부 사용자가 SCOW에 존재하지 않아 신규 사용자로 가져오기됩니다.",
@@ -1334,6 +1334,10 @@ export default {
       },
       importUsers: {
         importUserInfo: "사용자 가져오기",
+        importUserAlertInfo1:
+          "클러스터의 사용자 및 계정 데이터를 계정 단위로 플랫폼 default 테넌트로 가져옵니다.",
+        importUserAlertInfo2:
+          "권한 관리 기능이 활성화된 경우 가져오기에 성공하면 계정의 승인된 클러스터, 파티션 및 애플리케이션 정보가 플랫폼의 관련 권한 설정에 따라 재설정됩니다.",
       },
       lockedUsers: {
         userUnlock: "사용자 로그인 잠금 해제",
