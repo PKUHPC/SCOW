@@ -21,6 +21,7 @@ import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { CreateDevHostInput, CreateDevHostInputSchema } from "src/server/trpc/route/devHost/devHost";
 import {
+  type AppSession,
   CreateAppInput,
   CreateAppInputSchema,
   SERVER_ENTRY_COMMAND,
@@ -901,7 +902,7 @@ export class ScowdJobDriver implements JobDriver {
       ]),
     );
 
-    const sessions = jobsInfo.map((runningJobInfo) => {
+    const sessions: AppSession[] = jobsInfo.map((runningJobInfo) => {
       const sessionMetadata = totalSessionsByJobId.get(runningJobInfo.jobId);
       const statesNeedReason = new Set(["PENDING", "QUEUED", ...terminatedStates]);
       const needReason = statesNeedReason.has(runningJobInfo.state);

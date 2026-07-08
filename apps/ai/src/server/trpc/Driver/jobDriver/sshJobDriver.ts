@@ -20,6 +20,7 @@ import { quote } from "shell-quote";
 import { JobType, UNKNOWN_JOB_TYPE } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import {
+  type AppSession,
   CreateAppInput,
   CreateAppInputSchema,
   SERVER_ENTRY_COMMAND,
@@ -423,7 +424,7 @@ export class SshJobDriver implements JobDriver {
         );
       }
 
-      const sessions = runningJobsInfo.map((runningJobInfo) => {
+      const sessions: AppSession[] = runningJobsInfo.map((runningJobInfo) => {
         const sessionMetadataWithPath = sessionMetadataByJobId.get(runningJobInfo.jobId);
         const sessionMetadata = sessionMetadataWithPath?.metadata;
         const statesNeedReason = new Set(["PENDING", "QUEUED", ...terminatedStates]);
