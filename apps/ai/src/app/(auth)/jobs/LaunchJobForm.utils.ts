@@ -1,14 +1,19 @@
 import type { FormInstance } from "antd";
 
 import { createElement, isValidElement, type ReactNode } from "react";
-import { OwnerDisplayText, type ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import {
+  CATEGORY_VALUE_PRIVATE,
+  CATEGORY_VALUE_PUBLIC,
+  OwnerDisplayText,
+  type ResourceCategory,
+} from "src/app/(auth)/jobs/ResourceSelector.shared";
 import {
   getDefaultBuiltinEnvs,
   PREDEFINED_ENV_VAR,
   RESERVED_ENV_KEYS,
   shouldOmitEnvFromPayload,
 } from "src/models/envVars";
-import { type TemplateFormData } from "src/server/trpc/route/jobs/templates";
+import { TemplateFormData } from "src/server/trpc/route/jobs/templates";
 import { formatSize } from "src/utils/format";
 
 import type {
@@ -27,9 +32,6 @@ import type {
   VersionGroup,
   VersionLookupEntry,
 } from "./LaunchJobForm.types";
-
-export const CATEGORY_VALUE_PRIVATE = 1;
-export const CATEGORY_VALUE_PUBLIC = 2;
 
 export const createSelectionLookupKey = (id: number, isPrivate: boolean) => `${id}:${isPrivate ? "1" : "0"}`;
 
@@ -141,27 +143,12 @@ export const toIdPrivateList = (
     result.push({
       id,
       isPrivate: isPrivateFlag,
-      target: item.target,
+      target: item.target ?? "",
       currentNameVersion: meta?.currentNameVersion,
     });
   });
 
   return result;
-};
-
-// 构建 versionId → privatePath 的映射，仅 personal 版本（第一级分类值为 CATEGORY_VALUE_PRIVATE）有值
-export const buildPrivatePathLookup = (categories: ResourceCategory[]): Map<number, string> => {
-  const map = new Map<number, string>();
-  const privateCategory = categories.find((c) => c.value === CATEGORY_VALUE_PRIVATE);
-  if (!privateCategory) return map;
-  privateCategory.children?.forEach((group) => {
-    (group.children as ResourceCategory[] | undefined)?.forEach((version) => {
-      if (version.privatePath && typeof version.value === "number") {
-        map.set(version.value, version.privatePath);
-      }
-    });
-  });
-  return map;
 };
 
 // 将级联控件的标签格式化成可展示文本；若选中项携带 ownerText 则拼到末尾（灰色样式）
@@ -321,12 +308,12 @@ interface ResubmitResourceSelection {
   target?: string;
 }
 
-const resolveSelectionPath = (lookup: Map<string, CascaderSelection>, id: number, isPrivate: boolean) => {
-  const primary = lookup.get(createSelectionLookupKey(id, isPrivate));
-  if (primary) {
-    return primary;
+const resolveSelectionPath = (lookup: Map<string, CascaderSelection>, id: number, isPrivate?: boolean) => {
+  if (typeof isPrivate === "boolean") {
+    return lookup.get(createSelectionLookupKey(id, isPrivate));
   }
-  return lookup.get(createSelectionLookupKey(id, !isPrivate));
+
+  return lookup.get(createSelectionLookupKey(id, false)) ?? lookup.get(createSelectionLookupKey(id, true));
 };
 
 // 将再次提交中的资源选择恢复为表单级联选择值，同时保留挂载目标路径
@@ -336,9 +323,10 @@ export const buildResubmitResourceSelections = (
 ): ResourceSelectionField[] =>
   (items ?? [])
     .map((item) => {
-      const path = resolveSelectionPath(lookup, item.id, Boolean(item.isPrivate));
+      const path = resolveSelectionPath(lookup, item.id, item.isPrivate);
       if (!path) return null;
-      return { selection: [...path], target: item.target ?? "" };
+      const target = typeof item.target === "string" ? item.target.trim() : "";
+      return target ? { selection: [...path], target } : { selection: [...path] };
     })
     .filter((x): x is ResourceSelectionField => x !== null);
 

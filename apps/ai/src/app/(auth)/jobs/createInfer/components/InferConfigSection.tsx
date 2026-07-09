@@ -1,4 +1,4 @@
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 
 import { Checkbox } from "@scow/lib-web/build/components/styledAntdCom/Checkbox";
 import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
@@ -27,7 +27,7 @@ import {
 } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
-import { ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
+import { RESOURCE_MOUNT_TYPES, ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 
 import type { AppFormValues, ImageOption, InferImageSourceKey } from "../LaunchInferForm.types";
@@ -55,7 +55,6 @@ interface InferConfigSectionProps {
   selectedCluster?: string;
   displayRender?: (labels: ReactNode[]) => ReactNode;
   homeDir?: string;
-  modelPrivatePathLookup?: Map<number, string>;
 }
 
 const pAppConfig = prefix("app.jobs.appConfigSection.");
@@ -76,7 +75,6 @@ export const InferConfigSection = ({
   selectedCluster,
   displayRender,
   homeDir,
-  modelPrivatePathLookup,
 }: InferConfigSectionProps) => {
   const t = useI18nTranslateToString();
   const modelsPlaceholder = isModelsLoading ? t(pAppConfig("models.loading")) : t(pAppConfig("models.placeholder"));
@@ -262,12 +260,12 @@ export const InferConfigSection = ({
         >
           <ResourceSelectorList
             name="models"
+            resourceType={RESOURCE_MOUNT_TYPES.MODEL}
             placeholder={modelsPlaceholder}
             addButtonText={t(pAppConfig("models.addButton"))}
             requiredMessage={t(pAppConfig("models.requiredMessage"))}
             categories={modelCategories}
             displayRender={displayRender}
-            privatePathLookup={modelPrivatePathLookup}
           />
         </InlineFormItem>
 

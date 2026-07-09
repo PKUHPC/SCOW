@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 
 import { Checkbox } from "@scow/lib-web/build/components/styledAntdCom/Checkbox";
 import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
@@ -23,7 +23,7 @@ import {
 } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
-import { ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
+import { RESOURCE_MOUNT_TYPES, ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 
 import type { AppFormValues, ImageOption, ImageSourceKey } from "../LaunchAppForm.types";
@@ -54,9 +54,6 @@ interface AppConfigSectionProps {
   selectedCluster?: string;
   displayRender?: (labels: ReactNode[]) => ReactNode;
   homeDir?: string;
-  datasetPrivatePathLookup?: Map<number, string>;
-  algorithmPrivatePathLookup?: Map<number, string>;
-  modelPrivatePathLookup?: Map<number, string>;
 }
 
 const p = prefix("app.jobs.appConfigSection.");
@@ -82,9 +79,6 @@ export const AppConfigSection = ({
   selectedCluster,
   displayRender,
   homeDir,
-  datasetPrivatePathLookup,
-  algorithmPrivatePathLookup,
-  modelPrivatePathLookup,
 }: AppConfigSectionProps) => {
   const t = useI18nTranslateToString();
   const datasetsPlaceholder = isDatasetsLoading ? t(p("datasets.loading")) : t(p("datasets.placeholder"));
@@ -212,12 +206,12 @@ export const AppConfigSection = ({
         >
           <ResourceSelectorList
             name="datasets"
+            resourceType={RESOURCE_MOUNT_TYPES.DATASET}
             placeholder={datasetsPlaceholder}
             addButtonText={t(p("datasets.addButton"))}
             requiredMessage={t(p("datasets.requiredMessage"))}
             categories={datasetCategories}
             displayRender={displayRender}
-            privatePathLookup={datasetPrivatePathLookup}
           />
         </InlineFormItem>
 
@@ -227,12 +221,12 @@ export const AppConfigSection = ({
         >
           <ResourceSelectorList
             name="algorithms"
+            resourceType={RESOURCE_MOUNT_TYPES.ALGORITHM}
             placeholder={algorithmsPlaceholder}
             addButtonText={t(p("algorithms.addButton"))}
             requiredMessage={t(p("algorithms.requiredMessage"))}
             categories={algorithmCategories}
             displayRender={displayRender}
-            privatePathLookup={algorithmPrivatePathLookup}
           />
         </InlineFormItem>
 
@@ -242,12 +236,12 @@ export const AppConfigSection = ({
         >
           <ResourceSelectorList
             name="models"
+            resourceType={RESOURCE_MOUNT_TYPES.MODEL}
             placeholder={modelsPlaceholder}
             addButtonText={t(p("models.addButton"))}
             requiredMessage={t(p("models.requiredMessage"))}
             categories={modelCategories}
             displayRender={displayRender}
-            privatePathLookup={modelPrivatePathLookup}
           />
         </InlineFormItem>
 

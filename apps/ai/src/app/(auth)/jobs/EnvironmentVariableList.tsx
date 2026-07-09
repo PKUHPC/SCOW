@@ -41,7 +41,7 @@ const EnvRemoveButton = styled(RemoveButton)`
 
 const p = prefix("app.jobs.environmentVariableList.");
 
-const builtinTooltipProps = {
+export const BuiltinTooltipProps = {
   arrow: false as const,
   align: { offset: [0, -12] },
   mouseEnterDelay: 0.4,
@@ -127,7 +127,7 @@ export const EnvironmentVariableList = ({ clusterId, homeDir }: Props) => {
                     {isWorkDir ? (
                       <Tooltip
                         title={t("app.jobs.appConfigSection.environmentVariables.workdirHelpTip")}
-                        {...builtinTooltipProps}
+                        {...BuiltinTooltipProps}
                         color={builtinTooltipColor}
                       >
                         <RoundedInput size="large" disabled value={PREDEFINED_ENV_VAR.WORK_DIR} />
@@ -135,7 +135,7 @@ export const EnvironmentVariableList = ({ clusterId, homeDir }: Props) => {
                     ) : isXdlIp ? (
                       <Tooltip
                         title={t("app.jobs.appConfigSection.environmentVariables.xdlIpHelpTip")}
-                        {...builtinTooltipProps}
+                        {...BuiltinTooltipProps}
                         color={builtinTooltipColor}
                       >
                         <RoundedInput size="large" disabled value={PREDEFINED_ENV_VAR.XDL_IP} />

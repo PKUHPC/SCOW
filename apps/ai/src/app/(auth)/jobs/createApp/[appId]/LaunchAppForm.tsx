@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnsType } from "antd/es/table";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 import type { CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import type { AppTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
@@ -65,7 +65,6 @@ import { BaseInfoSection } from "./components/BaseInfoSection";
 import { ResourceConfigSection } from "./components/ResourceConfigSection";
 import {
   buildEnvPayload,
-  buildPrivatePathLookup,
   buildResubmitResourceSelections,
   buildSelectionPathLookup,
   buildUnavailableParams,
@@ -826,11 +825,6 @@ export const LaunchAppForm = ({
   const datasetSelectionLookup = useMemo(() => buildSelectionPathLookup(datasetCategories), [datasetCategories]);
   const algorithmSelectionLookup = useMemo(() => buildSelectionPathLookup(algorithmCategories), [algorithmCategories]);
   const modelSelectionLookup = useMemo(() => buildSelectionPathLookup(modelCategories), [modelCategories]);
-
-  // 预构建私有资源版本 id → privatePath 的查找表，用于自动填充 target
-  const datasetPrivatePathLookup = useMemo(() => buildPrivatePathLookup(datasetCategories), [datasetCategories]);
-  const algorithmPrivatePathLookup = useMemo(() => buildPrivatePathLookup(algorithmCategories), [algorithmCategories]);
-  const modelPrivatePathLookup = useMemo(() => buildPrivatePathLookup(modelCategories), [modelCategories]);
 
   // 回填数据集选择：等待级联树构造完成后，再把历史选择恢复到表单
   useEffect(() => {
@@ -2617,9 +2611,6 @@ export const LaunchAppForm = ({
           selectedCluster={selectedCluster}
           displayRender={renderCascaderLabels}
           homeDir={userHomeDir?.path}
-          datasetPrivatePathLookup={datasetPrivatePathLookup}
-          algorithmPrivatePathLookup={algorithmPrivatePathLookup}
-          modelPrivatePathLookup={modelPrivatePathLookup}
         />
       </PageContainer>
 

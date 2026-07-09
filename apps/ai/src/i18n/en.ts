@@ -467,7 +467,10 @@ export default {
         variableName: "Variable name",
         variableValue: "Variable value",
         command: "Execution command",
+        jobDetailsTitle: "{0} job details",
         jobDetailsTab: "Job details",
+        basicInfoTab: "Basic information",
+        runtimeConfigTab: "Run configuration",
         getJobDetailsFailed: "Failed to get job details",
         jobEventsTab: "Events",
         podListTitle: "Pod list",
@@ -857,6 +860,8 @@ export default {
       resourceSelectorList: {
         defaultRequiredMessage: "Please make a selection",
         removeAriaLabel: "Remove item",
+        resourceToolTip: "AI jobs cannot read files directly by absolute path. Use the mount path to read files",
+        invalidGeneratedTarget: "The mount path contains an invalid path segment. Please edit it manually.",
       },
       publicImageOption: {
         sharedBy: "Published by: {0}",
@@ -1586,8 +1591,7 @@ export default {
   },
   common: {
     noSpaceError: "Insufficient storage space, please clean up the space or contact the administrator",
-    schedulerAdapterTimeoutError:
-      "Scheduler adapter timed out. Please try again later or contact the administrator.",
+    schedulerAdapterTimeoutError: "Scheduler adapter timed out. Please try again later or contact the administrator.",
     clusterNotAvailableForAccount: "Account {0} is not authorized for cluster {1}",
     clusterPartitionNotAvailableForAccount: "Account {0} is not authorized for cluster {1} and partition {2}",
     userAccountNotAvailableWhenSubmit: "User {0} is not available under account {}",

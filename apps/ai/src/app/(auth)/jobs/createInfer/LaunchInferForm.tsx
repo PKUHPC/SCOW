@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnsType } from "antd/es/table";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 import type { InferTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
@@ -51,7 +51,6 @@ import type {
 
 import {
   buildEnvPayload,
-  buildPrivatePathLookup,
   buildResubmitResourceSelections,
   buildSelectionPathLookup,
   buildUnavailableParams,
@@ -571,8 +570,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
   // 预构建 id → 路径 的查找表，方便再次提交时把后端记录转回级联路径
   const modelSelectionLookup = useMemo(() => buildSelectionPathLookup(modelCategories), [modelCategories]);
-  const modelPrivatePathLookup = useMemo(() => buildPrivatePathLookup(modelCategories), [modelCategories]);
-
   // 回填模型选择，同上
   useEffect(() => {
     if (!createInferParams) {
@@ -2029,7 +2026,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           selectedCluster={selectedCluster}
           displayRender={renderCascaderLabels}
           homeDir={userHomeDir?.path}
-          modelPrivatePathLookup={modelPrivatePathLookup}
         />
       </PageContainer>
 

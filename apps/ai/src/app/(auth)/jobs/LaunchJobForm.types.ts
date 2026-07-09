@@ -101,7 +101,7 @@ export interface MountPointField {
 
 export interface ResourceSelectionField {
   selection: CascaderSelection;
-  target: string;
+  target?: string;
 }
 
 export interface EnvVariableField {
