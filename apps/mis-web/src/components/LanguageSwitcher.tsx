@@ -31,30 +31,19 @@ interface LanguageSwitcherProps {
 }
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLanguage }) => {
-  const [selectedLanguage, setSelectedLanguage] = useState("");
-
   const i18n = useI18n();
+  const currentLanguageId = i18n.currentLanguage.id || initialLanguage;
+  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguageId);
 
   const router = useRouter();
 
   useEffect(() => {
-    const init = i18n.currentLanguage.id;
-    if (init) {
-      setSelectedLanguage(init);
-    } else {
-      const defaultLanguage = initialLanguage;
-      setSelectedLanguage(defaultLanguage);
-      setLanguageCookie(defaultLanguage);
-    }
-  }, [router]);
+    setSelectedLanguage(currentLanguageId);
+  }, [currentLanguageId]);
 
   const setLanguage = (newLocale: string) => {
     setSelectedLanguage(newLocale);
-    setLanguageCookie(newLocale);
     i18n.setLanguageById(newLocale);
-  };
-
-  const setLanguageCookie = (newLocale: string) => {
     setCookie(null, "language", newLocale, {
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
