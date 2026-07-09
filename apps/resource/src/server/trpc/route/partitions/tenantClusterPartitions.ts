@@ -423,7 +423,7 @@ export const unAssignTenantCluster = adminAuthProcedure
     const { failedBlockedAccounts, successfullyBlockedAccounts } = clusterProcessResult;
 
     // 在同一个事务中完成数据更新
-    return await em.transactional(async (em) => {
+    await em.transactional(async (em) => {
       if (successfullyBlockedAccounts.length > 0) {
         // 移除账户集群授权数据，移除账户分区授权数据
         const deletedAccountClusterCount = await em.nativeDelete(AccountClusterRule, {
@@ -451,7 +451,7 @@ export const unAssignTenantCluster = adminAuthProcedure
       }
 
       // 如果取消授权失败的账户数据存在
-      // 只更改默认授权数据，扔出错误
+      // 只更改默认授权数据，错误在事务提交后抛出
       if (failedBlockedAccounts.length > 0) {
         await em.nativeUpdate(
           TenantPartitionRule,
@@ -479,12 +479,7 @@ export const unAssignTenantCluster = adminAuthProcedure
             ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned,` +
             ` while ${successfullyBlockedAccounts.toString()} were successfully unassigned.`,
         );
-        throw new TRPCError({
-          message:
-            `Unassign tenant ${tenantName} from cluster (ClusterId: ${clusterId}) failed.` +
-            ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned,`,
-          code: "CONFLICT",
-        });
+        return;
       }
 
       // 如果没有取消授权失败的账户数据，则移除租户集群授权数据，移除租户授权分区数据
@@ -503,6 +498,15 @@ export const unAssignTenantCluster = adminAuthProcedure
         clusterId,
       });
     });
+
+    if (failedBlockedAccounts.length > 0) {
+      throw new TRPCError({
+        message:
+          `Unassign tenant ${tenantName} from cluster (ClusterId: ${clusterId}) failed.` +
+          ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned,`,
+        code: "CONFLICT",
+      });
+    }
   });
 
 export const assignTenantPartition = adminAuthProcedure
@@ -673,7 +677,7 @@ export const unAssignTenantPartition = adminAuthProcedure
     const { successfullyBlockedAccounts, failedBlockedAccounts } = clusterProcessResult;
 
     // 在同一个数据库事务中完成数据更新
-    return await em.transactional(async (em) => {
+    await em.transactional(async (em) => {
       // 如果取消授权成功的账户数据存在
       if (successfullyBlockedAccounts.length > 0) {
         // 移除账户分区授权数据
@@ -690,7 +694,7 @@ export const unAssignTenantPartition = adminAuthProcedure
       }
 
       // 如果取消授权失败的账户数据存在
-      // 只更改默认授权数据，扔出错误
+      // 只更改默认授权数据，错误在事务提交后抛出
       if (failedBlockedAccounts.length > 0) {
         await em.nativeUpdate(
           TenantPartitionRule,
@@ -709,12 +713,7 @@ export const unAssignTenantPartition = adminAuthProcedure
             ` while ${successfullyBlockedAccounts.toString()} were successfully unassigned.`,
         );
 
-        throw new TRPCError({
-          message:
-            `Unassign tenant ${tenantName} from partition ${partition} of cluster (ClusterId: ${clusterId}) failed.` +
-            ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned.`,
-          code: "CONFLICT",
-        });
+        return;
       }
 
       // 如果没有取消授权失败的账户数据，则移除租户授权分区数据
@@ -725,6 +724,15 @@ export const unAssignTenantPartition = adminAuthProcedure
         partition,
       });
     });
+
+    if (failedBlockedAccounts.length > 0) {
+      throw new TRPCError({
+        message:
+          `Unassign tenant ${tenantName} from partition ${partition} of cluster (ClusterId: ${clusterId}) failed.` +
+          ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned.`,
+        code: "CONFLICT",
+      });
+    }
   });
 
 export const accountDefaultClusters = adminAuthProcedure
