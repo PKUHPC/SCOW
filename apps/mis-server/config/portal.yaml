@@ -1,0 +1,62 @@
+# 是否启用作业管理功能
+jobManagement: true
+
+# 登录节点桌面功能
+loginDesktop:
+  # 是否启用
+  enabled: true
+
+  wms:
+    - name: Xfce
+      wm: xfce
+    - name: MATE
+      wm: mate
+    - name: GNOME 3
+      wm: ""
+    - name: GNOME 2
+      wm: 2d
+    - name: KDE
+      wm: 1-kde-plasma-standard
+    - name: cinnamon
+      wm: cinnamon
+
+  # 最多启动多少个桌面节点
+  maxDesktops: 3
+
+# 是否启用交互式任务功能
+apps: true
+
+# 主页标题
+homeTitle:
+  defaultText: "Super Computing on Web"
+  hostnameMap:
+    a.com: "a.com's SCOW Deployment"
+
+# 主页文本
+homeText:
+  defaultText: "SCOW"
+  hostnameMap:
+    a.com: "a.com's SCOW"
+
+# 提交作业命令框中的提示语
+# submitJobPromptText: "#此处参数设置的优先级高于页面其它地方，两者冲突时以此处为准"
+
+# 如果部署了管理系统，请设置管理系统部署的路径
+# misPath: /mis
+
+# 是否启用终端功能
+shell: true
+
+# 提交作业的默认工作目录。使用{name}代替作业名称。相对于用户的家目录
+# submitJobDefaultPwd: scow/jobs/{name}
+
+# 将保存的作业保存到什么位置。相对于用户家目录
+# savedJobsDir: scow/savedJobs
+
+# 将交互式任务的信息保存到什么位置。相对于用户的家目录
+# appJobsDir: scow/appData
+
+# TurboVNC的安装路径
+# turboVNCPath: /opt/TurboVNC
+
+
