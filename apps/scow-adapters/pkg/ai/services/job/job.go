@@ -31,36 +31,12 @@ type ServerJob struct {
 
 func OrderByStatusAndCreatedAt(db *gorm.DB) *gorm.DB {
 	return db.Order(`
-	        CASE State
-	            WHEN 'RUNNING' THEN 1
-	            WHEN 'PENDING' THEN 2
-	            ELSE 3
-	        END
-	    `).Order("job_db_inx DESC")
-}
-
-func getJobsOrderBy(sort *pb.SortInfo) string {
-	if sort == nil {
-		return "job_db_inx ASC"
-	}
-
-	fieldMap := map[string]string{
-		"job_id":      "job_db_inx",
-		"submit_time": "time_submit",
-		"start_time":  "time_start",
-		"end_time":    "time_end",
-	}
-	field, ok := fieldMap[sort.GetField()]
-	if !ok {
-		field = "job_db_inx"
-	}
-
-	order := "ASC"
-	if sort.GetOrder() == pb.SortInfo_DESC {
-		order = "DESC"
-	}
-
-	return fmt.Sprintf("%s %s", field, order)
+        CASE State
+            WHEN 'Running' THEN 1
+            WHEN 'Pending' THEN 2
+            ELSE 3
+        END
+    `).Order("job_db_inx DESC")
 }
 
 func (s *ServerJob) SubmitScriptAsJob(ctx context.Context, in *pb.SubmitScriptAsJobRequest) (*pb.SubmitScriptAsJobResponse, error) {
@@ -210,9 +186,18 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 
 func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 	var (
-		totalCount int64
-		fields     = in.Fields // 筛选需要返回的字段
-		orderStr   string
+		totalCount      int64
+		startTimeFilter int64
+		endTimeFilter   int64
+		submitStartTime int64
+		submitEndTime   int64
+		pageLimit       int
+		jobDetail       []*pb.JobInfo
+		fields          = in.Fields // 筛选需要返回的字段
+		orderStr        string
+		conditions      []string
+		values          []interface{}
+		queryJobs       *gorm.DB
 	)
 	logrus.Infof("Received request GetJobs: %v", in)
 
@@ -223,92 +208,150 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "AI adapter does not support requested job types.")
 	}
 
-	orderStr = getJobsOrderBy(in.Sort)
-
-	logrus.Tracef("job type: %v", in.JobTypes)
-	queryConditions := logrus.Fields{
-		"jobTypes": GetJobTypes(in.JobTypes),
+	// 状态筛选、用户筛选、时间筛选、分页
+	var jobs []models.JobTable
+	if in.Sort != nil {
+		orderStr = fmt.Sprintf("job_db_inx %s", in.Sort.GetOrder().String())
+	} else {
+		orderStr = "job_db_inx ASC" // 默认就是升序排列
 	}
-	queryJobs := client.DB.Model(&models.JobTable{}).Where("job_type IN (?)", GetJobTypes(in.JobTypes))
+	logrus.Tracef("job type: %v", in.JobTypes)
+	if len(in.JobTypes) > 0 {
+		conditions = append(conditions, "job_type IN (?)")
+		values = append(values, GetJobTypes(in.JobTypes))
+	}
 
 	if in.Filter != nil {
 		if in.Filter.EndTime != nil {
 			if in.Filter.EndTime.StartTime != nil {
-				startTimeFilter := in.Filter.EndTime.StartTime.GetSeconds()
-				queryConditions["endTimeStart"] = startTimeFilter
-				queryJobs = queryJobs.Where("time_end >= ?", startTimeFilter)
+				startTimeFilter = in.Filter.EndTime.StartTime.GetSeconds()
+				conditions = append(conditions, "time_end >= ? OR ? = ?")
+				values = append(values, startTimeFilter, startTimeFilter, time.Time{})
 			}
 			if in.Filter.EndTime.EndTime != nil {
-				endTimeFilter := in.Filter.EndTime.EndTime.GetSeconds()
-				queryConditions["endTimeEnd"] = endTimeFilter
-				queryJobs = queryJobs.Where("time_end <= ?", endTimeFilter)
+				endTimeFilter = in.Filter.EndTime.EndTime.GetSeconds()
+				conditions = append(conditions, "time_end <= ? OR ? = ?")
+				values = append(values, endTimeFilter, endTimeFilter, time.Time{})
 			}
 		}
 		if in.Filter.SubmitTime != nil {
 			if in.Filter.SubmitTime.StartTime != nil {
-				submitStartTime := in.Filter.SubmitTime.StartTime.GetSeconds()
-				queryConditions["submitTimeStart"] = submitStartTime
-				queryJobs = queryJobs.Where("time_submit >= ?", submitStartTime)
+				submitStartTime = in.Filter.SubmitTime.StartTime.GetSeconds()
+				conditions = append(conditions, "time_submit >= ? OR ? = ?")
+				values = append(values, submitStartTime, submitStartTime, time.Time{})
 			}
 			if in.Filter.SubmitTime.EndTime != nil {
-				submitEndTime := in.Filter.SubmitTime.EndTime.GetSeconds()
-				queryConditions["submitTimeEnd"] = submitEndTime
-				queryJobs = queryJobs.Where("time_submit <= ?", submitEndTime)
+				submitEndTime = in.Filter.SubmitTime.EndTime.GetSeconds()
+				conditions = append(conditions, "time_submit <= ? OR ? = ?")
+				values = append(values, submitEndTime, submitEndTime, time.Time{})
 			}
 		}
 		if in.Filter.Users != nil {
-			queryConditions["users"] = in.Filter.Users
-			queryJobs = queryJobs.Where("username IN (?)", in.Filter.Users)
+			conditions = append(conditions, "username IN (?)")
+			values = append(values, in.Filter.Users)
 		}
 		if in.Filter.States != nil {
-			queryConditions["states"] = in.Filter.States
-			queryJobs = queryJobs.Where("state IN (?)", in.Filter.States)
+			conditions = append(conditions, "state IN (?)")
+			values = append(values, in.Filter.States)
 		}
 		if in.Filter.Accounts != nil {
-			queryConditions["accounts"] = in.Filter.Accounts
-			queryJobs = queryJobs.Where("account IN (?)", in.Filter.Accounts)
+			conditions = append(conditions, "account IN (?)")
+			values = append(values, in.Filter.Accounts)
 		}
-		// jobName 模糊查询条件
+		// 多加两个查询条件
 		if in.Filter.JobName != nil {
-			queryConditions["jobName"] = *in.Filter.JobName
-			queryJobs = queryJobs.Where(`job_name LIKE ? ESCAPE '\\'`, "%"+EscapeLikePattern(*in.Filter.JobName)+"%")
+			conditions = append(conditions, "job_name = ?")
+			values = append(values, *in.Filter.JobName)
 		}
 		if in.Filter.JobId != nil {
-			queryConditions["jobId"] = *in.Filter.JobId
-			queryJobs = queryJobs.Where("job_db_inx = ?", *in.Filter.JobId)
+			conditions = append(conditions, "job_db_inx = ?")
+			values = append(values, *in.Filter.JobId)
+		}
+		// 将所有条件组合成一个字符串
+		combinedConditions := strings.Join(conditions, " AND ")
+		if len(in.JobTypes) > 0 && ContainsJobType(in.JobTypes, pb.JobType_JOB_TYPE_DEV_HOST) {
+			queryJobs = client.DB.Where(combinedConditions, values...).Scopes(OrderByStatusAndCreatedAt)
+		} else {
+			queryJobs = client.DB.Where(combinedConditions, values...).Order(orderStr)
+		}
+
+		if in.PageInfo != nil {
+			page := in.PageInfo.Page         // 每页记录数
+			pageSize := in.PageInfo.PageSize // 当前页码， 从1开始
+			pageLimit = int(pageSize)
+			offset := (int(page) - 1) * pageLimit
+			if err := queryJobs.Limit(pageLimit).Offset(offset).Find(&jobs).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			jobDetail = utils.GetJobInfo(jobs, fields)
+			queryTotal := queryJobs.Model(&models.JobTable{}).Where(combinedConditions, values...)
+			if err := queryTotal.Count(&totalCount).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			totalNum := uint32(totalCount)
+			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
+		} else {
+			if err := queryJobs.Find(&jobs).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			jobDetail = utils.GetJobInfo(jobs, fields)
+			queryTotal := queryJobs.Model(&models.JobTable{}).Where(combinedConditions, values...)
+			if err := queryTotal.Count(&totalCount).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			totalNum := uint32(totalCount)
+			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
+		}
+	} else {
+		combinedConditions := strings.Join(conditions, " AND ")
+		logrus.Tracef("combinedConditions: %s，values：%v", combinedConditions, values)
+		if len(in.JobTypes) > 0 && ContainsJobType(in.JobTypes, pb.JobType_JOB_TYPE_DEV_HOST) {
+			queryJobs = client.DB.Where(combinedConditions, values...).Scopes(OrderByStatusAndCreatedAt)
+		} else {
+			queryJobs = client.DB.Where(combinedConditions, values...).Order(orderStr)
+		}
+		// 不带查询条件
+		if in.PageInfo != nil {
+			page := in.PageInfo.Page         // 每页记录数
+			pageSize := in.PageInfo.PageSize // 当前页码， 从1开始
+			pageLimit = int(pageSize)
+			offset := (int(page) - 1) * pageLimit
+			// 将所有条件组合成一个字符串
+			if err := queryJobs.Limit(pageLimit).Offset(offset).Find(&jobs).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			jobDetail = utils.GetJobInfo(jobs, fields)
+			// 获取总的页数
+			if err := queryJobs.Model(&models.JobTable{}).Count(&totalCount).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			totalNum := uint32(totalCount)
+			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
+		} else {
+			if err := queryJobs.Find(&jobs).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			jobDetail = utils.GetJobInfo(jobs, fields)
+			// 获取总的页数
+			if err := queryJobs.Model(&models.JobTable{}).Count(&totalCount).Error; err != nil {
+				logrus.Errorf("GetJobs failed %v", err)
+				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+			}
+			totalNum := uint32(totalCount)
+			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
 		}
 	}
-	logrus.WithFields(queryConditions).Trace("GetJobs query conditions")
-
-	if err := queryJobs.Session(&gorm.Session{}).Count(&totalCount).Error; err != nil {
-		logrus.Errorf("GetJobs failed %v", err)
-		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
-	}
-
-	if ContainsJobType(in.JobTypes, pb.JobType_JOB_TYPE_DEV_HOST) {
-		queryJobs = queryJobs.Scopes(OrderByStatusAndCreatedAt)
-	} else {
-		queryJobs = queryJobs.Order(orderStr)
-	}
-
-	if in.PageInfo != nil {
-		page := in.PageInfo.Page         // 当前页码，从1开始
-		pageSize := in.PageInfo.PageSize // 每页记录数
-		pageLimit := int(pageSize)
-		offset := (int(page) - 1) * pageLimit
-		queryJobs = queryJobs.Limit(pageLimit).Offset(offset)
-	}
-
-	var jobs []models.JobTable
-	if err := queryJobs.Find(&jobs).Error; err != nil {
-		logrus.Errorf("GetJobs failed %v", err)
-		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
-	}
-
-	jobDetail := utils.GetJobInfo(jobs, fields)
-	totalNum := uint32(totalCount)
-	logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
-	return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
 }
 
 // GetJobById 获取单个作业接口

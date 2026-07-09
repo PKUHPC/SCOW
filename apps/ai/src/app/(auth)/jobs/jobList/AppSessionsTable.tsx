@@ -3,10 +3,11 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
+import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { App, Button, Form, Popconfirm, Popover, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import { join } from "path";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { defaultClusterContext } from "src/app/(auth)/defaultClusterContext";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
@@ -25,16 +26,16 @@ import {
   NoHoverSubmitAgainIcon,
   SubmitAgainIcon,
 } from "src/icons/operationIcon";
-import { JobType, UNKNOWN_JOB_TYPE, statusColors } from "src/models/Job";
+import { JobType, statusColors } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
 import { JobReasonI18nKeyMap } from "src/utils/common";
-import { formatDateTime } from "src/utils/datetime";
+import { calculateAppRemainingTime, compareDateTime, formatDateTime } from "src/utils/datetime";
 import { formatSize } from "src/utils/format";
+import { compareNumber } from "src/utils/math";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
-import type { SortOrder as AntdSortOrder } from "antd/es/table/interface";
 
 import { ConnectTopAppLink } from "./ConnectToAppLink";
 
@@ -51,22 +52,6 @@ export enum AppTableStatus {
 interface Props {
   status: AppTableStatus;
 }
-
-interface PageInfo {
-  page: number;
-  pageSize: number;
-}
-
-type SortField = "job_id" | "submit_time" | "end_time";
-type QuerySortOrder = "ASC" | "DESC";
-
-interface SortInfo {
-  field: SortField;
-  order: QuerySortOrder;
-}
-
-const toAntdSortOrder = (order: QuerySortOrder | undefined): AntdSortOrder | undefined =>
-  order === "ASC" ? "ascend" : order === "DESC" ? "descend" : undefined;
 
 const PopIconContainer = styled.div`
   display: flex;
@@ -111,37 +96,17 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
   );
 
   const [form] = Form.useForm<FilterForm>();
-  const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 50 });
-  const [sortInfo, setSortInfo] = useState<SortInfo>({ field: "job_id", order: "DESC" });
-  const hasMountedRef = useRef(false);
 
   const [connectivityRefreshToken, setConnectivityRefreshToken] = useState(false);
 
-  const listAppSessionsInput = useMemo(
-    () => ({
+  const { data, refetch, isLoading, isFetching } = trpc.jobs.listAppSessions.useQuery(
+    {
       clusterId: query.cluster.id,
       isRunning: parseBooleanParam(unfinished),
       jobTypes: [JobType.APP, JobType.TRAIN, JobType.INFER],
-      jobName: query.appJobName?.trim() || undefined,
-      sortField: sortInfo.field,
-      sortOrder: sortInfo.order,
-      ...pageInfo,
-    }),
-    [pageInfo, query.appJobName, query.cluster.id, sortInfo.field, sortInfo.order, unfinished],
+    },
+    { trpc: { context: { meta: { noBatch: true } } } },
   );
-
-  const { data, refetch, isLoading, isFetching } = trpc.jobs.listAppSessions.useQuery(listAppSessionsInput, {
-    trpc: { context: { meta: { noBatch: true } } },
-  });
-
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-
-    refetch();
-  }, [refetch, sortInfo.field, sortInfo.order]);
 
   const cancelJobMutation = trpc.jobs.cancelJob.useMutation({
     onError: (e) => {
@@ -167,47 +132,56 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
     return record.state === "PENDING" ? record.nodesReq : record.nodesAlloc;
   };
 
-  const columns: TableColumnsType<AppSession> = [
+  type AppSessionColumn = AppSession & { remainingTime: string };
+  const columns: TableColumnsType<AppSessionColumn> = [
     {
       title: t(p("jobId")),
       dataIndex: "jobId",
       width: "20px",
+      defaultSortOrder: "descend",
+      sorter: (a, b) => compareNumber(a.jobId, b.jobId),
     },
     {
       title: t(p("jobName")),
       dataIndex: "jobName",
       width: "200px",
       ellipsis: true,
+      sorter: (a, b) => a.jobName.localeCompare(b.jobName),
     },
     {
       title: t(p("partition")),
       dataIndex: "partition",
       width: "80px",
       ellipsis: true,
+      sorter: (a, b) => a.partition.localeCompare(b.partition),
     },
     {
       title: "CPU",
       render: (_, record) => getCpu(record),
       width: "20px",
       ellipsis: true,
+      sorter: (a, b) => compareNumber(getCpu(a), getCpu(b)),
     },
     {
       title: "GPU",
       render: (_, record) => getGpu(record),
       width: "20px",
       ellipsis: true,
+      sorter: (a, b) => compareNumber(getGpu(a), getGpu(b)),
     },
     {
       title: t(p("memory")),
       width: "50px",
       ellipsis: true,
       render: (_, record) => formatSize(getMemory(record), ["MB", "GB", "TB"]),
+      sorter: (a, b) => compareNumber(getMemory(a), getMemory(b)),
     },
     {
       title: t(p("node")),
       render: (_, record) => getNode(record),
       width: "20px",
       ellipsis: true,
+      sorter: (a, b) => compareNumber(getNode(a), getNode(b)),
     },
     {
       title: t(p("jobType")),
@@ -218,38 +192,29 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
           return t(p("app"));
         } else if (record.jobType === JobType.TRAIN) {
           return t(p("train"));
-        } else if (record.jobType === JobType.INFER) {
-          return t(p("infer"));
         }
-        return UNKNOWN_JOB_TYPE;
+        return t(p("infer"));
       },
+      sorter: (a, b) => a.jobType.localeCompare(b.jobType),
     },
     {
       title: t(p("app")),
       dataIndex: "appId",
       width: "40px",
       render: (appId: string, record) => record.appName ?? appId,
+      sorter: (a, b) => {
+        const aName = a.appName ?? a.appId ?? "";
+        const bName = b.appName ?? b.appId ?? "";
+        return aName.localeCompare(bName);
+      },
     },
     {
       title: t(p("submitTime")),
       dataIndex: "submitTime",
       width: "200px",
       render: (_, record) => (record.submitTime ? formatDateTime(record.submitTime) : ""),
-      sorter: true,
-      sortOrder: sortInfo.field === "submit_time" ? toAntdSortOrder(sortInfo.order) : undefined,
+      sorter: (a, b) => compareDateTime(a.submitTime, b.submitTime),
     },
-    ...(!unfinished
-      ? [
-          {
-            title: t(p("endTime")),
-            dataIndex: "endTime",
-            width: "200px",
-            render: (_: unknown, record: AppSession) => (record.endTime ? formatDateTime(record.endTime) : ""),
-            sorter: true,
-            sortOrder: sortInfo.field === "end_time" ? toAntdSortOrder(sortInfo.order) : undefined,
-          },
-        ]
-      : []),
     {
       title: t(p("state")),
       dataIndex: "state",
@@ -271,7 +236,20 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
         ) : (
           <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
         ),
+      sorter: (a, b) => a.state.localeCompare(b.state),
     },
+    ...(unfinished
+      ? [
+          {
+            title: t(p("remainingTime")),
+            width: "120px",
+            dataIndex: "remainingTime",
+            sorter: (a: AppSessionColumn, b: AppSessionColumn) => {
+              return compareTimeAsSeconds(a.remainingTime, b.remainingTime);
+            },
+          },
+        ]
+      : []),
     {
       title: t(p("action")),
       key: "action",
@@ -286,8 +264,6 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
     setConnectivityRefreshToken((f) => !f);
   }, [refetch, setConnectivityRefreshToken]);
 
-  const totalCount = data?.count ?? 0;
-
   const filteredData = useMemo(() => {
     if (!data) {
       return [];
@@ -296,21 +272,23 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
     return data.sessions
       .filter((x) => {
         if (query.appJobName) {
-          const keyword = query.appJobName.trim().toLowerCase();
-          if (!keyword) {
-            return true;
-          }
-
-          return x.jobName?.toLowerCase().includes(keyword) ?? false;
+          // 之前的作业只有sessionId，没有存jobName
+          const jobName = x.jobName ? x.jobName : x.sessionId;
+          return jobName.toLowerCase().includes(query.appJobName.toLowerCase());
         }
-
         return true;
       })
       .map((x) => ({
         ...x,
         jobName: x.jobName ? x.jobName : x.sessionId,
+        remainingTime:
+          x.state === "RUNNING"
+            ? calculateAppRemainingTime(x.runningTime, x.timeLimit)
+            : ["PENDING", "QUEUED"].includes(x.state)
+              ? ""
+              : x.timeLimit,
       }));
-  }, [data, query.appJobName]);
+  }, [data, query]);
 
   const renderActionIcon = (record: AppSession) => {
     const actionIcons = [
@@ -331,8 +309,7 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
       <Tooltip title={t(p("enterDir"))}>
         <EnterDirectoryIcon
           onClick={() => {
-            if (!record.workDir) return;
-            router.push(join("/files", record.workDir));
+            router.push(join("/files", record.dataPath));
           }}
         />
       </Tooltip>,
@@ -412,8 +389,7 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
         <Tooltip title={t(p("enterDir"))}>
           <EnterDirectoryIcon
             onClick={() => {
-              if (!record.workDir) return;
-              router.push(join("/files", record.workDir));
+              router.push(join("/files", record.dataPath));
             }}
           />
         </Tooltip>,
@@ -485,7 +461,6 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
               appJobName,
               cluster,
             });
-            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
         >
           <Form.Item label={t(p("jobName"))} name="appJobName">
@@ -496,7 +471,6 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
               defaultValue={clusterObj}
               onChange={(val) => {
                 setQuery({ ...query, cluster: val });
-                setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
               }}
             />
           </Form.Item>
@@ -524,32 +498,9 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
           rowKey={(record) => record.sessionId}
           loading={isLoading || isFetching}
           scroll={{ x: "max-content" }}
-          onChange={(pagination, _, sorter) => {
-            const firstSorter = Array.isArray(sorter) ? sorter[0] : sorter;
-            const hasSorterOrder = firstSorter.order === "ascend" || firstSorter.order === "descend";
-            const sortField =
-              !hasSorterOrder || firstSorter.field === "jobId"
-                ? "job_id"
-                : firstSorter.field === "endTime"
-                  ? "end_time"
-                  : "submit_time";
-            const sortOrder = firstSorter.order === "ascend" ? "ASC" : "DESC";
-
-            setSortInfo({ field: sortField, order: sortOrder });
-            setPageInfo({
-              page:
-                sortField !== sortInfo.field || sortOrder !== sortInfo.order
-                  ? 1
-                  : pagination.current ?? pageInfo.page,
-              pageSize: pagination.pageSize ?? pageInfo.pageSize,
-            });
-          }}
           pagination={{
-            current: pageInfo.page,
-            pageSize: pageInfo.pageSize,
-            total: totalCount,
             showSizeChanger: true,
-            onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+            defaultPageSize: 50,
           }}
         />
       </TableWrapper>
