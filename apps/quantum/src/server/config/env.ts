@@ -9,6 +9,10 @@ export const config = envConfig({
     desc: "HPC门户系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件",
     default: "",
   }),
+  PORTAL_INTERNAL_URL: str({
+    desc: "服务端访问portal-web服务的URL，需为包含http(s)协议的绝对URL",
+    default: "",
+  }),
   PORTAL_SERVER_URL: str({ desc: "HPC门户系统后端服务的路径", default: "" }),
 
   MIS_URL: str({ desc: "管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件", default: "" }),

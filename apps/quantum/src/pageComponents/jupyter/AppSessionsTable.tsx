@@ -222,7 +222,12 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
       if (record.state === "RUNNING") {
         return (
           <>
-            <ConnectTopAppLink session={record} cluster={cluster} refreshToken={connectivityRefreshToken} />
+            <ConnectTopAppLink
+              session={record}
+              cluster={cluster}
+              portalUrl={portalUrl}
+              refreshToken={connectivityRefreshToken}
+            />
             <Popconfirm {...popconfirmProps}>
               <Tooltip title={t("button.finishButton")}>
                 <EndIcon />

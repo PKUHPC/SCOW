@@ -468,7 +468,6 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
                   host = (await sftpReadFile(sftp)(vncSessionInfoPath)).toString().trim();
                 }
               }
-
               const connectionInfo = await callOnOne(
                 cluster,
                 logger,

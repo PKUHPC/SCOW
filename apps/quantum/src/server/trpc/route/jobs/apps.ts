@@ -1,5 +1,4 @@
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
-import { getAppConnectionInfoFromAdapter } from "@scow/lib-server";
 import { AppServiceClient, WebAppProps_ProxyType } from "@scow/protos/build/portal/app";
 import { calculateAppRemainingTime } from "src/models/job";
 import { quantumConfig } from "src/server/config/quantum";
@@ -8,7 +7,7 @@ import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src
 import { logger } from "src/server/utils/logger";
 import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getPortalClient } from "src/utils/client";
-import { isPortReachable } from "src/utils/isPortReachable";
+import { isWebAppReachableThroughPortalProxy } from "src/utils/portalProxyReachability";
 import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
 
@@ -116,6 +115,58 @@ export const getQuantumConfig = procedure
 
 const TIMEOUT_MS = 3000;
 
+const getWebAppConnectionInfo = async ({
+  cluster,
+  userId,
+  sessionId,
+  jobId,
+}: {
+  cluster: string;
+  userId: string;
+  sessionId: string;
+  jobId: number;
+}) => {
+  const client = getPortalClient(AppServiceClient);
+
+  const reply = await asyncUnaryCall(client, "connectToApp", {
+    cluster,
+    userId,
+    sessionId,
+    jobId,
+  });
+
+  if (reply.appProps?.$case !== "web") {
+    logger.warn(
+      {
+        cluster,
+        userId,
+        sessionId,
+        jobId,
+        appPropsCase: reply.appProps?.$case,
+      },
+      "Portal returned a non-web app session when connecting quantum Jupyter app.",
+    );
+    throw new Error(`session id ${sessionId} is not a web app session`);
+  }
+
+  const webProps = reply.appProps.web;
+
+  return {
+    host: reply.host,
+    port: reply.port,
+    password: reply.password,
+    type: "web" as const,
+    connect: {
+      method: webProps.method,
+      path: webProps.path,
+      query: webProps.query ?? {},
+      formData: webProps.formData ?? {},
+    },
+    proxyType: webProps.proxyType === WebAppProps_ProxyType.RELATIVE ? ("relative" as const) : ("absolute" as const),
+    customFormData: webProps.customFormData,
+  };
+};
+
 export const checkAppConnectivity = procedure
   .meta({
     openapi: {
@@ -128,6 +179,7 @@ export const checkAppConnectivity = procedure
   .input(
     z.object({
       clusterId: z.string(),
+      sessionId: z.string(),
       jobId: z.number(),
     }),
   )
@@ -136,26 +188,35 @@ export const checkAppConnectivity = procedure
       ok: z.boolean(),
     }),
   )
-  .query(async ({ input, ctx: { user } }) => {
-    const { jobId, clusterId } = input;
+  .query(async ({ input, ctx: { req, user } }) => {
+    const { jobId, clusterId, sessionId } = input;
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
     try {
-      const client = getAdapterClient(clusterId);
+      const connectionInfo = await getWebAppConnectionInfo({
+        cluster: clusterId,
+        userId: user.identityId,
+        sessionId,
+        jobId,
+      });
 
-      const connectionInfo = await getAppConnectionInfoFromAdapter(client, jobId, logger);
+      const reachable = await isWebAppReachableThroughPortalProxy({
+        req,
+        timeout: TIMEOUT_MS,
+        clusterId,
+        host: connectionInfo.host,
+        port: connectionInfo.port,
+        proxyType: connectionInfo.proxyType,
+      });
 
-      if (connectionInfo?.response?.$case === "appConnectionInfo") {
-        const host = connectionInfo.response.appConnectionInfo.host;
-        const port = connectionInfo.response.appConnectionInfo.port;
-        const reachable = await isPortReachable(port, host, TIMEOUT_MS);
-        return { ok: reachable };
-      } else {
-        return { ok: false };
-      }
-    } catch {
+      return { ok: reachable };
+    } catch (e) {
+      logger.warn(
+        { err: e, clusterId, sessionId, jobId, userId: user.identityId },
+        "Failed to check quantum Jupyter app connectivity.",
+      );
       return { ok: false };
     }
   });
@@ -195,40 +256,11 @@ export const connectToApp = procedure
   .mutation(async ({ input, ctx: { user } }) => {
     const { cluster, sessionId, jobId } = input;
     const userId = user.identityId;
-    const client = getPortalClient(AppServiceClient);
 
-    return await asyncUnaryCall(client, "connectToApp", {
-      cluster,
-      userId,
-      sessionId,
-      jobId,
-    })
-      .then((reply) => {
-        // 处理 web 类型响应
-        if (reply.appProps?.$case !== "web") {
-          throw `访问了错误的sessionId: ${sessionId}`;
-        }
-        const webProps = reply.appProps.web;
-        return {
-          host: reply.host,
-          port: reply.port,
-          password: reply.password,
-          type: "web" as const,
-          connect: {
-            method: webProps.method,
-            path: webProps.path,
-            query: webProps.query ?? {},
-            formData: webProps.formData ?? {},
-          },
-          proxyType:
-            webProps.proxyType === WebAppProps_ProxyType.RELATIVE ? ("relative" as const) : ("absolute" as const),
-          customFormData: webProps.customFormData,
-        };
-      })
-      .catch((e) => {
-        console.log("connectToApp error", e);
-        throw e;
-      });
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, cluster);
+
+    return await getWebAppConnectionInfo({ cluster, userId, sessionId, jobId });
   });
 
 export const cancelJob = procedure

@@ -1,4 +1,4 @@
-import { statSync } from "fs";
+import { rmSync, statSync } from "fs";
 import { join } from "path";
 import { createComposeSpec } from "src/compose";
 import { AuthCustomType, getInstallConfig } from "src/config/install";
@@ -32,6 +32,33 @@ it("generate correct paths", async () => {
   expect(composeConfig.services["mis-web"].environment).toContain("PORTAL_URL=/");
   expect(composeConfig.services.ai.environment).toContain("MIS_URL=/mis");
   expect(composeConfig.services.ai.environment).toContain("MIS_SERVER_URL=mis-server:5000");
+});
+
+it("sets quantum portal internal url with portal base path", async () => {
+  const config = getInstallConfig(configPath);
+  const generatedUchipConfigPath = join(process.cwd(), "config", "quantum", "uchip");
+
+  config.basePath = "/scow";
+  config.portal = { enabled: true, basePath: "/portal", novncClientImage: "" };
+  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.quantum = {
+    enabled: true,
+    basePath: "/quantum",
+    qobody: { image: "qobody:test", token: "test-token" },
+  };
+
+  rmSync(generatedUchipConfigPath, { recursive: true, force: true });
+
+  try {
+    const composeConfig = createComposeSpec(config);
+
+    expect(composeConfig.services.quantum.environment).toContain("PORTAL_URL=/scow/portal");
+    expect(composeConfig.services.quantum.environment).toContain(
+      "PORTAL_INTERNAL_URL=http://portal-web:3000/scow/portal",
+    );
+  } finally {
+    rmSync(generatedUchipConfigPath, { recursive: true, force: true });
+  }
 });
 
 it("sets proxy_read_timeout", async () => {

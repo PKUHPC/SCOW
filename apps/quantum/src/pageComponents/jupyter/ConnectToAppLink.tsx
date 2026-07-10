@@ -1,8 +1,8 @@
 "use client";
 
 import { parsePlaceholder } from "@scow/lib-config/build/parse";
+import { joinWithUrl } from "@scow/utils";
 import { App } from "antd";
-import { join } from "path";
 import { useEffect } from "react";
 import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -13,19 +13,20 @@ import { trpc } from "src/utils/trpc";
 export interface Props {
   session: AppSession;
   cluster: string;
+  portalUrl: string;
   refreshToken: boolean;
 }
 
-export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, refreshToken }) => {
+export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, portalUrl, refreshToken }) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.appSessionTable.connectToAppLink.");
 
   const { message } = App.useApp();
 
   const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery(
-    { clusterId: cluster, jobId: session.jobId },
+    { clusterId: cluster, sessionId: session.sessionId, jobId: session.jobId },
     {
-      enabled: !!session.jobId,
+      enabled: !!session.jobId && !!session.sessionId,
     },
   );
 
@@ -37,7 +38,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, refreshTo
 
   useEffect(() => {
     refetch();
-  }, [refreshToken]);
+  }, [refetch, refreshToken]);
 
   const onClick = async () => {
     const reply = await connectMutation.mutateAsync({
@@ -47,8 +48,9 @@ export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, refreshTo
     });
 
     if (reply.type === "web") {
-      const { connect, host, password, port, proxyType } = reply;
-      const interpolatedValues = { HOST: host, PASSWORD: password, PORT: port };
+      const { connect, host, password, port, proxyType, customFormData } = reply;
+
+      const interpolatedValues = { HOST: host, PASSWORD: password, PORT: port, ...customFormData };
       const path = parsePlaceholder(connect.path, interpolatedValues);
 
       const interpolateValues = (obj: Record<string, string>): Record<string, string> => {
@@ -61,7 +63,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, refreshTo
       const query = connect.query ? interpolateValues(connect.query) : {};
       const formData = connect.formData ? interpolateValues(connect.formData) : undefined;
 
-      const pathname = join("/api/proxy", cluster, proxyType, host, String(port), path); // BASE_PATH后面改成portal的
+      const pathname = joinWithUrl(portalUrl, "/api/proxy", cluster, proxyType, host, String(port), path);
 
       const url = pathname + "?" + new URLSearchParams(query).toString();
 
@@ -92,8 +94,8 @@ export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, refreshTo
   };
 
   return (
-    <DisabledA disabled={!data} onClick={onClick} message={t(p("notReady"))} abledMessage={t(p("connect"))}>
-      {data ? <ConnectIcon /> : <ConnectIcon disabled />}
+    <DisabledA disabled={!data?.ok} onClick={onClick} message={t(p("notReady"))} abledMessage={t(p("connect"))}>
+      {data?.ok ? <ConnectIcon /> : <ConnectIcon disabled />}
     </DisabledA>
   );
 };

@@ -79,6 +79,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
 
   const PORTAL_PATH = config.portal?.basePath || "/";
   checkPathFormat("portal.basePath", PORTAL_PATH);
+  const portalBasePath = join(BASE_PATH, PORTAL_PATH);
 
   const MIS_PATH = config.mis?.basePath || "/mis";
   checkPathFormat("mis.basePath", MIS_PATH);
@@ -364,8 +365,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   if (config.portal?.enabled) {
     const configPath = "/etc/scow";
 
-    const portalBasePath = join(BASE_PATH, PORTAL_PATH);
-
     composeSpec.volumes.portal_data = {};
 
     addService("portal-server", {
@@ -605,6 +604,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         MIS_URL: join(BASE_PATH, MIS_PATH),
         MIS_SERVER_URL: config.mis?.enabled ? "mis-server:5000" : "",
         PORTAL_URL: join(BASE_PATH, PORTAL_PATH),
+        PORTAL_INTERNAL_URL: `http://portal-web:3000${portalBasePath === "/" ? "" : portalBasePath}`,
         PORTAL_SERVER_URL: config.portal?.enabled ? "portal-server:5000" : "",
         AI_URL: join(BASE_PATH, AI_PATH),
         AI_DEPLOYED: config.ai?.enabled ? "true" : "false",
