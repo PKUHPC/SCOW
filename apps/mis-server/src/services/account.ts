@@ -955,12 +955,11 @@ export const accountServiceServer = plugin((server) => {
             return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
           })
           .catch(async (e) => {
-            // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+            // 如果返回的所有 Error 都是 NOT_FOUND，说明这些集群均已将此用户移出账户，可以在 scow 数据库及认证系统中删除该条关系，
             // 除此以外，都抛出异常
-            if (
-              countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
-              Object.keys(currentActivatedClusters).length
-            ) {
+            const errorCount = countSubstringOccurrences(e.details, "Error:");
+            const notFoundErrorCount = countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND");
+            if (errorCount === 0 || errorCount !== notFoundErrorCount) {
               throw e;
             }
           });
@@ -988,11 +987,11 @@ export const accountServiceServer = plugin((server) => {
           return await asyncClientCall(client.account, "deleteAccount", { accountName });
         })
         .catch(async (e) => {
-          // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已移出账户
+          // 如果返回的所有 Error 都是 NOT_FOUND，说明这些集群均已移出账户
           // 除此以外，都抛出异常
-          if (
-            countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !== Object.keys(currentActivatedClusters).length
-          ) {
+          const errorCount = countSubstringOccurrences(e.details, "Error:");
+          const notFoundErrorCount = countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND");
+          if (errorCount === 0 || errorCount !== notFoundErrorCount) {
             logger.error(e, "deleteAccount Error occurred.");
             throw e;
           }

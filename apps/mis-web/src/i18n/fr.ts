@@ -1008,8 +1008,7 @@ export default {
         removeSuccess: "Utilisateur supprimé avec succès !",
         removerUser: "Supprimer l'utilisateur",
         cannotRemoverUserWhoHaveRunningJobFromAccount:
-          "L'utilisateur a encore un job en cours, " +
-          " et l'utilisateur a été bloqué. Veuillez attendre la fin du job ou le terminer manuellement avant de le retirer." +
+          "L'utilisateur a encore un job en cours. Veuillez attendre la fin du job ou le terminer manuellement avant de le retirer." +
           " Ou une synchronisation Compte/Utilisateur est en cours. Veuillez réessayer après la fin de la synchronisation.",
 
         blockUserInAccountFailed: "Échec du blocage de l'utilisateur dans le compte.",

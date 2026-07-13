@@ -1015,7 +1015,7 @@ export default {
         removerUser: "Benutzer entfernen",
         cannotRemoverUserWhoHaveRunningJobFromAccount:
           "Der Benutzer hat noch einen laufenden" +
-          " Job und wurde gesperrt. Bitte warten Sie, bis der Job beendet ist," +
+          " Job. Bitte warten Sie, bis der Job beendet ist," +
           " oder beenden Sie den Job manuell, bevor Sie den Benutzer entfernen." +
           " Oder es läuft eine Konto-/Benutzersynchronisierung." +
           " Bitte versuchen Sie es nach Abschluss der Synchronisierung erneut.",

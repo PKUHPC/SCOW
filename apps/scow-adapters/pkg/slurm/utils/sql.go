@@ -68,6 +68,38 @@ func GetNotCompletedJobsByUserAndAccount(uid int, account string) ([]string, err
 	return jobList, nil
 }
 
+// GetNotCompletedJobsByUserNameAndAccount 获取用户未结束的作业列表。
+// 不依赖系统/LDAP uid，适用于用户已从 LDAP 删除但 Slurm accounting 中仍有用户关联的场景。
+func GetNotCompletedJobsByUserNameAndAccount(user, account string) ([]string, error) {
+	var (
+		jobName string
+		jobList []string
+	)
+	clusterName := config.SlurmValue.MySQLConfig.ClusterName
+	jobSqlConfig := fmt.Sprintf(
+		"SELECT j.job_name FROM %s_job_table j JOIN %s_assoc_table a ON j.id_assoc = a.id_assoc WHERE a.user = ? AND a.acct = ? AND j.state IN (0, 1, 2)",
+		clusterName,
+		clusterName,
+	)
+	jobRows, err := client.SlurmDB.Query(jobSqlConfig, user, account)
+	if err != nil {
+		return nil, fmt.Errorf("sql query failed")
+	}
+	defer jobRows.Close()
+	for jobRows.Next() {
+		err = jobRows.Scan(&jobName)
+		if err != nil {
+			return nil, fmt.Errorf("sql query failed")
+		}
+		jobList = append(jobList, jobName)
+	}
+	err = jobRows.Err()
+	if err != nil {
+		return nil, fmt.Errorf("sql query failed")
+	}
+	return jobList, nil
+}
+
 // GetAllQosInDatabase 从数据库查询所有的qos
 func GetAllQosInDatabase() ([]string, error) {
 	var (

@@ -1005,8 +1005,7 @@ export default {
         removeSuccess: "¡Usuario eliminado con éxito!",
         removerUser: "Eliminar usuario",
         cannotRemoverUserWhoHaveRunningJobFromAccount:
-          "El usuario aún tiene un trabajo en ejecución, " +
-          " y el usuario ha sido bloqueado. Espere a que termine el trabajo o termínelo manualmente antes de moverlo." +
+          "El usuario aún tiene un trabajo en ejecución. Espere a que termine el trabajo o termínelo manualmente antes de moverlo." +
           " O hay una sincronización de Cuenta/Usuario en ejecución." +
           " Inténtelo de nuevo después de completar la sincronización.",
 

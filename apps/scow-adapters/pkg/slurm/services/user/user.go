@@ -135,15 +135,21 @@ func (s *ServerUser) RemoveUserFromAccount(ctx context.Context, in *pb.RemoveUse
 		return nil, ce.RichError(codes.NotFound, "USER_ACCOUNT_NOT_FOUND", err.Error())
 	}
 
-	// 查询用户uid
+	// 获取用户未结束的作业列表。优先用 uid 查询；若用户已从 LDAP 删除导致 uid 不可解析，
+	// 则回退到 Slurm accounting 中的 assoc 关系查询。
 	uid, _, err := utils.GetUserUidGid(in.UserId)
-	if err != nil {
-		logrus.Errorf("RemoveUserFromAccount failed: %v", err)
-		return nil, ce.RichError(codes.NotFound, "USER_NOT_FOUND", err.Error())
+	var jobList []string
+	if err == nil {
+		jobList, err = utils.GetNotCompletedJobsByUserAndAccount(uid, in.AccountName)
+	} else {
+		logrus.Warnf(
+			"Get user uid failed, fallback to query jobs by slurm assoc, user: %s, account: %s, err: %v",
+			in.UserId,
+			in.AccountName,
+			err,
+		)
+		jobList, err = utils.GetNotCompletedJobsByUserNameAndAccount(in.UserId, in.AccountName)
 	}
-
-	// 获取用户未结束的作业列表
-	jobList, err := utils.GetNotCompletedJobsByUserAndAccount(uid, in.AccountName)
 	if err != nil {
 		logrus.Errorf("RemoveUserFromAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())

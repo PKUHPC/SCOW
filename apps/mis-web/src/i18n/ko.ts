@@ -952,7 +952,7 @@ export default {
         removeSuccess: "사용자 제거 성공!",
         removerUser: "사용자 제거",
         cannotRemoverUserWhoHaveRunningJobFromAccount:
-          "사용자에게 아직 실행 중인 작업이 있으며 사용자가 차단되었습니다. 작업 종료를 기다리거나 수동으로 종료한 후 이동하세요." +
+          "사용자에게 아직 실행 중인 작업이 있습니다. 작업 종료를 기다리거나 수동으로 종료한 후 이동하세요." +
           " 또한 계정/사용자 동기화가 실행 중일 수 있습니다. 동기화 완료 후 다시 시도하세요.",
 
         blockUserInAccountFailed: "계정에서 사용자 차단 실패",

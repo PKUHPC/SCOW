@@ -317,58 +317,41 @@ export const userServiceServer = plugin((server) => {
 
       for (const userId of userIds) {
         try {
-          let userAccount: UserAccount | null;
-          try {
-            userAccount = await em.transactional(async (transactionalEm) => {
-              const userAcc = await transactionalEm.findOne(
-                UserAccount,
-                {
-                  user: { userId, tenant: { name: tenantName } },
-                  account: { accountName, tenant: { name: tenantName } },
-                },
-                {
-                  populate: ["user", "account"],
-                  lockMode: LockMode.PESSIMISTIC_WRITE,
-                },
-              );
+          const userAccount = await em.transactional(async (transactionalEm) => {
+            const userAcc = await transactionalEm.findOne(
+              UserAccount,
+              {
+                user: { userId, tenant: { name: tenantName } },
+                account: { accountName, tenant: { name: tenantName } },
+              },
+              {
+                populate: ["user", "account"],
+                lockMode: LockMode.PESSIMISTIC_WRITE,
+              },
+            );
 
-              if (!userAcc) {
-                results.push({
-                  userId,
-                  success: false,
-                  code: Status.NOT_FOUND,
-                  reason: `User ${userId} or account ${accountName} is not found.`,
-                });
-                return null;
-              }
+            if (!userAcc) {
+              results.push({
+                userId,
+                success: false,
+                code: Status.NOT_FOUND,
+                reason: `User ${userId} or account ${accountName} is not found.`,
+              });
+              return null;
+            }
 
-              if (userAcc.role === UserRole.OWNER) {
-                results.push({
-                  userId,
-                  success: false,
-                  code: Status.OUT_OF_RANGE,
-                  reason: `User ${userId} is the owner of the account ${accountName}。`,
-                });
-                return null;
-              }
+            if (userAcc.role === UserRole.OWNER) {
+              results.push({
+                userId,
+                success: false,
+                code: Status.OUT_OF_RANGE,
+                reason: `User ${userId} is the owner of the account ${accountName}。`,
+              });
+              return null;
+            }
 
-              // 如果要从账户中移出用户，先封锁，先将用户封锁，保证用户无法提交作业
-              if (userAcc.blockedInCluster === UserStatus.UNBLOCKED) {
-                userAcc.state = UserStateInAccount.BLOCKED_BY_ADMIN;
-                await blockUserInAccount(userAcc, currentActivatedClusters, server.ext, logger);
-              }
-
-              return userAcc;
-            });
-          } catch (error) {
-            results.push({
-              userId,
-              success: false,
-              code: Status.INTERNAL,
-              reason: `Failed to block user: ${JSON.stringify(error)}`,
-            });
-            return;
-          }
+            return userAcc;
+          });
 
           if (!userAccount) continue;
 
@@ -377,11 +360,14 @@ export const userServiceServer = plugin((server) => {
           const jobs = await Promise.all(
             Object.entries(currentActivatedClusters).map(async ([cluster, clusterConfig]) => ({
               cluster,
-              result: await server.ext.clusters.callOnOne(cluster, logger, async (client) =>
-                await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
-                  fields,
-                  filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"] },
-                }),
+              result: await server.ext.clusters.callOnOne(
+                cluster,
+                logger,
+                async (client) =>
+                  await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+                    fields,
+                    filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"] },
+                  }),
               ),
             })),
           );
@@ -403,20 +389,19 @@ export const userServiceServer = plugin((server) => {
               return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
             })
             .catch(async (e) => {
-              // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+              // 如果返回的所有 Error 都是 NOT_FOUND，说明这些集群均已将此用户移出账户，可以在 scow 数据库及认证系统中删除该条关系，
               // 除此以外，都抛出异常
-              if (
-                countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
-                Object.keys(currentActivatedClusters).length
-              ) {
+              const errorCount = countSubstringOccurrences(e.details, "Error:");
+              const notFoundErrorCount = countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND");
+              if (errorCount === 0 || errorCount !== notFoundErrorCount) {
                 results.push({
                   userId,
                   success: false,
                   code: Status.UNAVAILABLE,
                   reason: JSON.stringify(e),
                 });
+                shouldContinue = true;
               }
-              shouldContinue = true;
             });
 
           if (shouldContinue) {
@@ -958,11 +943,14 @@ export const userServiceServer = plugin((server) => {
       const runningJobs = await Promise.all(
         Object.entries(currentActivatedClusters).map(async ([cluster, clusterConfig]) => ({
           cluster,
-          result: await server.ext.clusters.callOnOne(cluster, logger, async (client) =>
-            await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
-              fields,
-              filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"] },
-            }),
+          result: await server.ext.clusters.callOnOne(
+            cluster,
+            logger,
+            async (client) =>
+              await getSchedulerAdapterJobsByClusterFeatures(client, clusterConfig, {
+                fields,
+                filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"] },
+              }),
           ),
         })),
       );
@@ -995,12 +983,11 @@ export const userServiceServer = plugin((server) => {
             return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
           })
           .catch(async (e) => {
-            // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+            // 如果返回的所有 Error 都是 NOT_FOUND，说明这些集群均已将此用户移出账户，可以在 scow 数据库及认证系统中删除该条关系，
             // 除此以外，都抛出异常
-            if (
-              countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
-              Object.keys(currentActivatedClusters).length
-            ) {
+            const errorCount = countSubstringOccurrences(e.details, "Error:");
+            const notFoundErrorCount = countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND");
+            if (errorCount === 0 || errorCount !== notFoundErrorCount) {
               throw e;
             }
           });
@@ -1039,11 +1026,11 @@ export const userServiceServer = plugin((server) => {
           return await asyncClientCall(client.user, "deleteUser", { userId });
         })
         .catch(async (e) => {
-          // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已移出此用户
+          // 如果返回的所有 Error 都是 NOT_FOUND，说明这些集群均已移出此用户
           // 除此以外，都抛出异常
-          if (
-            countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !== Object.keys(currentActivatedClusters).length
-          ) {
+          const errorCount = countSubstringOccurrences(e.details, "Error:");
+          const notFoundErrorCount = countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND");
+          if (errorCount === 0 || errorCount !== notFoundErrorCount) {
             logger.error(e, "deleteUser Error occurred.");
             throw e;
           }

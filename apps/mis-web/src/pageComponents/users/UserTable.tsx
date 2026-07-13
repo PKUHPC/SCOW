@@ -348,6 +348,13 @@ export const UserTable: React.FC<Props> = ({ data, isLoading, reload, update, ac
                           });
                           reload();
                         })
+                        .httpError(500, () => {
+                          message.destroy("removeUser");
+                          message.error({
+                            content: t(p("removeFailed")),
+                            duration: 4,
+                          });
+                        })
                         .then(() => {
                           message.destroy("removeUser");
                           message.success(t(p("removeSuccess")));

@@ -976,9 +976,10 @@ export default {
         confirmRemove: "确认移出用户",
         confirmRemoveText: "确认要从账户",
         removeSuccess: "移出用户成功！",
+        removeFailed: "移出用户失败！",
         removerUser: "移出用户",
         cannotRemoverUserWhoHaveRunningJobFromAccount:
-          "用户还有作业在运行，已封锁该用户，请等待作业结束或手动结束作业后再移出。" +
+          "用户还有作业在运行，请等待作业结束或手动结束作业后再移出。" +
           "或者有同步用户账户信息正在运行，请等待同步结束后再重试。",
 
         blockUserInAccountFailed: "在账户下封锁用户失败",

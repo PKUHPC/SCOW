@@ -1025,10 +1025,10 @@ export default {
         confirmRemove: "Confirm removing user",
         confirmRemoveText: "Confirm removing user from account",
         removeSuccess: "User removed successfully!",
+        removeFailed: "Remove user failed!",
         removerUser: "Remove User",
         cannotRemoverUserWhoHaveRunningJobFromAccount:
-          "The user still has a job running, " +
-          " and the user has been blocked. Please wait for the job to end or end the job manually before moving out." +
+          "The user still has a job running. Please wait for the job to end or end the job manually before moving out." +
           " Or there is a Account/User synchronization running. Please try again after synchronization completion.",
 
         blockUserInAccountFailed: "Block user in account failed.",
