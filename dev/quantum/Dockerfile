@@ -1,7 +1,7 @@
 FROM ccrepo.pku.edu.cn/dockerhub/library/debian:12
 
 # Setup proxy
-RUN sed -i 's|http://deb.debian.org/debian|https://mirrors.ustc.edu.cn/debian|g' /etc/apt/sources.list.d/debian.sources
+RUN sed -i 's|http://deb.debian.org/debian|http://mirrors.pku.edu.cn/debian|g' /etc/apt/sources.list.d/debian.sources
 
 # Install necessary tools
 RUN apt update && apt install -y curl wget sudo openssh-client bzip2
