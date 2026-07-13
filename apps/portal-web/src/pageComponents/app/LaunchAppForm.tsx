@@ -179,9 +179,9 @@ export interface PartitionRow {
   kind: PartitionTabKey;
 }
 
-// 生成默认应用名称，命名规则为"集群Id-当前应用名-年月日-时分秒"
-const genAppJobName = (clusterId: string, appName: string): string => {
-  return `${clusterId}-${appName}-${dayjs().format("YYYYMMDD-HHmmss")}`;
+// 生成默认应用名称，命名规则为"当前应用名-年月日-时分秒"
+const genAppJobName = (appName: string): string => {
+  return `${appName}-${dayjs().format("YYYYMMDD-HHmmss")}`;
 };
 
 const p = prefix("pageComp.app.launchAppForm.");
@@ -1047,7 +1047,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     if (selectedCluster) {
       resourceForm.setFieldValue("cluster", selectedCluster);
       setSelectedCluster(selectedCluster);
-      baseForm.setFieldValue("appJobName", genAppJobName(selectedCluster, appName || ""));
+      baseForm.setFieldValue("appJobName", genAppJobName(appName || ""));
     }
   }, [baseForm, selectedCluster]);
 

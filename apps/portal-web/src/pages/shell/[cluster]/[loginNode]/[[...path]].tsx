@@ -1,4 +1,3 @@
-import "@xterm/xterm/css/xterm.css";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Button, Popover, Space, Spin, Typography } from "antd";
 import { NextPage } from "next";

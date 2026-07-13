@@ -13,7 +13,17 @@ import { styled } from "styled-components";
 interface ClusterInfo {
   id: string;
   config: ClusterConfigSchema;
+  shellBaseUrl: string;
+  shellType: "portal" | "ai";
 }
+
+type LoginNodeConfig = ClusterConfigSchema["loginNodes"][number];
+
+const getLoginNodeInfo = (loginNodeConfig: LoginNodeConfig) => {
+  return typeof loginNodeConfig === "string"
+    ? { name: loginNodeConfig, address: loginNodeConfig }
+    : { name: loginNodeConfig.name, address: loginNodeConfig.address };
+};
 
 const Container = styled.div`
   display: grid;
@@ -25,51 +35,55 @@ const Container = styled.div`
 export const ShellCardList: React.FC = () => {
   const { activatedClusters, fullClusterConfigs } = useStore(ClusterInfoStore);
 
-  console.log("ClusterInfoStore", activatedClusters, fullClusterConfigs);
-
   // 1. 从 fullClusterConfigs 中取出所有集群（对象 -> 数组）
   const allClusters = Object.entries(fullClusterConfigs || {});
 
-  // 2. 过滤掉 hpc 不可用的
-  const hpcAvailableClusters = allClusters.filter(([_, config]) => config.hpc?.enabled);
-
-  // 3. 拆分为启用组 / 停用组
+  // 2. 生成启用组。HPC 和 AI 同时启用时优先打开 portal shell。
   const activeClusters: ClusterInfo[] = [];
-  const inactiveClusters: ClusterInfo[] = [];
 
-  for (const [id, config] of hpcAvailableClusters) {
-    if (activatedClusters?.[id]) {
-      activeClusters.push({ id, config });
-    } else {
-      inactiveClusters.push({ id, config });
+  for (const [id, config] of allClusters) {
+    const shellTarget =
+      config.hpc?.enabled && publicConfig.PORTAL_URL
+        ? { shellBaseUrl: publicConfig.PORTAL_URL, shellType: "portal" as const }
+        : config.ai?.enabled && publicConfig.AI_URL
+          ? { shellBaseUrl: publicConfig.AI_URL, shellType: "ai" as const }
+          : undefined;
+
+    if (shellTarget && activatedClusters?.[id]) {
+      activeClusters.push({ id, config, ...shellTarget });
     }
   }
 
-  // 4. 没有启用集群时，显示错误页
-  if (activeClusters.length === 0 || publicConfig.PORTAL_URL === undefined) {
+  // 3. 没有启用集群时，显示错误页
+  if (activeClusters.length === 0) {
     return <ClusterNotAvailablePage />;
   }
 
-  // 5. 生成 ShellCardData
+  // 4. 生成 ShellCardData
   const languageId = useI18n().currentLanguage.id;
 
-  const shellCards = activeClusters.flatMap(({ id, config }) => {
+  const shellCards = activeClusters.flatMap(({ id, config, shellBaseUrl, shellType }) => {
     const loginNodes = config.loginNodes;
     if (loginNodes.length === 0) {
       return [];
     }
 
-    return loginNodes.map((node) => ({
-      id: `${id}-${node.name}`,
-      clusterId: id,
-      clusterName: getI18nConfigCurrentText(config.displayName, languageId) || id,
-      nodeAddress: node.address,
-      nodeName: getI18nConfigCurrentText(node.name, languageId),
-      description: getI18nConfigCurrentText(config.description, languageId),
-    }));
+    return loginNodes.map((loginNodeConfig) => {
+      const node = getLoginNodeInfo(loginNodeConfig);
+      return {
+        id: `${shellBaseUrl}-${id}-${node.name}`,
+        clusterId: id,
+        clusterName: getI18nConfigCurrentText(config.displayName, languageId) || id,
+        nodeAddress: node.address,
+        nodeName: getI18nConfigCurrentText(node.name, languageId),
+        description: getI18nConfigCurrentText(config.description, languageId),
+        shellBaseUrl,
+        shellType,
+      };
+    });
   });
 
-  // 当前不展示hpc为false以及停用的集群
+  // 当前不展示对应系统未启用、未配置 URL 以及停用的集群
   return (
     <Container>
       {shellCards.map((card) => (

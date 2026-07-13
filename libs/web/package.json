@@ -31,6 +31,8 @@
     "@scow/protos": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
+    "@xterm/addon-fit": "0.10.0",
+    "@xterm/xterm": "5.5.0",
     "@uiw/codemirror-theme-github": "4.23.7",
     "@uiw/react-codemirror": "4.23.7",
     "mime-types": "2.1.35",

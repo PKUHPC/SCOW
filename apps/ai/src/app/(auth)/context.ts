@@ -2,13 +2,14 @@
 
 import React, { useContext } from "react";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
-import { Cluster, PublicConfig } from "src/server/trpc/route/config";
+import { Cluster, LoginNodeConfig, PublicConfig } from "src/server/trpc/route/config";
 
 export type ScowClusterConfigs = Record<
   string,
   {
     scowdEnabled: boolean;
     storage: { enabled: boolean; replicaExist: boolean; paths: string[] };
+    loginNodes: LoginNodeConfig;
     ai: {
       app?: { maxRunningTimeHours?: number };
       train?: { maxRunningTimeHours?: number };

@@ -3,7 +3,6 @@ import { ShellIcon } from "src/assets/headerIcons";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { BaseCardInfoItem, CardActions, CardTitleContainer, StyledButton, StyledCard } from "src/utils/baseCardStyles";
 import { getTransparentColor } from "src/utils/color";
-import { publicConfig } from "src/utils/config";
 import { styled, useTheme } from "styled-components";
 
 const CardDescription = styled.p`
@@ -35,6 +34,8 @@ export interface ShellCardData {
   clusterId: string;
   nodeAddress: string;
   nodeName: string;
+  shellBaseUrl: string;
+  shellType: "portal" | "ai";
 }
 
 interface ShellCardProps {
@@ -51,9 +52,11 @@ export const ShellCard: React.FC<ShellCardProps> = ({ data }) => {
   const borderColorWithAlpha = getTransparentColor(themeColor, 0.15);
 
   const handleOpenShell = () => {
-    const shellPath = `/shell/${data.clusterId}/${data.nodeAddress}?useRoot=true`;
-    const portalUrl = publicConfig.PORTAL_URL!; // 在shellcardlist组件已检查必须存在
-    const fullUrl = join(portalUrl, shellPath);
+    const shellPath =
+      data.shellType === "portal"
+        ? `/shell/${data.clusterId}/${data.nodeAddress}?useRoot=true`
+        : `/shell/${data.clusterId}/${data.nodeAddress}`;
+    const fullUrl = join(data.shellBaseUrl, shellPath);
     window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 

@@ -559,6 +559,11 @@ export default {
       job: "작업",
       refresh: "새로고침 및 재연결",
     },
+    shell: {
+      terminal: "Terminal of",
+      content: "Connect to node {2} of cluster {1} as ID: {0}",
+      refresh: "Refresh and reconnect",
+    },
     files: {
       pages: {
         fileManage: "파일 관리",

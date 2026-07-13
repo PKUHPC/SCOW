@@ -1,19 +1,7 @@
-import { debounce } from "@scow/lib-web/build/utils/debounce";
-import { FitAddon } from "@xterm/addon-fit";
-import { Terminal } from "@xterm/xterm";
+import { WebSocketTerminal } from "@scow/lib-web/build/components/shell/WebSocketTerminal";
 import { join } from "path";
-import { useEffect, useRef } from "react";
 import { urlToDownload } from "src/pageComponents/filemanager/api";
-import { ShellInputData, ShellOutputData } from "src/server/setup/shell";
 import { publicConfig } from "src/utils/config";
-import { styled } from "styled-components";
-
-const TerminalContainer = styled.div`
-  background-color: black;
-  flex: 1;
-
-  width: 100%;
-`;
 
 interface Props {
   userId: string;
@@ -40,108 +28,56 @@ const processShellOutput = (dataString: string) => {
 };
 
 export const Shell: React.FC<Props> = ({ userId, cluster, loginNode, path, useRootEnabled }) => {
-  const container = useRef<HTMLDivElement>(null);
+  const getWsUrl = ({ cols, rows }: { cols: number; rows: number }) => {
+    const payload = {
+      cluster,
+      loginNode,
+      path,
+      cols: cols + "",
+      rows: rows + "",
+      useRoot: useRootEnabled ? "true" : "false", // 通过http api的权限验证，通知websocket需要验证useRoot。
+    };
 
-  useEffect(() => {
-    if (container.current) {
-      const term = new Terminal({
-        cursorBlink: true,
-      });
+    return (
+      (location.protocol === "http:" ? "ws" : "wss") +
+      "://" +
+      location.host +
+      join(publicConfig.BASE_PATH, "/api/shell") +
+      "?" +
+      new URLSearchParams(payload).toString()
+    );
+  };
 
-      const fitAddon = new FitAddon();
-      term.loadAddon(fitAddon);
-      term.open(container.current);
-
-      const payload = {
-        cluster,
-        loginNode,
-        path,
-        cols: term.cols + "",
-        rows: term.rows + "",
-        useRoot: useRootEnabled ? "true" : "false", // 通过http api的权限验证，通知websocket需要验证useRoot。
-      };
-
-      term.write(
-        `\r\n*** Connecting to cluster ${payload.cluster} as ${userId} to ` +
-          `${path ? "path " + path : "home path"} ***\r\n`,
-      );
-
-      const socket = new WebSocket(
-        (location.protocol === "http:" ? "ws" : "wss") +
-          "://" +
-          location.host +
-          join(publicConfig.BASE_PATH, "/api/shell") +
-          "?" +
-          new URLSearchParams(payload).toString(),
-      );
-
-      socket.onopen = () => {
-        term.clear();
-
-        const send = (data: ShellInputData) => {
-          socket.send(JSON.stringify(data));
-        };
-
-        const resizeObserver = new ResizeObserver(
-          debounce(() => {
-            fitAddon.fit();
-            send({ $case: "resize", resize: { cols: term.cols, rows: term.rows } });
-          }),
-        );
-
-        resizeObserver.observe(container.current!);
-
-        term.onData((data) => {
-          send({ $case: "data", data: { data } });
-        });
-
-        term.onResize(({ cols, rows }) => {
-          send({ $case: "resize", resize: { cols, rows } });
-        });
-      };
-
-      socket.onmessage = (e) => {
-        const message = JSON.parse(e.data) as ShellOutputData;
-        switch (message.$case) {
-          case "data": {
-            const data = Buffer.from(message.data.data);
-
-            const dataString = data.toString();
-            if (dataString.includes(OPEN_EXPLORER_PREFIX)) {
-              const { path } = processShellOutput(dataString);
-              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path));
-            } else if (dataString.includes(DOWNLOAD_FILE_PREFIX)) {
-              const { result, path } = processShellOutput(dataString);
-              const fileStartIndex = result.search(DOWNLOAD_FILE_PREFIX);
-              const fileEndIndex = result.search(DOWNLOAD_FILE_SUFFIX);
-              const file = result.substring(fileStartIndex + DOWNLOAD_FILE_PREFIX.length, fileEndIndex);
-              window.location.href = urlToDownload(cluster, join(path, file), true);
-            } else if (dataString.includes(EDIT_FILE_PREFIX)) {
-              const { result, path } = processShellOutput(dataString);
-              const fileStartIndex = result.search(EDIT_FILE_PREFIX);
-              const fileEndIndex = result.search(EDIT_FILE_SUFFIX);
-              const file = result.substring(fileStartIndex + EDIT_FILE_PREFIX.length, fileEndIndex);
-              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?edit=" + file));
-            } else if (dataString.includes(UPLOAD_FILE_PREFIX)) {
-              const { path } = processShellOutput(dataString);
-              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?uploadModalOpen=true"));
-            }
-            term.write(Uint8Array.from(data));
-
-            break;
-          }
-          case "exit":
-            term.write(`Process exited with code ${message.exit.code} and signal ${message.exit.signal}.`);
-            break;
-        }
-      };
-
-      return () => {
-        socket.close();
-        term.dispose();
-      };
+  const handleData = (_data: Uint8Array, dataString: string) => {
+    if (dataString.includes(OPEN_EXPLORER_PREFIX)) {
+      const { path } = processShellOutput(dataString);
+      window.open(join(publicConfig.BASE_PATH, "/files", cluster, path));
+    } else if (dataString.includes(DOWNLOAD_FILE_PREFIX)) {
+      const { result, path } = processShellOutput(dataString);
+      const fileStartIndex = result.search(DOWNLOAD_FILE_PREFIX);
+      const fileEndIndex = result.search(DOWNLOAD_FILE_SUFFIX);
+      const file = result.substring(fileStartIndex + DOWNLOAD_FILE_PREFIX.length, fileEndIndex);
+      window.location.href = urlToDownload(cluster, join(path, file), true);
+    } else if (dataString.includes(EDIT_FILE_PREFIX)) {
+      const { result, path } = processShellOutput(dataString);
+      const fileStartIndex = result.search(EDIT_FILE_PREFIX);
+      const fileEndIndex = result.search(EDIT_FILE_SUFFIX);
+      const file = result.substring(fileStartIndex + EDIT_FILE_PREFIX.length, fileEndIndex);
+      window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?edit=" + file));
+    } else if (dataString.includes(UPLOAD_FILE_PREFIX)) {
+      const { path } = processShellOutput(dataString);
+      window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?uploadModalOpen=true"));
     }
-  }, [container.current]);
+  };
 
-  return <TerminalContainer ref={container} />;
+  return (
+    <WebSocketTerminal
+      getWsUrl={getWsUrl}
+      connectMessage={
+        `\r\n*** Connecting to cluster ${cluster} as ${userId} to ` +
+        `${path ? "path " + path : "home path"} ***\r\n`
+      }
+      onData={handleData}
+    />
+  );
 };

@@ -563,6 +563,11 @@ export default {
       job: "Tâche",
       refresh: "Actualiser et se reconnecter",
     },
+    shell: {
+      terminal: "Terminal of",
+      content: "Connect to node {2} of cluster {1} as ID: {0}",
+      refresh: "Refresh and reconnect",
+    },
     files: {
       pages: {
         fileManage: "Gestion des fichiers",

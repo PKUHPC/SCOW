@@ -866,6 +866,11 @@ export default {
       job: "的作业",
       refresh: "刷新并重新连接",
     },
+    shell: {
+      terminal: "的终端",
+      content: "以ID: {0} 连接到集群 {1} 的 {2} 节点",
+      refresh: "刷新并重新连接",
+    },
     files: {
       pages: {
         fileManage: "文件管理",
