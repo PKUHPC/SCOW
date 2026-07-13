@@ -15,3 +15,11 @@ stages:
   - name: E2E
     reviewers: ["lyl-available"]
     optional: true
+
+aiReview:
+  prompt: |
+    重点关注权限控制、数据一致性和兼容性问题。
+    忽略仅影响内部调试脚本的修改。
+  prDescription:
+    mode: "template"
+    templatePath: ".github/PULL_REQUEST_TEMPLATE.md"
