@@ -1,24 +1,27 @@
+import { runWithLogContext } from "@scow/lib-server";
 import { middleware } from "src/server/trpc/def";
 
 export const withLoggerContext = middleware(async (opts) => {
-  const start = Date.now();
+  return runWithLogContext(opts.ctx.logContext, async () => {
+    const start = Date.now();
 
-  const result = await opts.next();
+    const result = await opts.next();
 
-  const durationMs = Date.now() - start;
-  const meta = {
-    path: opts.path,
-    type: opts.type,
-    input: opts.input ?? opts.getRawInput(),
-    output: result,
-    durationMs,
-  };
+    const durationMs = Date.now() - start;
+    const meta = {
+      path: opts.path,
+      type: opts.type,
+      input: opts.input ?? opts.getRawInput(),
+      output: result,
+      durationMs,
+    };
 
-  if (result.ok) {
-    console.log("OK request timing:", meta);
-  } else {
-    console.error("Non-OK request timing", meta);
-  }
+    if (result.ok) {
+      opts.ctx.logger.info(meta, "OK request timing");
+    } else {
+      opts.ctx.logger.error(meta, "Non-OK request timing");
+    }
 
-  return result;
+    return result;
+  });
 });

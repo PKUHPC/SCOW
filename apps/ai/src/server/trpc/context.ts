@@ -1,9 +1,16 @@
+import { LogContext, withLogContext } from "@scow/lib-server";
 import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
+import { randomUUID } from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
+import type pino from "pino";
 
 import { ClientUserInfo } from "src/server/trpc/route/auth";
+import { logger } from "src/server/utils/logger";
 
-export type Context = object;
+export interface Context {
+  logger: pino.Logger;
+  logContext: LogContext;
+}
 
 export type SSRContext<R = any> = Context & {
   req: NextApiRequest;
@@ -18,4 +25,15 @@ export function isSSRContext(ctx: GlobalContext): ctx is SSRContext {
   return !!((ctx as SSRContext)?.req && (ctx as SSRContext)?.res);
 }
 
-export const createContext = (ctx: CreateNextContextOptions): GlobalContext => ctx;
+export const createContext = (ctx: CreateNextContextOptions): GlobalContext => {
+  const logContext = {
+    req: randomUUID(),
+    path: ctx.req.url?.split("?")[0],
+  };
+
+  return {
+    ...ctx,
+    logContext,
+    logger: withLogContext(logger, logContext),
+  };
+};

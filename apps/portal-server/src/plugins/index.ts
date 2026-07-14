@@ -1,13 +1,13 @@
 import { Plugin } from "@ddadaal/tsgrpc-server";
 import { ScowResourcePlugin, scowResourcePlugin } from "@scow/lib-scow-resource";
-import { apiAuthPlugin } from "@scow/lib-server";
+import { apiAuthPlugin, requestLogContextPlugin } from "@scow/lib-server";
 import { commonConfig } from "src/config/common";
 
 declare module "@ddadaal/tsgrpc-server" {
   interface Extensions extends ScowResourcePlugin {}
 }
 
-export const plugins = [] as Plugin[];
+export const plugins = [requestLogContextPlugin] as Plugin[];
 
 if (commonConfig.scowApi) {
   plugins.push(apiAuthPlugin(commonConfig.scowApi));

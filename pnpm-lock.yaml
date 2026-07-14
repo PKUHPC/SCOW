@@ -2536,6 +2536,9 @@ importers:
       nookies:
         specifier: 2.5.2
         version: 2.5.2
+      pino:
+        specifier: 9.6.0
+        version: 9.6.0
       shell-quote:
         specifier: 1.8.2
         version: 1.8.2

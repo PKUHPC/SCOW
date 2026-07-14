@@ -1,3 +1,4 @@
+import { runWithLogContext, withLogContext } from "@scow/lib-server";
 import { TRPCError } from "@trpc/server";
 import { getUserToken } from "src/server/auth/cookie";
 import { MOCK_USER_INFO } from "src/server/auth/server";
@@ -8,15 +9,24 @@ import { USE_MOCK } from "src/utils/processEnv";
 
 export const withAdminAuthContext = middleware(async ({ ctx, next }) => {
   if (USE_MOCK) {
-    return next({
-      ctx: {
-        ...ctx,
-        user: {
-          ...MOCK_USER_INFO,
-          token: "123",
+    const logContext = { userId: MOCK_USER_INFO.identityId };
+
+    return runWithLogContext(logContext, () =>
+      next({
+        ctx: {
+          ...ctx,
+          logContext: {
+            ...ctx.logContext,
+            ...logContext,
+          },
+          logger: withLogContext(ctx.logger, logContext),
+          user: {
+            ...MOCK_USER_INFO,
+            token: "123",
+          },
         },
-      },
-    });
+      }),
+    );
   }
 
   const token = getUserToken(ctx.req);
@@ -44,10 +54,19 @@ export const withAdminAuthContext = middleware(async ({ ctx, next }) => {
     throw new UserForbiddenError(validatedUser.identityId);
   }
 
-  return next({
-    ctx: {
-      ...ctx,
-      user: validatedUser,
-    },
-  });
+  const logContext = { userId: validatedUser.identityId };
+
+  return runWithLogContext(logContext, () =>
+    next({
+      ctx: {
+        ...ctx,
+        logContext: {
+          ...ctx.logContext,
+          ...logContext,
+        },
+        logger: withLogContext(ctx.logger, logContext),
+        user: validatedUser,
+      },
+    }),
+  );
 });

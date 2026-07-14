@@ -3,6 +3,7 @@ export * from "./apiAuthPlugin";
 export * from "./app";
 export * from "./date";
 export * from "./job";
+export * from "./logContext";
 export * from "./misCommon/appAuthorization";
 export * from "./misCommon/calculatePrice";
 export * from "./misCommon/clustersActivation";

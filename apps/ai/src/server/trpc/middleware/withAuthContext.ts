@@ -1,3 +1,4 @@
+import { runWithLogContext, withLogContext } from "@scow/lib-server";
 import { TRPCError } from "@trpc/server";
 import { getUserInfo } from "src/server/auth/server";
 import { middleware } from "src/server/trpc/def";
@@ -14,12 +15,21 @@ export const withAuthContext = middleware(async ({ ctx, next }) => {
     });
   }
 
-  return next({
-    ctx: {
-      ...ctx,
-      user: {
-        ...userInfo,
+  const logContext = { userId: userInfo.identityId };
+
+  return runWithLogContext(logContext, () =>
+    next({
+      ctx: {
+        ...ctx,
+        logContext: {
+          ...ctx.logContext,
+          ...logContext,
+        },
+        logger: withLogContext(ctx.logger, logContext),
+        user: {
+          ...userInfo,
+        },
       },
-    },
-  });
+    }),
+  );
 });

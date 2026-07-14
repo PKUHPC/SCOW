@@ -30,6 +30,7 @@
     "@scow/utils": "workspace:*",
     "dayjs": "1.11.13",
     "nookies": "2.5.2",
+    "pino": "9.6.0",
     "shell-quote": "1.8.2",
     "ts-log": "2.2.7"
   },

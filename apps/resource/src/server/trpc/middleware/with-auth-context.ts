@@ -1,3 +1,4 @@
+import { runWithLogContext, withLogContext } from "@scow/lib-server";
 import { TRPCError } from "@trpc/server";
 import { getUserToken } from "src/server/auth/cookie";
 import { MOCK_USER_INFO } from "src/server/auth/server";
@@ -7,15 +8,24 @@ import { USE_MOCK } from "src/utils/processEnv";
 
 export const withAuthContext = middleware(async ({ ctx, next }) => {
   if (USE_MOCK) {
-    return next({
-      ctx: {
-        ...ctx,
-        user: {
-          ...MOCK_USER_INFO,
-          token: "123",
+    const logContext = { userId: MOCK_USER_INFO.identityId };
+
+    return runWithLogContext(logContext, () =>
+      next({
+        ctx: {
+          ...ctx,
+          logContext: {
+            ...ctx.logContext,
+            ...logContext,
+          },
+          logger: withLogContext(ctx.logger, logContext),
+          user: {
+            ...MOCK_USER_INFO,
+            token: "123",
+          },
         },
-      },
-    });
+      }),
+    );
   }
 
   const token = getUserToken(ctx.req);
@@ -34,13 +44,22 @@ export const withAuthContext = middleware(async ({ ctx, next }) => {
     });
   }
 
-  return next({
-    ctx: {
-      ...ctx,
-      user: {
-        ...info,
-        token,
+  const logContext = { userId: info.identityId };
+
+  return runWithLogContext(logContext, () =>
+    next({
+      ctx: {
+        ...ctx,
+        logContext: {
+          ...ctx.logContext,
+          ...logContext,
+        },
+        logger: withLogContext(ctx.logger, logContext),
+        user: {
+          ...info,
+          token,
+        },
       },
-    },
-  });
+    }),
+  );
 });

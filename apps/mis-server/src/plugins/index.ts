@@ -8,7 +8,7 @@ import type { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 
 import { Capabilities } from "@scow/lib-auth";
 import { ScowResourcePlugin, scowResourcePlugin } from "@scow/lib-scow-resource";
-import { apiAuthPlugin } from "@scow/lib-server";
+import { apiAuthPlugin, requestLogContextPlugin } from "@scow/lib-server";
 import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { authServicePlugin } from "src/plugins/authService";
@@ -44,6 +44,7 @@ declare module "@ddadaal/tsgrpc-server" {
 }
 
 export const plugins = [
+  requestLogContextPlugin,
   ormPlugin,
   clustersPlugin,
   pricePlugin,
