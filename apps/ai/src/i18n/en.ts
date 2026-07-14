@@ -1389,6 +1389,7 @@ export default {
         cancel: "Cancel",
         saveEnvironment: "Save Environment",
         enterShell: "Enter Shell",
+        submitAgain: "Submit again",
         pleaseSelectCluster: "Please select cluster",
         refreshDevHostList: "Refresh dev host list",
         paginationTotal: "{0}-{1} / {2} items",

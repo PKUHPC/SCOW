@@ -1034,6 +1034,7 @@ export default {
         cancel: "취소",
         saveEnvironment: "환경 저장",
         enterShell: "쉘 진입",
+        submitAgain: "다시 제출",
         pleaseSelectCluster: "클러스터를 선택하세요",
         refreshDevHostList: "개발 호스트 목록 새로고침",
         paginationTotal: "{0}-{1} / {2} 항목",

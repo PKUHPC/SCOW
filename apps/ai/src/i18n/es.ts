@@ -1044,6 +1044,7 @@ export default {
         cancel: "Cancelar",
         saveEnvironment: "Guardar Entorno",
         enterShell: "Entrar a Shell",
+        submitAgain: "Enviar nuevamente",
         pleaseSelectCluster: "Por favor seleccione cluster",
         refreshDevHostList: "Actualizar lista de hosts de desarrollo",
         paginationTotal: "{0}-{1} / {2} elementos",

@@ -1039,6 +1039,7 @@ export default {
         cancel: "Отмена",
         saveEnvironment: "Сохранить окружение",
         enterShell: "Перейти в Shell",
+        submitAgain: "Отправить снова",
         pleaseSelectCluster: "Пожалуйста, выберите кластер",
         refreshDevHostList: "Обновить список хостов разработки",
         paginationTotal: "{0}-{1} / {2} элементов",

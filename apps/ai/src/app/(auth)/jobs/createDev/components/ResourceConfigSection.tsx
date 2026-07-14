@@ -60,6 +60,7 @@ interface ResourceConfigSectionProps {
   onMaxTimeUnitChange: (unit: MaxTimeUnit) => void;
   maxJobRunningTimeHours?: number;
   gpuUnitLimit?: number;
+  isResubmit?: boolean;
 }
 
 export const ResourceConfigSection = ({
@@ -82,17 +83,20 @@ export const ResourceConfigSection = ({
   onMaxTimeUnitChange,
   maxJobRunningTimeHours,
   gpuUnitLimit,
+  isResubmit,
 }: ResourceConfigSectionProps) => {
   const t = useI18nTranslateToString();
-  const { sortedGpuRows, sortedCpuRows, handleTabChange } = useQueueTabSelection({
-    gpuRows,
-    cpuRows,
-    activeResourceTab,
-    onActiveResourceTabChange,
-    selectedQueueKey,
-    onQueueSelect,
-    syncQueueField: (tab) => form.setFieldValue("queue", tab),
-  });
+  const { sortedGpuRows, sortedCpuRows, handleTabChange, markAccountTouched, markClusterTouched } =
+    useQueueTabSelection({
+      gpuRows,
+      cpuRows,
+      activeResourceTab,
+      onActiveResourceTabChange,
+      selectedQueueKey,
+      onQueueSelect,
+      syncQueueField: (tab) => form.setFieldValue("queue", tab),
+      isResubmit,
+    });
 
   const gpuTab = {
     key: "gpu",
@@ -219,7 +223,10 @@ export const ResourceConfigSection = ({
             size="large"
             options={accountOptions}
             placeholder={t(p("accountPlaceholder"))}
-            onChange={(value) => form.setFieldValue("account", value)}
+            onChange={(value) => {
+              markAccountTouched();
+              form.setFieldValue("account", value);
+            }}
           />
         </InlineFormItem>
 
@@ -237,6 +244,7 @@ export const ResourceConfigSection = ({
                     if (disabled) {
                       return;
                     }
+                    markClusterTouched();
                     form.setFieldValue("cluster", id);
                   }}
                 >

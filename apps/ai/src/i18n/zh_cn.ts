@@ -1373,6 +1373,7 @@ export default {
         cancel: "取消",
         saveEnvironment: "保存环境",
         enterShell: "进入 Shell",
+        submitAgain: "再次提交",
         pleaseSelectCluster: "请选择集群",
         refreshDevHostList: "刷新开发机列表",
         paginationTotal: "{0}-{1} / {2} 项",

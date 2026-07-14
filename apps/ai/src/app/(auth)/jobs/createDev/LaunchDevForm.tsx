@@ -1553,6 +1553,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
           onMaxTimeUnitChange={handleMaxTimeUnitChange}
           maxJobRunningTimeHours={maxJobRunningTimeHours}
           gpuUnitLimit={gpuUnitLimit}
+          isResubmit={Boolean(createDevParams)}
         />
 
         <DevConfigSection

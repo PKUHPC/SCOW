@@ -1037,6 +1037,7 @@ export default {
         cancel: "キャンセル",
         saveEnvironment: "環境を保存",
         enterShell: "シェルに入る",
+        submitAgain: "再度送信",
         pleaseSelectCluster: "クラスターを選択してください",
         refreshDevHostList: "開発ホストリストを更新",
         paginationTotal: "{0}-{1} / {2}項目",

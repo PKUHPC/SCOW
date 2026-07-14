@@ -1,6 +1,13 @@
 "use client";
 
-import { DesktopOutlined, MoreOutlined, ReloadOutlined, SaveOutlined, StopOutlined } from "@ant-design/icons";
+import {
+  DesktopOutlined,
+  MoreOutlined,
+  RedoOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  StopOutlined,
+} from "@ant-design/icons";
 import { App, Button, Card, Dropdown, MenuProps, Modal, Select, Space, Table, Tag, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { useRouter } from "next/navigation";
@@ -78,6 +85,17 @@ export const DevHostList = () => {
   const handleSaveImage = (record: AppSession) => {
     setCurrentDevHost(record);
     setSaveImageModalVisible(true);
+  };
+
+  const handleSubmitAgain = (record: AppSession) => {
+    const searchParams = new URLSearchParams({
+      jobId: record.jobId.toString(),
+      sessionId: record.sessionId,
+      clusterId: selectedCluster,
+    });
+
+    const basePath = join(publicConfig.BASE_PATH, "jobs/createDev");
+    window.location.href = `${basePath}?${searchParams.toString()}`;
   };
 
   // 关闭保存镜像模态框
@@ -250,6 +268,16 @@ export const DevHostList = () => {
       render: (_, record) => {
         const isRunning = record.state === "RUNNING";
         const items: MenuProps["items"] = [
+          {
+            key: "submitAgain",
+            onClick: () => handleSubmitAgain(record),
+            label: (
+              <span>
+                <RedoOutlined style={{ marginRight: 8 }} />
+                {t(p("submitAgain"))}
+              </span>
+            ),
+          },
           // 停止操作 - 仅对运行中的开发机显示
           ...(isRunning
             ? [

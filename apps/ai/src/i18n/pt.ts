@@ -1043,6 +1043,7 @@ export default {
         cancel: "Cancelar",
         saveEnvironment: "Salvar Ambiente",
         enterShell: "Entrar no Shell",
+        submitAgain: "Submeter novamente",
         pleaseSelectCluster: "Por favor selecione o cluster",
         refreshDevHostList: "Atualizar lista de hosts de desenvolvimento",
         paginationTotal: "{0}-{1} / {2} itens",
