@@ -137,7 +137,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
           extra.userAssociatedClusterIds = userAssociatedClusterIds;
         }
 
-        const clusters = await getClusterConfigFiles();
+        const clusters = await getClusterConfigFiles({ allowEmpty: true });
 
         if (Object.keys(clusters).length > 0) {
           extra.clusterConfigs = clusters;

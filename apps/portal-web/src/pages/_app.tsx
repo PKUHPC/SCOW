@@ -38,11 +38,18 @@ import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 
 const FailEventHandler: React.FC = () => {
-  const { message } = AntdApp.useApp();
+  const { message, modal } = AntdApp.useApp();
   const userStore = useStore(UserStore);
   const { publicConfigClusters, setCurrentClusters, setActivatedClusters } = useStore(ClusterInfoStore);
   const tArgs = useI18nTranslate();
   const languageId = useI18n().currentLanguage.id;
+
+  useEffect(() => {
+    if (publicConfigClusters.length === 0) {
+      const modalInstance = modal.warning({ title: tArgs("pages._app.noClusters") });
+      return () => modalInstance.destroy();
+    }
+  }, []);
 
   // 登出过程需要调用的几个方法（logout, useState等）都是immutable的
   // 所以不需要每次userStore变化时来重新注册handler
@@ -111,7 +118,7 @@ const FailEventHandler: React.FC = () => {
       }
 
       if (e.data?.code === "NO_CLUSTERS") {
-        message.error(tArgs("pages._app.noClusters"));
+        modal.warning({ title: tArgs("pages._app.noClusters") });
         return;
       }
 
