@@ -16,27 +16,20 @@ import { UnifiedErrorPage } from "src/components/errorPages/UnifiedErrorPage";
 import { useI18nTranslateToString } from "src/i18n";
 import { DesktopCardList } from "src/pageComponents/loginCluster/DesktopCardList";
 import { ShellCardList } from "src/pageComponents/loginCluster/ShellCardList";
+import { Cluster, LoginDesktopCluster } from "src/pageComponents/loginCluster/types";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getLoginDesktopEnabled } from "src/utils/cluster";
 import { publicConfig, runtimeConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 import { styled } from "styled-components";
 
-interface Cluster {
-  id: string;
-  name: string;
-  shadowdeskEnabled?: boolean;
-  hasShadowdeskConfig?: boolean;
-  shadowdeskAvailableWms?: string[];
-  description?: string;
-}
-
 type Props =
   | {
       error: AuthResultError;
     }
   | {
-      loginDesktopEnabledClusters: Cluster[];
+      loginDesktopEnabledClustersForGettingAndDeleting: Cluster[];
+      loginDesktopEnabledClustersForCreatingAndConnecting: LoginDesktopCluster[];
       shellClusters: Cluster[];
     };
 
@@ -63,12 +56,16 @@ export const LoginClusterPage: NextPage<Props> = requireAuth(() => true)((props:
     return <UnifiedErrorPage code={props.error} />;
   }
 
-  const { loginDesktopEnabledClusters, shellClusters } = props;
+  const {
+    loginDesktopEnabledClustersForGettingAndDeleting,
+    loginDesktopEnabledClustersForCreatingAndConnecting,
+    shellClusters,
+  } = props;
 
   const { enableLoginDesktop } = useStore(ClusterInfoStore);
 
   const shellAvailable = publicConfig.ENABLE_SHELL && shellClusters.length > 0;
-  const desktopAvailable = enableLoginDesktop && loginDesktopEnabledClusters.length > 0;
+  const desktopAvailable = enableLoginDesktop && loginDesktopEnabledClustersForGettingAndDeleting.length > 0;
 
   if (!shellAvailable && !desktopAvailable) {
     return <ClusterNotAvailablePage />;
@@ -114,7 +111,12 @@ export const LoginClusterPage: NextPage<Props> = requireAuth(() => true)((props:
           {
             label: t("pageComp.loginCluster.desktop"),
             key: "desktop",
-            children: <DesktopCardList clusters={loginDesktopEnabledClusters} />,
+            children: (
+              <DesktopCardList
+                clustersForGettingAndDeleting={loginDesktopEnabledClustersForGettingAndDeleting}
+                clustersForCreatingAndConnecting={loginDesktopEnabledClustersForCreatingAndConnecting}
+              />
+            ),
           },
         ]
       : []),
@@ -138,7 +140,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
   if (USE_MOCK) {
     return {
       props: {
-        loginDesktopEnabledClusters: [{ id: "hpc01", name: "hpc01Name" }],
+        loginDesktopEnabledClustersForGettingAndDeleting: [{ id: "hpc01", name: "hpc01Name" }],
+        loginDesktopEnabledClustersForCreatingAndConnecting: [{ id: "hpc01", name: "hpc01Name" }],
         shellClusters: [{ id: "hpc01", name: "hpc01Name" }],
       },
     };
@@ -166,7 +169,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
       .map((x) => x.clusterId) ?? [];
   const sortedCurrentClusterIds = clusterSortedIdList.filter((id) => activatedClusterIds.includes(id));
 
-  let sortedClusterIdList: string[];
+  // 用于新建和连接
+  let sortedClusterIdListForCreatingAndConnecting: string[];
+  // 用于获取和删除
+  let sortedClusterIdListForGettingAndDeleting: string[];
 
   // 1. 如果部署了管理系统，且部署了资源管理服务
   // 选取已授权且在线集群的集群ID
@@ -177,20 +183,25 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
         userId: info.identityId,
       },
     });
-    sortedClusterIdList = sortedCurrentClusterIds.filter((id) =>
+    sortedClusterIdListForCreatingAndConnecting = sortedCurrentClusterIds.filter((id) =>
       (userAssociatedClusterIds.clusterIds ?? []).includes(id),
     );
-    // 2. 如果部署了管理系统，未部署资源管理
-    // 选取在线集群的集群ID
-  } else if (publicConfig.MIS_DEPLOYED) {
-    sortedClusterIdList = sortedCurrentClusterIds;
-    // 3. 如果没有部署管理系统
-    // 选取系统所有已配置集群的集群ID
-  } else {
-    sortedClusterIdList = clusterSortedIdList;
+    sortedClusterIdListForGettingAndDeleting = sortedCurrentClusterIds;
+  }
+  // 2. 如果部署了管理系统，未部署资源管理
+  // 选取在线集群的集群ID
+  else if (publicConfig.MIS_DEPLOYED) {
+    sortedClusterIdListForCreatingAndConnecting = sortedCurrentClusterIds;
+    sortedClusterIdListForGettingAndDeleting = sortedCurrentClusterIds;
+  }
+  // 3. 如果没有部署管理系统
+  // 选取系统所有已配置集群的集群ID
+  else {
+    sortedClusterIdListForCreatingAndConnecting = clusterSortedIdList;
+    sortedClusterIdListForGettingAndDeleting = clusterSortedIdList;
   }
 
-  const shellClusters = sortedClusterIdList.map(
+  const shellClusters = sortedClusterIdListForCreatingAndConnecting.map(
     (clusterId) =>
       ({
         id: clusterId,
@@ -199,23 +210,35 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
       }) as Cluster,
   );
 
-  const loginDesktopEnabledClusters = sortedClusterIdList
+  const loginDesktopEnabledClustersForGettingAndDeleting = sortedClusterIdListForGettingAndDeleting
     .filter((clusterId) => getLoginDesktopEnabled(clusterId, clusterConfigs))
     .map(
       (clusterId) =>
         ({
           id: clusterId,
-          hasShadowdeskConfig: clusterConfigs[clusterId].loginDesktop?.shadowDesk !== undefined,
-          shadowdeskEnabled: clusterConfigs[clusterId].loginDesktop?.shadowDesk?.enabled || false,
-          shadowdeskAvailableWms: clusterConfigs[clusterId].loginDesktop?.shadowDesk?.wms || [],
           name: getI18nConfigCurrentText(clusterConfigs[clusterId].displayName, languageId),
           description: getI18nConfigCurrentText(clusterConfigs[clusterId].description, languageId),
         }) as Cluster,
     );
 
+  const loginDesktopEnabledClustersForCreatingAndConnecting = sortedClusterIdListForCreatingAndConnecting
+    .filter((clusterId) => getLoginDesktopEnabled(clusterId, clusterConfigs))
+    .map(
+      (clusterId) =>
+        ({
+          id: clusterId,
+          name: getI18nConfigCurrentText(clusterConfigs[clusterId].displayName, languageId),
+          description: getI18nConfigCurrentText(clusterConfigs[clusterId].description, languageId),
+          hasShadowdeskConfig: clusterConfigs[clusterId].loginDesktop?.shadowDesk !== undefined,
+          shadowdeskEnabled: clusterConfigs[clusterId].loginDesktop?.shadowDesk?.enabled || false,
+          shadowdeskAvailableWms: clusterConfigs[clusterId].loginDesktop?.shadowDesk?.wms || [],
+        }) as LoginDesktopCluster,
+    );
+
   return {
     props: {
-      loginDesktopEnabledClusters,
+      loginDesktopEnabledClustersForGettingAndDeleting,
+      loginDesktopEnabledClustersForCreatingAndConnecting,
       shellClusters,
     },
   };

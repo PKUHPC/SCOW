@@ -1,5 +1,6 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
+import { status } from "@grpc/grpc-js";
 import { DesktopServiceClient } from "@scow/protos/build/portal/desktop";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
@@ -7,6 +8,7 @@ import { getClusterConfigFiles } from "src/server/clusterConfig";
 import { getClient } from "src/utils/client";
 import { getLoginDesktopEnabled } from "src/utils/cluster";
 import { route } from "src/utils/route";
+import { handlegRPCError } from "src/utils/server";
 
 // Cannot use AvailableWm from protos
 export const AvailableWm = Type.Object({
@@ -30,6 +32,9 @@ export const ListAvailableWmsSchema = typeboxRouteSchema({
 
     // 功能没有启用
     501: Type.Object({ code: Type.Literal("CLUSTER_LOGIN_DESKTOP_NOT_ENABLED") }),
+
+    // 未授权集群
+    403: Type.Object({ code: Type.Literal("PERMISSION_DENIED") }),
   },
 });
 
@@ -53,5 +58,10 @@ export default /* #__PURE__*/ route(ListAvailableWmsSchema, async (req, res) => 
 
   const client = getClient(DesktopServiceClient);
 
-  return await asyncUnaryCall(client, "listAvailableWms", { cluster }).then(({ wms }) => ({ 200: { wms } }));
+  return await asyncUnaryCall(client, "listAvailableWms", { cluster, userId: info.identityId }).then(
+    ({ wms }) => ({ 200: { wms } }),
+    handlegRPCError({
+      [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
+    }),
+  );
 });

@@ -5,7 +5,7 @@ import { getLoginNode } from "@scow/config/build/cluster";
 import { DesktopServiceServer, DesktopServiceService, RemoteControlTool } from "@scow/protos/build/portal/desktop";
 import { getClusterOps } from "src/clusterops";
 import { configClusters } from "src/config/clusters";
-import { checkActivatedClusters, checkLoginNodeInCluster } from "src/utils/clusters";
+import { checkActivatedClusters, checkLoginNodeInCluster, checkUserClusterPermission } from "src/utils/clusters";
 import { ensureEnabled, getDesktopConfig } from "src/utils/desktops";
 import { clusterNotFound } from "src/utils/errors";
 import { connectToShadowDesk, createShadowDesk, deleteShadowDesk } from "src/utils/shadowDesk";
@@ -18,6 +18,7 @@ export const desktopServiceServer = plugin((server) => {
   server.addService<DesktopServiceServer>(DesktopServiceService, {
     createDesktop: async ({ request, logger }) => {
       const { cluster, loginNode: host, wm, userId, desktopName, remoteControlTool } = request;
+      await checkUserClusterPermission({ userId, clusterIds: cluster, logger });
 
       const maxDesktops: number = getDesktopConfig(cluster)?.maxDesktops || 0;
 
@@ -57,8 +58,6 @@ export const desktopServiceServer = plugin((server) => {
         }
         return [{ shadowdeskUrl, host: "", port: 0, password: "" }];
       } else {
-        await checkActivatedClusters({ clusterIds: cluster });
-
         ensureEnabled(cluster);
 
         const availableWms = getDesktopConfig(cluster).wms;
@@ -85,6 +84,8 @@ export const desktopServiceServer = plugin((server) => {
 
     killDesktop: async ({ request, logger }) => {
       const { cluster, loginNode: host, displayId, userId, desktopInfo, id } = request;
+      await checkActivatedClusters({ clusterIds: cluster });
+
       if (desktopInfo?.desktop?.$case === "shadowdesk") {
         const desktopName = desktopInfo.desktop.shadowdesk.desktopName;
         const response = await deleteShadowDesk(cluster, desktopName || "");
@@ -96,8 +97,6 @@ export const desktopServiceServer = plugin((server) => {
         }
         return [{}];
       }
-
-      await checkActivatedClusters({ clusterIds: cluster });
 
       ensureEnabled(cluster);
 
@@ -120,7 +119,7 @@ export const desktopServiceServer = plugin((server) => {
 
     connectToDesktop: async ({ request, logger }) => {
       const { cluster, loginNode: host, displayId, userId, desktopInfo, id } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
+      await checkUserClusterPermission({ userId, clusterIds: cluster, logger });
 
       ensureEnabled(cluster);
 
@@ -272,9 +271,9 @@ export const desktopServiceServer = plugin((server) => {
       return [{ userDesktops }];
     },
 
-    listAvailableWms: async ({ request }) => {
-      const { cluster } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
+    listAvailableWms: async ({ request, logger }) => {
+      const { cluster, userId } = request;
+      await checkUserClusterPermission({ userId, clusterIds: cluster, logger });
 
       ensureEnabled(cluster);
 

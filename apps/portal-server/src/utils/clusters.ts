@@ -6,6 +6,8 @@ import {
   getSchedulerAdapterClient,
   SchedulerAdapterClient,
 } from "@scow/lib-scheduler-adapter";
+import { getUserAccountsClusterIds } from "@scow/lib-scow-resource/build/utils";
+import { libGetUserInfo } from "@scow/lib-server";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import {
   libCheckActivatedClusters,
@@ -44,6 +46,7 @@ type CallOnOne = <T>(
 ) => Promise<T>;
 
 export const ADAPTER_CALL_ON_ONE_ERROR = "ADAPTER_CALL_ON_ONE_ERROR";
+export const USER_CLUSTER_PERMISSION_DENIED = "USER_CLUSTER_PERMISSION_DENIED";
 
 export const callOnOne: CallOnOne = async (cluster, logger, call) => {
   await checkActivatedClusters({ clusterIds: cluster });
@@ -96,6 +99,47 @@ export const checkActivatedClusters = async ({ clusterIds }: { clusterIds: strin
   );
 
   return libCheckActivatedClusters({ clusterIds, activatedClusters, logger: pinoLogger });
+};
+
+export const checkUserClusterPermission = async ({
+  userId,
+  clusterIds,
+  logger = pinoLogger,
+}: {
+  userId: string;
+  clusterIds: string[] | string;
+  logger?: Parameters<typeof libGetUserInfo>[0];
+}) => {
+  if (!config.MIS_DEPLOYED) {
+    return;
+  }
+
+  await checkActivatedClusters({ clusterIds });
+
+  if (!commonConfig.scowResource?.enabled) {
+    return;
+  }
+
+  const idsToCheck = Array.isArray(clusterIds) ? clusterIds : [clusterIds];
+  const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  const accountNames = userInfo.affiliations.map((affiliation) => affiliation.accountName);
+
+  const userAssociatedClusterIds = await getUserAccountsClusterIds(
+    commonConfig.scowResource,
+    accountNames,
+    userInfo.tenantName,
+  );
+  const unauthorizedClusterIds = idsToCheck.filter((clusterId) => !userAssociatedClusterIds.includes(clusterId));
+
+  if (unauthorizedClusterIds.length > 0) {
+    throw new ServiceError({
+      code: status.PERMISSION_DENIED,
+      details: `User ${userId} is not authorized to access clusters ${unauthorizedClusterIds.join(", ")}`,
+      metadata: scowErrorMetadata(USER_CLUSTER_PERMISSION_DENIED, {
+        unauthorizedClusterIds: JSON.stringify(unauthorizedClusterIds),
+      }),
+    });
+  }
 };
 
 export async function checkClusters(logger: Logger, activatedClusters: Record<string, ClusterConfigSchema>) {

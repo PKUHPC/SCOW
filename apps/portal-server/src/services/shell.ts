@@ -2,7 +2,7 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { ShellServiceServer, ShellServiceService } from "@scow/protos/build/portal/shell";
 import { getClusterOps } from "src/clusterops";
-import { checkActivatedClusters } from "src/utils/clusters";
+import { checkUserClusterPermission } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { getClusterLoginNode } from "src/utils/ssh";
 
@@ -38,7 +38,7 @@ export const shellServiceServer = plugin((server) => {
         },
       });
 
-      await checkActivatedClusters({ clusterIds: cluster });
+      await checkUserClusterPermission({ userId, clusterIds: cluster, logger });
 
       logger.info("Received shell connection");
 

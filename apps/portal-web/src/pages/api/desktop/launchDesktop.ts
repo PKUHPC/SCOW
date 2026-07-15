@@ -5,7 +5,6 @@ import { DesktopServiceClient } from "@scow/protos/build/portal/desktop";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getClusterConfigFiles } from "src/server/clusterConfig";
-import { checkUserAssignedClusters } from "src/utils/checkClusterIsAssgined";
 import { getClient } from "src/utils/client";
 import { getLoginDesktopEnabled } from "src/utils/cluster";
 import { route } from "src/utils/route";
@@ -62,6 +61,8 @@ export const LaunchDesktopSchema = typeboxRouteSchema({
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
     // 无效桌面名
     404: Type.Object({ code: Type.Literal("INVALID_DESKTOP_NAME") }),
+    // 未授权集群
+    403: Type.Object({ code: Type.Literal("PERMISSION_DENIED") }),
   },
 });
 
@@ -81,12 +82,6 @@ export default /* #__PURE__*/ route(LaunchDesktopSchema, async (req, res) => {
 
   if (!info) {
     return;
-  }
-
-  // 验证当前集群是否为用户关联账户的已授权集群
-  const isClusterAssigned = await checkUserAssignedClusters(cluster, info.identityId);
-  if (!isClusterAssigned) {
-    return { 400: { code: "INVALID_CLUSTER" as const } };
   }
 
   const client = getClient(DesktopServiceClient);
@@ -114,6 +109,7 @@ export default /* #__PURE__*/ route(LaunchDesktopSchema, async (req, res) => {
     handlegRPCError({
       [status.NOT_FOUND]: (e) => ({ 404: { code: "INVALID_DESKTOP_NAME" as const, message: e.message } }),
       [status.FAILED_PRECONDITION]: (e) => ({ 503: { code: "DESKTOP_NOT_AVAILABLE" as const, message: e.message } }),
+      [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
     }),
   );
 });

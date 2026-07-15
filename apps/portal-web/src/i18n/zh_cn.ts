@@ -815,6 +815,8 @@ export default {
         deleteConfirmContent: "删除后不可恢复，你确定要删除吗?",
         expiredTitle: "桌面已失效",
         expiredContent: "桌面已失效，无法连接，是否删除该桌面？",
+        unauthorizedTitle: "桌面无法连接",
+        unauthorizedContent: "当前账户或集群未授权，无法连接该桌面，是否删除该桌面？",
         expiredDeleteOk: "是",
         expiredCancel: "否",
       },

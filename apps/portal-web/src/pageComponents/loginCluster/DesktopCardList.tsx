@@ -12,15 +12,11 @@ import { NewDesktopCardModal } from "src/pageComponents/loginCluster/NewDesktopC
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
 import { styled } from "styled-components";
 
+import { Cluster, LoginDesktopCluster } from "./types";
+
 export enum RemoteControlTool {
   VNC = 0,
   SHADOWDESK = 1,
-}
-
-interface Cluster {
-  id: string;
-  name: string;
-  description?: string;
 }
 
 const HeaderContainer = styled.div`
@@ -67,7 +63,8 @@ export interface DesktopItem extends APIDerivedDesktop {
 }
 
 interface DesktopCardListProps {
-  clusters: Cluster[];
+  clustersForGettingAndDeleting: Cluster[];
+  clustersForCreatingAndConnecting: LoginDesktopCluster[];
 }
 
 interface WmsItem {
@@ -76,7 +73,8 @@ interface WmsItem {
 }
 
 export const DesktopCardList: React.FC<DesktopCardListProps> = ({
-  clusters,
+  clustersForGettingAndDeleting,
+  clustersForCreatingAndConnecting,
 }) => {
   const t = useI18nTranslateToString();
   const [openNewDesktopModal, setOpenNewDesktopModal] = useState(false);
@@ -95,7 +93,7 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({
         // loginNodes 传空，返回所有loginNode的desktop
         const desktopData = await api.listDesktops({
           body: {
-            clusters: clusters.map((cluster) => ({
+            clusters: clustersForGettingAndDeleting.map((cluster) => ({
               cluster: cluster.id,
               loginNodes: [],
             })),
@@ -117,15 +115,12 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({
                   createTime: dataSource?.createTime,
                   addr: userDesktop.host,
                   wm: dataSource?.wm || "",
-                  remoteControlTool:
-                    x.type === "shadowdesk"
-                      ? RemoteControlTool.SHADOWDESK
-                      : RemoteControlTool.VNC,
+                  remoteControlTool: x.type === "shadowdesk" ? RemoteControlTool.SHADOWDESK : RemoteControlTool.VNC,
                   clusterId,
                 };
 
                 return item;
-              })
+              }),
             )
             .flat();
 
@@ -136,14 +131,14 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({
         });
       } catch (error) {
         console.error("Failed to get desktops:", error);
-        return clusters.map((cluster) => {
+        return clustersForGettingAndDeleting.map((cluster) => {
           return {
             clusterId: cluster.id,
             desktops: [],
           };
         });
       }
-    }, [clusters]),
+    }, [clustersForGettingAndDeleting]),
   });
 
   const handleReload = () => {
@@ -153,7 +148,7 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({
   const handleCreateDesktop = async () => {
     setIsWmsLoading(true);
     try {
-      const wmsPromises = clusters.map(async (cluster) => {
+      const wmsPromises = clustersForCreatingAndConnecting.map(async (cluster) => {
         try {
           const wmsData = await api.listAvailableWms({
             query: { cluster: cluster.id },
@@ -164,10 +159,7 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({
             wms: wmsData.wms,
           };
         } catch (error) {
-          console.error(
-            `Failed to get available wms for cluster ${cluster.id}:`,
-            error
-          );
+          console.error(`Failed to get available wms for cluster ${cluster.id}:`, error);
           return {
             clusterId: cluster.id,
             wms: [],
@@ -183,27 +175,19 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({
   };
 
   // 将所有集群的桌面数据合并为一个数组，并添加完整的信息用于展示
-  const desktopData: DesktopItem[] = (
-    allDesktops?.flatMap((item) => item.desktops) || []
-  ).map((desktop) => {
+  const desktopData: DesktopItem[] = (allDesktops?.flatMap((item) => item.desktops) || []).map((desktop) => {
     // 查找集群名称
-    const clusterName = clusters.find((c) => c.id === desktop.clusterId)!.name;
+    const clusterName =
+      clustersForGettingAndDeleting.find((c) => c.id === desktop.clusterId)?.name ?? desktop.clusterId;
 
     // 查找登录节点名称
-    const loginNodeInfo = loginNodes[desktop.clusterId]?.find(
-      (ln) => ln.address === desktop.addr
-    );
+    const loginNodeInfo = loginNodes[desktop.clusterId]?.find((ln) => ln.address === desktop.addr);
 
     // 远程控制工具名称
-    const remoteTool =
-      desktop.remoteControlTool === RemoteControlTool.SHADOWDESK
-        ? "shadowdesk"
-        : "vnc";
+    const remoteTool = desktop.remoteControlTool === RemoteControlTool.SHADOWDESK ? "shadowdesk" : "vnc";
 
     // 创建时间格式化
-    const creationTime = desktop.createTime
-      ? dayjs(desktop.createTime).format("YYYY-MM-DD HH:mm:ss")
-      : "";
+    const creationTime = desktop.createTime ? dayjs(desktop.createTime).format("YYYY-MM-DD HH:mm:ss") : "";
 
     return {
       ...desktop,
@@ -230,18 +214,14 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({
       </HeaderContainer>
       <CardContainer>
         {desktopData.map((item) => (
-          <DesktopCard
-            key={item.id || `${item.clusterId}-${item.desktopId}`}
-            data={item}
-            reload={handleReload}
-          />
+          <DesktopCard key={item.id || `${item.clusterId}-${item.desktopId}`} data={item} reload={handleReload} />
         ))}
       </CardContainer>
       <NewDesktopCardModal
         open={openNewDesktopModal}
         onClose={() => setOpenNewDesktopModal(false)}
         reload={handleReload}
-        clusters={clusters}
+        clusters={clustersForCreatingAndConnecting}
         allAvailableWms={allAvailableWms}
         loginNodes={loginNodes}
       />

@@ -59,6 +59,16 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
     });
   };
 
+  const showUnauthorizedConfirm = () => {
+    modal.confirm({
+      title: t(p("unauthorizedTitle")),
+      content: t(p("unauthorizedContent")),
+      okText: t(p("expiredDeleteOk")),
+      cancelText: t(p("expiredCancel")),
+      onOk: handleKillDesktop,
+    });
+  };
+
   const handleLaunchDesktop = async () => {
     if (data.isActive !== true) {
       showExpiredConfirm();
@@ -95,6 +105,9 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
       })
       .httpError(503, () => {
         showExpiredConfirm();
+      })
+      .httpError(403, () => {
+        showUnauthorizedConfirm();
       })
       .then((resp) => {
         if (resp.vnc) {
