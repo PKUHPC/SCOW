@@ -17,6 +17,16 @@ package scow.scheduler_adapter;
 message AddUserToAccountRequest {
   string user_id = 1;
   string account_name = 2;
+  message UsablePartitions {
+    // 添加用户到账户时该用户当前实际可使用的完整分区集合。
+    repeated string partitions = 1;
+  }
+  oneof partition_strategy {
+    // 显式传递新增用户在该账户下当前实际可使用的分区。
+    UsablePartitions usable_partitions = 3;
+    // 显式要求沿用旧的全量分区语义；设置时 false 非法。
+    bool use_all_partitions = 4;
+  }
 }
 
 message AddUserToAccountResponse {
@@ -65,7 +75,7 @@ message DeleteUserResponse {
 service UserService {
   /*
    * description: add user to account
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * - user already exists in account
@@ -75,7 +85,7 @@ service UserService {
 
   /*
    * description: remove user from account
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * - user not exist in account
@@ -85,11 +95,11 @@ service UserService {
 
   /*
    * description: block user in account
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * - user not exist in account
-   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {} 
+   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {}
    * special case:
    * - already blocked, don't throw error
    */
@@ -97,11 +107,11 @@ service UserService {
 
   /*
    * description: unblock user in account
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * - user not exist in account
-   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {} 
+   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {}
    * special case:
    * - already unblocked, don't throw error
    */
@@ -109,17 +119,17 @@ service UserService {
 
   /*
    * description: query if a user is blocked in an account
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * - user not exist in account
-   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {} 
+   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {}
    */
   rpc QueryUserInAccountBlockStatus(QueryUserInAccountBlockStatusRequest) returns (QueryUserInAccountBlockStatusResponse);
 
   /*
    * description: delete user
-   * errors: 
+   * errors:
    * - user not exist
    *   NOT_FOUND, USER_NOT_FOUND, {}
    */

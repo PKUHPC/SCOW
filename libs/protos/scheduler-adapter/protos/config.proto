@@ -202,7 +202,7 @@ message NodeInfo {
   uint32 idle_gpu_count = 12;
   // node migration flag
   bool removable = 13;
-} 
+}
 
 message GetClusterNodesInfoRequest {
   // if the value of node_names = [], request all nodes info
@@ -224,7 +224,7 @@ message ListImplementedOptionalFeaturesResponse {
   repeated OptionalFeatures features = 1;
 }
 
-service ConfigService { 
+service ConfigService {
   /*
    * description: get cluster config
    */

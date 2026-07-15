@@ -2,8 +2,8 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -44,16 +44,59 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *protos.CreateAcco
 		return nil, ce.RichError(codes.Internal, "ACCOUNT_ILLEGAL", err.Error())
 	}
 
-	if err := utils.CreateAccount(in.AccountName); err != nil {
+	var partitions []string
+	useAuthorizedPartitions := false
+	switch partitionStrategy := in.PartitionStrategy.(type) {
+	case *protos.CreateAccountRequest_AuthorizedPartitions_:
+		useAuthorizedPartitions = true
+		if partitionStrategy.AuthorizedPartitions != nil {
+			partitions = partitionStrategy.AuthorizedPartitions.Partitions
+		}
+	case *protos.CreateAccountRequest_UseAllPartitions:
+		if !partitionStrategy.UseAllPartitions {
+			logrus.Debugf("CreateAccount rejected invalid use_all_partitions=false")
+			return nil, ce.RichError(codes.InvalidArgument, "INVALID_ARGUMENT",
+				"use_all_partitions must be true when set")
+		}
+	}
+
+	if useAuthorizedPartitions {
+		if err := utils.CreateAccount(in.AccountName, partitions); err != nil {
+			logrus.Errorf("create account %v failed: %v", in.AccountName, err)
+			return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", err.Error())
+		}
+	} else if err := utils.CreateAccount(in.AccountName); err != nil {
 		logrus.Errorf("create account %v failed: %v", in.AccountName, err)
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", err.Error())
 	}
 	logrus.Tracef("create account: %v success", in.AccountName)
 
+	rollbackCreatedAccount := func(cause error) (*protos.CreateAccountResponse, error) {
+		if rollbackErr := utils.DeleteAccount(in.AccountName); rollbackErr != nil {
+			logrus.Errorf("CreateAccount rollback account %v failed after add owner failure: %v", in.AccountName, rollbackErr)
+		}
+		return nil, ce.RichError(codes.Internal, "CRANE_CALL_FAILED", cause.Error())
+	}
+
 	// 账户创建成功后，将用户添加至账户中
-	if err := utils.AddUserToAccount(in.AccountName, in.OwnerUserId); err != nil {
+	if useAuthorizedPartitions {
+		if err := utils.AddUserToAccount(in.AccountName, in.OwnerUserId, partitions); err != nil {
+			logrus.Errorf("CreateAccount err: %v", err)
+			return rollbackCreatedAccount(err)
+		}
+	} else if err := utils.AddUserToAccount(in.AccountName, in.OwnerUserId); err != nil {
 		logrus.Errorf("CreateAccount err: %v", err)
-		return nil, ce.RichError(codes.Internal, "CRANE_CALL_FAILED", err.Error())
+		return rollbackCreatedAccount(err)
+	}
+
+	if in.AccountBlocked {
+		if err := utils.BlockAccount(in.AccountName); err != nil {
+			logrus.Errorf("CreateAccount block account %v failed: %v", in.AccountName, err)
+			if rollbackErr := utils.DeleteAccount(in.AccountName); rollbackErr != nil {
+				logrus.Errorf("CreateAccount rollback account %v failed after block failure: %v", in.AccountName, rollbackErr)
+			}
+			return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
+		}
 	}
 
 	logrus.Tracef("add user : %v to account: %v success", in.OwnerUserId, in.AccountName)
@@ -239,20 +282,31 @@ func (s *ServerAccount) DeleteAccount(ctx context.Context, in *protos.DeleteAcco
 		logrus.Infof("DeleteAccount remove users %v from account %v success", userNames, in.AccountName)
 	}
 
-	// 创建删除账户请求体
-	deleteAccountRequest := &craneProtos.DeleteAccountRequest{
-		Uid:         uint32(os.Getuid()),
-		AccountList: []string{in.AccountName},
-	}
-	response, err := client.CraneCtld.DeleteAccount(context.Background(), deleteAccountRequest)
-	if err != nil {
+	if err := utils.DeleteAccount(in.AccountName); err != nil {
+		var responseErr *utils.CraneCtldResponseError
+		if errors.As(err, &responseErr) {
+			richErrorCode := "UNKNOWN"
+			if len(responseErr.RichErrors) > 0 && responseErr.RichErrors[0] != nil {
+				richErrorCode = responseErr.RichErrors[0].GetCode().String()
+			}
+
+			logrus.Errorf(
+				"DeleteAccount %s failed, response get false, RichError code: %v",
+				in.AccountName,
+				richErrorCode,
+			)
+
+			if responseErr.AllHaveCode(craneProtos.ErrCode_ERR_INVALID_ACCOUNT) {
+				return nil, ce.RichError(codes.NotFound, "ASSOCIATION_NOT_EXISTS", responseErr.Error())
+			}
+
+			return nil, ce.RichError(codes.Internal, "DELETE_ACCOUNT_FAILED", responseErr.Error())
+		}
+
 		logrus.Errorf("DeleteAccount err: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 	}
-	if !response.GetOk() {
-		logrus.Errorf("DeleteAccount %s failed, response get false, RichError code: %v", in.AccountName, response.GetRichErrorList()[0].GetCode())
-		return nil, ce.RichError(codes.Internal, "DELETE_ACCOUNT_FAILED", response.RichErrorList[0].GetDescription())
-	}
+
 	logrus.Infof("DeleteAccount: %v success", in.AccountName)
 	return &protos.DeleteAccountResponse{}, nil
 }

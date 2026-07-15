@@ -36,7 +36,7 @@ func AddUserToAccount(user, account, baseQos string, partitions []string) error 
 		}
 	}
 
-	args = []string{"-i", "modify", "user", user, "set", fmt.Sprintf("qos=%s", baseQos), fmt.Sprintf("DefaultQOS=%s", defaultQos)}
+	args = []string{"-i", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account), "set", fmt.Sprintf("qos=%s", baseQos), fmt.Sprintf("DefaultQOS=%s", defaultQos)}
 	exitCode, stdout, stderr, err = ExecuteCommand(client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
@@ -62,6 +62,22 @@ func DeleteUser(user string) error {
 		} else {
 			// 命令执行但失败了
 			return fmt.Errorf("delete user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+		}
+	}
+	return nil
+}
+
+// DeleteUserAccountAssociation 只删除用户与指定账户的关联，不修改用户本体和 DefaultAccount。
+func DeleteUserAccountAssociation(user, account string) error {
+	args := []string{"-i", "delete", "user", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account)}
+	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	if err != nil {
+		if exitCode == -1 {
+			// 命令执行前就失败了
+			return fmt.Errorf("system error: %v", err)
+		} else {
+			// 命令执行但失败了
+			return fmt.Errorf("delete user account association failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 		}
 	}
 	return nil
@@ -1090,6 +1106,44 @@ func ResumeNode(nodeName string) error {
 	return nil
 }
 
+// BlockUserAssociationInAccountPartitionByAccountState 仅封锁单个用户在指定账户+分区下的账户原因关联。
+// 只将该 association 的 max_submit_jobs 设为 0，不修改 max_jobs 等用户原因封锁字段，
+// 并在封锁成功后持久化该用户原始 max_submit_jobs，供后续账户解封时精确恢复。
+func BlockUserAssociationInAccountPartitionByAccountState(user, account, partition string) error {
+	originalMaxSubmitJobs, found, err := GetUserMaxSubmitJobsInAccountPartition(user, account, partition)
+	if err != nil {
+		return fmt.Errorf("get user max_submit_jobs failed: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("user %s not found in account=%s partition=%s", user, account, partition)
+	}
+	if originalMaxSubmitJobs == 0 {
+		logrus.Infof("BlockUserAssociationInAccountPartitionByAccountState: user %s already blocked in account=%s partition=%s, skip", user, account, partition)
+		return nil
+	}
+
+	args := []string{"-i", "-Q", "modify", "user", "where",
+		fmt.Sprintf("name=%s", user),
+		fmt.Sprintf("account=%s", account),
+		fmt.Sprintf("partition=%s", partition),
+		"set", "MaxSubmitJobs=0"}
+	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	if err != nil {
+		if exitCode == -1 {
+			return fmt.Errorf("system error: %v", err)
+		}
+		if strings.TrimSpace(stdout) == "Nothing modified" {
+			return nil
+		}
+		return fmt.Errorf("block user association failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+	}
+
+	if err := upsertPermissionRecord(account, partition, user, originalMaxSubmitJobs); err != nil {
+		logrus.Warnf("BlockUserAssociationInAccountPartitionByAccountState: save original max_submit_jobs for user %s failed: %v", user, err)
+	}
+	return nil
+}
+
 // BlockAccountUseAssociation 封锁账户在指定分区下的所有用户（将 max_submit_jobs 设为 0）。
 // 先执行 sacctmgr 封锁命令，成功后再将原始 max_submit_jobs 持久化到数据库，
 // 确保 DB 记录仅在 Slurm 侧已实际封锁后写入，避免命令失败时原始值被覆盖。
@@ -1113,7 +1167,7 @@ func BlockAccountUseAssociation(account, partition string) error {
 		if exitCode == -1 {
 			return fmt.Errorf("system error: %v", err)
 		}
-		if stdout == "Nothing modified" || stderr == "" {
+		if strings.TrimSpace(stdout) == "Nothing modified" {
 			return nil
 		}
 		return fmt.Errorf("modify user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
@@ -1166,10 +1220,9 @@ func UnblockAccountUseAssociation(account, partition string) error {
 				if exitCode == -1 {
 					return fmt.Errorf("system error: %v", err)
 				}
-				if stdout == "Nothing modified" || stderr == "" {
-					return nil
+				if strings.TrimSpace(stdout) != "Nothing modified" {
+					return fmt.Errorf("unblock user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 				}
-				return fmt.Errorf("unblock user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 			}
 			return nil
 		}
@@ -1224,7 +1277,7 @@ func setUsersMaxSubmitJobsInAccountPartition(users []string, account, partition 
 		if exitCode == -1 {
 			return fmt.Errorf("system error: %v", err)
 		}
-		if stdout == "Nothing modified" || stderr == "" {
+		if strings.TrimSpace(stdout) == "Nothing modified" {
 			return nil
 		}
 		return fmt.Errorf("set MaxSubmitJobs failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))

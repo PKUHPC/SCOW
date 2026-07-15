@@ -66,12 +66,37 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *pb.CreateAccountR
 		return nil, ce.RichError(codes.AlreadyExists, "ACCOUNT_NOT_FOUND", err.Error())
 	}
 
-	queues, err := utils.GetQueueName()
-	if err != nil {
-		logrus.Errorf("CreateAccount failed: %v", err)
-		return nil, ce.RichError(codes.Internal, "GET_PARTITION_FAILED", err.Error())
+	var partitions []string
+	useAllPartitions := false
+	switch partitionStrategy := in.PartitionStrategy.(type) {
+	case *pb.CreateAccountRequest_AuthorizedPartitions_:
+		if partitionStrategy.AuthorizedPartitions != nil {
+			partitions = partitionStrategy.AuthorizedPartitions.Partitions
+		}
+	case *pb.CreateAccountRequest_UseAllPartitions:
+		if !partitionStrategy.UseAllPartitions {
+			logrus.Debugf("CreateAccount rejected invalid use_all_partitions=false")
+			return nil, ce.RichError(codes.InvalidArgument, "INVALID_ARGUMENT",
+				"use_all_partitions must be true when set")
+		}
+		useAllPartitions = true
+	default:
+		useAllPartitions = true
 	}
-	partitions := strings.Join(queues, ",")
+	if useAllPartitions {
+		partitions, err = utils.GetQueueName()
+		if err != nil {
+			logrus.Errorf("CreateAccount failed: %v", err)
+			return nil, ce.RichError(codes.Internal, "GET_PARTITION_FAILED", err.Error())
+		}
+	}
+	partitionNames := strings.Join(partitions, ",")
+	accountBlocked := 0
+	if in.AccountBlocked {
+		// authorized_partitions 表示授权分区；AI 的 AcctTable.Blocked 是账户封锁状态，
+		// 两者必须独立保存，不能用空分区列表推断账户封锁。
+		accountBlocked = 1
+	}
 	// 检查用户名是否在
 	exist, err = utils.SelectUserExists(userName)
 	if err != nil {
@@ -81,14 +106,14 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *pb.CreateAccountR
 
 	gpuQuota := config.Value.Quota.GPU
 	if exist {
-		err = utils.CreateAccountIfUserExits(accountName, userName, partitions, gpuQuota)
+		err = utils.CreateAccountIfUserExits(accountName, userName, partitionNames, gpuQuota, accountBlocked)
 		if err != nil {
 			logrus.Errorf("CreateAccount failed: %v", err)
 			return nil, ce.RichError(codes.Internal, "SQL_CREATE_FAILED", err.Error())
 		}
 		return &pb.CreateAccountResponse{}, nil
 	} else {
-		err = utils.CreateAccountIfUserNotExits(accountName, userName, partitions, gpuQuota)
+		err = utils.CreateAccountIfUserNotExits(accountName, userName, partitionNames, gpuQuota, accountBlocked)
 		if err != nil {
 			logrus.Errorf("CreateAccount failed: %v", err)
 			return nil, ce.RichError(codes.Internal, "SQL_CREATE_FAILED", err.Error())
@@ -391,7 +416,7 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pb
 
 	// 账户本来的分区去重加上需要解封的分区，得到的分区重新赋值给账户就代表需要解封的分区被解封了
 	accountPartitions := utils.IncludeUnblockedPartitions(account.Partitions, in.UnblockedPartitions)
-	if accountPartitions == account.Partitions {
+	if accountPartitions == account.Partitions && account.Blocked == 0 {
 		return &pb.UnblockAccountWithPartitionsResponse{}, nil
 	}
 

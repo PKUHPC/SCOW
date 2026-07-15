@@ -25,6 +25,19 @@ message ListAccountsResponse {
 message CreateAccountRequest {
   string account_name = 1;
   string owner_user_id = 2;
+  // 账户是否因账户维度原因应保持封锁。
+  // authorized_partitions 只表达授权分区集合；adapter 应结合本字段推导创建后的当前可使用分区。
+  bool account_blocked = 3;
+  message AuthorizedPartitions {
+    // 创建账户时账户/资源维度授权的完整分区集合，不表达账户封锁原因。
+    repeated string partitions = 1;
+  }
+  oneof partition_strategy {
+    // 显式传递账户/资源维度授权分区。
+    AuthorizedPartitions authorized_partitions = 4;
+    // 显式要求沿用旧的全量分区语义；设置时 false 非法。
+    bool use_all_partitions = 5;
+  }
 }
 
 message CreateAccountResponse {
@@ -196,7 +209,7 @@ message SyncAccountInfo {
 }
 
 message SyncAccountUserInfoResponse {
-  
+
   message CreateAccountOperation {
     string account_name = 1;
   }
@@ -252,10 +265,10 @@ message SyncAccountUserInfoResponse {
 }
 
 service AccountService {
-  
+
   /**
    * description: list accounts for a user
-   * errors: 
+   * errors:
    * - user not exist
    *   NOT_FOUND, USER_NOT_FOUND, {}
    */
@@ -267,13 +280,13 @@ service AccountService {
    * - account exist
    *   ALREADY_EXISTS, ACCOUNT_ALREADY_EXISTS, {}
    * - owner id not exist
-   *   NOT_FOUND, USER_NOT_FOUND, {} 
+   *   NOT_FOUND, USER_NOT_FOUND, {}
    */
   rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
 
   /*
-   * description: block an account 
-   * errors: 
+   * description: block an account
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * special case:
@@ -282,8 +295,8 @@ service AccountService {
   rpc BlockAccount(BlockAccountRequest) returns (BlockAccountResponse);
 
   /*
-   * description: unblock an account 
-   * errors: 
+   * description: unblock an account
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * special case:
@@ -307,7 +320,7 @@ service AccountService {
    * - In versions after 1.7.0:
    * - The 'blocked' field indicates whether the account is completely blocked across all partitions.
    * - The 'account_blocked_details' field provides detailed status information for each partition.
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    */
@@ -323,10 +336,10 @@ service AccountService {
 
 
   // ********** Below is the rpcs for optional feature: RESOURCE_MANAGEMENT ***************
-  /*  
+  /*
    * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
    * description: block an account with specified partitions
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * special case:
@@ -338,26 +351,26 @@ service AccountService {
    * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
 
    * description: unblock an account with specified partitions
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    * special case:
    * - account already unblocked, don't throw error
    */
    rpc UnblockAccountWithPartitions(UnblockAccountWithPartitionsRequest) returns (UnblockAccountWithPartitionsResponse);
- 
+
   /*
    * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
    * description: query if an account is blocked with specified partitions
-   * errors: 
+   * errors:
    * - account not exist
    *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
    */
    rpc QueryAccountBlockStatusWithPartitions(QueryAccountBlockStatusWithPartitionsRequest) returns (QueryAccountBlockStatusWithPartitionsResponse);
-   
+
   /*
    * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
-   * description: get all accounts with blocked partitions' detail and all associated users 
+   * description: get all accounts with blocked partitions' detail and all associated users
    * special case:
    * - account no users, exclude this account
    */

@@ -23,14 +23,45 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *protos.AddUserToA
 	var allowedPartitionQosList []*craneProtos.UserInfo_AllowedPartitionQos
 	logrus.Infof("Received request AddUserToAccount: %v", in)
 
+	var partitions []string
+	useUsablePartitions := false
+	switch partitionStrategy := in.PartitionStrategy.(type) {
+	case *protos.AddUserToAccountRequest_UsablePartitions_:
+		useUsablePartitions = true
+		if partitionStrategy.UsablePartitions != nil {
+			partitions = partitionStrategy.UsablePartitions.Partitions
+		}
+	case *protos.AddUserToAccountRequest_UseAllPartitions:
+		if !partitionStrategy.UseAllPartitions {
+			logrus.Debugf("AddUserToAccount rejected invalid use_all_partitions=false")
+			return nil, ce.RichError(codes.InvalidArgument, "INVALID_ARGUMENT",
+				"use_all_partitions must be true when set")
+		}
+	}
+
 	account, err := utils.GetAccountByName(in.AccountName)
 	if err != nil {
 		logrus.Errorf("AddUserToAccount get account failed: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 	}
 
+	allowedPartitions := account.AllowedPartitions
+	if useUsablePartitions {
+		for _, partition := range partitions {
+			if !utils.Contains(account.AllowedPartitions, partition) {
+				logrus.Warnf("AddUserToAccount usable partition %s is not in account %s allowed partitions %v", partition, in.AccountName, account.AllowedPartitions)
+			}
+		}
+		for _, partition := range account.AllowedPartitions {
+			if !utils.Contains(partitions, partition) {
+				logrus.Warnf("AddUserToAccount account %s allowed partition %s is not in usable partitions %v", in.AccountName, partition, partitions)
+			}
+		}
+		allowedPartitions = partitions
+	}
+
 	// 获取计算分区 配置qos
-	for _, partition := range account.AllowedPartitions {
+	for _, partition := range allowedPartitions {
 		allowedPartitionQosList = append(allowedPartitionQosList, &craneProtos.UserInfo_AllowedPartitionQos{
 			PartitionName: partition,
 			QosList:       account.AllowedQosList,

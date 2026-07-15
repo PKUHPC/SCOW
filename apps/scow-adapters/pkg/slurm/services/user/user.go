@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -41,6 +42,39 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccou
 		return nil, ce.RichError(codes.NotFound, "ACCOUNT_NOT_FOUND", err.Error())
 	}
 
+	// usablePartitions 表示新增用户当前实际可使用分区；Slurm 仍维护全量 association。
+	allPartitions, err := utils.GetPartitionsName()
+	if err != nil {
+		logrus.Errorf("AddUserToAccount failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+	if len(allPartitions) == 0 {
+		err = fmt.Errorf("no partitions found")
+		logrus.Errorf("AddUserToAccount failed: %v", err)
+		return nil, ce.RichError(codes.NotFound, "PARTITION_NOT_FOUND", err.Error())
+	}
+	openPartitions := allPartitions
+	useAllPartitions := false
+	switch partitionStrategy := in.PartitionStrategy.(type) {
+	case *pb.AddUserToAccountRequest_UsablePartitions_:
+		openPartitions = nil
+		if partitionStrategy.UsablePartitions != nil {
+			openPartitions = partitionStrategy.UsablePartitions.Partitions
+		}
+	case *pb.AddUserToAccountRequest_UseAllPartitions:
+		if !partitionStrategy.UseAllPartitions {
+			logrus.Infof("AddUserToAccount rejected invalid use_all_partitions=false")
+			return nil, ce.RichError(codes.InvalidArgument, "INVALID_ARGUMENT",
+				"use_all_partitions must be true when set")
+		}
+		useAllPartitions = true
+	default:
+		useAllPartitions = true
+	}
+
+	if useAllPartitions {
+		openPartitions = allPartitions
+	}
 	// 获取系统中的所有Qos
 	qosList, err := utils.GetAllQosInDatabase()
 	if err != nil {
@@ -49,17 +83,6 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccou
 	}
 
 	baseQos := strings.Join(qosList, ",")
-	// 获取系统中的partitions
-	partitions, err := utils.GetPartitionsName()
-	if err != nil {
-		logrus.Errorf("AddUserToAccount failed: %v", err)
-		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
-	}
-	if len(partitions) == 0 {
-		err = fmt.Errorf("no partitions found")
-		logrus.Errorf("AddUserToAccount failed: %v", err)
-		return nil, ce.RichError(codes.NotFound, "PARTITION_NOT_FOUND", err.Error())
-	}
 
 	// 检查用户是否在slurm中
 	exist, err = utils.SelectUserExists(in.UserId)
@@ -67,28 +90,70 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccou
 		logrus.Errorf("AddUserToAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
+	userExistedBefore := exist
+	associationCreated := false
 	if exist {
 		// 用户已存在，先检查账户和用户之间是否存在关联关系
 		if err = utils.CheckUserAndAccountAssociate(in.UserId, in.AccountName); err != nil {
 			// 不存在关联关系，则将用户加入账户
-			if err = utils.AddUserToAccount(in.UserId, in.AccountName, baseQos, partitions); err != nil {
+			if err = utils.AddUserToAccount(in.UserId, in.AccountName, baseQos, allPartitions); err != nil {
 				logrus.Errorf("AddUserToAccount failed: %v", err)
 				return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 			}
-			logrus.Infof("AddUserToAccount sucess! User is: %v, Account is: %v", in.UserId, in.AccountName)
-			return &pb.AddUserToAccountResponse{}, nil
+			associationCreated = true
+		} else {
+			// 存在关联关系，则返回用户已存在
+			err = fmt.Errorf("AddUserToAccount failed: User %s is already exists in account %s", in.UserId, in.AccountName)
+			logrus.Errorf("AddUserToAccount failed: %v", err)
+			return nil, ce.RichError(codes.AlreadyExists, "USER_ACCOUNT_ALREADY_EXISTS", err.Error())
 		}
-		// 存在关联关系，则返回用户已存在
-		err = fmt.Errorf("AddUserToAccount failed: User %s is already exists in account %s", in.UserId, in.AccountName)
-		logrus.Errorf("AddUserToAccount failed: %v", err)
-		return nil, ce.RichError(codes.AlreadyExists, "USER_ACCOUNT_ALREADY_EXISTS", err.Error())
-	}
-
-	// 用户不存在则创建用户，并将用户加入到账户中
-	if err = utils.AddUserToAccount(in.UserId, in.AccountName, baseQos, partitions); err != nil {
+	} else if err = utils.AddUserToAccount(in.UserId, in.AccountName, baseQos, allPartitions); err != nil {
 		logrus.Errorf("AddUserToAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	} else {
+		associationCreated = true
 	}
+
+	blockedPartitions := make([]string, 0)
+	rollbackAddedUserAccount := func(cause error) error {
+		if !associationCreated {
+			return cause
+		}
+
+		var rollbackErr error
+		if userExistedBefore {
+			// 用户调用前已存在时，只撤本次新增的 user-account association，避免改动用户本体。
+			rollbackErr = utils.DeleteUserAccountAssociation(in.UserId, in.AccountName)
+		} else {
+			// 用户调用前不存在时，删除本次创建的 user，恢复到调用前状态。
+			rollbackErr = utils.DeleteUser(in.UserId)
+		}
+
+		if rollbackErr != nil {
+			logrus.Errorf("AddUserToAccount rollback failed: %v, user is: %v, account is: %v", rollbackErr, in.UserId, in.AccountName)
+			return cause
+		}
+		// 分区封锁成功后会持久化原始 MaxSubmitJobs；新增关系已回滚删除时，这些恢复记录也要清理，避免后续重建后读到旧值。
+		for _, partition := range blockedPartitions {
+			if permissionErr := utils.DeletePermissionRecord(in.AccountName, partition, in.UserId); permissionErr != nil {
+				logrus.Errorf("AddUserToAccount rollback cleanup permission record failed: %v, user is: %v, account is: %v, partition is: %v", permissionErr, in.UserId, in.AccountName, partition)
+			}
+		}
+		return cause
+	}
+
+	for _, partition := range allPartitions {
+		if slices.Contains(openPartitions, partition) {
+			continue
+		}
+		if err = utils.BlockUserAssociationInAccountPartitionByAccountState(in.UserId, in.AccountName, partition); err != nil {
+			err = rollbackAddedUserAccount(err)
+			logrus.Errorf("AddUserToAccount block partition failed: %v, user is: %v, account is: %v, partition is: %v", err, in.UserId, in.AccountName, partition)
+			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+		}
+		blockedPartitions = append(blockedPartitions, partition)
+	}
+
 	logrus.Infof("AddUserToAccount sucess! User is: %v, Account is: %v", in.UserId, in.AccountName)
 	return &pb.AddUserToAccountResponse{}, nil
 }

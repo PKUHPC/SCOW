@@ -786,6 +786,30 @@ func GetUsersAndMaxSubmitJobsInAccountPartition(account, partition string) (map[
 	return result, nil
 }
 
+// GetUserMaxSubmitJobsInAccountPartition 查询单个用户在指定账户+分区关联中的 max_submit_jobs。
+// 返回值含义：
+//   - int32: 该 association 当前的 max_submit_jobs；当数据库字段为 NULL 时，统一映射为 -1 表示无限制。
+//   - bool: 该 association 是否存在；
+//   - error: 查询过程是否出错；
+func GetUserMaxSubmitJobsInAccountPartition(user, account, partition string) (int32, bool, error) {
+	query := fmt.Sprintf(
+		"SELECT max_submit_jobs FROM %s_assoc_table WHERE deleted = 0 AND `user` = ? AND acct = ? AND `partition` = ? LIMIT 1",
+		config.SlurmValue.MySQLConfig.ClusterName,
+	)
+
+	var maxSubmitJobs sql.NullInt64
+	if err := client.SlurmDB.QueryRow(query, user, account, partition).Scan(&maxSubmitJobs); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, false, nil
+		}
+		return 0, false, fmt.Errorf("sql query failed: %v", err)
+	}
+	if !maxSubmitJobs.Valid {
+		return -1, true, nil
+	}
+	return int32(maxSubmitJobs.Int64), true, nil
+}
+
 // SelectUserDeleted 查询用户是否已删除。
 // 返回 (true, nil) 表示用户已删除或者不存在；(false, nil) 表示用户存在但未删除；
 func SelectUserDeleted(user string) (bool, error) {

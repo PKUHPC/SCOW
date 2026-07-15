@@ -61,6 +61,18 @@ func getPermissionRecords(accountName, partitionName string) (map[string]int32, 
 	return records, nil
 }
 
+// DeletePermissionRecord 删除指定账户+分区+用户的一条持久化记录。
+// 用于 CreateAccount/AddUserToAccount 回滚：association 已删除时，对应的 MaxSubmitJobs 恢复记录也不应继续保留。
+func DeletePermissionRecord(accountName, partitionName, userName string) error {
+	query := `DELETE FROM acct_permission_persistence WHERE account_name = ? AND partition_name = ? AND user_name = ?`
+	_, err := client.SlurmDB.Exec(query, accountName, partitionName, userName)
+	if err != nil {
+		return fmt.Errorf("delete permission record failed: %w", err)
+	}
+	logrus.Tracef("deleted permission record: account=%s partition=%s user=%s", accountName, partitionName, userName)
+	return nil
+}
+
 // deletePermissionRecords 解封账户后，清理指定账户+分区下的所有持久化记录。
 func deletePermissionRecords(accountName, partitionName string) error {
 	query := `DELETE FROM acct_permission_persistence WHERE account_name = ? AND partition_name = ?`

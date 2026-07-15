@@ -79,23 +79,64 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *pb.CreateAccountR
 	}
 
 	// 不存在则开始创建账户
-	// 获取系统中计算分区信息
-	partitions, err := utils.GetPartitionsName()
+	// authorizedPartitions 表示账户/资源维度授权分区；Slurm 仍维护全量 association。
+	// account_blocked 为 true 时，授权分区仍保留在 SCOW/resource 侧，但新建的物理 association 全部按账户原因封锁。
+	allPartitions, err := utils.GetPartitionsName()
 	if err != nil {
 		logrus.Errorf("CreateAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 	}
-	if len(partitions) == 0 {
+	if len(allPartitions) == 0 {
 		err = fmt.Errorf("no partitions found")
 		logrus.Errorf("CreateAccount failed: %v", err)
 		return nil, ce.RichError(codes.NotFound, "PARTITION_NOT_FOUND", err.Error())
 	}
+	openPartitions := allPartitions
+	useAllPartitions := false
+	switch partitionStrategy := in.PartitionStrategy.(type) {
+	case *pb.CreateAccountRequest_AuthorizedPartitions_:
+		openPartitions = nil
+		if partitionStrategy.AuthorizedPartitions != nil {
+			openPartitions = partitionStrategy.AuthorizedPartitions.Partitions
+		}
+	case *pb.CreateAccountRequest_UseAllPartitions:
+		if !partitionStrategy.UseAllPartitions {
+			logrus.Debugf("CreateAccount rejected invalid use_all_partitions=false")
+			return nil, ce.RichError(codes.InvalidArgument, "INVALID_ARGUMENT",
+				"use_all_partitions must be true when set")
+		}
+		useAllPartitions = true
+	default:
+		useAllPartitions = true
+	}
 
-	// 获取系统中Qos
+	if useAllPartitions {
+		openPartitions = allPartitions
+	}
+	if in.AccountBlocked {
+		// 账户封锁原因单独由 account_blocked 表达；即使存在可使用分区，物理 association 也应全部封锁。
+		openPartitions = nil
+	}
+
 	qosList, err := utils.GetQosList()
 	if err != nil {
 		logrus.Errorf("CreateAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+	}
+
+	blockedPartitions := make([]string, 0)
+	rb := func(cause error) error {
+		if rollbackErr := utils.DeleteAccount(in.AccountName); rollbackErr != nil {
+			logrus.Errorf("CreateAccount rollback failed: %v, account is: %v", rollbackErr, in.AccountName)
+			return cause
+		}
+		// 分区封锁成功后会持久化原始 MaxSubmitJobs；账户已回滚删除时，这些恢复记录也要清理，避免同名账户重建后读到旧值。
+		for _, partition := range blockedPartitions {
+			if permissionErr := utils.DeletePermissionRecord(in.AccountName, partition, in.OwnerUserId); permissionErr != nil {
+				logrus.Errorf("CreateAccount rollback cleanup permission record failed: %v, owner is: %v, account is: %v, partition is: %v", permissionErr, in.OwnerUserId, in.AccountName, partition)
+			}
+		}
+		return cause
 	}
 
 	// 创建账户
@@ -106,9 +147,22 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *pb.CreateAccountR
 
 	// 创建用户及修改用户qos
 	baseQos := strings.Join(qosList, ",")
-	if err = utils.AddUserToAccount(in.OwnerUserId, in.AccountName, baseQos, partitions); err != nil {
+	if err = utils.AddUserToAccount(in.OwnerUserId, in.AccountName, baseQos, allPartitions); err != nil {
+		err = rb(err)
 		logrus.Errorf("CreateAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+
+	for _, partition := range allPartitions {
+		if slices.Contains(openPartitions, partition) {
+			continue
+		}
+		if err = utils.BlockUserAssociationInAccountPartitionByAccountState(in.OwnerUserId, in.AccountName, partition); err != nil {
+			err = rb(err)
+			logrus.Errorf("CreateAccount block partition failed: %v, owner is: %v, account is: %v, partition is: %v", err, in.OwnerUserId, in.AccountName, partition)
+			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+		}
+		blockedPartitions = append(blockedPartitions, partition)
 	}
 
 	logrus.Infof("CreateAccount sucess! account is: %v, owerUserId is: %v", in.AccountName, in.OwnerUserId)

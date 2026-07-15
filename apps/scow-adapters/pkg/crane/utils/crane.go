@@ -21,6 +21,19 @@ type jobCount struct {
 	PendingJobCount uint32
 }
 
+type CraneCtldResponseError struct {
+	Message    string
+	RichErrors []*craneProtos.RichError
+}
+
+func (e *CraneCtldResponseError) Error() string {
+	return e.Message
+}
+
+func (e *CraneCtldResponseError) AllHaveCode(code craneProtos.ErrCode) bool {
+	return richErrorsAllHaveCode(e.RichErrors, code)
+}
+
 func formatRichErrors(richErrors []*craneProtos.RichError) string {
 	if len(richErrors) == 0 {
 		return "no rich error returned"
@@ -69,7 +82,7 @@ func getUsersByAccountName(accountName string) ([]*craneProtos.UserInfo, error) 
 	return response.UserList, nil
 }
 
-func AddUserToAccount(accountName, userName string) error {
+func AddUserToAccount(accountName, userName string, partitions ...[]string) error {
 	var allowedPartitionQosList []*craneProtos.UserInfo_AllowedPartitionQos
 
 	account, err := GetAccountByName(accountName)
@@ -77,8 +90,13 @@ func AddUserToAccount(accountName, userName string) error {
 		return fmt.Errorf("AddUserToAccount get account failed: %v", err)
 	}
 
+	allowedPartitions := account.AllowedPartitions
+	if len(partitions) > 0 {
+		allowedPartitions = partitions[0]
+	}
+
 	// 获取计算分区 配置qos
-	for _, partition := range account.AllowedPartitions {
+	for _, partition := range allowedPartitions {
 		allowedPartitionQosList = append(allowedPartitionQosList, &craneProtos.UserInfo_AllowedPartitionQos{
 			PartitionName: partition,
 			QosList:       account.AllowedQosList,
@@ -130,11 +148,17 @@ func SelectAccountExists(account string) (bool, error) {
 	return true, nil
 }
 
-func CreateAccount(accountName string) error {
+func CreateAccount(accountName string, partitions ...[]string) error {
 	var partitionList []string
-	// 获取计算分区信息
-	for _, partition := range client.CConfig.Partitions {
-		partitionList = append(partitionList, partition.Name)
+	if len(partitions) > 0 && len(partitions[0]) > 0 {
+		partitionList = partitions[0]
+	} else {
+		// 未指定 authorized_partitions 时沿用旧行为：使用配置里的全部分区。
+		// authorized_partitions=[] 时也先按全量分区创建，再在创建成功后删除全部分区；
+		// 不能直接写空 AllowedPartitions，因为 proto3 repeated 空列表跨 gRPC 后会变成 nil。
+		for _, partition := range client.CConfig.Partitions {
+			partitionList = append(partitionList, partition.Name)
+		}
 	}
 	// 获取系统QOS
 	qosList, err := GetAllQos()
@@ -161,6 +185,36 @@ func CreateAccount(accountName string) error {
 	}
 	if !response.GetOk() {
 		return fmt.Errorf("create account error: %v", strconv.FormatInt(int64(response.GetCode()), 10))
+	}
+	if len(partitions) > 0 && len(partitions[0]) == 0 {
+		if err := BlockAccountWithPartition(accountName, partitionList); err != nil {
+			// authorized_partitions=[] 需要先创建全量分区再删空；若删分区失败，必须删除刚创建的账户，
+			// 避免把“无可使用分区”错误地留成“全量可使用分区”。
+			if rollbackErr := DeleteAccount(accountName); rollbackErr != nil {
+				logrus.Errorf("CreateAccount rollback account %s failed: %v", accountName, rollbackErr)
+			}
+			return fmt.Errorf("block all account partitions after create account failed: %w", err)
+		}
+	}
+	return nil
+}
+
+func DeleteAccount(accountName string) error {
+	request := &craneProtos.DeleteAccountRequest{
+		Uid:         uint32(os.Getuid()),
+		AccountList: []string{accountName},
+	}
+	response, err := client.CraneCtld.DeleteAccount(context.Background(), request)
+	if err != nil {
+		logrus.Errorf("DeleteAccount err: %v", err)
+		return err
+	}
+	if !response.GetOk() {
+		richErrors := response.GetRichErrorList()
+		return &CraneCtldResponseError{
+			Message:    formatRichErrors(richErrors),
+			RichErrors: richErrors,
+		}
 	}
 	return nil
 }
@@ -271,6 +325,7 @@ func modifyUserAllowedPartitions(accountName string, partitions []string) error 
 	users, err := getUsersByAccountName(accountName)
 	if err != nil {
 		logrus.Errorf("BlockAccountWithPartitions err: %v", err)
+		return err
 	}
 
 	for _, user := range users {

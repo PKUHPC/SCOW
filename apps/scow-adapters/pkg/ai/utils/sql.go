@@ -257,7 +257,7 @@ func CreateAccount(account string) error {
 	return nil
 }
 
-func CreateAccountIfUserExits(account, user, partitions string, gpuQuota uint32) error {
+func CreateAccountIfUserExits(account, user, partitions string, gpuQuota uint32, blocked int) error {
 	tx := client.DB.Begin()
 	currentTime := time.Now().Unix()
 	accountInfo := models.AcctTable{
@@ -266,6 +266,7 @@ func CreateAccountIfUserExits(account, user, partitions string, gpuQuota uint32)
 		Partitions:   partitions,
 		GpuQuota:     gpuQuota,
 		Description:  "Create account",
+		Blocked:      blocked,
 	}
 	if err := tx.Create(&accountInfo).Error; err != nil {
 		tx.Rollback()
@@ -284,7 +285,7 @@ func CreateAccountIfUserExits(account, user, partitions string, gpuQuota uint32)
 	return nil
 }
 
-func CreateAccountIfUserNotExits(account, user, partitions string, gpuQuota uint32) error {
+func CreateAccountIfUserNotExits(account, user, partitions string, gpuQuota uint32, blocked int) error {
 	tx := client.DB.Begin()
 	currentTime := time.Now().Unix()
 	accountInfo := models.AcctTable{
@@ -293,6 +294,7 @@ func CreateAccountIfUserNotExits(account, user, partitions string, gpuQuota uint
 		Partitions:   partitions,
 		GpuQuota:     gpuQuota,
 		Description:  "Create account",
+		Blocked:      blocked,
 	}
 	if err := tx.Create(&accountInfo).Error; err != nil {
 		tx.Rollback()

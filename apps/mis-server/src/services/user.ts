@@ -38,6 +38,7 @@ import { getActivatedClusters } from "src/bl/clustersUtils";
 import { processExpiredWhitelist } from "src/bl/whitelist";
 import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
+import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
@@ -45,11 +46,12 @@ import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
-import { getUserStateInfo } from "src/utils/accountUserState";
+import { getAccountStateInfo, getUserStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { logger } from "src/utils/logger";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
+import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
 import { getSchedulerAdapterJobsByClusterFeatures } from "src/utils/schedulerAdapterJobTypes";
 import { setNewUserStorageQuota } from "src/utils/storageQuota";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
@@ -58,6 +60,10 @@ interface ResultInfo extends UserOperationResult {
   code?: number;
   reason?: string;
 }
+
+const isAlreadyExistsError = (e: any) => {
+  return e?.code === Status.ALREADY_EXISTS || String(e?.details ?? e?.message ?? e).includes("Error: 6 ALREADY_EXISTS");
+};
 
 export const userServiceServer = plugin((server) => {
   server.addService<UserServiceServer>(UserServiceService, {
@@ -265,20 +271,96 @@ export const userServiceServer = plugin((server) => {
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
-      await server.ext.clusters
-        .callOnAll(currentActivatedClusters, logger, async (client) => {
-          return await asyncClientCall(client.user, "addUserToAccount", { userId, accountName });
-        })
-        .catch(async (e) => {
-          // 如果每个适配器返回的Error都是ALREADY_EXISTS，说明所有集群均已添加成功，可以在scow数据库及认证系统中加入该条关系，
-          // 除此以外，都抛出异常
-          if (
-            countSubstringOccurrences(e.details, "Error: 6 ALREADY_EXISTS") !==
-            Object.keys(currentActivatedClusters).length
-          ) {
-            throw e;
-          }
-        });
+      // 添加用户 RPC 只传新增用户当前实际可使用分区。
+      // 这里仍需按 MIS 业务规则判断账户是否应封锁，用于把可使用分区收敛为空列表。
+      const blockThresholdAmount = account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+      const isAccountBlocked = getAccountStateInfo(
+        account.whitelist?.id,
+        account.state,
+        account.balance,
+        blockThresholdAmount,
+      ).shouldBlockInCluster;
+
+      if (commonConfig.scowResource?.enabled) {
+        const results = await Promise.allSettled(
+          Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
+            await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
+              const authorizedPartitions =
+                (await server.ext.resource.getAccountAssignedPartitionsForCluster({
+                  accountName,
+                  tenantName,
+                  clusterId,
+                })) ?? [];
+              const usablePartitions = isAccountBlocked ? [] : authorizedPartitions;
+
+              try {
+                await asyncClientCall(client.user, "addUserToAccount", {
+                  userId,
+                  accountName,
+                  // usablePartitions 表示该新增用户当前实际可使用分区，不表达账户封锁原因。
+                  partitionStrategy: {
+                    $case: "usablePartitions" as const,
+                    usablePartitions: { partitions: usablePartitions },
+                  },
+                });
+              } catch (e: any) {
+                if (isAlreadyExistsError(e)) {
+                  if (isAccountBlocked) {
+                    // 用户已存在时，账户原因封锁仍需收敛到账户级封锁状态。
+                    await asyncClientCall(client.account, "blockAccount", { accountName });
+                  } else {
+                    // 用户在调度器中已存在（残留或重复请求），按当前资源授权状态重整账户分区。
+                    await unblockAccountAssignedPartitionsInCluster(
+                      accountName,
+                      tenantName,
+                      clusterId,
+                      server.ext.clusters,
+                      logger,
+                      server.ext.resource,
+                    );
+                  }
+                } else {
+                  throw e;
+                }
+              }
+            });
+          }),
+        );
+
+        const realErrors = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+        if (realErrors.length > 0) {
+          throw realErrors[0].reason;
+        }
+      } else {
+        const noResourceResults = await Promise.allSettled(
+          Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
+            await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
+              try {
+                await asyncClientCall(client.user, "addUserToAccount", {
+                  userId,
+                  accountName,
+                });
+                if (isAccountBlocked) {
+                  await asyncClientCall(client.account, "blockAccount", { accountName });
+                }
+              } catch (e: any) {
+                if (isAlreadyExistsError(e)) {
+                  if (isAccountBlocked) {
+                    await asyncClientCall(client.account, "blockAccount", { accountName });
+                  }
+                } else {
+                  throw e;
+                }
+              }
+            });
+          }),
+        );
+
+        const noResourceErrors = noResourceResults.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+        if (noResourceErrors.length > 0) {
+          throw noResourceErrors[0].reason;
+        }
+      }
 
       const newUserAccount = new UserAccount({
         account,

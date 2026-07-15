@@ -439,10 +439,18 @@ export const unAssignAccountCluster = adminAuthProcedure
 
       // 确保正常账户在集群的所有分区已封锁
       const accountInfo = await getScowAccounts(tenantName, accountName);
+      const account = accountInfo.results[0];
+      if (!account) {
+        throw new TRPCError({
+          message: `Can not find account ${accountName} under tenant ${tenantName}`,
+          code: "NOT_FOUND",
+        });
+      }
       const clustersUtil = await getClusterUtils();
-      if (!accountInfo.results[0].blocked) {
+      if (!account.blocked) {
         await clustersUtil
           .callOnOne(clusterId, logger, async (adapterClient) => {
+            await ensureResourceManagementFeatureAvailable(adapterClient, logger);
             const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
             // 1.获取当前集群下所有分区
             const partitionNames = clusterConfig.partitions.map((p) => p.name);
@@ -571,16 +579,24 @@ export const assignAccountPartition = adminAuthProcedure
 
       // 确保正常账户在集群的此分区下同时解封
       const accountInfo = await getScowAccounts(tenantName, accountName);
+      const account = accountInfo.results[0];
+      if (!account) {
+        throw new TRPCError({
+          message: `Can not find account ${accountName} under tenant ${tenantName}`,
+          code: "NOT_FOUND",
+        });
+      }
+
       const clustersUtil = await getClusterUtils();
-      if (!accountInfo.results[0].blocked) {
+      if (!account.blocked) {
         await clustersUtil
           .callOnOne(
             clusterId,
 
             logger,
             async (adapterClient) => {
-              // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
               await ensureResourceManagementFeatureAvailable(adapterClient, logger);
+
               await asyncClientCall(adapterClient.account, "unblockAccountWithPartitions", {
                 accountName,
                 unblockedPartitions: [partition],
@@ -589,7 +605,7 @@ export const assignAccountPartition = adminAuthProcedure
           )
           .catch((e) => {
             logger.error(
-              "Unblock account %s in partition (clusterId: %s, partitionName: %s) failed with error details: %s",
+              "Unblock account %s in partition (clusterId: %s, partitionName: %s) failed with error details: %o",
               accountName,
               clusterId,
               partition,
@@ -699,8 +715,15 @@ export const unAssignAccountPartition = adminAuthProcedure
 
       // 确保正常账户在集群的此分区已封锁
       const accountInfo = await getScowAccounts(tenantName, accountName);
+      const account = accountInfo.results[0];
+      if (!account) {
+        throw new TRPCError({
+          message: `Can not find account ${accountName} under tenant ${tenantName}`,
+          code: "NOT_FOUND",
+        });
+      }
       const clustersUtil = await getClusterUtils();
-      if (!accountInfo.results[0].blocked) {
+      if (!account.blocked) {
         await clustersUtil
           .callOnOne(clusterId, logger, async (adapterClient) => {
             await ensureResourceManagementFeatureAvailable(adapterClient, logger);

@@ -21,6 +21,21 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccou
 	userName := in.UserId
 	accountName := in.AccountName
 
+	if in.PartitionStrategy != nil {
+		switch partitionStrategy := in.PartitionStrategy.(type) {
+		case *pb.AddUserToAccountRequest_UsablePartitions_:
+			// AI 的分区授权是账户级状态，AddUserToAccount 只新增/恢复用户-账户关系。
+			// MIS 在资源管理开启时会统一传 usable_partitions，但 AI 在这里不消费它，
+			// 避免“添加用户”请求意外改写账户 Partitions/Blocked。
+		case *pb.AddUserToAccountRequest_UseAllPartitions:
+			if !partitionStrategy.UseAllPartitions {
+				logrus.Debugf("AddUserToAccount rejected invalid use_all_partitions=false")
+				return nil, ce.RichError(codes.InvalidArgument, "INVALID_ARGUMENT",
+					"use_all_partitions must be true when set")
+			}
+		}
+	}
+
 	// 检查账号是否存在
 	exist, err := utils.SelectAccountExists(accountName)
 	if err != nil {
