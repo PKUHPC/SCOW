@@ -12,6 +12,7 @@ import { callOnOne } from "src/utils/clusters";
 import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 import { JobMetadata } from "./index";
+import { resolveSubmitJobWorkingDirectory } from "./workingDirectory";
 
 export const scowdJobServices = (getClient: (userId: string) => ScowdClient): JobOps => ({
   submitJob: async (request, logger) => {
@@ -39,8 +40,11 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
     logger.info("Submitting job %s for user %s in cluster %s", jobName, userId, cluster);
 
     try {
+      const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
+      const resolvedWorkingDirectory = resolveSubmitJobWorkingDirectory(workingDirectory, userHomeDir);
+
       // make sure working directory exists
-      await client.file.makeDirectory({ userId, dirPath: workingDirectory });
+      await client.file.makeDirectory({ userId, dirPath: resolvedWorkingDirectory });
 
       const timeUnitConversion = {
         [TimeUnit.MINUTES]: 1,
@@ -64,7 +68,7 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
             coreCount,
             timeLimitMinutes: maxTimeConversion,
             script: command,
-            workingDirectory,
+            workingDirectory: resolvedWorkingDirectory,
             stdout: output,
             stderr: errorOutput,
             extraOptions: [],
@@ -90,7 +94,7 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
 
       // 保存作业脚本
       if (scriptOutput) {
-        const scriptPath = join(workingDirectory, scriptOutput);
+        const scriptPath = join(resolvedWorkingDirectory, scriptOutput);
 
         await client.file.writeFile({ userId, filePath: scriptPath, content: reply.generatedScript });
       }
@@ -111,8 +115,6 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
         };
 
         logger.info("jobInfo: %o", jobInfo);
-
-        const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
 
         const { exists } = await client.file.exists({ userId, path: join(userHomeDir, portalConfig.savedJobsDir) });
 

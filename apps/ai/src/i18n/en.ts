@@ -763,6 +763,7 @@ export default {
         imageField: {
           label: "Development Image",
           remoteAddressRequired: "Please enter the remote image address",
+          remoteAddressInvalid: "Image address is illegal",
           remotePlaceholder: "Enter the remote image address",
           usePrivateImage: "Use private registry",
           remoteUsernamePlaceholder: "Enter username for the private image",
@@ -842,6 +843,7 @@ export default {
         xdlIpPlaceholder: "Automatically retrieved",
         workDirPlaceholder: "Default: User's home directory",
         clusterRequired: "Please select a cluster first",
+        notInHomeDir: "Working directory must be under the user's home directory",
       },
       mountPointList: {
         sourceRequired: "Please select a source path",
@@ -853,6 +855,7 @@ export default {
         targetRootNotAllowed: "Target path cannot be root (/)",
         targetPlaceholder: "Enter a mount path (e.g. /mnt/data)",
         duplicateTarget: "Mount target paths must be unique",
+        notInHomeDir: "Mount source path must be under the user's home directory",
         removeAriaLabel: "Remove mount point",
         addButton: "Add Mount Point",
       },
@@ -1605,6 +1608,14 @@ export default {
     resourceNameRuleTips: "The length cannot exceed 50 bytes and cannot contain the '/' character",
     pleaseInput: "Please enter {0}",
     pleaseSelect: "Please select {0}",
+    pathValidation: {
+      unsafeCharacter: "Path cannot contain spaces, commas, or special characters",
+      pathTraversal: "Path cannot contain ..",
+      currentDirectory: "Path cannot contain .",
+      absoluteRequired: "Path must start with /",
+      homeDirRequired: "Failed to get the user's home directory",
+      targetSystemPathNotAllowed: "Mount target path cannot be a system directory",
+    },
     aiJobExceptionReason: {
       imagePullError: "Image Pull Error",
       mountError: "Mount Error",

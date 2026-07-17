@@ -29,6 +29,7 @@ import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { RESOURCE_MOUNT_TYPES, ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { createImageAddressValidator } from "src/utils/form";
 
 import type { AppFormValues, ImageOption, InferImageSourceKey } from "../LaunchInferForm.types";
 
@@ -147,7 +148,10 @@ export const InferConfigSection = ({
               <>
                 <Form.Item
                   name="image"
-                  rules={[{ required: true, message: t(pAppConfig("imageField.remoteAddressRequired")) }]}
+                  rules={[
+                    { required: true, message: t(pAppConfig("imageField.remoteAddressRequired")) },
+                    createImageAddressValidator(t(pAppConfig("imageField.remoteAddressInvalid"))),
+                  ]}
                   style={{ marginBottom: 0 }}
                 >
                   <RoundedInput
@@ -273,7 +277,7 @@ export const InferConfigSection = ({
           label={<Label>{t(pAppConfig("customMountPoints.label"))}</Label>}
           helpTip={t(pAppConfig("customMountPoints.helpTip"))}
         >
-          <MountPointList clusterId={selectedCluster ?? ""} />
+          <MountPointList clusterId={selectedCluster ?? ""} homeDir={homeDir} />
         </InlineFormItem>
 
         <EnvVariableFormSection

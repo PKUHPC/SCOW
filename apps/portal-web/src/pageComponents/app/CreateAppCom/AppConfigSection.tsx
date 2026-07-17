@@ -7,6 +7,7 @@ import {
 } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { createLinuxAbsolutePathValidator } from "@scow/lib-web/build/utils/form";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Form, type FormInstance } from "antd";
 import { Rule } from "antd/es/form";
@@ -49,6 +50,17 @@ export const AppConfigSection = ({
       attributes.map((item, index) => {
         const rules: Rule[] =
           item.type === "NUMBER" ? [{ type: "integer" }, { required: item.required }] : [{ required: item.required }];
+        if (item.type === "FILE") {
+          rules.push(
+            createLinuxAbsolutePathValidator({
+              unsafeCharacter: t(p("pathUnsafeCharacter")),
+              pathTraversal: t(p("pathTraversal")),
+              currentDirectory: t(p("pathCurrentDirectory")),
+              absoluteRequired: t(p("absolutePathRequired")),
+              rootNotAllowed: t(p("rootNotAllowed")),
+            }),
+          );
+        }
 
         const placeholder = item.placeholder ?? "";
 

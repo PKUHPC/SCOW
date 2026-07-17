@@ -20,6 +20,7 @@ import { getImageTexts, getImageTypeText, ImageInterface, ImageType, Source } fr
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
 import {
+  createImageAddressValidator,
   createInterdependentValidator,
   imageNameValidation,
   imageTagValidation,
@@ -306,25 +307,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                   required: true,
                   message: source === Source.INTERNAL ? t(p("selectImagePlaceHolder")) : t(p("inputImagePlaceHolder")),
                 },
-                () => ({
-                  validator(_, value) {
-                    if (!value) return Promise.resolve(); // 为空时交由 required 校验处理
-
-                    if (source !== Source.INTERNAL) {
-                      const ImageAddressRegex = new RegExp(
-                        "^(?:[a-zA-Z0-9.-]+(?::\\d+)?\\/)?" + // 可选的 registry（如 docker.io, myregistry.com:5000）
-                          "[a-z0-9._-]+(?:\\/[a-z0-9._-]+)*" + // 镜像名称（支持多级路径）
-                          "(?::[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$", // 可选的 tag 或 sha256 digest
-                      );
-
-                      if (!ImageAddressRegex.test(value)) {
-                        return Promise.reject(new Error(t(p("imageAddressIsIllegal")))); // 显示错误信息
-                      }
-                    }
-
-                    return Promise.resolve();
-                  },
-                }),
+                createImageAddressValidator(t(p("imageAddressIsIllegal")), source !== Source.INTERNAL),
               ]}
             >
               <RoundedInput

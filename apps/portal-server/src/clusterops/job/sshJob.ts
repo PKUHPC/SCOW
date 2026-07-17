@@ -1,7 +1,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { createDirectoriesRecursively, sftpReadFile, sftpStat, sftpWriteFile } from "@scow/lib-ssh";
+import { createDirectoriesRecursively, getUserHomedir, sftpReadFile, sftpStat, sftpWriteFile } from "@scow/lib-ssh";
 import { TimeUnit } from "@scow/protos/build/portal/job";
 import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
 import path, { join } from "path";
@@ -12,6 +12,7 @@ import { clusterNotFound } from "src/utils/errors";
 import { getClusterLoginNode, sshConnect } from "src/utils/ssh";
 
 import { JobMetadata } from "./index";
+import { resolveSubmitJobWorkingDirectory } from "./workingDirectory";
 
 export const sshJobServices = (): JobOps => ({
   submitJob: async (request, logger) => {
@@ -41,9 +42,12 @@ export const sshJobServices = (): JobOps => ({
     if (!host) {
       throw clusterNotFound(cluster);
     }
+    const userHomeDir = await sshConnect(host, userId, logger, async (ssh) => getUserHomedir(ssh, userId, logger));
+    const resolvedWorkingDirectory = resolveSubmitJobWorkingDirectory(workingDirectory, userHomeDir);
+
     await sshConnect(host, userId, logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
-      await createDirectoriesRecursively(sftp, workingDirectory);
+      await createDirectoriesRecursively(sftp, resolvedWorkingDirectory);
     });
     const timeUnitConversion = {
       [TimeUnit.MINUTES]: 1,
@@ -67,7 +71,7 @@ export const sshJobServices = (): JobOps => ({
           coreCount,
           timeLimitMinutes: maxTimeConversion,
           script: command,
-          workingDirectory,
+          workingDirectory: resolvedWorkingDirectory,
           stdout: output,
           stderr: errorOutput,
           extraOptions: [],
@@ -95,7 +99,7 @@ export const sshJobServices = (): JobOps => ({
     if (scriptOutput) {
       await sshConnect(host, userId, logger, async (ssh) => {
         const sftp = await ssh.requestSFTP();
-        const scriptPath = join(workingDirectory, scriptOutput);
+        const scriptPath = join(resolvedWorkingDirectory, scriptOutput);
         await sftpWriteFile(sftp)(scriptPath, reply.generatedScript);
       });
     }

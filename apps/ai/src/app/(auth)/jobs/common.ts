@@ -1,3 +1,4 @@
+import { createContainerMountTargetPathValidator } from "@scow/lib-web/build/utils/form";
 import { PREDEFINED_ENV_VAR } from "src/models/envVars";
 import { styled } from "styled-components";
 
@@ -174,15 +175,18 @@ export const createMountTargetRules = (
   selfIndex: number,
   rootNotAllowedText: string,
   duplicateText: string,
-) => [
-  {
-    validator: (_: any, value?: string) => {
-      if (typeof value === "string" && value.trim() === "/") {
-        return Promise.reject(new Error(rootNotAllowedText));
-      }
-      return Promise.resolve();
-    },
+  pathMessages?: {
+    unsafeCharacter?: string;
+    pathTraversal?: string;
+    currentDirectory?: string;
+    absoluteRequired?: string;
+    systemPathNotAllowed?: string;
   },
+) => [
+  createContainerMountTargetPathValidator({
+    rootNotAllowed: rootNotAllowedText,
+    ...pathMessages,
+  }),
   validateTargetUnique(allListNames, selfListName, selfIndex, duplicateText),
 ];
 

@@ -192,6 +192,11 @@ export default {
         hours: "Hours",
         days: "Days",
         workingDirectory: "Working Directory",
+        pathUnsafeCharacter: "Path cannot contain spaces, commas, or special characters",
+        pathTraversal: "Path cannot contain ..",
+        pathCurrentDirectory: "Path cannot contain .",
+        homeDirRequired: "Failed to get the user's home directory",
+        notInHomeDir: "Absolute path must be under the user's home directory",
         wdTooltip1:
           "1. Please enter the absolute path. If you enter a relative path, it will be " +
           "relative to the user's home directory.",
@@ -666,6 +671,11 @@ export default {
         maxTimePositive: "The max running time must be greater than 0",
         maxRunTimeExceed: "The max running time cannot exceed {0} hours",
         jobNameRequired: "Please enter a job name",
+        pathUnsafeCharacter: "Path cannot contain spaces, commas, or special characters",
+        pathTraversal: "Path cannot contain ..",
+        pathCurrentDirectory: "Path cannot contain .",
+        absolutePathRequired: "Path must start with /",
+        rootNotAllowed: "Path cannot be root (/)",
         create: "create",
         costPerHour: "Cost:",
         gpuCoresRequired: "Please enter the number of accelerator cards per node",

@@ -4,6 +4,7 @@ import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/Cus
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { createRelativeToHomePathValidator } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance } from "antd";
 import { join } from "path";
 import { useCallback, useEffect } from "react";
@@ -26,6 +27,7 @@ interface JobConfigSectionProps {
   onErrorOutputChange: (value: string) => void;
   scriptOutput: string;
   onScriptOutputChange: (value: string) => void;
+  homePath?: string;
 }
 
 const p = prefix("pageComp.job.submitJobForm.");
@@ -41,6 +43,7 @@ export const JobConfigSection = ({
   onErrorOutputChange,
   scriptOutput,
   onScriptOutputChange,
+  homePath,
 }: JobConfigSectionProps) => {
   const t = useI18nTranslateToString();
   const calculateWorkingDirectory = (template: string, homePath: string = "") =>
@@ -53,21 +56,14 @@ export const JobConfigSection = ({
     ),
   });
 
-  const { data: homePath } = useAsync({
-    promiseFn: useCallback(
-      async () => (cluster ? api.getHomeDirectory({ query: { cluster: cluster.id } }) : { path: "" }),
-      [cluster?.id],
-    ),
-  });
-
   useEffect(() => {
     if (!form.isFieldTouched("workingDirectory") && clusterInfoQuery.data) {
       form.setFieldValue(
         "workingDirectory",
-        calculateWorkingDirectory(clusterInfoQuery.data.clusterInfo.submitJobDirTemplate, homePath?.path),
+        calculateWorkingDirectory(clusterInfoQuery.data.clusterInfo.submitJobDirTemplate, homePath),
       );
     }
-  }, [clusterInfoQuery.data, form, homePath?.path, jobName]);
+  }, [clusterInfoQuery.data, form, homePath, jobName]);
 
   return (
     <TitledSectionCard
@@ -85,7 +81,16 @@ export const JobConfigSection = ({
               <span>{t(p("wdTooltip2"))}</span>
             </>
           }
-          rules={[{ required: true }]}
+          rules={[
+            { required: true },
+            createRelativeToHomePathValidator(homePath, {
+              unsafeCharacter: t(p("pathUnsafeCharacter")),
+              pathTraversal: t(p("pathTraversal")),
+              currentDirectory: t(p("pathCurrentDirectory")),
+              homeDirRequired: t(p("homeDirRequired")),
+              notInHomeDir: t(p("notInHomeDir")),
+            }),
+          ]}
         >
           <RoundedInput
             size="large"

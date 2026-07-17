@@ -23,6 +23,7 @@ import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { RESOURCE_MOUNT_TYPES, ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { createImageAddressValidator } from "src/utils/form";
 import { useTheme } from "styled-components";
 
 import type { ImageOption, TrainAppFormValues, TrainImageSourceKey } from "../LaunchTrainForm.types";
@@ -110,7 +111,10 @@ export const TrainConfigSection = ({
               <>
                 <Form.Item
                   name="image"
-                  rules={[{ required: true, message: t(p("imageField.remoteAddressRequired")) }]}
+                  rules={[
+                    { required: true, message: t(p("imageField.remoteAddressRequired")) },
+                    createImageAddressValidator(t(p("imageField.remoteAddressInvalid"))),
+                  ]}
                   style={{ marginBottom: 0 }}
                 >
                   <RoundedInput
@@ -240,7 +244,7 @@ export const TrainConfigSection = ({
           label={<Label>{t(p("customMountPoints.label"))}</Label>}
           helpTip={t(p("customMountPoints.helpTip"))}
         >
-          <MountPointList clusterId={selectedCluster ?? ""} />
+          <MountPointList clusterId={selectedCluster ?? ""} homeDir={homeDir} />
         </InlineFormItem>
 
         <EnvVariableFormSection clusterId={selectedCluster} homeDir={homeDir} />

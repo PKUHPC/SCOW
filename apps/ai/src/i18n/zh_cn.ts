@@ -760,6 +760,7 @@ export default {
         imageField: {
           label: "开发镜像",
           remoteAddressRequired: "请填写远程镜像地址",
+          remoteAddressInvalid: "镜像地址不合法",
           remotePlaceholder: "请填写远程镜像地址",
           usePrivateImage: "使用私有镜像",
           remoteUsernamePlaceholder: "私有镜像地址请提供用户名",
@@ -833,6 +834,7 @@ export default {
         xdlIpPlaceholder: "自动获取",
         workDirPlaceholder: "默认：用户家目录",
         clusterRequired: "请先选择集群",
+        notInHomeDir: "工作目录必须位于用户家目录下",
       },
       mountPointList: {
         sourceRequired: "请选择挂载源路径",
@@ -844,6 +846,7 @@ export default {
         targetRootNotAllowed: "挂载目标路径不能为根目录 (/)",
         targetPlaceholder: "请输入挂载路径 (例如 /mnt/data)",
         duplicateTarget: "填写的挂载路径不能重复",
+        notInHomeDir: "挂载源路径必须位于用户家目录下",
         removeAriaLabel: "删除挂载点",
         addButton: "添加挂载点",
       },
@@ -1585,6 +1588,14 @@ export default {
     resourceNameRuleTips: "长度不能超过 50 字节且不能包含 '/' 字符",
     pleaseInput: "请输入{0}",
     pleaseSelect: "请选择{0}",
+    pathValidation: {
+      unsafeCharacter: "路径不能包含空格、逗号或特殊字符",
+      pathTraversal: "路径不能包含 ..",
+      currentDirectory: "路径不能包含 .",
+      absoluteRequired: "路径必须以 / 开头",
+      homeDirRequired: "无法获取用户家目录",
+      targetSystemPathNotAllowed: "挂载目标路径不能为系统目录",
+    },
     aiJobExceptionReason: {
       imagePullError: "拉取镜像失败",
       mountError: "挂载失败",

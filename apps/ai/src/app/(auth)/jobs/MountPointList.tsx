@@ -2,6 +2,7 @@
 
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { createHomeScopedPathValidator } from "@scow/lib-web/build/utils/form";
 import { Form } from "antd";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -33,12 +34,14 @@ const MountRemoveButton = styled(RemoveButton)`
 `;
 
 const p = prefix("app.jobs.mountPointList.");
+const pPathValidation = prefix("common.pathValidation.");
 
 interface Props {
   clusterId: string;
+  homeDir?: string;
 }
 
-export const MountPointList = ({ clusterId }: Props) => {
+export const MountPointList = ({ clusterId, homeDir }: Props) => {
   const theme = useTheme();
   const form = Form.useFormInstance();
   const t = useI18nTranslateToString();
@@ -56,6 +59,14 @@ export const MountPointList = ({ clusterId }: Props) => {
                   style={{ flex: 1, marginBottom: 0 }}
                   rules={[
                     { required: true, message: t(p("sourceRequired")) },
+                    createHomeScopedPathValidator(homeDir, {
+                      unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                      pathTraversal: t(pPathValidation("pathTraversal")),
+                      currentDirectory: t(pPathValidation("currentDirectory")),
+                      absoluteRequired: t(pPathValidation("absoluteRequired")),
+                      homeDirRequired: t(pPathValidation("homeDirRequired")),
+                      notInHomeDir: t(p("notInHomeDir")),
+                    }),
                     // 添加的自定义校验器以确保挂载点不重复
                     validateMountPoints(t(p("duplicateSource")), t(p("sourceConflictsWithWorkingDir"))),
                   ]}
@@ -89,6 +100,13 @@ export const MountPointList = ({ clusterId }: Props) => {
                       name,
                       t(p("targetRootNotAllowed")),
                       t(p("duplicateTarget")),
+                      {
+                        unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                        pathTraversal: t(pPathValidation("pathTraversal")),
+                        currentDirectory: t(pPathValidation("currentDirectory")),
+                        absoluteRequired: t(pPathValidation("absoluteRequired")),
+                        systemPathNotAllowed: t(pPathValidation("targetSystemPathNotAllowed")),
+                      },
                     ),
                   ]}
                 >

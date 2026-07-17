@@ -2,6 +2,7 @@
 
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { createHomeScopedPathValidator } from "@scow/lib-web/build/utils/form";
 import { Form, Tooltip } from "antd";
 import { useEffect } from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
@@ -40,6 +41,7 @@ const EnvRemoveButton = styled(RemoveButton)`
 `;
 
 const p = prefix("app.jobs.environmentVariableList.");
+const pPathValidation = prefix("common.pathValidation.");
 
 export const BuiltinTooltipProps = {
   arrow: false as const,
@@ -149,7 +151,25 @@ export const EnvironmentVariableList = ({ clusterId, homeDir }: Props) => {
                     {...restField}
                     name={[name, "value"]}
                     style={{ flex: 1, marginBottom: 0 }}
-                    rules={isXdlIp ? [] : [{ required: true, message: t(p("valueRequired")) }]}
+                    rules={
+                      isXdlIp
+                        ? []
+                        : [
+                            { required: true, message: t(p("valueRequired")) },
+                            ...(isWorkDir
+                              ? [
+                                  createHomeScopedPathValidator(homeDir, {
+                                    unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                                    pathTraversal: t(pPathValidation("pathTraversal")),
+                                    currentDirectory: t(pPathValidation("currentDirectory")),
+                                    absoluteRequired: t(pPathValidation("absoluteRequired")),
+                                    homeDirRequired: t(pPathValidation("homeDirRequired")),
+                                    notInHomeDir: t(p("notInHomeDir")),
+                                  }),
+                                ]
+                              : []),
+                          ]
+                    }
                     getValueProps={isXdlIp ? () => ({ value: t(p("xdlIpPlaceholder")) }) : undefined}
                   >
                     {isWorkDir ? (

@@ -1336,6 +1336,13 @@ export class ScowdJobDriver implements JobDriver {
       }
     });
 
+    if (tensorBoardDataPath && !isParentOrSameFolder(homeDir, tensorBoardDataPath)) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "tensorBoardDataPath should be in homeDir",
+      });
+    }
+
     const scowWorkDirectoryName = `${clusterId}-job-${dayjs().format("YYYYMMDD-HHmmss")}`;
     const trainJobsDirectory = join(aiConfig.appJobsDir, scowWorkDirectoryName);
 

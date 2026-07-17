@@ -408,6 +408,7 @@ export interface ResourceSelectorListProps {
 
 const p = prefix("app.jobs.resourceSelectorList.");
 const pMount = prefix("app.jobs.mountPointList.");
+const pPathValidation = prefix("common.pathValidation.");
 
 export const ResourceSelectorList = ({
   name,
@@ -603,6 +604,13 @@ export const ResourceSelectorList = ({
                       field.name,
                       t(pMount("targetRootNotAllowed")),
                       t(pMount("duplicateTarget")),
+                      {
+                        unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                        pathTraversal: t(pPathValidation("pathTraversal")),
+                        currentDirectory: t(pPathValidation("currentDirectory")),
+                        absoluteRequired: t(pPathValidation("absoluteRequired")),
+                        systemPathNotAllowed: t(pPathValidation("targetSystemPathNotAllowed")),
+                      },
                     ),
                     ({ getFieldValue }) => ({
                       validator: (_: unknown, value?: string) => {

@@ -218,6 +218,13 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
     ? fullClusterConfigs[selectedCluster]?.hpc?.job?.maxRunningTimeHours
     : undefined;
 
+  const homeDirectoryQuery = useAsync({
+    promiseFn: useCallback(
+      async () => (selectedCluster ? api.getHomeDirectory({ query: { cluster: selectedCluster } }) : { path: "" }),
+      [selectedCluster],
+    ),
+  });
+
   // 保留之前的逻辑：提交作业时选择集群，将该集群设置默认集群
   useEffect(() => {
     if (!selectedClusterInfo) {
@@ -1003,6 +1010,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
                   onErrorOutputChange={handleErrorOutputChange}
                   scriptOutput={scriptOutput}
                   onScriptOutputChange={handleScriptOutputChange}
+                  homePath={homeDirectoryQuery.data?.path}
                 />
               </JobContainer>
             </JobMainContent>

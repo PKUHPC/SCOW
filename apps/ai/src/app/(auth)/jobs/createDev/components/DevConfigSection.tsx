@@ -17,6 +17,7 @@ import {
 import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { createImageAddressValidator } from "src/utils/form";
 
 import type { AppFormValues, DevImageSourceKey, ImageOption } from "../LaunchDevForm.types";
 
@@ -80,7 +81,10 @@ export const DevConfigSection = ({
               <>
                 <Form.Item
                   name="image"
-                  rules={[{ required: true, message: t(p("imageField.remoteAddressRequired")) }]}
+                  rules={[
+                    { required: true, message: t(p("imageField.remoteAddressRequired")) },
+                    createImageAddressValidator(t(p("imageField.remoteAddressInvalid"))),
+                  ]}
                   style={{ marginBottom: 0 }}
                 >
                   <RoundedInput
@@ -161,7 +165,7 @@ export const DevConfigSection = ({
           label={<Label>{t(p("customMountPoints.label"))}</Label>}
           helpTip={t(p("customMountPoints.helpTip"))}
         >
-          <MountPointList clusterId={selectedCluster ?? ""} />
+          <MountPointList clusterId={selectedCluster ?? ""} homeDir={homeDir} />
         </InlineFormItem>
 
         <EnvVariableFormSection clusterId={selectedCluster} homeDir={homeDir} />
