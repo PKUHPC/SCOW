@@ -52,7 +52,7 @@ func AddAndBlockUserInAccount(users []*pb.SyncAccountInfo_UserInAccount, account
 		associateInfo, exitAssociate := actualAssociateInfo[user.UserId]
 		if exitAssociate {
 			// 存在关联关系，封锁或解封用户用户
-			if result := blockOrUnblockUser(user, accountName, associateInfo.MaxJobs); result != nil {
+			if result := blockOrUnblockUser(user, accountName, associateInfo.UserBlockLimit); result != nil {
 				results = append(results, result)
 			}
 		} else {
@@ -86,9 +86,9 @@ func AddAndBlockUserInAccount(users []*pb.SyncAccountInfo_UserInAccount, account
 	return results
 }
 
-func blockOrUnblockUser(user *pb.SyncAccountInfo_UserInAccount, accountName string, maxSubmitJobs int) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
+func blockOrUnblockUser(user *pb.SyncAccountInfo_UserInAccount, accountName string, maxJobs int) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
 	// 封锁用户
-	if user.Blocked && maxSubmitJobs != 0 {
+	if user.Blocked && maxJobs != 0 {
 		if err := utils.BlockUserInAccount(user.UserId, accountName); err != nil {
 			message := fmt.Sprintf("block user %v in account %v failed: %v", user.UserId, accountName, err)
 			logrus.Errorf("[SyncAccountUser]: %v", message)
@@ -100,7 +100,7 @@ func blockOrUnblockUser(user *pb.SyncAccountInfo_UserInAccount, accountName stri
 	}
 
 	// 解封用户
-	if !user.Blocked && maxSubmitJobs == 0 {
+	if !user.Blocked && maxJobs == 0 {
 		if err := utils.UnblockUserInAccount(user.UserId, accountName); err != nil {
 			message := fmt.Sprintf("unblock user %v in account %v failed: %v", user.UserId, accountName, err)
 			logrus.Errorf("[SyncAccountUser]: %v", message)

@@ -524,6 +524,22 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 	)
 	logrus.Tracef("Received request SubmitJob: %v", in)
 
+	account, err := utils.GetAccountByName(in.Account)
+	if err != nil {
+		logrus.Errorf("SubmitJob get account failed: %v", err)
+		return nil, ce.RichError(codes.Unavailable, "CRANE_INTERNAL_ERROR", err.Error())
+	}
+	if account.GetBlocked() {
+		err = fmt.Errorf("account %s is blocked", in.Account)
+		logrus.Errorf("SubmitJob failed: %v", err)
+		return nil, ce.RichError(codes.PermissionDenied, "ACCOUNT_BLOCKED", err.Error())
+	}
+	if !utils.Contains(account.GetAllowedPartitions(), in.Partition) {
+		err = fmt.Errorf("account %s is not authorized to use partition %s", in.Account, in.Partition)
+		logrus.Errorf("SubmitJob failed: %v", err)
+		return nil, ce.RichError(codes.PermissionDenied, "ACCOUNT_PARTITION_NOT_ALLOWED", err.Error())
+	}
+
 	if in.Stdout != nil {
 		stdout = *in.Stdout
 	} else { // 可选参数没传的情况

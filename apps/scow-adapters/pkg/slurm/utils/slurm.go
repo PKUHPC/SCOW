@@ -51,6 +51,72 @@ func AddUserToAccount(user, account, baseQos string, partitions []string) error 
 	return nil
 }
 
+func createUserAssociationsInAccountPartition(users []string, account, partition string) error {
+	if len(users) == 0 {
+		return nil
+	}
+
+	args := []string{"-i", "create", "user",
+		fmt.Sprintf("name=%s", strings.Join(users, ",")),
+		fmt.Sprintf("partition=%s", partition),
+		fmt.Sprintf("account=%s", account),
+		accountPartitionBlockLimitArg(true)}
+	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	if err != nil {
+		if exitCode == -1 {
+			return fmt.Errorf("system error: %v", err)
+		}
+
+		output := strings.TrimSpace(stdout + "\n" + stderr)
+		if strings.Contains(output, "Nothing added") || strings.Contains(output, "Nothing modified") {
+			return nil
+		}
+
+		return fmt.Errorf("create user association failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+	}
+
+	return nil
+}
+
+// EnsureAccountUsersAssociationInPartition 确保账户下已有用户在指定分区中存在 association。
+func EnsureAccountUsersAssociationInPartition(account, partition string) error {
+	users, err := GetAccountAssociatedUserInDatabase(account, nil)
+	if err != nil {
+		return fmt.Errorf("get account associated users failed: %w", err)
+	}
+	if len(users) == 0 {
+		logrus.Infof("EnsureAccountUsersAssociationInPartition: no users found for account=%s, skip", account)
+		return nil
+	}
+
+	associatedUsers, err := GetAccountAssociatedUsersInPartition(account, partition)
+	if err != nil {
+		return fmt.Errorf("get account associated users in partition failed: %w", err)
+	}
+	associatedUserSet := make(map[string]struct{}, len(associatedUsers))
+	for _, user := range associatedUsers {
+		associatedUserSet[user] = struct{}{}
+	}
+
+	var missingUsers []string
+	for _, user := range users {
+		if _, ok := associatedUserSet[user]; ok {
+			continue
+		}
+		missingUsers = append(missingUsers, user)
+	}
+
+	if len(missingUsers) == 0 {
+		return nil
+	}
+
+	if err := createUserAssociationsInAccountPartition(missingUsers, account, partition); err != nil {
+		return fmt.Errorf("create associations for users=%v account=%s partition=%s failed: %w", missingUsers, account, partition, err)
+	}
+	logrus.Infof("EnsureAccountUsersAssociationInPartition: created associations for users=%v account=%s partition=%s", missingUsers, account, partition)
+	return nil
+}
+
 // DeleteUser 使用slurm命令删除用户
 func DeleteUser(user string) error {
 	args := []string{"-i", "delete", "user", fmt.Sprintf("name=%s", user)}
@@ -145,7 +211,7 @@ func DeleteAccount(account string) error {
 // BlockUserInAccount 封锁账户下的用户
 func BlockUserInAccount(user, account string) error {
 	args := []string{"-i", "-Q", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
-		"set", "MaxSubmitJobs=0", "MaxJobs=0", "GrpJobs=0", "GrpSubmit=0", "GrpSubmitJobs=0"}
+		"set", "MaxJobs=0"}
 	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
@@ -162,7 +228,7 @@ func BlockUserInAccount(user, account string) error {
 // UnblockUserInAccount 解封账户下的用户
 func UnblockUserInAccount(user, account string) error {
 	args := []string{"-i", "-Q", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
-		"set", "MaxSubmitJobs=-1", "MaxJobs=-1", "GrpJobs=-1", "GrpSubmit=-1", "GrpSubmitJobs=-1"}
+		"set", "MaxJobs=-1"}
 	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
@@ -173,6 +239,40 @@ func UnblockUserInAccount(user, account string) error {
 			return fmt.Errorf("unblock user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 		}
 	}
+
+	if err := clearLegacyUserBlockFields(user, account); err != nil {
+		logrus.Warnf("UnblockUserInAccount: clear legacy user block fields failed, ignored: user=%s account=%s err=%v", user, account, err)
+	}
+
+	return nil
+}
+
+func clearLegacyUserBlockFields(user, account string) error {
+	partitions, err := GetLegacyUserBlockPartitions(user, account)
+	if err != nil {
+		return fmt.Errorf("get legacy user block partitions failed: %w", err)
+	}
+	if len(partitions) == 0 {
+		return nil
+	}
+
+	args := []string{"-i", "-Q", "modify", "user", "where",
+		fmt.Sprintf("name=%s", user),
+		fmt.Sprintf("account=%s", account),
+		fmt.Sprintf("partition=%s", strings.Join(partitions, ",")),
+		"set", "GrpJobs=-1", "GrpSubmit=-1", "GrpSubmitJobs=-1"}
+	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	if err != nil {
+		if exitCode == -1 {
+			return fmt.Errorf("system error: %v", err)
+		}
+		if stdout == "Nothing modified" || stderr == "" {
+			return nil
+		}
+		return fmt.Errorf("clear legacy user block fields failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+	}
+
+	logrus.Infof("UnblockUserInAccount: cleared legacy user block fields for user=%s account=%s partitions=%v", user, account, partitions)
 	return nil
 }
 
@@ -371,6 +471,38 @@ func GetPartitionsName() ([]string, error) {
 		line := scanner.Text()
 		partitionName := extractValue(line, partitionNameRe)
 		partitions = append(partitions, partitionName)
+	}
+	return partitions, nil
+}
+
+// GetPartitionNamesBySinfo 使用 sinfo 获取运行态分区名。
+// 该函数只拉取分区名，用于 slurm.conf 变更后的轻量运行态探测。
+func GetPartitionNamesBySinfo() ([]string, error) {
+	args := []string{"--nohead", "-o", "%R"}
+	exitCode, stdout, stderr, err := ExecuteCommand(client.SINFO, args...)
+	if err != nil {
+		if exitCode == -1 {
+			return nil, fmt.Errorf("system error: %v", err)
+		}
+		return nil, fmt.Errorf("sinfo partition names failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+	}
+
+	var partitions []string
+	seen := make(map[string]struct{})
+	scanner := bufio.NewScanner(strings.NewReader(stdout))
+	for scanner.Scan() {
+		partition := strings.TrimSpace(scanner.Text())
+		if partition == "" {
+			continue
+		}
+		if _, ok := seen[partition]; ok {
+			continue
+		}
+		seen[partition] = struct{}{}
+		partitions = append(partitions, partition)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
 	}
 	return partitions, nil
 }
@@ -1106,18 +1238,18 @@ func ResumeNode(nodeName string) error {
 	return nil
 }
 
-// BlockUserAssociationInAccountPartitionByAccountState 仅封锁单个用户在指定账户+分区下的账户原因关联。
-// 只将该 association 的 max_submit_jobs 设为 0，不修改 max_jobs 等用户原因封锁字段，
-// 并在封锁成功后持久化该用户原始 max_submit_jobs，供后续账户解封时精确恢复。
+// BlockUserAssociationInAccountPartitionByAccountState 仅封锁单个用户在指定账户+分区下的账户-分区关联。
+// 只将该 association 的账户-分区提交限制设为 0，不修改用户维度封锁字段，
+// 并在封锁成功后持久化该用户原始账户-分区提交限制，供后续账户/分区解封时精确恢复。
 func BlockUserAssociationInAccountPartitionByAccountState(user, account, partition string) error {
-	originalMaxSubmitJobs, found, err := GetUserMaxSubmitJobsInAccountPartition(user, account, partition)
+	originalSubmitLimit, found, err := GetUserAccountPartitionSubmitLimit(user, account, partition)
 	if err != nil {
-		return fmt.Errorf("get user max_submit_jobs failed: %w", err)
+		return fmt.Errorf("get user account-partition submit limit failed: %w", err)
 	}
 	if !found {
 		return fmt.Errorf("user %s not found in account=%s partition=%s", user, account, partition)
 	}
-	if originalMaxSubmitJobs == 0 {
+	if originalSubmitLimit == associationBlockedLimit {
 		logrus.Infof("BlockUserAssociationInAccountPartitionByAccountState: user %s already blocked in account=%s partition=%s, skip", user, account, partition)
 		return nil
 	}
@@ -1126,7 +1258,7 @@ func BlockUserAssociationInAccountPartitionByAccountState(user, account, partiti
 		fmt.Sprintf("name=%s", user),
 		fmt.Sprintf("account=%s", account),
 		fmt.Sprintf("partition=%s", partition),
-		"set", "MaxSubmitJobs=0"}
+		"set", accountPartitionBlockLimitArg(true)}
 	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
@@ -1138,20 +1270,20 @@ func BlockUserAssociationInAccountPartitionByAccountState(user, account, partiti
 		return fmt.Errorf("block user association failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 	}
 
-	if err := upsertPermissionRecord(account, partition, user, originalMaxSubmitJobs); err != nil {
-		logrus.Warnf("BlockUserAssociationInAccountPartitionByAccountState: save original max_submit_jobs for user %s failed: %v", user, err)
+	if err := upsertPermissionRecord(account, partition, user, originalSubmitLimit); err != nil {
+		logrus.Warnf("BlockUserAssociationInAccountPartitionByAccountState: save original account-partition submit limit for user %s failed: %v", user, err)
 	}
 	return nil
 }
 
-// BlockAccountUseAssociation 封锁账户在指定分区下的所有用户（将 max_submit_jobs 设为 0）。
-// 先执行 sacctmgr 封锁命令，成功后再将原始 max_submit_jobs 持久化到数据库，
+// BlockAccountUseAssociation 封锁账户在指定分区下的所有用户（将账户-分区提交限制设为 0）。
+// 先执行 sacctmgr 封锁命令，成功后再将原始账户-分区提交限制持久化到数据库，
 // 确保 DB 记录仅在 Slurm 侧已实际封锁后写入，避免命令失败时原始值被覆盖。
 func BlockAccountUseAssociation(account, partition string) error {
-	// 1. 查询该账户+分区下所有用户的当前 max_submit_jobs
-	userOriginalValues, err := GetUsersAndMaxSubmitJobsInAccountPartition(account, partition)
+	// 1. 查询该账户+分区下所有用户的当前账户-分区封锁字段值
+	userOriginalValues, err := GetUsersAndAccountPartitionSubmitLimits(account, partition)
 	if err != nil {
-		return fmt.Errorf("get users max_submit_jobs failed: %w", err)
+		return fmt.Errorf("get users account-partition submit limits failed: %w", err)
 	}
 	if len(userOriginalValues) == 0 {
 		logrus.Infof("BlockAccountUseAssociation: no users found for account=%s partition=%s, skip", account, partition)
@@ -1161,7 +1293,7 @@ func BlockAccountUseAssociation(account, partition string) error {
 	// 2. 先执行 sacctmgr 封锁，仅在命令成功后才持久化原始值
 	args := []string{"-i", "-Q", "modify", "user", "where",
 		fmt.Sprintf("account=%s", account), fmt.Sprintf("partition=%s", partition),
-		"set", "MaxSubmitJobs=0"}
+		"set", accountPartitionBlockLimitArg(true)}
 	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
@@ -1176,31 +1308,18 @@ func BlockAccountUseAssociation(account, partition string) error {
 	// 3. 封锁成功后持久化原始值（upsert：重复封锁时更新记录）
 	for user, originalVal := range userOriginalValues {
 		if err := upsertPermissionRecord(account, partition, user, originalVal); err != nil {
-			// DB 写入失败仅告警，不回滚已生效的封锁；解封时将回退到 MaxSubmitJobs=-1
-			logrus.Warnf("BlockAccountUseAssociation: save original max_submit_jobs for user %s failed: %v", user, err)
+			// DB 写入失败仅告警，不回滚已生效的封锁；解封时将回退到无限制。
+			logrus.Warnf("BlockAccountUseAssociation: save original account-partition submit limit for user %s failed: %v", user, err)
 		}
 	}
 	return nil
 }
 
 // UnblockAccountUseAssociation 解封账户在指定分区下的所有用户，
-// 从持久化表中读取每个用户封锁前的原始 max_submit_jobs 并还原。
+// 从持久化表中读取每个用户封锁前的账户-分区封锁字段原始值并还原。
 // 相同原始值的用户合并为一次 sacctmgr 调用，减少命令执行次数。
-// 若无持久化记录（如旧数据或异常情况），回退为统一设置 MaxSubmitJobs=-1（无限制）。
-//
-// 注意：被用户维度封锁（BlockUserInAccount，max_jobs=0）的用户在任何路径下均会跳过，
-// 避免解封账户时意外恢复其 MaxSubmitJobs，导致与用户维度封锁产生干扰。
+// 若无持久化记录（如旧数据或异常情况），回退为统一设置为无限制。
 func UnblockAccountUseAssociation(account, partition string) error {
-	// 0. 查询被用户维度封锁（max_jobs=0）的用户集合。
-	//    BlockUserInAccount 同时将 max_jobs 置为 0；BlockAccountUseAssociation 只修改 max_submit_jobs。
-	//    因此 max_jobs=0 是区分两种封锁来源的唯一标识：
-	//      max_submit_jobs=0 且 max_jobs=NULL → 仅账户维度封锁，解封账户时应恢复
-	//      max_submit_jobs=0 且 max_jobs=0   → 用户维度封锁，解封账户时必须跳过
-	userLevelBlocked, err := GetUsersBlockedByUserLevelInAccountPartition(account, partition)
-	if err != nil {
-		return fmt.Errorf("get user-level blocked users failed: %w", err)
-	}
-
 	// 1. 读取持久化的原始值
 	records, err := getPermissionRecords(account, partition)
 	if err != nil {
@@ -1208,52 +1327,32 @@ func UnblockAccountUseAssociation(account, partition string) error {
 	}
 
 	if len(records) == 0 {
-		// 无历史记录：回退到解封，但跳过用户维度封锁的用户
-		logrus.Warnf("UnblockAccountUseAssociation: no saved records for account=%s partition=%s, fallback to MaxSubmitJobs=-1", account, partition)
-		if len(userLevelBlocked) == 0 {
-			// 无用户维度封锁，可安全地对所有用户批量解封
-			args := []string{"-i", "-Q", "modify", "user", "where",
-				fmt.Sprintf("account=%s", account), fmt.Sprintf("partition=%s", partition),
-				"set", "MaxSubmitJobs=-1"}
-			exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
-			if err != nil {
-				if exitCode == -1 {
-					return fmt.Errorf("system error: %v", err)
-				}
-				if strings.TrimSpace(stdout) != "Nothing modified" {
-					return fmt.Errorf("unblock user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
-				}
-			}
-			return nil
-		}
-		// 存在用户维度封锁的用户，精确恢复：只恢复 max_submit_jobs=0 且 max_jobs 未被封锁的用户
-		usersToRestore, err := getUsersBlockedByAccountOnlyInAccountPartition(account, partition)
+		// 无历史记录：回退到统一解封账户级限制。用户级封锁由用户封锁字段独立表达，不影响账户-分区封锁字段恢复。
+		logrus.Warnf("UnblockAccountUseAssociation: no saved records for account=%s partition=%s, fallback to unlimited account-partition submit limit", account, partition)
+		args := []string{"-i", "-Q", "modify", "user", "where",
+			fmt.Sprintf("account=%s", account), fmt.Sprintf("partition=%s", partition),
+			"set", accountPartitionBlockLimitArg(false)}
+		exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
 		if err != nil {
-			return fmt.Errorf("get account-only blocked users failed: %w", err)
-		}
-		logrus.Infof("UnblockAccountUseAssociation: fallback restore %d users for account=%s partition=%s (skipped %d user-level blocked)",
-			len(usersToRestore), account, partition, len(userLevelBlocked))
-		if len(usersToRestore) > 0 {
-			if err := setUsersMaxSubmitJobsInAccountPartition(usersToRestore, account, partition, -1); err != nil {
-				return fmt.Errorf("restore MaxSubmitJobs=-1 for users %v failed: %w", usersToRestore, err)
+			if exitCode == -1 {
+				return fmt.Errorf("system error: %v", err)
 			}
+			if stdout == "Nothing modified" || stderr == "" {
+				return nil
+			}
+			return fmt.Errorf("unblock account partition submit limit failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 		}
 		return nil
 	}
 
 	// 2. 按相同 originalVal 分组，每组合并为一次 sacctmgr 批量调用。
-	//    跳过被用户维度封锁（max_jobs=0）的用户，避免解封账户时意外恢复其 MaxSubmitJobs。
 	valueToUsers := make(map[int32][]string)
 	for user, val := range records {
-		if _, blocked := userLevelBlocked[user]; blocked {
-			logrus.Infof("UnblockAccountUseAssociation: skip user %s in account=%s partition=%s (user-level blocked, max_jobs=0)", user, account, partition)
-			continue
-		}
 		valueToUsers[val] = append(valueToUsers[val], user)
 	}
 	for val, users := range valueToUsers {
-		if err := setUsersMaxSubmitJobsInAccountPartition(users, account, partition, val); err != nil {
-			return fmt.Errorf("restore max_submit_jobs=%d for users %v failed: %w", val, users, err)
+		if err := setUsersAccountPartitionSubmitLimit(users, account, partition, val); err != nil {
+			return fmt.Errorf("restore account-partition submit limit=%d for users %v failed: %w", val, users, err)
 		}
 	}
 
@@ -1264,14 +1363,14 @@ func UnblockAccountUseAssociation(account, partition string) error {
 	return nil
 }
 
-// setUsersMaxSubmitJobsInAccountPartition 将多个用户在同一账户+分区关联中的 max_submit_jobs 批量设为给定值，
+// setUsersAccountPartitionSubmitLimit 将多个用户在同一账户+分区关联中的账户-分区封锁字段批量设为给定值，
 // 使用 name=u1,u2,u3 语法合并为单次 sacctmgr 调用，避免用户数多时的串行开销。
-func setUsersMaxSubmitJobsInAccountPartition(users []string, account, partition string, maxSubmitJobs int32) error {
+func setUsersAccountPartitionSubmitLimit(users []string, account, partition string, limit int32) error {
 	args := []string{"-i", "-Q", "modify", "user", "where",
 		fmt.Sprintf("name=%s", strings.Join(users, ",")),
 		fmt.Sprintf("account=%s", account),
 		fmt.Sprintf("partition=%s", partition),
-		"set", fmt.Sprintf("MaxSubmitJobs=%d", maxSubmitJobs)}
+		"set", accountPartitionSubmitLimitArg(limit)}
 	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
@@ -1280,7 +1379,7 @@ func setUsersMaxSubmitJobsInAccountPartition(users []string, account, partition 
 		if strings.TrimSpace(stdout) == "Nothing modified" {
 			return nil
 		}
-		return fmt.Errorf("set MaxSubmitJobs failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+		return fmt.Errorf("set account-partition submit limit failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 	}
 	return nil
 }

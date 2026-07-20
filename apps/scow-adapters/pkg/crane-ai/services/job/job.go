@@ -791,7 +791,7 @@ func (s *ServerJob) submitHpcJob(in *protos.SubmitJobRequest) (*protos.SubmitJob
 func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) (*protos.SubmitJobResponse, error) {
 	logrus.Tracef("[SubmitJob] Received request: %v", in)
 
-	err := s.checkJob(in.Account, in.UserId, in.WorkingDirectory)
+	err := s.checkJob(in.Account, in.UserId, in.Partition, in.WorkingDirectory)
 	if err != nil {
 		return nil, ce.RichError(codes.Internal, "SUBMIT_JOB_FAILED", err.Error())
 	}
@@ -1016,7 +1016,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 func (s *ServerJob) SubmitInferJob(ctx context.Context, in *protos.SubmitInferJobRequest) (*protos.SubmitInferJobResponse, error) {
 	logrus.Tracef("[SubmitInferJob] Received request: %v", in)
 
-	err := s.checkJob(in.Account, in.UserId, in.WorkingDirectory)
+	err := s.checkJob(in.Account, in.UserId, in.Partition, in.WorkingDirectory)
 	if err != nil {
 		return nil, ce.RichError(codes.Internal, "SUBMIT_INFERENCE_JOB_FAILED", err.Error())
 	}
@@ -1082,7 +1082,7 @@ func (s *ServerJob) SubmitInferJob(ctx context.Context, in *protos.SubmitInferJo
 func (s *ServerJob) CreateDevHost(ctx context.Context, in *protos.CreateDevHostRequest) (*protos.CreateDevHostResponse, error) {
 	logrus.Tracef("[CreateDevHost] Received request: %v", in)
 
-	err := s.checkJob(in.Account, in.UserId, in.WorkingDirectory)
+	err := s.checkJob(in.Account, in.UserId, in.Partition, in.WorkingDirectory)
 	if err != nil {
 		return nil, ce.RichError(codes.Internal, "CREATE_DEV_HOST_FAILED", err.Error())
 	}
@@ -1368,7 +1368,7 @@ func (s *ServerJob) submitToScheduler(task *craneProtos.JobToCtld) (uint32, erro
 	return jobId, nil
 }
 
-func (s *ServerJob) checkJob(accountName, userName, workdir string) error {
+func (s *ServerJob) checkJob(accountName, userName, partition, workdir string) error {
 	// 先查询账户
 	account, err := utils.GetAccountByName(accountName)
 	if err != nil {
@@ -1378,6 +1378,11 @@ func (s *ServerJob) checkJob(accountName, userName, workdir string) error {
 	}
 	if account.Blocked {
 		message := fmt.Errorf("account %v is blocked", accountName)
+		logrus.Errorf("[SubmitJob] %v", message)
+		return message
+	}
+	if !utils.Contains(account.GetAllowedPartitions(), partition) {
+		message := fmt.Errorf("account %v is not authorized to use partition %v", accountName, partition)
 		logrus.Errorf("[SubmitJob] %v", message)
 		return message
 	}

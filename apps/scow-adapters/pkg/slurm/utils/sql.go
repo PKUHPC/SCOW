@@ -14,19 +14,19 @@ import (
 )
 
 type AssociateInfo struct {
-	MaxJobs int
+	UserBlockLimit int
 }
 
-// GetMaxSubmitJobs 获取用户的MaxSubmitJobs， NULL表示提交作业不受限制，0表示该用户无法提交作业
-func GetMaxSubmitJobs(user, account string) string {
-	var maxSubmitJobs string
+// IsUserBlockedInAccount 查询用户在账户下是否被用户维度封锁。
+func IsUserBlockedInAccount(user, account string) bool {
+	var exists int
 	clusterName := config.SlurmValue.MySQLConfig.ClusterName
-	maxSubmitJobsSqlConfig := fmt.Sprintf("SELECT DISTINCT max_submit_jobs FROM %s_assoc_table WHERE user = ? AND acct = ? AND deleted = 0", clusterName)
-	err := client.SlurmDB.QueryRow(maxSubmitJobsSqlConfig, user, account).Scan(&maxSubmitJobs)
+	maxJobsSqlConfig := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s_assoc_table WHERE user = ? AND acct = ? AND deleted = 0 AND %s)", clusterName, sqlUserBlockedCondition)
+	err := client.SlurmDB.QueryRow(maxJobsSqlConfig, user, account).Scan(&exists)
 	if err != nil {
-		return "NULL"
+		return false
 	}
-	return "0"
+	return exists == 1
 }
 
 // CheckUserAndAccountAssociate 在assoc_table表中查看用户和账户是否存在联系
@@ -282,7 +282,8 @@ func GetAcctAndUsersBlockedInfo() (map[string]map[string]bool, error) {
 
 	// 构建 SQL 查询
 	query := fmt.Sprintf(
-		"SELECT acct, user, max_jobs FROM %s_assoc_table WHERE deleted = 0 AND user != '' ORDER BY acct, user",
+		"SELECT acct, user, %s FROM %s_assoc_table WHERE deleted = 0 AND user != '' ORDER BY acct, user",
+		sqlUserBlockColumn,
 		config.SlurmValue.MySQLConfig.ClusterName,
 	)
 
@@ -292,20 +293,20 @@ func GetAcctAndUsersBlockedInfo() (map[string]map[string]bool, error) {
 	}
 	defer rows.Close()
 
-	// 临时存储每个用户的所有 max_submit_jobs 值
-	userMaxJobs := make(map[string]map[string][]sql.NullInt64)
+	// 临时存储每个用户的所有用户封锁字段值
+	userBlockLimits := make(map[string]map[string][]sql.NullInt64)
 
-	// 第一遍扫描：收集所有用户的所有 maxJobs 值
+	// 第一遍扫描：收集所有用户的所有用户封锁字段值
 	for rows.Next() {
 		if err := rows.Scan(&acctName, &userName, &maxJobs); err != nil {
 			return nil, fmt.Errorf("row scan failed: %v", err)
 		}
 
-		if _, ok := userMaxJobs[acctName]; !ok {
-			userMaxJobs[acctName] = make(map[string][]sql.NullInt64)
+		if _, ok := userBlockLimits[acctName]; !ok {
+			userBlockLimits[acctName] = make(map[string][]sql.NullInt64)
 		}
 
-		userMaxJobs[acctName][userName] = append(userMaxJobs[acctName][userName], maxJobs)
+		userBlockLimits[acctName][userName] = append(userBlockLimits[acctName][userName], maxJobs)
 	}
 
 	// 检查是否有扫描错误
@@ -314,7 +315,7 @@ func GetAcctAndUsersBlockedInfo() (map[string]map[string]bool, error) {
 	}
 
 	// 第二遍处理：确定每个用户的最终封锁状态
-	for acct, users := range userMaxJobs {
+	for acct, users := range userBlockLimits {
 		if _, ok := acctUsersStatus[acct]; !ok {
 			acctUsersStatus[acct] = make(map[string]bool)
 		}
@@ -323,7 +324,7 @@ func GetAcctAndUsersBlockedInfo() (map[string]map[string]bool, error) {
 			// 默认设置为封锁状态（只有全部为0时才封锁）
 			blocked := true
 
-			// 检查该用户的所有 max_submit_jobs 值
+			// 检查该用户的所有用户封锁字段值
 			for _, job := range jobs {
 				// 如果有任何一个 NULL 值，用户解封
 				if !job.Valid {
@@ -517,12 +518,46 @@ func GetAccountAssociatedUserInDatabase(accountName string, excludeUserList []st
 	return userList, nil
 }
 
+// GetAccountAssociatedUsersInPartition 从数据库中获取指定账户在指定分区下已存在关联的用户。
+func GetAccountAssociatedUsersInPartition(accountName, partition string) ([]string, error) {
+	var (
+		userName string
+		userList []string
+	)
+
+	acctSqlConfig := fmt.Sprintf(
+		"SELECT DISTINCT `user` FROM %s_assoc_table WHERE deleted = 0 AND user != '' AND acct = ? AND `partition` = ?",
+		config.SlurmValue.MySQLConfig.ClusterName,
+	)
+
+	rows, err := client.SlurmDB.Query(acctSqlConfig, accountName, partition)
+	if err != nil {
+		logrus.Errorf("sql query failed, error: %v", err)
+		return nil, fmt.Errorf("sql query failed")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&userName)
+		if err != nil {
+			return nil, fmt.Errorf("sql query failed")
+		}
+
+		userList = append(userList, userName)
+	}
+	err = rows.Err()
+	if err != nil {
+		logrus.Errorf("sql rows failed, error: %v", err)
+		return nil, fmt.Errorf("sql query failed")
+	}
+	return userList, nil
+}
+
 // GetAccountAssociateInfoInDatabase 从数据库中获取指定账户的用户关联信息,返回key为userName，value为AssociateInfo的值。
 func GetAccountAssociateInfoInDatabase(accountName string) (map[string]*AssociateInfo, error) {
 	var userName, maxJobs string
 	assocInfo := make(map[string]*AssociateInfo)
 
-	acctSqlConfig := fmt.Sprintf("SELECT DISTINCT `user`, max_jobs FROM %s_assoc_table WHERE deleted = 0 AND user != '' AND `partition` != '' AND acct = ?", config.SlurmValue.MySQLConfig.ClusterName)
+	acctSqlConfig := fmt.Sprintf("SELECT DISTINCT `user`, %s FROM %s_assoc_table WHERE deleted = 0 AND user != '' AND `partition` != '' AND acct = ?", sqlUserBlockColumn, config.SlurmValue.MySQLConfig.ClusterName)
 	rows, err := client.SlurmDB.Query(acctSqlConfig, accountName)
 	if err != nil {
 		logrus.Errorf("sql query failed, error: %v", err)
@@ -536,7 +571,7 @@ func GetAccountAssociateInfoInDatabase(accountName string) (map[string]*Associat
 		}
 
 		assocInfo[userName] = &AssociateInfo{
-			MaxJobs: convertJobNums(maxJobs),
+			UserBlockLimit: convertJobNums(maxJobs),
 		}
 	}
 	err = rows.Err()
@@ -570,7 +605,7 @@ func GetAccountAssociatedAllowedUserInDatabaseByDeleted(accountName, partition s
 		userList []string
 	)
 
-	userSqlConfig := fmt.Sprintf("SELECT DISTINCT `user` FROM %s_assoc_table WHERE deleted = 0 AND `partition`= ? AND acct = ? AND (max_submit_jobs IS NULL OR max_submit_jobs != 0)", config.SlurmValue.MySQLConfig.ClusterName)
+	userSqlConfig := fmt.Sprintf("SELECT DISTINCT `user` FROM %s_assoc_table WHERE deleted = 0 AND `partition`= ? AND acct = ? AND %s", config.SlurmValue.MySQLConfig.ClusterName, sqlAccountPartitionNotBlockedCondition)
 
 	rows, err := client.SlurmDB.Query(userSqlConfig, partition, accountName)
 	if err != nil {
@@ -601,8 +636,8 @@ func GetAccountAssociatedAllowedPartitionInDatabase(accountName string) ([]strin
 		partitionList []string
 	)
 
-	partitionSqlConfig := fmt.Sprintf("SELECT DISTINCT `partition` FROM %s_assoc_table WHERE deleted = 0 AND `partition` != '' AND `user` != '' AND acct = ? AND (max_submit_jobs IS NULL OR max_submit_jobs != 0)",
-		config.SlurmValue.MySQLConfig.ClusterName)
+	partitionSqlConfig := fmt.Sprintf("SELECT DISTINCT `partition` FROM %s_assoc_table WHERE deleted = 0 AND `partition` != '' AND `user` != '' AND acct = ? AND %s",
+		config.SlurmValue.MySQLConfig.ClusterName, sqlAccountPartitionNotBlockedCondition)
 
 	rows, err := client.SlurmDB.Query(partitionSqlConfig, accountName)
 	if err != nil {
@@ -633,8 +668,8 @@ func GetAccountAssociatedBlockedPartitionInDatabase(accountName string) ([]strin
 		partitionList []string
 	)
 
-	partitionSqlConfig := fmt.Sprintf("SELECT DISTINCT `partition` FROM %s_assoc_table WHERE deleted = 0 AND `partition` != '' AND `user` != '' AND acct = ? AND max_submit_jobs = 0",
-		config.SlurmValue.MySQLConfig.ClusterName)
+	partitionSqlConfig := fmt.Sprintf("SELECT DISTINCT `partition` FROM %s_assoc_table WHERE deleted = 0 AND `partition` != '' AND `user` != '' AND acct = ? AND %s",
+		config.SlurmValue.MySQLConfig.ClusterName, sqlAccountPartitionBlockedCondition)
 
 	rows, err := client.SlurmDB.Query(partitionSqlConfig, accountName)
 	if err != nil {
@@ -665,8 +700,8 @@ func GetAccountAllowedPartitionByAssociation() (map[string][]string, error) {
 		partition string
 	)
 
-	partitionSqlConfig := fmt.Sprintf("SELECT DISTINCT acct,`partition` FROM %s_assoc_table WHERE deleted = 0 AND `partition` != '' AND `user` != '' AND (max_submit_jobs IS NULL OR max_submit_jobs != 0)",
-		config.SlurmValue.MySQLConfig.ClusterName)
+	partitionSqlConfig := fmt.Sprintf("SELECT DISTINCT acct,`partition` FROM %s_assoc_table WHERE deleted = 0 AND `partition` != '' AND `user` != '' AND %s",
+		config.SlurmValue.MySQLConfig.ClusterName, sqlAccountPartitionNotBlockedCondition)
 
 	rows, err := client.SlurmDB.Query(partitionSqlConfig)
 	if err != nil {
@@ -693,75 +728,44 @@ func GetAccountAllowedPartitionByAssociation() (map[string][]string, error) {
 	return acctBlockedInfo, nil
 }
 
-// GetUsersBlockedByUserLevelInAccountPartition 查询指定账户+分区下被用户维度封锁（max_jobs=0）的用户集合。
-//
-// 封锁用户接口（BlockUserInAccount）会将 max_jobs 置为 0，而封锁账户接口（BlockAccountUseAssociation）
-// 仅修改 max_submit_jobs，不影响 max_jobs。因此 max_jobs=0 是"用户维度封锁"的唯一标识，
-// 可在解封账户时用来跳过这些用户，避免误将其 MaxSubmitJobs 恢复。
-func GetUsersBlockedByUserLevelInAccountPartition(account, partition string) (map[string]struct{}, error) {
+// GetLegacyUserBlockPartitions 查询旧版用户封锁留下的分区。
+func GetLegacyUserBlockPartitions(user, account string) ([]string, error) {
 	query := fmt.Sprintf(
-		"SELECT DISTINCT `user` FROM %s_assoc_table WHERE deleted = 0 AND acct = ? AND `partition` = ? AND `user` != '' AND max_jobs = 0",
-		config.SlurmValue.MySQLConfig.ClusterName,
+		"SELECT DISTINCT `partition` FROM %s_assoc_table WHERE deleted = 0 AND `user` = ? AND acct = ? AND `partition` != '' AND %s",
+		config.SlurmValue.MySQLConfig.ClusterName, sqlLegacyUserBlockCompatibilityCriteria,
 	)
-	rows, err := client.SlurmDB.Query(query, account, partition)
+	rows, err := client.SlurmDB.Query(query, user, account)
 	if err != nil {
 		return nil, fmt.Errorf("sql query failed: %v", err)
 	}
 	defer rows.Close()
-	result := make(map[string]struct{})
+	var partitions []string
 	for rows.Next() {
-		var userName string
-		if err := rows.Scan(&userName); err != nil {
+		var partition string
+		if err := rows.Scan(&partition); err != nil {
 			return nil, fmt.Errorf("row scan failed: %v", err)
 		}
-		result[userName] = struct{}{}
+		partitions = append(partitions, partition)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("sql rows failed: %v", err)
 	}
-	return result, nil
+	return partitions, nil
 }
 
-// getUsersBlockedByAccountOnlyInAccountPartition 查询指定账户+分区下仅被账户维度封锁的用户列表：
-// max_submit_jobs=0（账户封锁）且 max_jobs 不为 0（未被用户维度封锁）。
-// 仅在 UnblockAccountUseAssociation fallback 路径中使用，用于在无持久化记录时精确恢复该恢复的用户。
-func getUsersBlockedByAccountOnlyInAccountPartition(account, partition string) ([]string, error) {
-	query := fmt.Sprintf(
-		"SELECT DISTINCT `user` FROM %s_assoc_table WHERE deleted = 0 AND acct = ? AND `partition` = ? AND `user` != '' AND max_submit_jobs = 0 AND (max_jobs IS NULL OR max_jobs != 0)",
-		config.SlurmValue.MySQLConfig.ClusterName,
-	)
-	rows, err := client.SlurmDB.Query(query, account, partition)
-	if err != nil {
-		return nil, fmt.Errorf("sql query failed: %v", err)
-	}
-	defer rows.Close()
-	var users []string
-	for rows.Next() {
-		var userName string
-		if err := rows.Scan(&userName); err != nil {
-			return nil, fmt.Errorf("row scan failed: %v", err)
-		}
-		users = append(users, userName)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("sql rows failed: %v", err)
-	}
-	return users, nil
-}
-
-// GetUsersAndMaxSubmitJobsInAccountPartition 查询指定账户+分区下尚未被封锁的用户及其 max_submit_jobs 原始值。
-// 只返回 max_submit_jobs IS NULL 或 != 0 的用户，已封锁（= 0）的用户跳过，
+// GetUsersAndAccountPartitionSubmitLimits 查询指定账户+分区下尚未被账户分区封锁的用户及其原始限制值。
+// 只返回账户-分区封锁字段为 NULL 或非 0 的用户，已封锁（= 0）的用户跳过，
 // 避免重复封锁时用 0 覆盖 acct_permission_persistence 表中已保存的真实原始值。
-// Slurm assoc_table 中 max_submit_jobs 为 NULL 表示无限制，此函数统一映射为 -1 返回。
-func GetUsersAndMaxSubmitJobsInAccountPartition(account, partition string) (map[string]int32, error) {
+// Slurm assoc_table 中账户-分区封锁字段为 NULL 表示无限制，此函数统一映射为 -1 返回。
+func GetUsersAndAccountPartitionSubmitLimits(account, partition string) (map[string]int32, error) {
 	query := fmt.Sprintf(
-		"SELECT `user`, max_submit_jobs FROM %s_assoc_table WHERE deleted = 0 AND acct = ? AND `partition` = ? AND `user` != '' AND (max_submit_jobs IS NULL OR max_submit_jobs != 0)",
-		config.SlurmValue.MySQLConfig.ClusterName,
+		"SELECT `user`, %s FROM %s_assoc_table WHERE deleted = 0 AND acct = ? AND `partition` = ? AND `user` != '' AND %s",
+		sqlAccountPartitionBlockColumn, config.SlurmValue.MySQLConfig.ClusterName, sqlAccountPartitionNotBlockedCondition,
 	)
 
 	rows, err := client.SlurmDB.Query(query, account, partition)
 	if err != nil {
-		logrus.Errorf("GetUsersAndMaxSubmitJobsInAccountPartition sql query failed, error: %v", err)
+		logrus.Errorf("GetUsersAndAccountPartitionSubmitLimits sql query failed, error: %v", err)
 		return nil, fmt.Errorf("sql query failed")
 	}
 	defer rows.Close()
@@ -774,40 +778,40 @@ func GetUsersAndMaxSubmitJobsInAccountPartition(account, partition string) (map[
 			return nil, fmt.Errorf("row scan failed: %v", err)
 		}
 		if !maxSubmitJobs.Valid {
-			result[userName] = -1 // NULL 表示无限制
+			result[userName] = associationUnlimitedLimit // NULL 表示无限制
 		} else {
 			result[userName] = int32(maxSubmitJobs.Int64)
 		}
 	}
 	if err := rows.Err(); err != nil {
-		logrus.Errorf("GetUsersAndMaxSubmitJobsInAccountPartition rows error: %v", err)
+		logrus.Errorf("GetUsersAndAccountPartitionSubmitLimits rows error: %v", err)
 		return nil, fmt.Errorf("sql rows failed")
 	}
 	return result, nil
 }
 
-// GetUserMaxSubmitJobsInAccountPartition 查询单个用户在指定账户+分区关联中的 max_submit_jobs。
+// GetUserAccountPartitionSubmitLimit 查询单个用户在指定账户+分区关联中的账户-分区提交限制。
 // 返回值含义：
-//   - int32: 该 association 当前的 max_submit_jobs；当数据库字段为 NULL 时，统一映射为 -1 表示无限制。
+//   - int32: 该 association 当前的账户-分区提交限制；当数据库字段为 NULL 时，统一映射为 -1 表示无限制。
 //   - bool: 该 association 是否存在；
 //   - error: 查询过程是否出错；
-func GetUserMaxSubmitJobsInAccountPartition(user, account, partition string) (int32, bool, error) {
+func GetUserAccountPartitionSubmitLimit(user, account, partition string) (int32, bool, error) {
 	query := fmt.Sprintf(
-		"SELECT max_submit_jobs FROM %s_assoc_table WHERE deleted = 0 AND `user` = ? AND acct = ? AND `partition` = ? LIMIT 1",
-		config.SlurmValue.MySQLConfig.ClusterName,
+		"SELECT %s FROM %s_assoc_table WHERE deleted = 0 AND `user` = ? AND acct = ? AND `partition` = ? LIMIT 1",
+		sqlAccountPartitionBlockColumn, config.SlurmValue.MySQLConfig.ClusterName,
 	)
 
-	var maxSubmitJobs sql.NullInt64
-	if err := client.SlurmDB.QueryRow(query, user, account, partition).Scan(&maxSubmitJobs); err != nil {
+	var submitLimit sql.NullInt64
+	if err := client.SlurmDB.QueryRow(query, user, account, partition).Scan(&submitLimit); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, false, nil
 		}
 		return 0, false, fmt.Errorf("sql query failed: %v", err)
 	}
-	if !maxSubmitJobs.Valid {
-		return -1, true, nil
+	if !submitLimit.Valid {
+		return associationUnlimitedLimit, true, nil
 	}
-	return int32(maxSubmitJobs.Int64), true, nil
+	return int32(submitLimit.Int64), true, nil
 }
 
 // SelectUserDeleted 查询用户是否已删除。

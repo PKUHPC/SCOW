@@ -181,8 +181,7 @@ func GetAccountsNameByUser(userName string) ([]string, error) {
 	return accounts, nil
 }
 
-// BlockAccount partitions为空表示在所有分区封锁账户， 不为空则是只在非partitions的分区中封锁（账户只有partitions分区的权限）
-func BlockAccount(accountName string, partitions string) error {
+func BlockAccount(accountName string) error {
 	return client.DB.Transaction(func(tx *gorm.DB) error {
 		// 1. 加锁查询
 		var account models.AcctTable
@@ -192,19 +191,12 @@ func BlockAccount(accountName string, partitions string) error {
 			return err
 		}
 
-		// 2. 执行更新
-		blocked := 0
-		if len(partitions) == 0 {
-			blocked = 1
-			partitions = ""
-		}
 		modTime := uint64(time.Now().Unix())
 		result := tx.Model(&models.AcctTable{}).
 			Where("name = ?", accountName).
 			Updates(map[string]interface{}{
-				"blocked":    blocked,
-				"partitions": partitions,
-				"mod_time":   modTime,
+				"blocked":  1,
+				"mod_time": modTime,
 			})
 
 		if result.Error != nil {
@@ -214,7 +206,7 @@ func BlockAccount(accountName string, partitions string) error {
 	})
 }
 
-func UnblockAccount(accountName string, partitions string) error {
+func UnblockAccount(accountName string) error {
 	return client.DB.Transaction(func(tx *gorm.DB) error {
 		// 1. 加锁查询
 		var account models.AcctTable
@@ -229,7 +221,30 @@ func UnblockAccount(accountName string, partitions string) error {
 		result := tx.Model(&models.AcctTable{}).
 			Where("name = ?", accountName).
 			Updates(map[string]interface{}{
-				"blocked":    0,
+				"blocked":  0,
+				"mod_time": modTime,
+			})
+
+		if result.Error != nil {
+			return result.Error
+		}
+		return nil
+	})
+}
+
+func UpdateAccountPartitions(accountName string, partitions string) error {
+	return client.DB.Transaction(func(tx *gorm.DB) error {
+		var account models.AcctTable
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("name = ?", accountName).
+			First(&account).Error; err != nil {
+			return err
+		}
+
+		modTime := uint64(time.Now().Unix())
+		result := tx.Model(&models.AcctTable{}).
+			Where("name = ?", accountName).
+			Updates(map[string]interface{}{
 				"partitions": partitions,
 				"mod_time":   modTime,
 			})

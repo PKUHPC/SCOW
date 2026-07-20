@@ -75,7 +75,7 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *pb.GetAva
 		return nil, ce.RichError(codes.NotFound, "USER_ACCOUNT_NOT_FOUND", err.Error())
 	}
 
-	// 基于 Association max_submit_jobs 机制：查询该账户下有未封锁用户的分区列表
+	// 基于账户-分区封锁字段：查询该账户下有未封锁用户的分区列表
 	whitelistPartition, err = utils.GetAccountAssociatedAllowedPartitionInDatabase(in.AccountName)
 	if err != nil {
 		logrus.Errorf("GetAvailablePartitions failed: %v", err)
@@ -207,7 +207,7 @@ func (s *ServerConfig) GetSummaryClusterInfo(ctx context.Context, in *pb.GetSumm
 
 	clusterName := config.SlurmValue.MySQLConfig.ClusterName
 
-	// 基于 Association max_submit_jobs 机制：查询各账户下有未封锁用户的分区
+	// 基于账户-分区封锁字段：查询各账户下有未封锁用户的分区
 	acctAllowedPartitions, err := utils.GetAccountAllowedPartitionByAssociation()
 	if err != nil {
 		logrus.Errorf("GetSummaryClusterInfo failed: %v", err)

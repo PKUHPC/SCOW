@@ -62,7 +62,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 		logrus.Errorf("SubmitJob failed %v", err)
 		return nil, ce.RichError(codes.Internal, "JOB_NAME_INVALID", err.Error())
 	}
-	if err := CheckUserInfo(in.Account, in.UserId); err != nil {
+	if err := CheckUserInfo(in.Account, in.UserId, in.Partition); err != nil {
 		return nil, err
 	}
 	account, _ := utils.GetAccountByName(in.Account)
@@ -772,6 +772,11 @@ func (s *ServerJob) SubmitInferJob(ctx context.Context, in *pb.SubmitInferJobReq
 		err = fmt.Errorf("the account has been blocked")
 		logrus.Errorf("SubmitJob failed %v", err)
 		return nil, ce.RichError(codes.Internal, "ACCOUNT_BLOCKED", err.Error())
+	}
+	if !utils.AccountHasAuthorizedPartition(account.Partitions, in.Partition) {
+		err = fmt.Errorf("the account %s is not authorized to use partition %s", in.Account, in.Partition)
+		logrus.Errorf("SubmitJob failed %v", err)
+		return nil, ce.RichError(codes.PermissionDenied, "ACCOUNT_PARTITION_NOT_ALLOWED", err.Error())
 	}
 
 	// 检查用户名是否在

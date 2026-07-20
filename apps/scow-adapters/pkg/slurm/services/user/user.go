@@ -349,8 +349,8 @@ func (s *ServerUser) UnblockUserInAccount(ctx context.Context, in *pb.UnblockUse
 		return nil, ce.RichError(codes.NotFound, "USER_ACCOUNT_NOT_FOUND", err.Error())
 	}
 
-	// 最大提交作业数为NULL表示没被封锁，不需要解封
-	if maxSubmitJobs := utils.GetMaxSubmitJobs(in.UserId, in.AccountName); maxSubmitJobs == "NULL" {
+	// 未被用户级封锁，不需要解封
+	if !utils.IsUserBlockedInAccount(in.UserId, in.AccountName) {
 		logrus.Infof("UnblockUserInAccount User %v is not block in Account %v", in.UserId, in.AccountName)
 		return &pb.UnblockUserInAccountResponse{}, nil
 	}
@@ -406,8 +406,8 @@ func (s *ServerUser) QueryUserInAccountBlockStatus(ctx context.Context, in *pb.Q
 		return nil, ce.RichError(codes.NotFound, "USER_ACCOUNT_NOT_FOUND", err.Error())
 	}
 
-	// 查询max_submit_jobs的值,通过max_submit_jobs来判断用户是否被封锁
-	if maxSubmitJobs := utils.GetMaxSubmitJobs(in.UserId, in.AccountName); maxSubmitJobs == "NULL" {
+	// 查询用户级封锁状态
+	if !utils.IsUserBlockedInAccount(in.UserId, in.AccountName) {
 		logrus.Infof("User %v In Account %v is Unblocked Status", in.UserId, in.AccountName)
 		return &pb.QueryUserInAccountBlockStatusResponse{Blocked: false}, nil
 	}

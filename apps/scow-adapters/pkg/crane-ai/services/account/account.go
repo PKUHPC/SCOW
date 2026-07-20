@@ -365,11 +365,6 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pr
 	s.muUnBlock.Lock() // 加锁操作
 	defer s.muUnBlock.Unlock()
 
-	if len(in.UnblockedPartitions) == 0 {
-		logrus.Infof("UnblockAccountWithPartitions：%v no partition need unblock", in.AccountName)
-		return &protos.UnblockAccountWithPartitionsResponse{}, nil
-	}
-
 	// 检查账户名
 	if err := utils.CheckAccount(in.AccountName); err != nil {
 		logrus.Errorf("UnblockAccountWithPartitions failed: %v", err)
@@ -383,14 +378,6 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pr
 		return nil, ce.RichError(codes.Unavailable, "CRANE_INTERNAL_ERROR", err.Error())
 	}
 
-	if account.Blocked {
-		// 先将账户的Blocked字段置为false
-		if err = utils.UnblockAccount(in.AccountName); err != nil {
-			logrus.Errorf("BlockAccount err: %v", err)
-			return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
-		}
-	}
-
 	// 获取账户的allowPartitions
 	allowPartitions := account.GetAllowedPartitions()
 
@@ -399,6 +386,16 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pr
 	for _, partition := range in.UnblockedPartitions {
 		if !utils.Contains(allowPartitions, partition) {
 			needUnblockPartitions = append(needUnblockPartitions, partition)
+		}
+	}
+
+	if account.Blocked {
+		// SCOW 只会在账户应处于解封态时调用分区解封接口。
+		// AllowedPartitions 和账户整体 Blocked 是两套状态；即使目标分区已在授权列表中，
+		// 也需要先清除整体 blocked 状态，否则账户仍然无法提交作业。
+		if err = utils.UnblockAccount(in.AccountName); err != nil {
+			logrus.Errorf("UnblockAccountWithPartitions unblock account failed: %v", err)
+			return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
 		}
 	}
 

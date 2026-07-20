@@ -1441,6 +1441,20 @@ func IncludeUnblockedPartitions(accountPartitions string, needUnblockPartitions 
 	return strings.Join(existingPartitions, ",")
 }
 
+func AccountHasAuthorizedPartition(accountPartitions string, partition string) bool {
+	partition = strings.TrimSpace(partition)
+	if partition == "" {
+		return false
+	}
+
+	for _, p := range strings.Split(accountPartitions, ",") {
+		if strings.TrimSpace(p) == partition {
+			return true
+		}
+	}
+	return false
+}
+
 func AcceleratorIsAscend(accelerator string) bool {
 	if strings.Contains(accelerator, HuaweiAscend) {
 		return true
@@ -1474,6 +1488,9 @@ func GetAccountsAuthorizedPartitions(accounts []string) ([]string, error) {
 		account, err := GetAccountByName(a)
 		if err != nil {
 			return nil, fmt.Errorf("get accounts: %v failed: %v", a, err)
+		}
+		if account.Blocked != 0 {
+			continue
 		}
 
 		for _, p := range strings.Split(account.Partitions, ",") {

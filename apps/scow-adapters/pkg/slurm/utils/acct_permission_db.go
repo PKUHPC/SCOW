@@ -9,7 +9,7 @@ import (
 	"scow-adapters/pkg/slurm/client"
 )
 
-// upsertPermissionRecord 保存（或覆盖更新）封锁前某用户在指定账户+分区下的原始 max_submit_jobs。
+// upsertPermissionRecord 保存（或覆盖更新）账户分区封锁前某用户的原始提交限制值。
 // 以 (account_name, partition_name, user_name) 三元组作为唯一键：
 //   - 若记录不存在，则插入；
 //   - 若记录已存在（账户重复封锁），则更新 original_max_submit_jobs 和 mod_time。
@@ -32,7 +32,7 @@ func upsertPermissionRecord(accountName, partitionName, userName string, origina
 	return nil
 }
 
-// getPermissionRecords 读取指定账户+分区下所有已持久化的原始 max_submit_jobs 记录。
+// getPermissionRecords 读取指定账户+分区下所有已持久化的原始提交限制值记录。
 // 返回 map[userName]originalMaxSubmitJobs。
 func getPermissionRecords(accountName, partitionName string) (map[string]int32, error) {
 	query := `

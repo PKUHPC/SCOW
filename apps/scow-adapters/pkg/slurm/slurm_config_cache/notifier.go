@@ -21,6 +21,7 @@ type Notifier struct {
 	// destination where notifications are sent
 	dest    chan<- Info
 	fsEvent <-chan fsnotify.Event
+	fsError <-chan error
 }
 
 type Info struct {
@@ -36,11 +37,17 @@ func newNotifier(sleepInterval time.Duration, dest chan<- Info, slurmConfigPath 
 	return &Notifier{
 		sleepInterval: sleepInterval,
 		dest:          dest,
-		fsEvent:       ch,
+		fsEvent:       ch.event,
+		fsError:       ch.err,
 	}, nil
 }
 
-func createFSWatcherEvent(fsWatchPaths []string) (chan fsnotify.Event, error) {
+type fsWatcherChannels struct {
+	event <-chan fsnotify.Event
+	err   <-chan error
+}
+
+func createFSWatcherEvent(fsWatchPaths []string) (*fsWatcherChannels, error) {
 	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -50,7 +57,10 @@ func createFSWatcherEvent(fsWatchPaths []string) (chan fsnotify.Event, error) {
 			return nil, fmt.Errorf("failed to watch: %q; %w", p, err)
 		}
 	}
-	return fsWatcher.Events, nil
+	return &fsWatcherChannels{
+		event: fsWatcher.Events,
+		err:   fsWatcher.Errors,
+	}, nil
 }
 
 func (n *Notifier) Run() {
@@ -68,13 +78,25 @@ func (n *Notifier) Run() {
 			i := Info{Event: IntervalBased}
 			n.dest <- i
 
-		case e := <-n.fsEvent:
+		case e, ok := <-n.fsEvent:
+			if !ok {
+				logrus.Warnf("fsnotify event channel closed, notifier stopped")
+				return
+			}
+
 			basename := path.Base(e.Name)
 			logrus.Tracef("fsnotify event received filename %s, op: %v", basename, e.Op)
 			if basename == "slurm.conf" {
 				i := Info{Event: FSUpdate}
 				n.dest <- i
 			}
+
+		case err, ok := <-n.fsError:
+			if !ok {
+				logrus.Warnf("fsnotify error channel closed, notifier stopped")
+				return
+			}
+			logrus.Warnf("fsnotify error received: %v", err)
 		}
 	}
 }

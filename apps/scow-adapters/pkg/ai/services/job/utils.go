@@ -10,7 +10,7 @@ import (
 	ce "scow-adapters/pkg/common/error"
 )
 
-func CheckUserInfo(accountName, userName string) (err error) {
+func CheckUserInfo(accountName, userName, partition string) (err error) {
 	// 检查账号名是否存在
 	exist, err := utils.SelectAccountExists(accountName)
 	if err != nil {
@@ -33,6 +33,11 @@ func CheckUserInfo(accountName, userName string) (err error) {
 		err = fmt.Errorf("the account has been blocked")
 		logrus.Errorf("SubmitJob failed %v", err)
 		return ce.RichError(codes.Internal, "ACCOUNT_BLOCKED", err.Error())
+	}
+	if !utils.AccountHasAuthorizedPartition(account.Partitions, partition) {
+		err = fmt.Errorf("the account %s is not authorized to use partition %s", accountName, partition)
+		logrus.Errorf("SubmitJob failed %v", err)
+		return ce.RichError(codes.PermissionDenied, "ACCOUNT_PARTITION_NOT_ALLOWED", err.Error())
 	}
 
 	// 检查用户名是否在

@@ -828,6 +828,9 @@ func GetAccountsAuthorizedPartitions(accounts []string) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("get accounts: %v failed: %v", a, err)
 		}
+		if account.GetBlocked() {
+			continue
+		}
 
 		for _, p := range account.GetAllowedPartitions() {
 			if _, ok := seen[p]; !ok {

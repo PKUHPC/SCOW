@@ -34,6 +34,18 @@ func BlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_
 
 	account := syncData.AccountName
 
+	partitions, err := utils.GetPartitionsName()
+	if err != nil {
+		message := fmt.Sprintf("block account: get cluster partitions failed: %v", err)
+		logrus.Errorf("[SyncAccountUser], %v", message)
+		return BlockAccountFailedOperation(syncData.AccountName, message)
+	}
+	if err = ensureAccountUsersAssociationInPartitions(account, partitions); err != nil {
+		message := fmt.Sprintf("block account: ensure associations failed: %v", err)
+		logrus.Errorf("[SyncAccountUser], %v", message)
+		return BlockAccountFailedOperation(syncData.AccountName, message)
+	}
+
 	// 只封锁当前尚未封锁的分区，避免对已封锁分区的 no-op 操作被误计为同步变更
 	needToBlock, err := utils.GetAccountAssociatedAllowedPartitionInDatabase(account)
 	if err != nil {
@@ -72,6 +84,18 @@ func UnBlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoRespons
 	)
 
 	account := syncData.AccountName
+	partitions, err := utils.GetPartitionsName()
+	if err != nil {
+		message = fmt.Sprintf("unblock account failed, get cluster partitions failed: %v", err)
+		logrus.Errorf("[SyncAccountUser] %v", message)
+		return UnblockAccountFailedOperation(syncData.AccountName, message)
+	}
+	if err = ensureAccountUsersAssociationInPartitions(account, partitions); err != nil {
+		message = fmt.Sprintf("unblock account failed, ensure associations failed: %v", err)
+		logrus.Errorf("[SyncAccountUser] %v", message)
+		return UnblockAccountFailedOperation(syncData.AccountName, message)
+	}
+
 	// 获取unblockedPartitions分区，该分区需要解封
 	unblockPartition, err := getUnblockPartition(syncData)
 	if err != nil {
@@ -98,6 +122,14 @@ func UnBlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoRespons
 	for _, partition := range unblockPartition {
 		if slices.Contains(AllowedPartitions, partition) {
 			logrus.Infof("[SyncAccountUser]: account %v no need unblock in partition %v", account, partition)
+			continue
+		}
+
+		err = utils.EnsureAccountUsersAssociationInPartition(account, partition)
+		if err != nil {
+			unBlockFailedPartitions = append(unBlockFailedPartitions, partition)
+			message = fmt.Sprintf("unblock account: %v ensure association failed in partition %v, error: %v", account, partition, err)
+			logrus.Errorf("[SyncAccountUser] %v", message)
 			continue
 		}
 
@@ -150,7 +182,15 @@ func blockAccount(syncData *pb.SyncAccountInfo, partitions []string) ([]string, 
 	account := syncData.AccountName
 
 	for _, partition := range partitions {
-		err := utils.BlockAccountUseAssociation(account, partition)
+		err := utils.EnsureAccountUsersAssociationInPartition(account, partition)
+		if err != nil {
+			blockFailedPartitions = append(blockFailedPartitions, partition)
+			message = fmt.Sprintf("block account: %v ensure association failed in partition %v, error: %v", account, partition, err)
+			logrus.Errorf("[SyncAccountUser] %v", message)
+			continue
+		}
+
+		err = utils.BlockAccountUseAssociation(account, partition)
 		if err != nil {
 			blockFailedPartitions = append(blockFailedPartitions, partition)
 			message = fmt.Sprintf("block account: %v failed in partition %v, error: %v", account, partition, err)
@@ -162,6 +202,15 @@ func blockAccount(syncData *pb.SyncAccountInfo, partitions []string) ([]string, 
 	}
 
 	return blockFailedPartitions, blockSuccessPartitions
+}
+
+func ensureAccountUsersAssociationInPartitions(account string, partitions []string) error {
+	for _, partition := range partitions {
+		if err := utils.EnsureAccountUsersAssociationInPartition(account, partition); err != nil {
+			return fmt.Errorf("ensure association failed in partition %s: %w", partition, err)
+		}
+	}
+	return nil
 }
 
 func getUnblockPartition(syncData *pb.SyncAccountInfo) ([]string, error) {

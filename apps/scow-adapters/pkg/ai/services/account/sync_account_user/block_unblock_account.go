@@ -45,7 +45,7 @@ func BlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_
 		return nil
 	}
 
-	if err := utils.BlockAccount(syncData.AccountName, ""); err != nil {
+	if err := utils.BlockAccount(syncData.AccountName); err != nil {
 		message := fmt.Sprintf("block account: %v failed", syncData.AccountName)
 		logrus.Errorf("[SyncAccountUser], %v", message)
 		return BlockAccountFailedOperation(syncData.AccountName, message)
@@ -74,15 +74,26 @@ func UnBlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoRespons
 		return UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
 
-	if equalAccounts(unblockPartition, account.Partitions) {
+	partitionsChanged := !equalAccounts(unblockPartition, account.Partitions)
+	if account.Blocked == 0 && !partitionsChanged {
 		return nil
 	}
 
+	if account.Blocked != 0 {
+		if err = utils.UnblockAccount(syncData.AccountName); err != nil {
+			message = fmt.Sprintf("unblock account %v failed: %v", syncData.AccountName, err)
+			logrus.Errorf("[SyncAccountUser] %v", message)
+			return UnblockAccountFailedOperation(syncData.AccountName, message)
+		}
+	}
+
 	// 需要封锁的分区不在unblockedPartitions中，自然就封锁了
-	if err = utils.UnblockAccount(syncData.AccountName, strings.Join(unblockPartition, ",")); err != nil {
-		message = fmt.Sprintf("unblock account %v in partitions %v failed: %v", syncData.AccountName, unblockPartition, err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
-		return UnblockAccountFailedOperation(syncData.AccountName, message)
+	if partitionsChanged {
+		if err = utils.UpdateAccountPartitions(syncData.AccountName, strings.Join(unblockPartition, ",")); err != nil {
+			message = fmt.Sprintf("update account %v partitions %v failed: %v", syncData.AccountName, unblockPartition, err)
+			logrus.Errorf("[SyncAccountUser] %v", message)
+			return UnblockAccountFailedOperation(syncData.AccountName, message)
+		}
 	}
 
 	message = fmt.Sprintf("unblock account: %v success", syncData.AccountName)

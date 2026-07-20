@@ -191,8 +191,17 @@ func (s *ServerAccount) BlockAccount(ctx context.Context, in *pb.BlockAccountReq
 		return nil, ce.RichError(codes.NotFound, "ACCOUNT_NOT_FOUND", err.Error())
 	}
 
+	partitions, err := utils.GetPartitionsName()
+	if err != nil {
+		logrus.Errorf("BlockAccount get cluster partitions failed: %v, account is: %v", err, in.AccountName)
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+	if err = ensureAccountUsersAssociationInPartitions(in.AccountName, partitions, "BlockAccount"); err != nil {
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+
 	// 获取账户的授权分区
-	partitions, err := utils.GetAccountAssociatedAllowedPartitionInDatabase(in.AccountName)
+	partitions, err = utils.GetAccountAssociatedAllowedPartitionInDatabase(in.AccountName)
 	if err != nil {
 		logrus.Errorf("BlockAccount get account associated partition failed: %v, account is: %v", err, in.AccountName)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
@@ -234,6 +243,15 @@ func (s *ServerAccount) UnblockAccount(ctx context.Context, in *pb.UnblockAccoun
 		err = fmt.Errorf("account %s not found", in.AccountName)
 		logrus.Errorf("UnblockAccount failed: %v", err)
 		return nil, ce.RichError(codes.NotFound, "ACCOUNT_NOT_FOUND", err.Error())
+	}
+
+	partitions, err := utils.GetPartitionsName()
+	if err != nil {
+		logrus.Errorf("UnblockAccount get cluster partitions failed: %v, account is: %v", err, in.AccountName)
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+	if err = ensureAccountUsersAssociationInPartitions(in.AccountName, partitions, "UnblockAccount"); err != nil {
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 	}
 
 	// 获取账户的已封锁分区
@@ -450,12 +468,32 @@ func (s *ServerAccount) BlockAccountWithPartitions(ctx context.Context, in *pb.B
 		return nil, ce.RichError(codes.NotFound, "ACCOUNT_NOT_FOUND", err.Error())
 	}
 
+	// 先确保所有目标分区上的用户关联都存在，再开始修改 Slurm 封锁状态。
+	// 这样如果某个分区无法补齐 association，请求会在真正封锁前失败，避免只封锁前几个分区后中断。
+	if err := ensureAccountUsersAssociationInPartitions(in.AccountName, in.BlockedPartitions, "BlockAccountWithPartitions"); err != nil {
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+
+	// 记录本次请求中已经封锁成功的分区。
+	// 后续分区如果失败，会用这个列表执行反向解封补偿，尽量把 Slurm 状态恢复到请求前。
+	successPartitions := make([]string, 0, len(in.BlockedPartitions))
 	for _, p := range in.BlockedPartitions {
 		err = utils.BlockAccountUseAssociation(in.AccountName, p)
 		if err != nil {
 			logrus.Errorf("BlockAccountWithPartitions failed: %v, account is: %v, partition is: %v", err, in.AccountName, p)
+			// 多分区封锁不是 Slurm 事务。这里对已经封锁成功的分区执行反向解封，
+			// 避免接口整体失败时 SCOW 侧认为没有封锁，但 Slurm 侧已经封锁了部分分区。
+			err = rollbackAccountPartitions(
+				in.AccountName,
+				successPartitions,
+				utils.UnblockAccountUseAssociation,
+				"BlockAccountWithPartitions",
+				"unblock",
+				err,
+			)
 			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 		}
+		successPartitions = append(successPartitions, p)
 		logrus.Infof("BlockAccountWithPartitions sucess! account is: %v, partition is: %v", in.AccountName, p)
 	}
 
@@ -490,16 +528,92 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pb
 		return nil, ce.RichError(codes.NotFound, "ACCOUNT_NOT_FOUND", err.Error())
 	}
 
+	// 先确保所有目标分区上的用户关联都存在，再开始修改 Slurm 解封状态。
+	// 这样如果某个分区无法补齐 association，请求会在真正解封前失败，避免只解封前几个分区后中断。
+	if err := ensureAccountUsersAssociationInPartitions(in.AccountName, in.UnblockedPartitions, "UnblockAccountWithPartitions"); err != nil {
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+
+	// 记录本次请求中已经解封成功的分区。
+	// 后续分区如果失败，会用这个列表执行反向封锁补偿，尽量把 Slurm 状态恢复到请求前。
+	successPartitions := make([]string, 0, len(in.UnblockedPartitions))
 	for _, p := range in.UnblockedPartitions {
 		err = utils.UnblockAccountUseAssociation(in.AccountName, p)
 		if err != nil {
 			logrus.Errorf("UnblockAccountWithPartitions failed: %v, account is: %v, partition is: %v", err, in.AccountName, p)
+			// 多分区解封不是 Slurm 事务。这里对已经解封成功的分区执行反向封锁，
+			// 避免接口整体失败时 SCOW 侧认为没有解封，但 Slurm 侧已经解封了部分分区。
+			err = rollbackAccountPartitions(
+				in.AccountName,
+				successPartitions,
+				utils.BlockAccountUseAssociation,
+				"UnblockAccountWithPartitions",
+				"block",
+				err,
+			)
 			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 		}
+		successPartitions = append(successPartitions, p)
 		logrus.Infof("UnblockAccountWithPartitions sucess! account is: %v, partition is: %v", in.AccountName, p)
 	}
 
 	return &pb.UnblockAccountWithPartitionsResponse{}, nil
+}
+
+// ensureAccountUsersAssociationInPartitions 是多分区封锁/解封前的预检查。
+// BlockAccountUseAssociation 和 UnblockAccountUseAssociation 都依赖账户用户在目标分区下已有 association；
+// 如果边执行边补齐 association，某个分区失败时前面分区可能已经被封锁或解封。
+// 因此这里先把所有分区的 association 准备好，任何一个分区失败都直接返回，不进入后续状态修改阶段。
+func ensureAccountUsersAssociationInPartitions(account string, partitions []string, operation string) error {
+	for _, partition := range partitions {
+		if err := utils.EnsureAccountUsersAssociationInPartition(account, partition); err != nil {
+			logrus.Errorf("%s ensure association failed: %v, account is: %v, partition is: %v", operation, err, account, partition)
+			return fmt.Errorf("%s ensure association failed in partition %s: %w", operation, partition, err)
+		}
+	}
+
+	return nil
+}
+
+// rollbackAccountPartitions 对已经成功修改的分区执行反向补偿。
+// Slurm 的 sacctmgr 命令没有把多个分区封锁/解封包装成一个事务的能力：
+//   - 如果封锁第 1 个分区成功、第 2 个分区失败，第 1 个分区不会自动回滚；
+//   - 如果直接向调用方返回失败，SCOW 侧通常会认为本次请求整体未生效，从而和 Slurm 实际状态不一致。
+//
+// 调用方在执行多分区操作时会把已成功的分区传进来，本函数逐个执行反向操作。
+// rollback 参数由调用方指定：
+//   - 封锁失败时传 UnblockAccountUseAssociation；
+//   - 解封失败时传 BlockAccountUseAssociation。
+//
+// 如果补偿也失败，返回值会同时包含原始错误和补偿失败分区，方便排查仍可能残留的不一致状态。
+func rollbackAccountPartitions(
+	account string,
+	partitions []string,
+	rollback func(account, partition string) error,
+	operation string,
+	rollbackAction string,
+	originalErr error,
+) error {
+	if len(partitions) == 0 {
+		return originalErr
+	}
+
+	var rollbackErrors []string
+	for _, partition := range partitions {
+		if err := rollback(account, partition); err != nil {
+			logrus.Errorf("%s rollback %s failed: %v, account is: %v, partition is: %v", operation, rollbackAction, err, account, partition)
+			rollbackErrors = append(rollbackErrors, fmt.Sprintf("%s: %v", partition, err))
+			continue
+		}
+
+		logrus.Infof("%s rollback %s success, account is: %v, partition is: %v", operation, rollbackAction, account, partition)
+	}
+
+	if len(rollbackErrors) > 0 {
+		return fmt.Errorf("%w; rollback %s failed in partitions: %s", originalErr, rollbackAction, strings.Join(rollbackErrors, "; "))
+	}
+
+	return originalErr
 }
 
 func (s *ServerAccount) QueryAccountBlockStatusWithPartitions(ctx context.Context, in *pb.QueryAccountBlockStatusWithPartitionsRequest) (*pb.QueryAccountBlockStatusWithPartitionsResponse, error) {

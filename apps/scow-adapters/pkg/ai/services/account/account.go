@@ -9,7 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	"k8s.io/utils/strings/slices"
 
 	pb "scow-adapters/gen/go"
 	"scow-adapters/pkg/ai/config"
@@ -22,6 +21,40 @@ type ServerAccount struct {
 	pb.UnimplementedAccountServiceServer
 	muBlock   sync.Mutex // Add a Mutex field for locking
 	muUnBlock sync.Mutex // Add a Mutex field for locking
+}
+
+func isAccountBlocked(blocked int) bool {
+	return blocked != 0
+}
+
+func getAccountStatusInPartitions(accountBlocked int, accountPartitions string, partitions []string) []*pb.AccountStatusInPartition {
+	accountStatusInPartition := make([]*pb.AccountStatusInPartition, 0, len(partitions))
+	if isAccountBlocked(accountBlocked) {
+		for _, partition := range partitions {
+			accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
+				Blocked:   true,
+				Partition: partition,
+			})
+		}
+		return accountStatusInPartition
+	}
+
+	allowedPartitions := make(map[string]struct{})
+	for _, partition := range strings.Split(accountPartitions, ",") {
+		if partition == "" {
+			continue
+		}
+		allowedPartitions[partition] = struct{}{}
+	}
+
+	for _, partition := range partitions {
+		_, allowed := allowedPartitions[partition]
+		accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
+			Blocked:   !allowed,
+			Partition: partition,
+		})
+	}
+	return accountStatusInPartition
 }
 
 func (s *ServerAccount) ListAccounts(ctx context.Context, in *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
@@ -149,7 +182,7 @@ func (s *ServerAccount) BlockAccount(ctx context.Context, in *pb.BlockAccountReq
 		return &pb.BlockAccountResponse{}, nil
 	}
 
-	if err = utils.BlockAccount(in.AccountName, ""); err != nil {
+	if err = utils.BlockAccount(in.AccountName); err != nil {
 		logrus.Errorf("BlockAccount: account %v failed: %v", in.AccountName, err)
 		return nil, ce.RichError(codes.Internal, "BLOCK_ACCOUNT_FAILED", err.Error())
 	}
@@ -184,13 +217,7 @@ func (s *ServerAccount) UnblockAccount(ctx context.Context, in *pb.UnblockAccoun
 		return &pb.UnblockAccountResponse{}, nil
 	}
 
-	queues, err := utils.GetQueueName()
-	if err != nil {
-		logrus.Errorf("UnblockAccount failed: %v", err)
-		return nil, ce.RichError(codes.Internal, "GET_PARTITION_FAILED", err.Error())
-	}
-	partitions := strings.Join(queues, ",")
-	if err = utils.UnblockAccount(in.AccountName, partitions); err != nil {
+	if err = utils.UnblockAccount(in.AccountName); err != nil {
 		logrus.Errorf("UnblockAccount: account %v failed: %v", in.AccountName, err)
 		return nil, ce.RichError(codes.Internal, "BLOCK_ACCOUNT_FAILED", err.Error())
 	}
@@ -278,31 +305,11 @@ func (s *ServerAccount) QueryAccountBlockStatus(ctx context.Context, in *pb.Quer
 		return nil, ce.RichError(codes.Internal, "GET_PARTITION_FAILED", err.Error())
 	}
 
-	var (
-		accountStatusInPartition []*pb.AccountStatusInPartition
-		accountsBlocked          int
-	)
-
-	for _, partition := range partitions {
-		if account.Partitions != "" && slices.Contains(strings.Split(account.Partitions, ","), partition) {
-			accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
-				Blocked:   false,
-				Partition: partition,
-			})
-		} else {
-			accountsBlocked += 1
-			accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
-				Blocked:   true,
-				Partition: partition,
-			})
-		}
-	}
-
-	if accountsBlocked == len(partitions) {
-		return &pb.QueryAccountBlockStatusResponse{Blocked: true, AccountBlockedDetails: accountStatusInPartition}, nil
-	} else {
-		return &pb.QueryAccountBlockStatusResponse{Blocked: false, AccountBlockedDetails: accountStatusInPartition}, nil
-	}
+	accountStatusInPartition := getAccountStatusInPartitions(account.Blocked, account.Partitions, partitions)
+	return &pb.QueryAccountBlockStatusResponse{
+		Blocked:               isAccountBlocked(account.Blocked),
+		AccountBlockedDetails: accountStatusInPartition,
+	}, nil
 }
 
 func (s *ServerAccount) DeleteAccount(ctx context.Context, in *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
@@ -367,8 +374,8 @@ func (s *ServerAccount) BlockAccountWithPartitions(ctx context.Context, in *pb.B
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
 
-	if account.Blocked == 1 || account.Partitions == "" {
-		logrus.Infof("BlockAccount account %s is already blocked", in.AccountName)
+	if account.Partitions == "" {
+		logrus.Infof("BlockAccount account %s has no authorized partitions", in.AccountName)
 		return &pb.BlockAccountWithPartitionsResponse{}, nil
 	}
 
@@ -378,7 +385,7 @@ func (s *ServerAccount) BlockAccountWithPartitions(ctx context.Context, in *pb.B
 		return &pb.BlockAccountWithPartitionsResponse{}, nil
 	}
 
-	if err = utils.BlockAccount(in.AccountName, accountPartitions); err != nil {
+	if err = utils.UpdateAccountPartitions(in.AccountName, accountPartitions); err != nil {
 		logrus.Errorf("BlockAccount: account %v failed: %v", in.AccountName, err)
 		return nil, ce.RichError(codes.Internal, "BLOCK_ACCOUNT_FAILED", err.Error())
 	}
@@ -391,10 +398,6 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pb
 	s.muUnBlock.Lock() // 加锁操作
 	defer s.muUnBlock.Unlock()
 	logrus.Infof("Received request UnblockAccountWithPartitions: %v", in)
-
-	if len(in.UnblockedPartitions) == 0 {
-		return &pb.UnblockAccountWithPartitionsResponse{}, nil
-	}
 
 	// 检查账号名是否存在
 	exist, err := utils.SelectAccountExists(in.AccountName)
@@ -416,13 +419,26 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pb
 
 	// 账户本来的分区去重加上需要解封的分区，得到的分区重新赋值给账户就代表需要解封的分区被解封了
 	accountPartitions := utils.IncludeUnblockedPartitions(account.Partitions, in.UnblockedPartitions)
-	if accountPartitions == account.Partitions && account.Blocked == 0 {
+	partitionsChanged := accountPartitions != account.Partitions
+	if !partitionsChanged && account.Blocked == 0 {
 		return &pb.UnblockAccountWithPartitionsResponse{}, nil
 	}
 
-	if err = utils.UnblockAccount(in.AccountName, accountPartitions); err != nil {
-		logrus.Errorf("UnblockAccountWithPartitions: account %v failed: %v", in.AccountName, err)
-		return nil, ce.RichError(codes.Internal, "BLOCK_ACCOUNT_FAILED", err.Error())
+	if account.Blocked != 0 {
+		// SCOW 只会在账户应处于解封态时调用分区解封接口。
+		// 分区授权和账户整体封锁是两套状态；即使目标分区已在授权列表中，
+		// 也需要先清除整体 blocked 状态，否则账户仍然无法提交作业。
+		if err = utils.UnblockAccount(in.AccountName); err != nil {
+			logrus.Errorf("UnblockAccountWithPartitions: unblock account %v failed: %v", in.AccountName, err)
+			return nil, ce.RichError(codes.Internal, "BLOCK_ACCOUNT_FAILED", err.Error())
+		}
+	}
+
+	if partitionsChanged {
+		if err = utils.UpdateAccountPartitions(in.AccountName, accountPartitions); err != nil {
+			logrus.Errorf("UnblockAccountWithPartitions: account %v failed: %v", in.AccountName, err)
+			return nil, ce.RichError(codes.Internal, "BLOCK_ACCOUNT_FAILED", err.Error())
+		}
 	}
 	logrus.Infof("UnblockAccountWithPartitions: unblocked account %v success in partitions", in.AccountName)
 	return &pb.UnblockAccountWithPartitionsResponse{}, nil
@@ -433,7 +449,6 @@ func (s *ServerAccount) QueryAccountBlockStatusWithPartitions(ctx context.Contex
 	var (
 		queriedPartitions        []string
 		accountStatusInPartition []*pb.AccountStatusInPartition
-		accountsBlocked          int
 	)
 
 	// 检查账号是否存在
@@ -467,27 +482,11 @@ func (s *ServerAccount) QueryAccountBlockStatusWithPartitions(ctx context.Contex
 		queriedPartitions = in.QueriedPartitions
 	}
 
-	for _, partition := range queriedPartitions {
-		if account.Partitions != "" && slices.Contains(strings.Split(account.Partitions, ","), partition) {
-			accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
-				Blocked:   false,
-				Partition: partition,
-			})
-		} else {
-			accountsBlocked += 1
-			accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
-				Blocked:   true,
-				Partition: partition,
-			})
-		}
-	}
-
-	// 该账户在每个所属的分区中都被blocked
-	if accountsBlocked == len(queriedPartitions) {
-		return &pb.QueryAccountBlockStatusWithPartitionsResponse{Blocked: true, AccountBlockedDetails: accountStatusInPartition}, nil
-	} else {
-		return &pb.QueryAccountBlockStatusWithPartitionsResponse{Blocked: false, AccountBlockedDetails: accountStatusInPartition}, nil
-	}
+	accountStatusInPartition = getAccountStatusInPartitions(account.Blocked, account.Partitions, queriedPartitions)
+	return &pb.QueryAccountBlockStatusWithPartitionsResponse{
+		Blocked:               isAccountBlocked(account.Blocked),
+		AccountBlockedDetails: accountStatusInPartition,
+	}, nil
 }
 
 func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Context, in *pb.GetAllAccountsWithUsersAndBlockedDetailsRequest) (*pb.GetAllAccountsWithUsersAndBlockedDetailsResponse, error) {
@@ -509,7 +508,6 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 		var (
 			userInfo                 []*pb.ClusterAccountInfoWithBlockedDetails_UserInAccount
 			accountStatusInPartition []*pb.AccountStatusInPartition
-			accountsBlocked          int
 		)
 
 		associate, err := utils.GetAssociateByAccountName(account.Name)
@@ -533,37 +531,13 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 			}
 		}
 
-		for _, partition := range partitions {
-			if account.Partitions != "" && slices.Contains(strings.Split(account.Partitions, ","), partition) {
-				accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
-					Blocked:   false,
-					Partition: partition,
-				})
-			} else {
-				accountsBlocked += 1
-				accountStatusInPartition = append(accountStatusInPartition, &pb.AccountStatusInPartition{
-					Blocked:   true,
-					Partition: partition,
-				})
-			}
-		}
-
-		// 该账户在每个所属的分区中都被blocked
-		if accountsBlocked == len(partitions) {
-			acctInfo = append(acctInfo, &pb.ClusterAccountInfoWithBlockedDetails{
-				AccountName:           account.Name,
-				Users:                 userInfo,
-				Blocked:               true,
-				AccountBlockedDetails: accountStatusInPartition,
-			})
-		} else {
-			acctInfo = append(acctInfo, &pb.ClusterAccountInfoWithBlockedDetails{
-				AccountName:           account.Name,
-				Users:                 userInfo,
-				Blocked:               false,
-				AccountBlockedDetails: accountStatusInPartition,
-			})
-		}
+		accountStatusInPartition = getAccountStatusInPartitions(account.Blocked, account.Partitions, partitions)
+		acctInfo = append(acctInfo, &pb.ClusterAccountInfoWithBlockedDetails{
+			AccountName:           account.Name,
+			Users:                 userInfo,
+			Blocked:               isAccountBlocked(account.Blocked),
+			AccountBlockedDetails: accountStatusInPartition,
+		})
 	}
 	logrus.Tracef("GetAllAccountsWithUsersAndBlockedDetails: %v", acctInfo)
 	return &pb.GetAllAccountsWithUsersAndBlockedDetailsResponse{Accounts: acctInfo}, nil

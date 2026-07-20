@@ -72,9 +72,8 @@ func UnBlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoRespons
 	}
 
 	executeUnblock, executeBlock := false, false
-	if len(unblockPartition) > 0 && account.Blocked {
+	if account.Blocked {
 		executeUnblock = true
-		// 先将账户的Blocked字段置为false
 		if err = utils.UnblockAccount(account.Name); err != nil {
 			message = fmt.Sprintf("unblock account %v failed: %v", syncData.AccountName, err)
 			logrus.Errorf("[SyncAccountUser] %v", message)

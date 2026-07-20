@@ -30,7 +30,7 @@ func (s *ServerJob) CreateDevHost(ctx context.Context, in *pb.CreateDevHostReque
 		logrus.Errorf("SubmitJob failed %v", err)
 		return nil, ce.RichError(codes.Internal, "JOB_NAME_INVALID", err.Error())
 	}
-	if err := CheckUserInfo(in.Account, in.UserId); err != nil {
+	if err := CheckUserInfo(in.Account, in.UserId, in.Partition); err != nil {
 		return nil, err
 	}
 	queueInfo, err := utils.GetQueueByName(in.Partition)

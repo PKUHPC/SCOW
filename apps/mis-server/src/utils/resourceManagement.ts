@@ -52,11 +52,11 @@ export async function unblockAccountAssignedPartitionsInCluster(
     // 3.执行解封，调用适配器的 unblockAccountWithPartitions
     if (unblockedPartitions.length === 0) {
       logger.info("There is no assigned partitions for account %s to unblock in cluster %s", accountName, clusterId);
-    } else {
-      await asyncClientCall(client.account, "unblockAccountWithPartitions", {
-        accountName,
-        unblockedPartitions: unblockedPartitions,
-      });
     }
+    // 空分区也确保调用了unblockAccountWithPartitions，同步账户解封语义到适配器
+    await asyncClientCall(client.account, "unblockAccountWithPartitions", {
+      accountName,
+      unblockedPartitions: unblockedPartitions,
+    });
   });
 }
