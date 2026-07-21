@@ -78,12 +78,27 @@ function get_pip_break_system_packages_arg {
   fi
 }
 
+function get_server_session_info_path {
+  local file_name=$1
+
+  if [ -n "$WORK_DIR" ] && [ -n "$JOB_NAME" ]; then
+    local session_dir="${WORK_DIR%/}/${JOB_NAME}"
+    if mkdir -p "$session_dir" >/dev/null 2>&1; then
+      echo "${session_dir}/${file_name}"
+      return 0
+    fi
+    echo "[WARN] failed to create session info dir: ${session_dir}, fallback to /tmp" >>/tmp/devhost_session_info.log
+  fi
+
+  echo "/tmp/${file_name}"
+}
+
 function start_jupyterlab {
   local PORT=$1
   local HOST=$2
   local SVCPORT=$3
   local PROXY_BASE_PATH=$4
-  local SERVER_SESSION_INFO=/tmp/server_session_jupyterlab.json
+  local SERVER_SESSION_INFO=$(get_server_session_info_path "server_session_jupyterlab.json")
   local PASSWORD=$(get_password 12)
   local PYTHON_CMD
   local PY_VERSION
@@ -139,7 +154,7 @@ function start_jupyterlab {
     return 1
   fi
 
-  echo -e "{\"HOST\":\"$HOST\",\"PORT\":\"$SVCPORT\",\"PASSWORD\":\"$PASSWORD\"}" >$SERVER_SESSION_INFO
+  echo -e "{\"HOST\":\"$HOST\",\"PORT\":\"$SVCPORT\",\"PASSWORD\":\"$PASSWORD\"}" >"$SERVER_SESSION_INFO"
 
   jupyter-lab \
     --ServerApp.ip='0.0.0.0' \
@@ -158,10 +173,10 @@ function start_vscode {
   local HOST=$2
   local SVCPORT=$3
   local VSCODE=$4
-  local SERVER_SESSION_INFO=/tmp/server_session_vscode.json
+  local SERVER_SESSION_INFO=$(get_server_session_info_path "server_session_vscode.json")
   local PASSWORD=$(get_password 12)
 
-  echo -e "{\"HOST\":\"$HOST\",\"PORT\":\"$SVCPORT\",\"PASSWORD\":\"$PASSWORD\"}" >$SERVER_SESSION_INFO
+  echo -e "{\"HOST\":\"$HOST\",\"PORT\":\"$SVCPORT\",\"PASSWORD\":\"$PASSWORD\"}" >"$SERVER_SESSION_INFO"
   PASSWORD=$PASSWORD ${VSCODE} -vvv --bind-addr 0.0.0.0:$PORT --auth password >>/tmp/vscode.log 2>&1
 }
 

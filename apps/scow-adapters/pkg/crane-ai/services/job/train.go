@@ -276,7 +276,7 @@ func buildContainerCommandWithAddr(req *protos.SubmitJobRequest, config *TrainCo
 	return strings.Join(cmdParts, " "), nil
 }
 
-func buildTensorBoardCommand(req *protos.SubmitJobRequest, config *TrainConfig, tensorBoardProxyPort int) (string, error) {
+func buildTensorBoardCommand(req *protos.SubmitJobRequest, _ *TrainConfig, tensorBoardProxyPort int) (string, error) {
 	var cmdParts []string
 	if tensorBoardProxyPort < utils.MinPort {
 		return "", fmt.Errorf("invalid tensorboard proxy port %d: expected a proxy port >= %d",
@@ -286,7 +286,11 @@ func buildTensorBoardCommand(req *protos.SubmitJobRequest, config *TrainConfig, 
 	if err != nil {
 		return "", fmt.Errorf("get adapter hostname failed: %w", err)
 	}
-	// The entry script uses the external proxy port to build TensorBoard's base path.
+	pathPrefix, err := buildTensorBoardPathPrefix(req, adapterHostname, tensorBoardProxyPort)
+	if err != nil {
+		return "", err
+	}
+
 	cmdParts = append(cmdParts,
 		"ccon",
 		"-c", strconv.Itoa(utils.TensorBoardCpu),
@@ -294,20 +298,30 @@ func buildTensorBoardCommand(req *protos.SubmitJobRequest, config *TrainConfig, 
 		"run", "-i -t -d",
 	)
 
-	mountArgs := buildMountArgs(config.RWVolumes, config.ROVolumes,
-		req.Script, config.WorkingDirectory, config.AlgorithmPath, config.DatasetPath, config.ModelPath)
-	cmdParts = append(cmdParts, mountArgs...)
 	cmdParts = append(cmdParts,
 		"-v", fmt.Sprintf("%s:%s", req.GetTensorBoardDataPath(), utils.TensorBoardLogMountDir),
-		"-v", fmt.Sprintf("%s:/opt", utils.GetDirPathWithSlash(req.Script)),
 		utils.TensorboardImage,
-		"bash",
-		fmt.Sprintf("/opt/%s", utils.TensorBoardEntryScript),
-		strconv.Itoa(tensorBoardProxyPort),
-		adapterHostname,
+		"tensorboard",
+		"--logdir", utils.TensorBoardLogMountDir,
+		"--host", "0.0.0.0",
+		"--path_prefix", pathPrefix,
 	)
 
 	return strings.Join(cmdParts, " "), nil
+}
+
+func buildTensorBoardPathPrefix(req *protos.SubmitJobRequest, hostname string, tensorBoardProxyPort int) (string, error) {
+	pathPrefix := ""
+	if req != nil {
+		pathPrefix = req.GetTensorboardProxyPathPrefix()
+	}
+	if strings.TrimSpace(pathPrefix) == "" {
+		return "", fmt.Errorf("tensorboard proxy path prefix is empty")
+	}
+	if !strings.HasSuffix(pathPrefix, "/") {
+		pathPrefix += "/"
+	}
+	return fmt.Sprintf("%s%s/%d/", pathPrefix, hostname, tensorBoardProxyPort), nil
 }
 
 // buildEnvArgsWithMasterAddr builds env args using an explicit masterAddr string (can be a shell variable).

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -94,11 +95,23 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 			sessionInfo = fmt.Sprintf("server_session_%s.json", utils.Vscode)
 		}
 	}
+	logrus.Tracef(
+		"[GetAppConnectionInfo] resolved app connection target, jobId=%d, jobName=%s, jobType=%s, containerPort=%d, sessionInfo=%s",
+		jobID, jobName, jobType, containerPort, sessionInfo,
+	)
 
 	proxyInfo, err := utils.LoadJobProxyMetaByPort(jobID, containerPort)
 	if err != nil {
 		logrus.Errorf("load job proxy info failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "CRANE_FAILED", err.Error())
+	}
+	if proxyInfo == nil {
+		logrus.Infof("[GetAppConnectionInfo] proxy metadata cache missed, jobId=%d, containerPort=%d", jobID, containerPort)
+	} else {
+		logrus.Tracef(
+			"[GetAppConnectionInfo] proxy metadata cache hit, jobId=%d, containerPort=%d, proxyPort=%d",
+			jobID, containerPort, proxyInfo.ProxyPort,
+		)
 	}
 	if proxyInfo != nil && !utils.GlobalProxyManager.IsProxyRunning(proxyInfo) {
 		logrus.Warnf("[GetAppConnectionInfo] proxy metadata exists but service is not running for job %d port %d, rebuild it", jobID, containerPort)
@@ -109,7 +122,7 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 	}
 
 	if cachedInfo := loadConnectionInfoCache(jobID, containerPort); isUsableConnectionCache(cachedInfo, proxyInfo, containerPort) {
-		logrus.Infof("[GetAppConnectionInfo] use cached connection info for job %d, containerPort=%d", jobID, containerPort)
+		logrus.Tracef("[GetAppConnectionInfo] use cached connection info for job %d, containerPort=%d", jobID, containerPort)
 		if containerPort == utils.AppVNCContainerPort {
 			stepId, nodeName, err := getConnectionStepAndNode(taskInfo, cachedInfo)
 			if err != nil {
@@ -120,12 +133,12 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 				return nil, ce.RichError(codes.Internal, "MODIFY_VNC_PASSWORD_FAILED", err.Error())
 			}
 			responseMessage := buildAppConnectionInfoResponse(cachedInfo.Host, cachedInfo.Port, randomPassword)
-			logrus.Infof("GetAppConnectionInfo response from cache: %v", responseMessage)
+			logAppConnectionInfoResponse("GetAppConnectionInfo response from cache", cachedInfo.Host, cachedInfo.Port, randomPassword)
 			return responseMessage, nil
 		}
 
 		responseMessage := buildAppConnectionInfoResponse(cachedInfo.Host, cachedInfo.Port, cachedInfo.Password)
-		logrus.Infof("GetAppConnectionInfo response from cache: %v", responseMessage)
+		logAppConnectionInfoResponse("GetAppConnectionInfo response from cache", cachedInfo.Host, cachedInfo.Port, cachedInfo.Password)
 		return responseMessage, nil
 	}
 
@@ -148,6 +161,7 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 
 	if proxyInfo == nil {
 		// 双重检查锁：先乐观判断，拿锁后再次验证，防止并发请求重复创建同一代理。
+		logrus.Infof("[GetAppConnectionInfo] start creating proxy, jobId=%d, containerPort=%d", jobID, containerPort)
 		var setupErr error
 		proxyInfo, setupErr = func() (*utils.ProxyMeta, error) {
 			proxySetupMu.Lock()
@@ -194,6 +208,12 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 		if setupErr != nil {
 			return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", setupErr.Error())
 		}
+		if proxyInfo != nil {
+			logrus.Infof(
+				"[GetAppConnectionInfo] proxy created, jobId=%d, containerPort=%d, proxyPort=%d",
+				jobID, containerPort, proxyInfo.ProxyPort,
+			)
+		}
 	}
 
 	if proxyInfo == nil {
@@ -201,7 +221,7 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 		return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", "proxy not found after creation")
 	}
 
-	logrus.Infof("proxy info: %v", proxyInfo)
+	logrus.Tracef("proxy info: %v", proxyInfo)
 
 	// 得到step的id和uid
 	primarySteps := utils.GetJobPrimaryStep(taskInfo.StepInfoList)
@@ -212,54 +232,105 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 	step := primarySteps[0]
 
 	if jobType == utils.APP || jobType == utils.DevHost {
-		webFilePath := fmt.Sprintf("/tmp/%s", sessionInfo)
-		dstDir := "/tmp"
-		currentTimestamp := time.Now().UnixMicro()
-		strNum := strconv.FormatInt(currentTimestamp, 10)
-		webFileDestPath := dstDir + "/" + "server_session_info.json" + "-" + strNum
-		logrus.Infof("task.TaskId %v, step.StepId %v, step.Uid %v, webFilePath %v, webFileDestPath %v, nodeName %v", taskInfo.JobId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName)
-		if err = utils.CopyFromPod(taskInfo.JobId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName); err != nil {
-			logrus.Errorf("copy file failed: %v", err)
-			return &protos.GetAppConnectionInfoResponse{}, nil
-		}
-		logrus.Tracef("copy container %s file %s successful", jobName, webFilePath)
 		if containerPort == utils.AppVNCContainerPort {
 			randomPassword, err := resetVNCPassword(taskInfo.JobId, step.StepId, step.Uid, nodeName)
 			if err != nil {
 				return nil, ce.RichError(codes.Internal, "MODIFY_VNC_PASSWORD_FAILED", err.Error())
 			}
-			err = os.Remove(webFileDestPath)
-			if err != nil {
-				err = fmt.Errorf("remove web file failed, %v", err)
-				logrus.Errorf("GetAppConnectionInfo failed: %v", err)
-			}
 
 			cacheConnectionInfo(jobID, hostname, uint32(proxyInfo.ProxyPort), "", containerPort, step.StepId, nodeName)
 			responseMessage := buildAppConnectionInfoResponse(hostname, uint32(proxyInfo.ProxyPort), randomPassword)
-			logrus.Infof("GetAppConnectionInfo response: %v", responseMessage)
+			logAppConnectionInfoResponse("GetAppConnectionInfo response", hostname, uint32(proxyInfo.ProxyPort), randomPassword)
 			return responseMessage, nil
 		} else {
-			_, webPassword, err := utils.GetWebJobFileContent(webFileDestPath)
+			logrus.Infof(
+				"[GetAppConnectionInfo] connection info cache missed, read session password, jobId=%d, jobName=%s, jobType=%s, sessionInfo=%s",
+				jobID, jobName, jobType, sessionInfo,
+			)
+			webPassword, err := readSessionPassword(taskInfo, jobInfo, sessionInfo, step, nodeName)
 			if err != nil {
-				logrus.Errorf("GetAppConnectionInfo parse file %s failed, %v", webFileDestPath, err)
+				logrus.Errorf("GetAppConnectionInfo read session password failed, %v", err)
 				return &protos.GetAppConnectionInfoResponse{}, nil
 			}
-			_ = os.Remove(webFileDestPath)
 			cacheConnectionInfo(jobID, hostname, uint32(proxyInfo.ProxyPort), webPassword, containerPort, step.StepId, nodeName)
+			logrus.Infof(
+				"[GetAppConnectionInfo] connection info saved to cache, jobId=%d, jobName=%s, jobType=%s, containerPort=%d, proxyPort=%d",
+				jobID, jobName, jobType, containerPort, proxyInfo.ProxyPort,
+			)
 			responseMessage := buildAppConnectionInfoResponse(hostname, uint32(proxyInfo.ProxyPort), webPassword)
-			logrus.Infof("GetAppConnectionInfo response: %v", responseMessage)
+			logAppConnectionInfoResponse("GetAppConnectionInfo response", hostname, uint32(proxyInfo.ProxyPort), webPassword)
 			return responseMessage, nil
 		}
 	} else if jobType == utils.Inference {
 		cacheConnectionInfo(jobID, hostname, uint32(proxyInfo.ProxyPort), "", containerPort, step.StepId, nodeName)
 		responseMessage := buildAppConnectionInfoResponse(hostname, uint32(proxyInfo.ProxyPort), "")
-		logrus.Tracef("GetAppConnectionInfo response: %v", responseMessage)
+		logAppConnectionInfoResponse("GetAppConnectionInfo response", hostname, uint32(proxyInfo.ProxyPort), "")
 		return responseMessage, nil
 	}
 
 	err = fmt.Errorf("not support")
 	logrus.Errorf("GetAppConnectionInfo failed: %v", err)
 	return nil, ce.RichError(codes.Internal, "NOT_SUPPORT", err.Error())
+}
+
+func readSessionPassword(taskInfo *craneProtos.JobInfo, jobInfo *utils.SubmitJobInfo, sessionInfo string, step *craneProtos.StepInfo, nodeName string) (string, error) {
+	if jobInfo.JobType == utils.APP {
+		sessionInfoPath := filepath.Join(jobInfo.ScriptDir, "server_session_info.json")
+		if jobInfo.ScriptDir == "" {
+			sessionInfoPath = filepath.Join(taskInfo.GetCwd(), "server_session_info.json")
+		}
+		logrus.Infof("read app session file %s", sessionInfoPath)
+		_, webPassword, err := utils.GetWebJobFileContent(sessionInfoPath)
+		if err == nil {
+			logrus.Infof("read app session file %s successful", sessionInfoPath)
+			return webPassword, nil
+		}
+
+		logrus.Warnf("read app session file %s failed: %v, fallback to copy from container /tmp", sessionInfoPath, err)
+		return copyAndReadContainerSessionPassword(taskInfo, sessionInfo, step, nodeName)
+	}
+
+	if jobInfo.JobType == utils.DevHost {
+		sessionInfoPath := filepath.Join(taskInfo.GetCwd(), taskInfo.GetName(), sessionInfo)
+		logrus.Infof("read dev host session file %s", sessionInfoPath)
+		_, webPassword, err := utils.GetWebJobFileContent(sessionInfoPath)
+		if err == nil {
+			logrus.Infof("read dev host session file %s successful", sessionInfoPath)
+			return webPassword, nil
+		}
+		logrus.Warnf("read dev host session file %s failed: %v, fallback to copy from container", sessionInfoPath, err)
+	}
+
+	return copyAndReadContainerSessionPassword(taskInfo, sessionInfo, step, nodeName)
+}
+
+func copyAndReadContainerSessionPassword(taskInfo *craneProtos.JobInfo, sessionInfo string, step *craneProtos.StepInfo, nodeName string) (string, error) {
+	webFilePath := fmt.Sprintf("/tmp/%s", sessionInfo)
+	dstDir := "/tmp"
+	currentTimestamp := time.Now().UnixMicro()
+	strNum := strconv.FormatInt(currentTimestamp, 10)
+	webFileDestPath := filepath.Join(dstDir, "server_session_info.json-"+strNum)
+	defer func() {
+		_ = os.Remove(webFileDestPath)
+	}()
+
+	logrus.Infof("task.TaskId %v, step.StepId %v, step.Uid %v, webFilePath %v, webFileDestPath %v, nodeName %v",
+		taskInfo.JobId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName)
+	if err := utils.CopyFromPod(taskInfo.JobId, step.StepId, step.Uid, webFilePath, webFileDestPath, nodeName); err != nil {
+		return "", fmt.Errorf("copy container session file %s failed: %w", webFilePath, err)
+	}
+	logrus.Infof("copy container %s file %s successful", taskInfo.Name, webFilePath)
+
+	_, webPassword, err := utils.GetWebJobFileContent(webFileDestPath)
+	if err != nil {
+		return "", fmt.Errorf("parse container session file %s failed: %w", webFileDestPath, err)
+	}
+
+	return webPassword, nil
+}
+
+func logAppConnectionInfoResponse(message, host string, port uint32, password string) {
+	logrus.Tracef("%s: host=%s, port=%d, passwordSet=%t", message, host, port, password != "")
 }
 
 func isUsableConnectionCache(cachedInfo *cachedAppConnectionInfo, proxyInfo *utils.ProxyMeta, containerPort int32) bool {

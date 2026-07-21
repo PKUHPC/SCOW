@@ -35,7 +35,9 @@ func GetPodInfoByUid(uid string) (modelPod *models.PodTable, err error) {
 
 func GetPodInfoByJobName(jobName string) (podInfo []*pb.JobInfo_PodInfo, err error) {
 	var modelsPod []*models.PodTable
-	err = client.DB.Where("job_name = ?", jobName).Find(&modelsPod).Error
+	err = client.DB.Where("job_name = ? AND status = ?", jobName, RunningStatus).
+		Order("updated DESC").
+		Find(&modelsPod).Error
 	if err != nil {
 		logrus.Errorf("DB select pod failed by jobname %s, error: %v", jobName, err)
 		return nil, err

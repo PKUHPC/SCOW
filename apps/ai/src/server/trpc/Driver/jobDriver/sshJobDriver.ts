@@ -25,7 +25,6 @@ import {
   CreateAppInput,
   CreateAppInputSchema,
   SERVER_ENTRY_COMMAND,
-  SERVER_SESSION_INFO,
   SESSION_METADATA_NAME,
   SessionMetadata,
   VNC_ENTRY_COMMAND,
@@ -157,6 +156,7 @@ export class SshJobDriver implements JobDriver {
       // make sure appJobsDirectory exists.
       await ssh.mkdir(appJobsDirectory);
       const remoteEntryPath = join(homeDir, appJobsDirectory, "entry.sh");
+      const serverSessionInfoPath = join(homeDir, appJobsDirectory, "server_session_info.json");
 
       const attributesConfig = app.attributes;
       let customAttributesExport: string = "";
@@ -191,7 +191,7 @@ export class SshJobDriver implements JobDriver {
       if (app.type === "web") {
         const runtimeVariables = getEnvVariables({
           PROXY_BASE_PATH: join(proxyBasePath, app.web!.proxyType),
-          SERVER_SESSION_INFO,
+          SERVER_SESSION_INFO: serverSessionInfoPath,
         });
         const beforeScript = runtimeVariables + customAttributesExport + app.web!.beforeScript + sessionInfo;
         // 用户如果传了自定义的启动命令，则根据配置文件去替换默认的启动命令
@@ -199,7 +199,7 @@ export class SshJobDriver implements JobDriver {
         entryScript = SERVER_ENTRY_COMMAND + beforeScript + webScript;
       } else if (app.type === "vnc") {
         const runtimeVariables = getEnvVariables({
-          SERVER_SESSION_INFO,
+          SERVER_SESSION_INFO: serverSessionInfoPath,
         });
         // 对于vnc 的自定义镜像应用，用户需要传对应的运行镜像中启动脚本的命令
         const xstartupScript = startCommand || app.vnc!.xstartup;

@@ -106,6 +106,10 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 	} else {
 		gpuType = in.ExtraOptions[7]
 	}
+	appDir := ""
+	if in.ExtraOptions[0] == utils.APP && in.Script != "" {
+		appDir = filepath.Dir(in.Script)
+	}
 	jobTable = models.JobTable{
 		Account:    in.Account,
 		CPUsReq:    uint(in.CoreCount) * uint(in.NodeCount),
@@ -121,6 +125,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 		Timelimit:  uint(*in.TimeLimitMinutes),
 		TimeSubmit: uint64(currentTime),
 		WorkDir:    in.WorkingDirectory,
+		AppDir:     appDir,
 		GpuType:    gpuType,
 		JobType:    in.ExtraOptions[0],
 		Qos:        in.GetQos(),

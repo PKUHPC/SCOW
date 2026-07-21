@@ -24,6 +24,7 @@ type JobTable struct {
 	TimeStart   uint64 `gorm:"column:time_start;default:0"`
 	TimeEnd     uint64 `gorm:"column:time_end;index:time_end_index;default:0"`
 	WorkDir     string `gorm:"column:work_dir"`
+	AppDir      string `gorm:"column:app_dir"`
 	GpuType     string `gorm:"column:gpu_type"`
 	JobType     string `gorm:"column:job_type"`
 	SvcPassword string `gorm:"column:svc_password"`

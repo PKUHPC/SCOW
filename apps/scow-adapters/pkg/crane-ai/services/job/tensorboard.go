@@ -156,13 +156,19 @@ func isTensorBoardStep(step *craneProtos.StepInfo) bool {
 		if image := containerMeta.GetImage(); image != nil && image.GetImage() == utils.TensorboardImage {
 			return true
 		}
-		if strings.Contains(strings.Join(containerMeta.GetArgs(), " "), utils.TensorBoardEntryScript) {
+		args := strings.Join(containerMeta.GetArgs(), " ")
+		if strings.Contains(args, utils.TensorBoardEntryScript) || isTensorBoardCommand(args) {
 			return true
 		}
 	}
 	cmdLine := step.GetCmdLine()
 	return strings.Contains(cmdLine, utils.TensorboardImage) ||
-		strings.Contains(cmdLine, utils.TensorBoardEntryScript)
+		strings.Contains(cmdLine, utils.TensorBoardEntryScript) ||
+		isTensorBoardCommand(cmdLine)
+}
+
+func isTensorBoardCommand(command string) bool {
+	return strings.Contains(command, "tensorboard") && strings.Contains(command, "--path_prefix")
 }
 
 func firstNodeFromNodeList(nodeList string) string {

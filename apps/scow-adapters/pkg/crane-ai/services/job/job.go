@@ -997,10 +997,15 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 	for _, port := range task.PodMeta.Ports {
 		containerPorts = append(containerPorts, port.ContainerPort)
 	}
+	scriptDir := ""
+	if in.ExtraOptions[0] == utils.APP && in.Script != "" {
+		scriptDir = filepath.Dir(in.Script)
+	}
 	submitJobInfo := &utils.SubmitJobInfo{
 		JobName:            in.JobName,
 		JobId:              jobID,
 		JobType:            in.ExtraOptions[0],
+		ScriptDir:          scriptDir,
 		ContainerPorts:     containerPorts,
 		TensorBoardLogPath: in.GetTensorBoardDataPath(),
 	}

@@ -115,7 +115,7 @@ export const VNC_ENTRY_COMMAND = fs.readFileSync("assets/app/vnc_entry.sh", { en
 export const SESSION_METADATA_NAME = "session.json";
 export const TOTAL_SESSIONS = "total_sessions.json";
 
-// 适配器将该文件写在了/tmp目录下
+// 旧版应用连接信息文件默认路径。新提交的 app 会在 job driver 中注入持久化路径。
 export const SERVER_SESSION_INFO = "/tmp/server_session_info.json";
 
 export interface ClusterAppsResultSchema {
