@@ -307,6 +307,11 @@ func (s *ServerAccount) GetAllAccountsWithUsers(ctx context.Context, in *pb.GetA
 
 	// 4. 获取每个账户及关联的用户的封锁信息
 	for _, v := range acctList {
+		// root为Slurm账户层级的根节点，不作为可导入的业务账户返回
+		if v == "root" {
+			continue
+		}
+
 		var userInfo []*pb.ClusterAccountInfo_UserInAccount
 		// 该账户在assoc_table中没有数据
 		usersBlockInfo, ok := acctAndUsersBlockInfo[v]
@@ -691,6 +696,7 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 	logrus.Tracef("Received request GetAllAccountsWithUsersAndBlockedDetails: %v", in)
 
 	var acctInfo []*pb.ClusterAccountInfoWithBlockedDetails
+	var accountsWithoutPartitions []string
 	// 1. 获取系统中所有账户信息
 	acctList, err := utils.GetAllAccountInDatabase()
 	if err != nil {
@@ -721,6 +727,11 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 
 	// 6. 获取每个账户及关联的用户的封锁信息
 	for _, v := range acctList {
+		// root为Slurm账户层级的根节点，不作为可导入的业务账户返回
+		if v == "root" {
+			continue
+		}
+
 		var userInfo []*pb.ClusterAccountInfoWithBlockedDetails_UserInAccount
 		// 该账户在assoc_table中没有数据
 		usersBlockInfo, ok := acctAndUsersBlockInfo[v]
@@ -743,8 +754,8 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 		// 4.2 得到账户的分区
 		partitions, ok := acctAndPartitions[v]
 		if !ok {
-			// 此时account为root
-			continue
+			accountsWithoutPartitions = append(accountsWithoutPartitions, v)
+			partitions = []string{}
 		}
 
 		// 4.3 得到账户的可用分区
@@ -766,6 +777,14 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 				AccountBlockedDetails: accountStatusInPartition,
 			})
 		}
+	}
+
+	if len(accountsWithoutPartitions) > 0 {
+		logrus.Warnf(
+			"GetAllAccountsWithUsersAndBlockedDetails accounts have users but no non-empty partition association; they will be returned with empty blocked details, accountCount: %v, accounts: %v",
+			len(accountsWithoutPartitions),
+			accountsWithoutPartitions,
+		)
 	}
 
 	logrus.Tracef("GetAllAccountsWithUsersAndBlockedDetails response: %v", acctInfo)

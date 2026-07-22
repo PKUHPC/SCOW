@@ -4,8 +4,11 @@ import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { MikroORM } from "@mikro-orm/core";
 import { MySqlDriver } from "@mikro-orm/mysql";
+import { Decimal } from "@scow/lib-decimal";
 import { AdminServiceClient } from "@scow/protos/build/server/admin";
 import { createServer } from "src/app";
+import * as blockOperations from "src/bl/block";
+import { commonConfig } from "src/config/common";
 import { Account } from "src/entities/Account";
 import { Tenant } from "src/entities/Tenant";
 import { User } from "src/entities/User";
@@ -154,4 +157,56 @@ it("import users and accounts if an account exists", async () => {
     { userId: "user2", name: "user2" },
     { userId: "user3", name: "user3" },
   ]);
+});
+
+describe("resource management", () => {
+  let originalScowResource: typeof commonConfig.scowResource;
+  let unblockAccount: jest.SpyInstance;
+
+  beforeEach(() => {
+    originalScowResource = commonConfig.scowResource;
+    commonConfig.scowResource = { enabled: true, address: "http://localhost:1" };
+    // 只验证导入流程会派发分区收敛，不在该测试中连接真实的 resource 服务和调度器适配器。
+    unblockAccount = jest.spyOn(blockOperations, "unblockAccount").mockResolvedValue("ALREADY_UNBLOCKED");
+  });
+
+  afterEach(() => {
+    commonConfig.scowResource = originalScowResource;
+    unblockAccount.mockRestore();
+  });
+
+  it("reconciles assigned partitions when importing an unblocked account", async () => {
+    const em = orm.em.fork();
+    const tenant = await em.findOneOrFail(Tenant, { name: "default" });
+    tenant.defaultAccountBlockThreshold = new Decimal(-1);
+    const account = new Account({
+      accountName: "unblocked_account",
+      comment: "",
+      blockedInCluster: false,
+      tenant,
+    });
+    await em.persistAndFlush([tenant, account]);
+
+    await asyncClientCall(client, "importUsers", {
+      data: {
+        accounts: [
+          {
+            accountName: account.accountName,
+            users: [{ userId: "new_user", userName: "New User", blocked: false }],
+            blocked: false,
+          },
+        ],
+      },
+      whitelist: false,
+    });
+
+    expect(unblockAccount).toHaveBeenCalledTimes(1);
+    expect(unblockAccount).toHaveBeenCalledWith(
+      expect.objectContaining({ accountName: account.accountName, blockedInCluster: false }),
+      expect.any(Object),
+      server.ext.clusters,
+      expect.any(Object),
+      server.ext.resource,
+    );
+  });
 });

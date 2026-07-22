@@ -208,9 +208,20 @@ export async function importUsers(
   // 账户信息导入scow完成后，更新slurm的block状态
   const failedUnblockAccounts = [] as string[];
   const failedBlockAccounts = [] as string[];
-  if (whitelistAll) {
+  // 加入白名单的账户不受租户默认封锁阈值影响；未加入白名单时，阈值大于等于0则需要封锁账户
+  const shouldBlockInCluster = !whitelistAll && tenant.defaultAccountBlockThreshold.gte(0);
+  // 加入白名单时解封所有导入账户；否则仅在启用资源管理且无需封锁时，收敛当前未封锁账户的授权分区
+  const accountsToUnblock = whitelistAll
+    ? accounts
+    : commonConfig.scowResource?.enabled && !shouldBlockInCluster
+      ? accounts.filter((a) => !a.blockedInCluster)
+      : [];
+  // 仅对根据租户默认阈值需要封锁、且当前尚未封锁的账户执行封锁
+  const accountsToBlock = shouldBlockInCluster ? accounts.filter((a) => !a.blockedInCluster) : [];
+
+  if (accountsToUnblock.length > 0) {
     await Promise.allSettled(
-      accounts.map((acc) => {
+      accountsToUnblock.map((acc) => {
         return em.transactional(async (em) => {
           const account = await em.findOne(Account, { accountName: acc.accountName }, { populate: ["tenant"] });
           if (!account) {
@@ -224,49 +235,45 @@ export async function importUsers(
               failedUnblockAccounts.push(account.accountName);
               throw e;
             }
-            logger.info("Add %s to whitelist", account.accountName);
-            const whitelist = new AccountWhitelist({
-              account,
-              comment: "initial",
-              operatorId: "",
-            });
-            account.whitelist = toRef(whitelist);
-            // 加入白名单后账户状态变为正常
-            account.state = AccountState.NORMAL;
-            await em.persistAndFlush(whitelist);
+            if (whitelistAll) {
+              logger.info("Add %s to whitelist", account.accountName);
+              const whitelist = new AccountWhitelist({
+                account,
+                comment: "initial",
+                operatorId: "",
+              });
+              account.whitelist = toRef(whitelist);
+              // 加入白名单后账户状态变为正常
+              account.state = AccountState.NORMAL;
+              await em.persistAndFlush(whitelist);
+            }
           }
         });
       }),
     );
-    // 如果不选择全部添加白名单时，判断租户默认阈值选择是否在集群中封锁账户
-  } else {
-    const shouldBlockInCluster = tenant.defaultAccountBlockThreshold.gte(0);
-    // 只判断当前为未在集群中封锁的账户
-    const shouldBlockAccounts = accounts.filter((a) => !a.blockedInCluster);
+  }
 
-    // 判断封锁阈值需要封锁时
-    if (shouldBlockInCluster) {
-      // 出现失败时记录失败信息，但不会抛出错误
-      await Promise.allSettled(
-        shouldBlockAccounts.map((acc) => {
-          return em.transactional(async (em) => {
-            const account = await em.findOne(Account, { accountName: acc.accountName }, { populate: ["tenant"] });
-            if (!account) {
-              failedBlockAccounts.push(acc.accountName);
-            } else {
-              try {
-                await blockAccount(account, currentActivatedClusters, clusterPlugin, logger);
-              } catch (e) {
-                // 集群封锁账户失败，记录失败账户
-                logger.warn("Block account %s failed during importing users: %o", account.accountName, e);
-                failedBlockAccounts.push(account.accountName);
-                throw e;
-              }
+  if (accountsToBlock.length > 0) {
+    // 出现失败时记录失败信息，但不会抛出错误
+    await Promise.allSettled(
+      accountsToBlock.map((acc) => {
+        return em.transactional(async (em) => {
+          const account = await em.findOne(Account, { accountName: acc.accountName }, { populate: ["tenant"] });
+          if (!account) {
+            failedBlockAccounts.push(acc.accountName);
+          } else {
+            try {
+              await blockAccount(account, currentActivatedClusters, clusterPlugin, logger);
+            } catch (e) {
+              // 集群封锁账户失败，记录失败账户
+              logger.warn("Block account %s failed during importing users: %o", account.accountName, e);
+              failedBlockAccounts.push(account.accountName);
+              throw e;
             }
-          });
-        }),
-      );
-    }
+          }
+        });
+      }),
+    );
   }
   logger.info(
     `Import users complete. ${accounts.length} accounts, \

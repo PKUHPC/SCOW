@@ -251,9 +251,17 @@ export async function blockAccount(
 }
 
 /**
- * Unblocks the account in the slurm.
- * If it is whitelisted, it doesn't block.
+ * Unblocks the account or reconcile account assigned partitions in the slurm.
+ * If it is whitelisted, it doesn't block
  * Call flush after this.
+ *
+ * 开启资源管理时，无论账户当前是否已在集群中封锁，都会按授权分区收敛集群状态：
+ * 未授权分区保持分区封锁，已授权分区执行分区解封。
+ * 账户原本未封锁时返回 ALREADY_UNBLOCKED，不修改账户状态，也不发送 accountUnblocked hook；
+ * 账户原本已封锁时更新状态并发送 hook。
+ *
+ * 未开启资源管理时，仅对当前已封锁的账户调用传统集群解封接口；
+ * 账户原本未封锁时不执行集群操作，返回 ALREADY_UNBLOCKED，不发送 hook
  *
  * @returns Operation result
  **/
@@ -264,10 +272,6 @@ export async function unblockAccount(
   logger: Logger,
   scowResourcePlugin?: ScowResourcePlugin["resource"],
 ): Promise<"OK" | "ALREADY_UNBLOCKED"> {
-  if (!account.blockedInCluster) {
-    return "ALREADY_UNBLOCKED";
-  }
-
   // 执行解封操作
   // 如果已配置资源管理功能,调用适配器的 unblockAccountWithPartitions
   if (commonConfig.scowResource?.enabled) {
@@ -305,13 +309,17 @@ export async function unblockAccount(
       });
     }
 
-    // 如果未配置资源管理扩展功能， 调用适配器的 unblockAccount
-  } else {
+    // 如果未配置资源管理扩展功能， 原本在集群下是封锁状态的账户，调用适配器的 unblockAccount
+  } else if (account.blockedInCluster) {
     await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client) => {
       await asyncClientCall(client.account, "unblockAccount", {
         accountName: account.accountName,
       });
     });
+  }
+
+  if (!account.blockedInCluster) {
+    return "ALREADY_UNBLOCKED";
   }
 
   account.blockedInCluster = false;
