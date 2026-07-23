@@ -1,5 +1,25 @@
 # @scow/portal-server
 
+## 1.11.4
+
+### Patch Changes
+
+- ef31c3e: 桌面的集群区分可用和授权集群：新建和连接桌面使用可用的授权集群,获取和删除桌面使用可用集群
+- 23a94d3: 增加统一的日志上下文信息
+- 3567ac0: 交互式应用配置添加`ignoreGpu`配置，默认为 false。当添加了这个配置后，提交这个作业的时候所有分区都被认为为非 GPU 分区
+- ceabd6d: 优先使用 ssh 的方式去刷新 vnc 密码
+- 6bad926: 量子系统检查 portal 下 jupyter 应用是否可连接逻辑重构
+- Updated dependencies [23a94d3]
+- Updated dependencies [3567ac0]
+- Updated dependencies [a46cdc1]
+  - @scow/lib-server@1.5.4
+  - @scow/config@1.16.1
+  - @scow/scheduler-adapter-protos@1.6.2
+  - @scow/protos@1.1.3
+  - @scow/lib-scow-resource@0.2.26
+  - @scow/lib-scheduler-adapter@1.1.41
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.3
 
 ### Patch Changes

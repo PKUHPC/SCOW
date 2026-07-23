@@ -1,5 +1,12 @@
 # @scow/meta-server
 
+## 1.11.4
+
+### Patch Changes
+
+- Updated dependencies [3567ac0]
+  - @scow/config@1.16.1
+
 ## 1.11.3
 
 ### Patch Changes

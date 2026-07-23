@@ -1,5 +1,30 @@
 # @scow/portal-web
 
+## 1.11.4
+
+### Patch Changes
+
+- ef31c3e: 桌面的集群区分可用和授权集群：新建和连接桌面使用可用的授权集群,获取和删除桌面使用可用集群
+- af06530: 交互式应用 appComment 增加 markdown 格式渲染
+- 3567ac0: 交互式应用配置添加`ignoreGpu`配置，默认为 false。当添加了这个配置后，提交这个作业的时候所有分区都被认为为非 GPU 分区
+- 837808c: 增加前端路径安全校验并统一工作目录与挂载路径规则；hpc 提交作业工作目录支持相对路径
+- 3d040c8: 兼容未配置集群的情况，不再报错
+- ba403a6: 首次进入系统切换多语言，语言 select 值未改变修复
+- 09f58c0: 优化 portal 已创建应用查询
+- 3b1dbd5: 作业提交时间和开始时间差导致作业无法同步问题
+- c273ead: 提交应用默认作业名改为 “应用名-年月日-时分秒”
+- Updated dependencies [fb6ab4b]
+- Updated dependencies [3567ac0]
+- Updated dependencies [837808c]
+- Updated dependencies [c273ead]
+  - @scow/lib-web@1.6.4
+  - @scow/config@1.16.1
+  - @scow/protos@1.1.3
+  - @scow/lib-notification@1.0.27
+  - @scow/lib-operation-log@2.2.18
+  - @scow/lib-scow-resource@0.2.26
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.3
 
 ### Patch Changes

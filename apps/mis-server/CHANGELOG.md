@@ -1,5 +1,29 @@
 # @scow/mis-server
 
+## 1.11.4
+
+### Patch Changes
+
+- aeb8bc2: 修复 mis-server 单测报错
+- ee8bad1: 导入用户时返回没有分区关联的账户用户数据;
+  导入用户时对维持解封状态的账户收敛授权分区
+- 23a94d3: 增加统一的日志上下文信息
+- a46cdc1: 基于 scheduler adapter 的 partitionStrategy 优化创建账户和添加用户到账户流程：MIS 在资源管理开启时传递当前可开放分区，适配器在创建时直接收敛分区可用状态，减少创建后再封锁的窗口期，并修复空授权分区、账户封锁和后续重新授权场景下的状态一致性。
+- 9dd4357: hpc 的历史作业模版迁移至 mis 数据库中
+- 3b1dbd5: 作业提交时间和开始时间差导致作业无法同步问题
+- 1722413: 从账户中移除用户时，所有适配器返回的 Error 都是 NOT_FOUND，scow 删除该条关系、移出用户时不自动封锁用户
+- Updated dependencies [23a94d3]
+- Updated dependencies [3567ac0]
+- Updated dependencies [a46cdc1]
+  - @scow/lib-server@1.5.4
+  - @scow/config@1.16.1
+  - @scow/scheduler-adapter-protos@1.6.2
+  - @scow/protos@1.1.3
+  - @scow/lib-hook@1.0.43
+  - @scow/lib-notification@1.0.27
+  - @scow/lib-scow-resource@0.2.26
+  - @scow/lib-scheduler-adapter@1.1.41
+
 ## 1.11.3
 
 ### Patch Changes

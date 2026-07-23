@@ -1,5 +1,20 @@
 # @scow/cli
 
+## 1.11.4
+
+### Patch Changes
+
+- 7596a2a: 修复 cli compose logs -f 命令异常结束不删除 compose.yml 文件的问题
+- af06530: 交互式应用 appComment 增加 markdown 格式渲染
+- 381c41d: 补充集群配置中 `hpc.enabled` 的说明：该配置未显式配置时默认为 `true`；
+  纯 AI 集群（如 k8s 集群）应显式配置为 `false`，避免管理系统对该集群调用 HPC 相关逻辑；
+  同时承载 HPC 和 AI 业务的超智算集群可同时开启 `hpc.enabled` 和 `ai.enabled`。
+- 6dc8026: 内置认证系统支持 OIDC 登录。文档：docs/deploy/config/auth/config
+- 6bad926: 量子系统检查 portal 下 jupyter 应用是否可连接逻辑重构
+- Updated dependencies [3567ac0]
+  - @scow/config@1.16.1
+  - @scow/lib-scheduler-adapter@1.1.41
+
 ## 1.11.3
 
 ### Patch Changes

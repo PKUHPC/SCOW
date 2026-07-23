@@ -1,5 +1,27 @@
 # @scow/mis-web
 
+## 1.11.4
+
+### Patch Changes
+
+- 66a526f: 用户导入功能增加权限设置说明
+- 88902e0: 删除 noAccount 页面、mis 已登录用户统一跳转到 `/dashboard`
+- ba403a6: 首次进入系统切换多语言，语言 select 值未改变修复
+- 3b1dbd5: 作业提交时间和开始时间差导致作业无法同步问题
+- 7d8b0bd: 增加租户/平台管理员、财务人员权限说明
+- c273ead: 智算增加平台管理员能够以 root 身份进入集群 master 节点
+- Updated dependencies [fb6ab4b]
+- Updated dependencies [3567ac0]
+- Updated dependencies [837808c]
+- Updated dependencies [c273ead]
+  - @scow/lib-web@1.6.4
+  - @scow/config@1.16.1
+  - @scow/protos@1.1.3
+  - @scow/lib-notification@1.0.27
+  - @scow/lib-operation-log@2.2.18
+  - @scow/lib-scow-resource@0.2.26
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.3
 
 ### Patch Changes

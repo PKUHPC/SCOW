@@ -1,5 +1,25 @@
 # @scow/resource
 
+## 0.3.18
+
+### Patch Changes
+
+- 23a94d3: 增加统一的日志上下文信息
+- a46cdc1: 基于 scheduler adapter 的 partitionStrategy 优化创建账户和添加用户到账户流程：MIS 在资源管理开启时传递当前可开放分区，适配器在创建时直接收敛分区可用状态，减少创建后再封锁的窗口期，并修复空授权分区、账户封锁和后续重新授权场景下的状态一致性。
+- 3ee238d: 取消租户授权集群/分区时，如果出现报错，资源管理数据库相关数据未移除成功
+- Updated dependencies [23a94d3]
+- Updated dependencies [fb6ab4b]
+- Updated dependencies [3567ac0]
+- Updated dependencies [837808c]
+- Updated dependencies [c273ead]
+  - @scow/lib-server@1.5.4
+  - @scow/lib-web@1.6.4
+  - @scow/config@1.16.1
+  - @scow/protos@1.1.3
+  - @scow/lib-hook@1.0.43
+  - @scow/lib-operation-log@2.2.18
+  - @scow/lib-scheduler-adapter@1.1.41
+
 ## 0.3.17
 
 ### Patch Changes

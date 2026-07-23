@@ -1,5 +1,22 @@
 # @scow/notification
 
+## 0.2.30
+
+### Patch Changes
+
+- 23a94d3: 增加统一的日志上下文信息
+- Updated dependencies [23a94d3]
+- Updated dependencies [fb6ab4b]
+- Updated dependencies [3567ac0]
+- Updated dependencies [837808c]
+- Updated dependencies [c273ead]
+  - @scow/lib-server@1.5.4
+  - @scow/lib-web@1.6.4
+  - @scow/config@1.16.1
+  - @scow/protos@1.1.3
+  - @scow/lib-notification@1.0.27
+  - @scow/lib-scheduler-adapter@1.1.41
+
 ## 0.2.29
 
 ### Patch Changes

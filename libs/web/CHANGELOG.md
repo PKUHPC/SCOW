@@ -1,5 +1,16 @@
 # @scow/lib-web
 
+## 1.6.4
+
+### Patch Changes
+
+- fb6ab4b: 数据资产使用及作业详情展示优化，AI 提交作业使用数据资产时默认填充指定前缀+资源名称/版本的挂载路径
+- 837808c: 增加前端路径安全校验并统一工作目录与挂载路径规则；hpc 提交作业工作目录支持相对路径
+- c273ead: 新增通用 WebSocketTermina 组件
+- Updated dependencies [3567ac0]
+  - @scow/config@1.16.1
+  - @scow/protos@1.1.3
+
 ## 1.6.3
 
 ### Patch Changes

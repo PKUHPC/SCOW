@@ -1,5 +1,21 @@
 # @scow/scow-adapters
 
+## 1.11.4
+
+### Patch Changes
+
+- a136207: 鹤思 AI 应用作业的建立连接功能
+- f910038: 修复：1. 创建的新分区无法授权；2. 解封用户会将封锁的账户误解封；3. 修改 slurm.conf 后 scontrol reconfigure，缓存中的分区未更新。
+- a46cdc1: 基于 scheduler adapter 的 partitionStrategy 优化创建账户和添加用户到账户流程：MIS 在资源管理开启时传递当前可开放分区，适配器在创建时直接收敛分区可用状态，减少创建后再封锁的窗口期，并修复空授权分区、账户封锁和后续重新授权场景下的状态一致性。
+- 4202192: slurm 适配器 GetAccountAllowedPartitionByAssociation 补充账户下没有任何用户分区关联时通过 maxSubmitJobs 判断账户状态
+- ee8bad1: 在 GetAllAccountsWithUsers / GetAllAccountsWithUsersAndBlockedDetails 接口中返回没有分区关联的账户用户数据
+- 1722413: ldap 已删的用户，这时从账户中移出时，若没有运行的作业了，应该运行适配器从账户移出该用户
+- 2e7f2bf: 修复执行 slurm 命令 Nothing modified 时，报该命令失败的问题
+- a042731: 应用建立连接信息持久化及 crane-ai 的 tensorbord 启动命令适配器自己维护
+- 660ad21: "修复 AI 作业运行时长和超时定时器计算"
+- f6023cf: 仪表盘稳定性，避免因个别节点和分区信息获取失败导致整个接口失败
+- 3abea29: "开发机增加 pipy 备用源"
+
 ## 1.11.3
 
 ### Patch Changes

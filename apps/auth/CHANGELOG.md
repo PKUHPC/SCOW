@@ -1,5 +1,15 @@
 # @scow/auth
 
+## 1.11.4
+
+### Patch Changes
+
+- 6dc8026: 内置认证系统支持 OIDC 登录。文档：docs/deploy/config/auth/config
+- Updated dependencies [23a94d3]
+- Updated dependencies [3567ac0]
+  - @scow/lib-server@1.5.4
+  - @scow/config@1.16.1
+
 ## 1.11.3
 
 ### Patch Changes

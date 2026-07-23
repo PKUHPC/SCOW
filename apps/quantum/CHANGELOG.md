@@ -1,5 +1,27 @@
 # @scow/quantum
 
+## 0.1.18
+
+### Patch Changes
+
+- ba403a6: 首次进入系统切换多语言，语言 select 值未改变修复
+- 6bad926: 量子系统检查 portal 下 jupyter 应用是否可连接逻辑重构
+- Updated dependencies [23a94d3]
+- Updated dependencies [fb6ab4b]
+- Updated dependencies [3567ac0]
+- Updated dependencies [837808c]
+- Updated dependencies [a46cdc1]
+- Updated dependencies [c273ead]
+  - @scow/lib-server@1.5.4
+  - @scow/lib-web@1.6.4
+  - @scow/config@1.16.1
+  - @scow/scheduler-adapter-protos@1.6.2
+  - @scow/protos@1.1.3
+  - @scow/lib-operation-log@2.2.18
+  - @scow/lib-scow-resource@0.2.26
+  - @scow/lib-scheduler-adapter@1.1.41
+  - @scow/rich-error-model@2.0.4
+
 ## 0.1.17
 
 ### Patch Changes

@@ -1,5 +1,34 @@
 # @scow/ai
 
+## 0.5.7
+
+### Patch Changes
+
+- 23a94d3: 增加统一的日志上下文信息
+- fb6ab4b: 数据资产使用及作业详情展示优化，AI 提交作业使用数据资产时默认填充指定前缀+资源名称/版本的挂载路径
+- af06530: 交互式应用 appComment 增加 markdown 格式渲染
+- 837808c: 增加前端路径安全校验并统一工作目录与挂载路径规则；hpc 提交作业工作目录支持相对路径
+- ba403a6: 首次进入系统切换多语言，语言 select 值未改变修复
+- 0e868a4: ai 应用提交时未传 ImageName 修复
+- c539ce2: 增加开发机再次提交功能
+- c273ead: 智算增加平台管理员能够以 root 身份进入集群 master 节点
+- Updated dependencies [23a94d3]
+- Updated dependencies [fb6ab4b]
+- Updated dependencies [3567ac0]
+- Updated dependencies [837808c]
+- Updated dependencies [a46cdc1]
+- Updated dependencies [c273ead]
+  - @scow/lib-server@1.5.4
+  - @scow/lib-web@1.6.4
+  - @scow/config@1.16.1
+  - @scow/scheduler-adapter-protos@1.6.2
+  - @scow/protos@1.1.3
+  - @scow/lib-notification@1.0.27
+  - @scow/lib-operation-log@2.2.18
+  - @scow/lib-scow-resource@0.2.26
+  - @scow/lib-scheduler-adapter@1.1.41
+  - @scow/rich-error-model@2.0.4
+
 ## 0.5.6
 
 ### Patch Changes

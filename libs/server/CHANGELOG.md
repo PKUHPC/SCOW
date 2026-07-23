@@ -1,5 +1,18 @@
 # @scow/lib-server
 
+## 1.5.4
+
+### Patch Changes
+
+- 23a94d3: 增加统一的日志上下文信息
+- Updated dependencies [3567ac0]
+- Updated dependencies [a46cdc1]
+  - @scow/config@1.16.1
+  - @scow/scheduler-adapter-protos@1.6.2
+  - @scow/protos@1.1.3
+  - @scow/lib-scheduler-adapter@1.1.41
+  - @scow/rich-error-model@2.0.4
+
 ## 1.5.3
 
 ### Patch Changes

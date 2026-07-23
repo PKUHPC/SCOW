@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-server",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "private": true,
   "description": "Server libraries",
   "license": "Mulan PSL v2",
