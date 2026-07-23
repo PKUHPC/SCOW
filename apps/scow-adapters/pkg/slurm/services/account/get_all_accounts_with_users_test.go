@@ -38,7 +38,7 @@ func (accountQueryTestConn) QueryContext(_ context.Context, query string, _ []dr
 	case strings.Contains(query, "FROM acct_table"):
 		return &accountQueryTestRows{
 			columns: []string{"name"},
-			values:  [][]driver.Value{{"root"}, {"account_without_partitions"}},
+			values:  [][]driver.Value{{"root"}, {"account_without_partitions"}, {"account_with_mixed_users"}},
 		}, nil
 	case strings.Contains(query, "user != ''") && strings.Contains(query, "max_jobs"):
 		return &accountQueryTestRows{
@@ -46,15 +46,31 @@ func (accountQueryTestConn) QueryContext(_ context.Context, query string, _ []dr
 			values: [][]driver.Value{
 				{"root", "root_user", nil},
 				{"account_without_partitions", "test_user", nil},
+				{"account_with_mixed_users", "user_without_partition", int64(0)},
+				{"account_with_mixed_users", "user_with_partition", nil},
+				{"account_with_mixed_users", "user_with_partition", int64(0)},
+			},
+		}, nil
+	case strings.Contains(query, "SELECT acct, `partition`, max_submit_jobs"):
+		return &accountQueryTestRows{
+			columns: []string{"acct", "partition", "max_submit_jobs"},
+			values: [][]driver.Value{
+				{"root", "", nil},
+				{"account_without_partitions", "", nil},
+				// 混合账户已有具体分区，该基础值不能覆盖具体分区计算结果。
+				{"account_with_mixed_users", "", int64(0)},
+				{"account_with_mixed_users", "normal", nil},
 			},
 		}, nil
 	case strings.Contains(query, "SELECT DISTINCT acct, `partition`"):
 		return &accountQueryTestRows{
 			columns: []string{"acct", "partition"},
-			values:  [][]driver.Value{{"account_without_partitions", ""}},
+			values: [][]driver.Value{
+				{"account_without_partitions", ""},
+				{"account_with_mixed_users", ""},
+				{"account_with_mixed_users", "normal"},
+			},
 		}, nil
-	case strings.Contains(query, "SELECT DISTINCT acct,`partition`"):
-		return &accountQueryTestRows{columns: []string{"acct", "partition"}}, nil
 	default:
 		return nil, driver.ErrSkip
 	}
@@ -101,15 +117,21 @@ func TestGetAllAccountsWithUsersReturnsAccountWithoutPartitionAssociations(t *te
 	response, err := (&ServerAccount{}).GetAllAccountsWithUsers(context.Background(), &pb.GetAllAccountsWithUsersRequest{})
 
 	require.NoError(t, err)
-	require.Len(t, response.Accounts, 1)
+	require.Len(t, response.Accounts, 2)
 	for _, account := range response.Accounts {
 		require.NotEqual(t, "root", account.AccountName)
 	}
-	require.Equal(t, "account_without_partitions", response.Accounts[0].AccountName)
-	require.True(t, response.Accounts[0].Blocked)
-	require.Len(t, response.Accounts[0].Users, 1)
-	require.Equal(t, "test_user", response.Accounts[0].Users[0].UserId)
-	require.False(t, response.Accounts[0].Users[0].Blocked)
+	accounts := make(map[string]*pb.ClusterAccountInfo, len(response.Accounts))
+	for _, account := range response.Accounts {
+		accounts[account.AccountName] = account
+	}
+	withoutPartitions := accounts["account_without_partitions"]
+	require.False(t, withoutPartitions.Blocked)
+	require.Len(t, withoutPartitions.Users, 1)
+	require.False(t, withoutPartitions.Users[0].Blocked)
+
+	mixed := accounts["account_with_mixed_users"]
+	require.False(t, mixed.Blocked)
 }
 
 func TestGetAllAccountsWithUsersAndBlockedDetailsReturnsAccountWithoutPartitionAssociations(t *testing.T) {
@@ -121,14 +143,21 @@ func TestGetAllAccountsWithUsersAndBlockedDetailsReturnsAccountWithoutPartitionA
 	)
 
 	require.NoError(t, err)
-	require.Len(t, response.Accounts, 1)
+	require.Len(t, response.Accounts, 2)
 	for _, account := range response.Accounts {
 		require.NotEqual(t, "root", account.AccountName)
 	}
-	require.Equal(t, "account_without_partitions", response.Accounts[0].AccountName)
-	require.True(t, response.Accounts[0].Blocked)
-	require.Len(t, response.Accounts[0].Users, 1)
-	require.Equal(t, "test_user", response.Accounts[0].Users[0].UserId)
-	require.False(t, response.Accounts[0].Users[0].Blocked)
-	require.Empty(t, response.Accounts[0].AccountBlockedDetails)
+	accounts := make(map[string]*pb.ClusterAccountInfoWithBlockedDetails, len(response.Accounts))
+	for _, account := range response.Accounts {
+		accounts[account.AccountName] = account
+	}
+	withoutPartitions := accounts["account_without_partitions"]
+	require.False(t, withoutPartitions.Blocked)
+	require.Len(t, withoutPartitions.Users, 1)
+	require.False(t, withoutPartitions.Users[0].Blocked)
+	require.Empty(t, withoutPartitions.AccountBlockedDetails)
+
+	mixed := accounts["account_with_mixed_users"]
+	require.False(t, mixed.Blocked)
+	require.Len(t, mixed.AccountBlockedDetails, 1)
 }

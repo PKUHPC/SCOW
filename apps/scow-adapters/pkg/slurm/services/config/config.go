@@ -208,7 +208,7 @@ func (s *ServerConfig) GetSummaryClusterInfo(ctx context.Context, in *pb.GetSumm
 	clusterName := config.SlurmValue.MySQLConfig.ClusterName
 
 	// 基于账户-分区封锁字段：查询各账户下有未封锁用户的分区
-	acctAllowedPartitions, err := utils.GetAccountAllowedPartitionByAssociation()
+	accountPartitionBlockInfo, err := utils.GetAccountAllowedPartitionByAssociation()
 	if err != nil {
 		logrus.Errorf("GetSummaryClusterInfo failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
@@ -217,7 +217,7 @@ func (s *ServerConfig) GetSummaryClusterInfo(ctx context.Context, in *pb.GetSumm
 	// 对请求中的所有账户取分区并集
 	seen := make(map[string]struct{})
 	for _, acct := range in.AccountNames {
-		for _, p := range acctAllowedPartitions[acct] {
+		for _, p := range accountPartitionBlockInfo[acct].AllowedPartitions {
 			seen[p] = struct{}{}
 		}
 	}

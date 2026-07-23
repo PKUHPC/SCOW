@@ -298,12 +298,12 @@ func (s *ServerAccount) GetAllAccountsWithUsers(ctx context.Context, in *pb.GetA
 	logrus.Tracef("GetAllAccountsWithUsers acctAndUsers: %v", acctAndUsersBlockInfo)
 
 	// 3. 获取账户的授权分区
-	acctAndAllowedPartition, err := utils.GetAccountAllowedPartitionByAssociation()
+	accountPartitionBlockInfo, err := utils.GetAccountAllowedPartitionByAssociation()
 	if err != nil {
 		logrus.Errorf("GetAllAccountsWithUsers get account associate partition failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-	logrus.Tracef("GetAllAccountsWithUsers acctAndAllowPartition: %v", acctAndAllowedPartition)
+	logrus.Tracef("GetAllAccountsWithUsers accountPartitionBlockInfo: %v", accountPartitionBlockInfo)
 
 	// 4. 获取每个账户及关联的用户的封锁信息
 	for _, v := range acctList {
@@ -331,8 +331,17 @@ func (s *ServerAccount) GetAllAccountsWithUsers(ctx context.Context, in *pb.GetA
 			})
 		}
 
-		// 4.2 获取每个账户的block状态
-		if _, ok = acctAndAllowedPartition[v]; ok {
+		// 4.2 有具体分区时沿用分区状态；完全没有具体分区时回退到基础 association 的 MaxSubmitJobs。
+		blocked := true
+		if blockInfo, exists := accountPartitionBlockInfo[v]; exists {
+			if blockInfo.HasPartition {
+				blocked = len(blockInfo.AllowedPartitions) == 0
+			} else {
+				blocked = blockInfo.FallbackBlocked
+			}
+		}
+
+		if !blocked {
 			acctInfo = append(acctInfo, &pb.ClusterAccountInfo{
 				AccountName: v,
 				Users:       userInfo,
@@ -718,12 +727,12 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 	}
 
 	// 4. 获取账户的授权分区
-	acctAndAllowedPartition, err := utils.GetAccountAllowedPartitionByAssociation()
+	accountPartitionBlockInfo, err := utils.GetAccountAllowedPartitionByAssociation()
 	if err != nil {
 		logrus.Errorf("GetAllAccountsWithUsers get account associate partition failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-	logrus.Tracef("GetAllAccountsWithUsers acctAndAllowPartition: %v", acctAndAllowedPartition)
+	logrus.Tracef("GetAllAccountsWithUsers accountPartitionBlockInfo: %v", accountPartitionBlockInfo)
 
 	// 6. 获取每个账户及关联的用户的封锁信息
 	for _, v := range acctList {
@@ -758,9 +767,19 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 			partitions = []string{}
 		}
 
-		// 4.3 得到账户的可用分区
-		allowPartitions, ok := acctAndAllowedPartition[v]
-		if ok {
+		// 4.3 有具体分区时沿用分区状态；完全没有具体分区时回退到基础 association 的 MaxSubmitJobs。
+		var allowPartitions []string
+		blocked := true
+		if blockInfo, exists := accountPartitionBlockInfo[v]; exists {
+			allowPartitions = blockInfo.AllowedPartitions
+			if blockInfo.HasPartition {
+				blocked = len(blockInfo.AllowedPartitions) == 0
+			} else {
+				blocked = blockInfo.FallbackBlocked
+			}
+		}
+
+		if !blocked {
 			accountStatusInPartition := utils.GetAccountPartitionStatus(partitions, allowPartitions)
 			acctInfo = append(acctInfo, &pb.ClusterAccountInfoWithBlockedDetails{
 				AccountName:           v,

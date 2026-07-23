@@ -693,15 +693,27 @@ func GetAccountAssociatedBlockedPartitionInDatabase(accountName string) ([]strin
 	return partitionList, nil
 }
 
-// GetAccountAllowedPartitionByAssociation 从数据库中获取账户的授权分区。
-func GetAccountAllowedPartitionByAssociation() (map[string][]string, error) {
+// AccountPartitionBlockInfo 汇总账户的具体分区和无分区兜底状态。
+type AccountPartitionBlockInfo struct {
+	HasPartition      bool
+	AllowedPartitions []string
+	FallbackBlocked   bool
+}
+
+// GetAccountAllowedPartitionByAssociation 从数据库中获取账户的分区封锁信息。
+// 具体分区存在时由 AllowedPartitions 判断状态；完全没有具体分区时才使用 FallbackBlocked。
+func GetAccountAllowedPartitionByAssociation() (map[string]AccountPartitionBlockInfo, error) {
 	var (
-		account   string
-		partition string
+		account       string
+		partition     string
+		maxSubmitJobs sql.NullInt64
 	)
 
-	partitionSqlConfig := fmt.Sprintf("SELECT DISTINCT acct,`partition` FROM %s_assoc_table WHERE deleted = 0 AND `partition` != '' AND `user` != '' AND %s",
-		config.SlurmValue.MySQLConfig.ClusterName, sqlAccountPartitionNotBlockedCondition)
+	partitionSqlConfig := fmt.Sprintf(
+		"SELECT acct, `partition`, %s FROM %s_assoc_table WHERE deleted = 0 AND `user` != ''",
+		sqlAccountPartitionBlockColumn,
+		config.SlurmValue.MySQLConfig.ClusterName,
+	)
 
 	rows, err := client.SlurmDB.Query(partitionSqlConfig)
 	if err != nil {
@@ -709,23 +721,44 @@ func GetAccountAllowedPartitionByAssociation() (map[string][]string, error) {
 	}
 	defer rows.Close()
 
-	// 存储每个账户的所有partition值
-	acctBlockedInfo := make(map[string][]string)
+	accountBlockInfo := make(map[string]AccountPartitionBlockInfo)
+	allowedPartitionSets := make(map[string]map[string]struct{})
 
 	for rows.Next() {
-		if err := rows.Scan(&account, &partition); err != nil {
+		if err := rows.Scan(&account, &partition, &maxSubmitJobs); err != nil {
 			return nil, fmt.Errorf("row scan failed: %v", err)
 		}
 
-		// 如果账户不存在于map中，初始化一个空切片
-		if _, exists := acctBlockedInfo[account]; !exists {
-			acctBlockedInfo[account] = []string{}
+		info, exists := accountBlockInfo[account]
+		if !exists {
+			// 没有可用的基础 association 时保守视为封锁；遇到任一非零或 NULL 值后解除兜底封锁。
+			info.FallbackBlocked = true
 		}
 
-		acctBlockedInfo[account] = append(acctBlockedInfo[account], partition)
+		if partition == "" {
+			if !maxSubmitJobs.Valid || maxSubmitJobs.Int64 != int64(associationBlockedLimit) {
+				info.FallbackBlocked = false
+			}
+		} else {
+			info.HasPartition = true
+			if !maxSubmitJobs.Valid || maxSubmitJobs.Int64 != int64(associationBlockedLimit) {
+				if _, exists := allowedPartitionSets[account]; !exists {
+					allowedPartitionSets[account] = make(map[string]struct{})
+				}
+				if _, exists := allowedPartitionSets[account][partition]; !exists {
+					allowedPartitionSets[account][partition] = struct{}{}
+					info.AllowedPartitions = append(info.AllowedPartitions, partition)
+				}
+			}
+		}
+
+		accountBlockInfo[account] = info
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %v", err)
 	}
 
-	return acctBlockedInfo, nil
+	return accountBlockInfo, nil
 }
 
 // GetLegacyUserBlockPartitions 查询旧版用户封锁留下的分区。
