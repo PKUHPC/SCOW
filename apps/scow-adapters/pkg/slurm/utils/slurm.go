@@ -266,7 +266,7 @@ func clearLegacyUserBlockFields(user, account string) error {
 		if exitCode == -1 {
 			return fmt.Errorf("system error: %v", err)
 		}
-		if stdout == "Nothing modified" || stderr == "" {
+		if strings.TrimSpace(stdout) == "Nothing modified" {
 			return nil
 		}
 		return fmt.Errorf("clear legacy user block fields failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
@@ -1337,7 +1337,7 @@ func UnblockAccountUseAssociation(account, partition string) error {
 			if exitCode == -1 {
 				return fmt.Errorf("system error: %v", err)
 			}
-			if stdout == "Nothing modified" || stderr == "" {
+			if strings.TrimSpace(stdout) == "Nothing modified" {
 				return nil
 			}
 			return fmt.Errorf("unblock account partition submit limit failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
