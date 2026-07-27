@@ -39,6 +39,7 @@ export interface FileDriver {
   deleteFile(path: string, noCheckPermission?: boolean): Promise<void>;
   deleteDir(path: string, noCheckPermission?: boolean): Promise<void>;
   copy(fromPath: string, toPath: string, noCheckPermission?: boolean): Promise<void>;
+  copyWithMode(fromPath: string, toPath: string, mode: string, noCheckPermission?: boolean): Promise<void>;
   createFile(path: string, noCheckPermission?: boolean): Promise<void>;
   getHomeDirectory(): Promise<string>;
   makeDirectory(path: string, noCheckPermission?: boolean): Promise<void>;

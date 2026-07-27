@@ -3,7 +3,7 @@ import { FileType as scowdFileType } from "@scow/scowd-protos/build/storage/file
 import { TRPCError } from "@trpc/server";
 import { NextApiResponse } from "next";
 import { NextResponse } from "next/server";
-import path, { basename, dirname, join } from "path";
+import { basename, dirname, join } from "path";
 import { config } from "src/server/config/env";
 import { FileMeta, ListDirectoryOutput } from "src/server/trpc/model/file";
 import { getScowdClient, mapConnectErrorToTRPCError, wrap } from "src/server/trpc/scowd/scowd";
@@ -64,6 +64,20 @@ export class ScowdFileDriver implements FileDriver {
         userId: this.userId,
         fromPath,
         toPath,
+        noCheckPermission: noCheckPermission ?? false,
+      }),
+      this.logger,
+    );
+  }
+
+  async copyWithMode(fromPath: string, toPath: string, mode: string, noCheckPermission?: boolean): Promise<void> {
+    await wrap(
+      this.client.file.copy({
+        userId: this.userId,
+        fromPath,
+        toPath,
+        mode,
+        chmodRecursive: true,
         noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
@@ -401,83 +415,27 @@ export class ScowdFileDriver implements FileDriver {
     failureCallback?: callback,
   ): Promise<void> {
     // 获取类别路径 如 nfs/home/.shared/{userId}/{target}
-    const targetDirectory = path.join(sharedTopDir, SHARED_DIR, this.userId, sharedTarget);
+    const targetDirectory = join(sharedTopDir, SHARED_DIR, this.userId, sharedTarget);
     // nfs/home/.shared/{userId}/{target}/{targetName}
-    const targetTopDir = path.join(targetDirectory, targetName);
+    const targetTopDir = join(targetDirectory, targetName);
     // nfs/home/.shared/{userId}/{target}/{targetName}/{versionName}
-    const targetFullDir = path.join(targetDirectory, targetName, targetSubName);
+    const targetFullDir = join(targetDirectory, targetName, targetSubName);
+    const sharedFilePath = join(targetFullDir, basename(sourceFilePath));
 
     try {
-      const targetDirectoryExists = await wrap(
-        this.client.file.exists({
-          userId: this.userId,
-          path: targetDirectory,
-        }),
-        this.logger,
-      );
-
-      // 判断共享目录是否存在
-      if (!targetDirectoryExists.exists) {
-        await wrap(
-          this.client.file.makeDirectory({
-            userId: this.userId,
-            dirPath: targetDirectory,
-          }),
-          this.logger,
-        );
-
-        await wrap(
-          this.client.file.changeMode({
-            userId: this.userId,
-            path: targetDirectory,
-            mode: "555",
-            recursive: true,
-          }),
-          this.logger,
-        );
-      }
-
-      const targetFullDirExists = await wrap(
-        this.client.file.exists({
-          userId: this.userId,
-          path: targetFullDir,
-        }),
-        this.logger,
-      );
-
-      // 判断目标路径是否存在，如果不存在则创建
-      if (!targetFullDirExists.exists) {
-        await wrap(
-          this.client.file.makeDirectory({
-            userId: this.userId,
-            dirPath: targetFullDir,
-          }),
-          this.logger,
-        );
-      }
-
-      // 复制并从顶层目录递归修改文件夹权限
       await wrap(
-        this.client.file.copy({
+        this.client.file.shareFileOrDir({
           userId: this.userId,
-          // sourceFilePath: /nfs/home/demo_admin2/1111
-          // targetFullDir /nfs/.shared/demo_admin2/dataset/oyx0529/v1
-          // 需要再targetFullDir 需要拼上sourceFilePath 的末尾
-          fromPath: sourceFilePath,
-          toPath: path.join(targetFullDir, path.basename(sourceFilePath)),
-        }),
-        this.logger,
-      );
-
-      await wrap(
-        this.client.file.changeMode({
-          userId: this.userId,
-          path: targetTopDir,
+          sourceFilePath,
+          targetDirectory,
+          targetTopDir,
+          targetFullDir,
+          sharedFilePath,
           mode: "555",
-          recursive: true,
         }),
         this.logger,
       );
+
       successCallback?.(targetFullDir);
     } catch (e) {
       failureCallback?.();

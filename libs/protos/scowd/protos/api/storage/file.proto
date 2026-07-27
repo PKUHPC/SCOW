@@ -153,9 +153,28 @@ message CopyRequest {
   string from_path = 2;
   string to_path = 3;
   optional bool no_check_permission = 4;
+  optional string mode = 5;
+  optional bool chmod_recursive = 6;
 }
 
 message CopyResponse {
+}
+
+message ShareFileOrDirRequest {
+  string user_id = 1;
+  string source_file_path = 2;
+  // 共享类别目录，例如：/nfs/.shared/{userId}/{target}
+  string target_directory = 3;
+  // 共享资源顶层目录，必须在 target_directory 下，例如：{targetDirectory}/{targetName}
+  string target_top_dir = 4;
+  // 共享资源版本目录，必须在 target_top_dir 下，例如：{targetTopDir}/{versionName}
+  string target_full_dir = 5;
+  // 最终复制目标路径，必须在 target_full_dir 下，且文件名应与 source_file_path 的文件名一致
+  string shared_file_path = 6;
+  string mode = 7;
+}
+
+message ShareFileOrDirResponse {
 }
 
 message InitMultipartUploadRequest {
@@ -251,6 +270,7 @@ message DecompressFileResponse {}
 
 service FileService {
   rpc Copy(CopyRequest) returns (CopyResponse) {}
+  rpc ShareFileOrDir(ShareFileOrDirRequest) returns (ShareFileOrDirResponse) {}
   rpc Move(MoveRequest) returns (MoveResponse) {}
   rpc Exists(ExistsRequest) returns (ExistsResponse) {}
 

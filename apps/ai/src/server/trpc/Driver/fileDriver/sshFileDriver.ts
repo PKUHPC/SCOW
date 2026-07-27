@@ -68,6 +68,11 @@ export class SshFileDriver implements FileDriver {
     });
   }
 
+  async copyWithMode(fromPath: string, toPath: string, mode: string): Promise<void> {
+    await this.copy(fromPath, toPath);
+    await this.chmod(toPath, mode);
+  }
+
   async move(fromPath: string, toPath: string) {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();

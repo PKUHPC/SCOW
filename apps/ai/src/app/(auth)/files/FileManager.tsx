@@ -673,7 +673,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
             operation.started ? (
               <span>
                 {`${t(p("ing"))}${operationTexts[operation.op]}，` +
-                  `${t(p("completed"))}：${operation.completed.length} / ${operation.selected.length}`}
+                  `${t(p("completed"))} ${operation.completed.length} / ${operation.selected.length}`}
               </span>
             ) : (
               <span>

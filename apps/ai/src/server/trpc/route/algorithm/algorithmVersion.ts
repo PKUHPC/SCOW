@@ -1198,19 +1198,12 @@ export const copyPublicAlgorithmVersion = procedure
           const cluster = clusters[algorithmVersion.algorithm.$.clusterId];
 
           // scowd复制需要再路径最后加上文件夹名
-          await driver.copy(
+          await driver.copyWithMode(
             algorithmVersion.path,
             cluster.scowd?.enabled ? targetCopiedPath : input.path,
+            "0750",
             checkIsPublicPathsResult,
           );
-        },
-        logger,
-      );
-      // 递归修改文件权限和拥有者
-      await withFileDriver(
-        { clusterId: algorithmVersion.algorithm.$.clusterId, user: user.identityId },
-        async (driver) => {
-          await driver.chmod(targetCopiedPath, "0750");
         },
         logger,
       );
