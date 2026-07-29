@@ -16,7 +16,7 @@ export interface FetchPlugin {
 }
 
 export const fetchPlugin = plugin(async (f) => {
-  let fetchStarted = !!misConfig.fetchJobs.periodicFetch;
+  let fetchStarted = !!misConfig.fetchJobs.periodicFetch?.enabled;
   let fetchIsRunning = false;
 
   const logger = f.logger.child({ plugin: "fetch" });
