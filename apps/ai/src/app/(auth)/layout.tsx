@@ -75,10 +75,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const publicConfig = configQuery.data;
   const scowClusterConfigs = scowClusterConfigsQuery.data;
-  const { currentClusters } = defaultClusterContext(
-    publicConfig.CLUSTERS,
-    currentClusterIdsQuery?.data?.clusterIds ?? [],
+  const aiClusterIds = new Set(publicConfig.CLUSTERS.map((cluster) => cluster.id));
+  const currentAvailableClusterIds = (currentClusterIdsQuery.data?.clusterIds ?? []).filter((clusterId) =>
+    aiClusterIds.has(clusterId),
   );
+
+  const { currentClusters } = defaultClusterContext(publicConfig.CLUSTERS, currentAvailableClusterIds);
 
   const footerConfig = uiConfig.config?.footer;
   const footerText = (hostname && footerConfig?.hostnameMap?.[hostname]) ?? footerConfig?.defaultText;
@@ -92,11 +94,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         publicConfig,
         clusters: publicConfig.CLUSTERS,
         scowClusterConfigs,
-        currentAvailableClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
-        defaultClusterContext: defaultClusterContext(
-          publicConfig.CLUSTERS ?? [],
-          currentClusterIdsQuery?.data?.clusterIds ?? [],
-        ),
+        currentAvailableClusterIds,
+        defaultClusterContext: defaultClusterContext(publicConfig.CLUSTERS, currentAvailableClusterIds),
       }}
     >
       <BaseLayout
