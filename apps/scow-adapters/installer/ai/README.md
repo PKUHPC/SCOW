@@ -65,6 +65,7 @@ hostPathMounts:
   enabled: true
   logPath: /data/logs                          # 宿主机日志目录，优先填写共享存储路径
   containerLogFile: /adapter/logs/server.log   # 容器内日志文件路径，挂载目录由此自动推导
+  queuedJobsPath: /data/queued-jobs            # 排队作业请求持久化目录，优先填写共享存储路径
   
 # ai适配器的service配置 
 service:
@@ -191,4 +192,3 @@ registrySecret:
  # 查看日志 
   kubectl logs -f -n scow-ai-adapter scow-ai-adapter-**
 ```
-

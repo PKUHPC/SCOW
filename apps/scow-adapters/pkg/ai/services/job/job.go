@@ -65,7 +65,6 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 	if err := CheckUserInfo(in.Account, in.UserId, in.Partition); err != nil {
 		return nil, err
 	}
-	account, _ := utils.GetAccountByName(in.Account)
 	currentTimestamp := time.Now().Unix()
 	strNum := strconv.FormatInt(currentTimestamp, 10)
 
@@ -135,41 +134,15 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 		jobTable.TensorboardLogPath = *in.TensorBoardDataPath
 	}
 
-	usedGpuNum, err := utils.GetAccountUsedGpuNum(in.Account)
+	queued, err := CreateJobWithGpuQuotaCheck(&jobTable, &SubmitJobReq{OriginTrainIn: in})
 	if err != nil {
-		logrus.Errorf("SubmitJob failed %v", err)
-		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+		logrus.Errorf("SubmitJob gpu quota check failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "GPU_QUOTA_CHECK_FAILED", err.Error())
 	}
-
-	if account.GpuQuota > 0 && in.GpuCount > 0 && usedGpuNum+in.GpuCount > account.GpuQuota {
-		logrus.Infof("SubmitJob account %v gpu request %v has exceeded the remaining %v", in.Account, in.GpuCount, account.GpuQuota-usedGpuNum)
-		jobTable.State = utils.QueuedStatus
-		jobTable.Reason = fmt.Sprintf("The account %v gpu quota: %v, used: %v, req %v will exceed the quota. "+
-			"job will be queued and submit automatically after the gpu meets the quota", account.Name, account.GpuQuota, usedGpuNum, in.GpuCount)
-		err = client.DB.Create(&jobTable).Error
-		if err != nil {
-			logrus.Errorf("SubmitJob sql create failed: %v", err)
-			return nil, err
-		}
-
-		err := SaveJobSubmitInfoToFile(in, nil, newJobName, workdir)
-		if err != nil {
-			go func() {
-				err = client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
-				logrus.Infof("delete DB jobname %s, err: %v", jobTable.NewJobName, err)
-			}()
-			logrus.Errorf("SubmitJob queued job info file create failed: %v", err)
-			return nil, err
-		}
-
+	if queued {
 		return &pb.SubmitJobResponse{JobId: uint32(jobTable.JobDBInx)}, nil
 	}
 
-	err = client.DB.Create(&jobTable).Error
-	if err != nil {
-		logrus.Errorf("SubmitJob sql create failed: %v", err)
-		return nil, err
-	}
 	if in.ExtraOptions[0] == utils.Train {
 		err = TrainVCJob(in, newJobName, workdir)
 	} else {
@@ -544,17 +517,59 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb
 
 	jobName := jobInfo.NewJobName
 	state := jobInfo.State
-	logrus.Infof("job name: %s, status:%s", jobName, state)
 
 	if state == utils.QueuedStatus {
-		err = utils.DeleteJobById(in.JobId)
-		if err != nil {
+		queuedJobCanceled, cancelErr := func() (bool, error) {
+			account := jobInfo.Account
+			al := getAccountLock(account)
+			al.mu.Lock()
+			defer func() {
+				al.mu.Unlock()
+				putAccountLock(account)
+			}()
+
+			// Worker 可能在首次查询后先获得账户锁，拿到锁后必须重新确认作业状态。
+			refreshedJob, err := utils.GetJobsByUserAndId(in.UserId, in.JobId)
+			if err != nil {
+				return false, err
+			}
+			if refreshedJob == nil {
+				// 未查询到作业记录
+				return true, nil
+			}
+
+			jobInfo = refreshedJob
+			if jobInfo.State != utils.QueuedStatus {
+				return false, nil
+			}
+			// 不保留未提交到k8s的作业记录，直接删除数据库记录和作业信息文件
+			if err := utils.DeleteJobById(in.JobId); err != nil {
+				return false, err
+			}
+			if err := DeleteJobSubmitInfoFile(jobInfo.NewJobName); err != nil {
+				// 数据库记录已删除，取消已经生效。文件清理失败不应让客户端误判取消失败。
+				logrus.Errorf("CancelJob delete queued job info file failed: %v", err)
+			}
+			return true, nil
+		}()
+
+		if cancelErr != nil {
+			err = cancelErr
 			logrus.Errorf("CancelJob failed %v", err)
 			return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 		}
-		logrus.Infof("Cancel job %s success！", jobName)
-		return &pb.CancelJobResponse{}, nil
+		if queuedJobCanceled {
+			logrus.Infof("Cancel queued job %s success", jobName)
+			return &pb.CancelJobResponse{}, nil
+		}
+
+		// Worker 已提交作业，继续按刷新后的 PENDING/RUNNING 状态取消 Kubernetes 资源。
+		jobName = jobInfo.NewJobName
+		state = jobInfo.State
 	}
+
+	logrus.Infof("job name: %s, status:%s", jobName, state)
+
 	if state == utils.CanceledStatus {
 		logrus.Infof("Cancel job %s ignored because it is already canceled", jobName)
 		return &pb.CancelJobResponse{}, nil
@@ -874,39 +889,13 @@ func (s *ServerJob) SubmitInferJob(ctx context.Context, in *pb.SubmitInferJobReq
 		Qos:        in.GetQos(),
 	}
 
-	usedGpuNum, err := utils.GetAccountUsedGpuNum(in.Account)
+	queued, err := CreateJobWithGpuQuotaCheck(&jobTable, &SubmitJobReq{OriginInferIn: in})
 	if err != nil {
-		logrus.Errorf("SubmitJob failed %v", err)
-		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+		logrus.Errorf("SubmitInferJob gpu quota check failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "GPU_QUOTA_CHECK_FAILED", err.Error())
 	}
-
-	if account.GpuQuota > 0 && in.GpuCount > 0 && usedGpuNum+in.GpuCount > account.GpuQuota {
-		logrus.Infof("SubmitInferJob account %v gpu request %v has exceeded the remaining %v", in.Account, in.GpuCount, account.GpuQuota-usedGpuNum)
-		jobTable.State = utils.QueuedStatus
-		jobTable.Reason = fmt.Sprintf("The account %v gpu quota: %v, used: %v, req %v will exceed the quota. "+
-			"job will be queued and submit automatically after the gpu meets the quota", account.Name, account.GpuQuota, usedGpuNum, in.GpuCount)
-		err = client.DB.Create(&jobTable).Error
-		if err != nil {
-			logrus.Errorf("SubmitInferJob sql create failed: %v", err)
-			return nil, err
-		}
-
-		err := SaveJobSubmitInfoToFile(nil, in, newJobName, workdir)
-		if err != nil {
-			go func() {
-				err = client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
-				logrus.Infof("delete DB jobname %s, err: %v", jobTable.NewJobName, err)
-			}()
-			logrus.Errorf("SubmitInferJob queued job info file create failed: %v", err)
-			return nil, err
-		}
+	if queued {
 		return &pb.SubmitInferJobResponse{JobId: uint32(jobTable.JobDBInx)}, nil
-	}
-
-	err = client.DB.Create(&jobTable).Error
-	if err != nil {
-		logrus.Errorf("SubmitInferJob sql create failed: %v", err)
-		return nil, ce.RichError(codes.Internal, "SQL_CREATE_FAILED", err.Error())
 	}
 
 	_, err = inference.SubmitInference(in, newJobName, workdir)

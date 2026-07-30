@@ -86,11 +86,16 @@ func (s *ServerJob) CreateDevHost(ctx context.Context, in *pb.CreateDevHostReque
 	if in.VscodeInfo != nil {
 		jobTable.VscodeBinPath = in.VscodeInfo.VscodeBinPath
 	}
-	err = client.DB.Create(&jobTable).Error
+	// 账户配额检查
+	queued, err := CreateJobWithGpuQuotaCheck(&jobTable, &SubmitJobReq{OriginDevIn: in})
 	if err != nil {
-		logrus.Errorf("Submit devHost sql create failed: %v", err)
-		return nil, err
+		logrus.Errorf("Submit devHost gpu quota check failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "GPU_QUOTA_CHECK_FAILED", err.Error())
 	}
+	if queued {
+		return &pb.CreateDevHostResponse{JobId: uint32(jobTable.JobDBInx)}, nil
+	}
+
 	err = DevHostVCJob(in, newJobName, in.WorkingDirectory)
 	if err != nil {
 		go func() {

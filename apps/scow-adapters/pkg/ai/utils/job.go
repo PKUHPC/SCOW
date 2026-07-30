@@ -173,26 +173,41 @@ func GetAccountUsedGpuNum(accountName string) (uint32, error) {
 	return uint32(gpuReq), nil
 }
 
-func UpdateJobReasonByJobName(jobName string) error {
-	return client.DB.Transaction(func(tx *gorm.DB) error {
-		modTime := uint64(time.Now().Unix())
-		result := tx.Model(&models.JobTable{}).
-			Where("job_name = ?", jobName).
-			Updates(map[string]interface{}{
-				"reason":   "",
-				"mod_time": modTime,
-			})
-
-		if result.Error != nil {
-			return result.Error
-		}
-
-		if result.RowsAffected == 0 {
-			return gorm.ErrRecordNotFound
-		}
-
+func MarkQueuedJobPending(jobID uint64) error {
+	result := client.DB.Model(&models.JobTable{}).
+		Where("job_db_inx = ? AND state = ?", jobID, QueuedStatus).
+		Updates(map[string]interface{}{
+			"state":    PendingStatus,
+			"reason":   "",
+			"mod_time": uint64(time.Now().Unix()),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected > 0 {
 		return nil
-	})
+	}
+
+	// Informer 可能先一步把作业更新为 PENDING 或 RUNNING，此时只清理排队原因，不回退状态。
+	result = client.DB.Model(&models.JobTable{}).
+		Where("job_db_inx = ? AND state IN ?", jobID, []string{PendingStatus, RunningStatus}).
+		Updates(map[string]interface{}{
+			"reason":   "",
+			"mod_time": uint64(time.Now().Unix()),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected > 0 {
+		return nil
+	}
+
+	var job models.JobTable
+	if err := client.DB.Select("state").Where("job_db_inx = ?", jobID).First(&job).Error; err != nil {
+		return err
+	}
+	return fmt.Errorf("job %d state is %s, expected %s, %s or %s",
+		jobID, job.State, QueuedStatus, PendingStatus, RunningStatus)
 }
 
 func UpdateJobStatusByJobName(jobName, state string) error {

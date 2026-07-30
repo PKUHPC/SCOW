@@ -46,6 +46,8 @@ spec:
               readOnly: true
             - mountPath: {{ .Values.hostPathMounts.containerLogFile | dir }}
               name: log-data
+            - mountPath: /adapter/queued-jobs
+              name: queued-jobs-data
 {{- end }}
             - name: scow-ai-adapter-config
               mountPath: /adapter/config/
@@ -84,8 +86,11 @@ spec:
           hostPath:
             path: {{.Values.hostPathMounts.logPath}}
             type: DirectoryOrCreate
+        - name: queued-jobs-data
+          hostPath:
+            path: {{ .Values.hostPathMounts.queuedJobsPath | default "/data/queued-jobs" | quote }}
+            type: DirectoryOrCreate
 {{- end }}
         - name: scow-ai-adapter-config
           configMap:
             name: {{ .Values.configMap.name }}
-
