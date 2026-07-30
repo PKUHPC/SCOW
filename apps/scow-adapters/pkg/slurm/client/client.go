@@ -94,6 +94,12 @@ func runMigrations() {
 			slurmPath+"/bin/scontrol",
 			config.SlurmValue.MySQLConfig.ClusterName,
 		),
+		// 将旧版混用 Max*、Grp* 的封锁数据迁移为：账户封锁使用 Grp*，用户封锁使用 Max*。
+		// 迁移需要调用 sacctmgr 修改 Slurm association，因此同时传入命令路径和集群名。
+		migrations.NewM2026072900(
+			slurmPath+"/bin/sacctmgr",
+			config.SlurmValue.MySQLConfig.ClusterName,
+		),
 	})
 	if err := m.Migrate(); err != nil {
 		logrus.Fatalf("Could not migrate: %v", err)

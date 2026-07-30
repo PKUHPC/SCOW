@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -20,66 +21,177 @@ import (
 // 预编译正则表达式以提高性能
 var allowAccountsRe = regexp.MustCompile(`AllowAccounts=(\S+)`)
 
-// AddUserToAccount 将用户加入账户中
-func AddUserToAccount(user, account, baseQos string, partitions []string) error {
+// AddUserToAccount 将用户加入账户，并在创建 association 时直接应用 SCOW 的完整分区权限。
+// partitions 是集群全部分区，allowedPartitions 是该账户当前授权分区；
+// 未授权分区的 association 创建时就写入 GrpJobs=0、GrpSubmitJobs=0，避免先可用再封锁的窗口。
+func AddUserToAccount(ctx context.Context, user, account, baseQos string, partitions, allowedPartitions []string) error {
 	defaultQos := config.SlurmValue.Slurm.DefaultQOS
-	partition := strings.Join(partitions, ",")
-	args := []string{"-i", "create", "user", fmt.Sprintf("name=%s", user), fmt.Sprintf("partition=%s", partition), fmt.Sprintf("account=%s", account)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
-	if err != nil {
-		if exitCode == -1 {
-			// 命令执行前就失败了
-			return fmt.Errorf("system error: %v", err)
+	allowedSet := make(map[string]struct{}, len(allowedPartitions))
+	for _, partition := range allowedPartitions {
+		allowedSet[strings.ToLower(partition)] = struct{}{}
+	}
+	allowed := make([]string, 0, len(partitions))
+	blocked := make([]string, 0, len(partitions))
+	for _, partition := range partitions {
+		if _, ok := allowedSet[strings.ToLower(partition)]; ok {
+			allowed = append(allowed, partition)
 		} else {
-			// 命令执行但失败了
-			return fmt.Errorf("create user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+			blocked = append(blocked, partition)
 		}
 	}
 
-	args = []string{"-i", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account), "set", fmt.Sprintf("qos=%s", baseQos), fmt.Sprintf("DefaultQOS=%s", defaultQos)}
-	exitCode, stdout, stderr, err = ExecuteCommand(client.SACCTMGR, args...)
+	// 先创建未授权分区，即使后续创建授权分区失败，新用户也不会在未授权分区短暂获得资源权限。
+	if err := createUserInAccountPartitions(ctx, user, account, blocked, true); err != nil {
+		return rollbackAddedUserToAccount(ctx, user, account, err,
+			DeleteUserAccountAssociation, DeleteUserAssociationBlockRecords)
+	}
+	if err := createUserInAccountPartitions(ctx, user, account, allowed, false); err != nil {
+		return rollbackAddedUserToAccount(ctx, user, account, err,
+			DeleteUserAccountAssociation, DeleteUserAssociationBlockRecords)
+	}
+
+	args := []string{"-i", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account), "set", fmt.Sprintf("qos=%s", baseQos), fmt.Sprintf("DefaultQOS=%s", defaultQos)}
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
+		var cause error
 		if exitCode == -1 {
 			// 命令执行前就失败了
-			return fmt.Errorf("system error: %v", err)
+			cause = fmt.Errorf("system error: %v", err)
 		} else {
 			// 命令执行但失败了
-			return fmt.Errorf("modify user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+			cause = fmt.Errorf("modify user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 		}
+		return rollbackAddedUserToAccount(ctx, user, account, cause,
+			DeleteUserAccountAssociation, DeleteUserAssociationBlockRecords)
 	}
 
 	return nil
 }
 
-func createUserAssociationsInAccountPartition(users []string, account, partition string) error {
+// rollbackAddedUserToAccount 清理 AddUserToAccount 失败前可能已经创建的部分 association。
+// 补偿不继承原请求的取消状态；删除 association 失败时保留恢复记录，避免仍存在的封锁关系丢失原值。
+func rollbackAddedUserToAccount(
+	ctx context.Context,
+	user, account string,
+	cause error,
+	deleteAssociation func(context.Context, string, string) error,
+	deleteRecords func(string, string) error,
+) error {
+	rollbackCtx := context.WithoutCancel(ctx)
+	if err := deleteAssociation(rollbackCtx, user, account); err != nil {
+		return fmt.Errorf("%w; rollback delete user-account association failed: %v", cause, err)
+	}
+	if err := deleteRecords(account, user); err != nil {
+		return fmt.Errorf("%w; rollback cleanup block records failed: %v", cause, err)
+	}
+	return cause
+}
+
+// createUserInAccountPartitions 一次为用户创建一组权限相同的分区 association。
+func createUserInAccountPartitions(ctx context.Context, user, account string, partitions []string, blocked bool) error {
+	if len(partitions) == 0 {
+		return nil
+	}
+	args := []string{"-i", "create", "user", fmt.Sprintf("name=%s", user),
+		fmt.Sprintf("partition=%s", strings.Join(partitions, ",")), fmt.Sprintf("account=%s", account)}
+	if blocked {
+		args = append(args, accountPartitionBlockLimitArgs(true)...)
+	}
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
+	if err != nil {
+		if exitCode == -1 {
+			return fmt.Errorf("system error: %v", err)
+		}
+		return fmt.Errorf("create user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+	}
+	if !blocked {
+		return nil
+	}
+
+	// 新 association 尚未配置自定义 Grp* 限制，因此封锁前原值为 -1。
+	// 记录只用于以后恢复，不参与权限状态判断。
+	records := make([]accountBlockRecord, 0, len(partitions))
+	for _, partition := range partitions {
+		records = append(records, accountBlockRecord{
+			Account: account, Partition: partition, User: user,
+			Original: associationLimitPair{Jobs: associationUnlimitedLimit, SubmitJobs: associationUnlimitedLimit},
+		})
+	}
+	return saveAccountBlockRecords(records)
+}
+
+func createUserAssociationsInAccountPartition(ctx context.Context, users []string, account, partition string, partitionBlocked bool) error {
 	if len(users) == 0 {
 		return nil
 	}
 
-	args := []string{"-i", "create", "user",
-		fmt.Sprintf("name=%s", strings.Join(users, ",")),
-		fmt.Sprintf("partition=%s", partition),
-		fmt.Sprintf("account=%s", account),
-		accountPartitionBlockLimitArg(true)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	blockedUsers, err := getRecordedBlockedUsersInAccount(account)
 	if err != nil {
-		if exitCode == -1 {
-			return fmt.Errorf("system error: %v", err)
+		return err
+	}
+	defaultLimits := associationLimitPair{Jobs: associationUnlimitedLimit, SubmitJobs: associationUnlimitedLimit}
+
+	return forEachAssociationBatch(users, func(batch []string) error {
+		args := []string{"-i", "create", "user",
+			fmt.Sprintf("name=%s", strings.Join(batch, ",")),
+			fmt.Sprintf("partition=%s", partition),
+			fmt.Sprintf("account=%s", account)}
+		if partitionBlocked {
+			// SCOW 请求已明确该分区无权限，创建时直接写入双零，避免先创建为可用状态的窗口。
+			args = append(args, accountPartitionBlockLimitArgs(true)...)
+		}
+		exitCode, stdout, stderr, commandErr := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
+		if commandErr != nil {
+			if exitCode == -1 {
+				return fmt.Errorf("system error: %v", commandErr)
+			}
+			output := strings.TrimSpace(stdout + "\n" + stderr)
+			if !strings.Contains(output, "Nothing added") && !strings.Contains(output, "Nothing modified") {
+				return fmt.Errorf("create user association failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+			}
+		}
+		if partitionBlocked {
+			// 新 association 的封锁前默认值为 -1，保存后可在 SCOW 重新授权时恢复。
+			records := make([]accountBlockRecord, 0, len(batch))
+			for _, user := range batch {
+				records = append(records, accountBlockRecord{
+					Account: account, Partition: partition, User: user, Original: defaultLimits,
+				})
+			}
+			if err := saveAccountBlockRecords(records); err != nil {
+				return err
+			}
 		}
 
-		output := strings.TrimSpace(stdout + "\n" + stderr)
-		if strings.Contains(output, "Nothing added") || strings.Contains(output, "Nothing modified") {
+		var blockedInBatch []string
+		var userRecords []userBlockRecord
+		for _, user := range batch {
+			if _, blocked := blockedUsers[user]; !blocked {
+				continue
+			}
+			blockedInBatch = append(blockedInBatch, user)
+			userRecords = append(userRecords, userBlockRecord{
+				Account: account, User: user, Partition: partition, Original: defaultLimits,
+			})
+		}
+		if err := saveUserBlockRecords(userRecords); err != nil {
+			return err
+		}
+		if len(blockedInBatch) == 0 {
 			return nil
 		}
-
-		return fmt.Errorf("create user association failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
-	}
-
-	return nil
+		blockArgs := []string{"-i", "-Q", "modify", "user", "where",
+			fmt.Sprintf("name=%s", strings.Join(blockedInBatch, ",")), fmt.Sprintf("account=%s", account),
+			fmt.Sprintf("partition=%s", partition),
+			fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+		blockArgs = append(blockArgs, userBlockLimitArgs(true)...)
+		return executeAssociationModification(ctx, "block new user associations by user state", blockArgs)
+	})
 }
 
 // EnsureAccountUsersAssociationInPartition 确保账户下已有用户在指定分区中存在 association。
-func EnsureAccountUsersAssociationInPartition(account, partition string) error {
+// partitionBlocked 直接来自当前请求的完整分区权限；新 association 创建时立即使用该权限。
+func EnsureAccountUsersAssociationInPartition(ctx context.Context, account, partition string, partitionBlocked bool) error {
 	users, err := GetAccountAssociatedUserInDatabase(account, nil)
 	if err != nil {
 		return fmt.Errorf("get account associated users failed: %w", err)
@@ -110,7 +222,7 @@ func EnsureAccountUsersAssociationInPartition(account, partition string) error {
 		return nil
 	}
 
-	if err := createUserAssociationsInAccountPartition(missingUsers, account, partition); err != nil {
+	if err := createUserAssociationsInAccountPartition(ctx, missingUsers, account, partition, partitionBlocked); err != nil {
 		return fmt.Errorf("create associations for users=%v account=%s partition=%s failed: %w", missingUsers, account, partition, err)
 	}
 	logrus.Infof("EnsureAccountUsersAssociationInPartition: created associations for users=%v account=%s partition=%s", missingUsers, account, partition)
@@ -118,9 +230,9 @@ func EnsureAccountUsersAssociationInPartition(account, partition string) error {
 }
 
 // DeleteUser 使用slurm命令删除用户
-func DeleteUser(user string) error {
+func DeleteUser(ctx context.Context, user string) error {
 	args := []string{"-i", "delete", "user", fmt.Sprintf("name=%s", user)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
 			// 命令执行前就失败了
@@ -134,9 +246,9 @@ func DeleteUser(user string) error {
 }
 
 // DeleteUserAccountAssociation 只删除用户与指定账户的关联，不修改用户本体和 DefaultAccount。
-func DeleteUserAccountAssociation(user, account string) error {
+func DeleteUserAccountAssociation(ctx context.Context, user, account string) error {
 	args := []string{"-i", "delete", "user", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
 			// 命令执行前就失败了
@@ -150,9 +262,9 @@ func DeleteUserAccountAssociation(user, account string) error {
 }
 
 // DeleteUserWithAccount 使用slurm命令修改用户的默认账户并删除用户
-func DeleteUserWithAccount(user, account string, acctList []string) error {
+func DeleteUserWithAccount(ctx context.Context, user, account string, acctList []string) error {
 	args := []string{"-i", "update", "user", "set", fmt.Sprintf("DefaultAccount=%s", acctList[0]), "where", fmt.Sprintf("user=%s", user)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
 			// 命令执行前就失败了
@@ -163,7 +275,7 @@ func DeleteUserWithAccount(user, account string, acctList []string) error {
 		}
 	}
 	args = []string{"-i", "delete", "user", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account)}
-	exitCode, stdout, stderr, err = ExecuteCommand(client.SACCTMGR, args...)
+	exitCode, stdout, stderr, err = ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
 			// 命令执行前就失败了
@@ -177,9 +289,9 @@ func DeleteUserWithAccount(user, account string, acctList []string) error {
 }
 
 // CreateAccount 使用slurm命令创建账户
-func CreateAccount(account string) error {
+func CreateAccount(ctx context.Context, account string) error {
 	args := []string{"-i", "create", "account", fmt.Sprintf("name=%s", account)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
 			// 命令执行前就失败了
@@ -193,9 +305,9 @@ func CreateAccount(account string) error {
 }
 
 // DeleteAccount 使用slurm命令删除账户
-func DeleteAccount(account string) error {
+func DeleteAccount(ctx context.Context, account string) error {
 	args := []string{"-i", "delete", "account", fmt.Sprintf("name=%s", account)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
 		if exitCode == -1 {
 			// 命令执行前就失败了
@@ -208,12 +320,53 @@ func DeleteAccount(account string) error {
 	return nil
 }
 
-// BlockUserInAccount 封锁账户下的用户
-func BlockUserInAccount(user, account string) error {
-	args := []string{"-i", "-Q", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
-		"set", "MaxJobs=0"}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+// BlockUserInAccount 封锁账户下的用户。
+// 用户封锁只修改 MaxJobs、MaxSubmitJobs，不修改账户封锁使用的 Grp*，
+// 因此账户封锁和用户封锁可以叠加，并能按各自保存的原值独立解封。
+func BlockUserInAccount(ctx context.Context, user, account string) error {
+	// 恢复记录只保存第一次封锁前的值，不能替代 Slurm 实际状态。即使记录已经存在，
+	// 也仍要执行幂等的 Max*=0，以修复 association 被意外改回非零的状态漂移。
+	recorded, err := IsUserBlockRecorded(account, user)
 	if err != nil {
+		return err
+	}
+	if !recorded {
+		// 兼容旧版本已经通过 MaxJobs=0、MaxSubmitJobs=0 封锁，但尚未写入恢复记录的数据。
+		// 这类数据没有可靠原值，解封函数会按历史行为回退到 -1，因此这里不保存两个 0。
+		if IsUserBlockedInAccount(user, account) {
+			return nil
+		}
+
+		// 用户在不同分区的 Max* 可能不同，必须在修改前逐分区读取并保存。
+		originalLimits, err := GetUserMaxLimits(user, account)
+		if err != nil {
+			return err
+		}
+		if len(originalLimits) == 0 {
+			return fmt.Errorf("no associations found for user=%s account=%s", user, account)
+		}
+		records := make([]userBlockRecord, 0, len(originalLimits))
+		for partition, limits := range originalLimits {
+			records = append(records, userBlockRecord{
+				Account: account, User: user, Partition: partition, Original: normalizeOriginalLimits(limits),
+			})
+		}
+		if err := saveUserBlockRecords(records); err != nil {
+			_ = deleteUserBlockRecords(account, user)
+			return err
+		}
+	}
+
+	// 不指定 partition，使该账户下该用户现有的全部 association 同时封锁。
+	args := []string{"-i", "-Q", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
+		fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+	args = append(args, userBlockLimitArgs(true)...)
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
+	if err != nil {
+		// 只删除本次新建的恢复记录；已有记录属于第一次封锁，必须保留供以后重试和解封。
+		if !recorded {
+			_ = deleteUserBlockRecords(account, user)
+		}
 		if exitCode == -1 {
 			// 命令执行前就失败了
 			return fmt.Errorf("system error: %v", err)
@@ -225,55 +378,88 @@ func BlockUserInAccount(user, account string) error {
 	return nil
 }
 
-// UnblockUserInAccount 解封账户下的用户
-func UnblockUserInAccount(user, account string) error {
-	args := []string{"-i", "-Q", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
-		"set", "MaxJobs=-1"}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+// UnblockUserInAccount 解封账户下的用户，并逐分区恢复封锁前的 Max* 原值。
+func UnblockUserInAccount(ctx context.Context, user, account string) error {
+	records, err := getUserBlockRecords(account, user)
 	if err != nil {
-		if exitCode == -1 {
-			// 命令执行前就失败了
-			return fmt.Errorf("system error: %v", err)
-		} else {
-			// 命令执行但失败了
-			return fmt.Errorf("unblock user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+		return err
+	}
+	if len(records) == 0 {
+		// 无恢复记录仅用于兼容旧数据：沿用历史行为，将两个 Max* 清为未限制。
+		args := []string{"-i", "-Q", "modify", "user", "where", fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
+			fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+		args = append(args, userBlockLimitArgs(false)...)
+		if err := executeAssociationModification(ctx, "unblock user", args); err != nil {
+			return err
 		}
-	}
-
-	if err := clearLegacyUserBlockFields(user, account); err != nil {
-		logrus.Warnf("UnblockUserInAccount: clear legacy user block fields failed, ignored: user=%s account=%s err=%v", user, account, err)
-	}
-
-	return nil
-}
-
-func clearLegacyUserBlockFields(user, account string) error {
-	partitions, err := GetLegacyUserBlockPartitions(user, account)
-	if err != nil {
-		return fmt.Errorf("get legacy user block partitions failed: %w", err)
-	}
-	if len(partitions) == 0 {
 		return nil
 	}
 
-	args := []string{"-i", "-Q", "modify", "user", "where",
-		fmt.Sprintf("name=%s", user),
-		fmt.Sprintf("account=%s", account),
-		fmt.Sprintf("partition=%s", strings.Join(partitions, ",")),
-		"set", "GrpJobs=-1", "GrpSubmit=-1", "GrpSubmitJobs=-1"}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	// 封锁后新增的分区 association 在异常情况下可能没有对应恢复记录。
+	// 对这些 association 只能回退到 -1；已有记录的分区随后仍会恢复第一次封锁前的原值。
+	currentLimits, err := GetUserMaxLimits(user, account)
 	if err != nil {
-		if exitCode == -1 {
-			return fmt.Errorf("system error: %v", err)
+		return err
+	}
+	recordedPartitions := make(map[string]struct{}, len(records))
+	for _, record := range records {
+		recordedPartitions[record.Partition] = struct{}{}
+	}
+	var unrecordedBlockedPartitions []string
+	for partition, limits := range currentLimits {
+		if _, recorded := recordedPartitions[partition]; recorded {
+			continue
 		}
-		if strings.TrimSpace(stdout) == "Nothing modified" {
-			return nil
+		if limits.Jobs == associationBlockedLimit || limits.SubmitJobs == associationBlockedLimit {
+			unrecordedBlockedPartitions = append(unrecordedBlockedPartitions, partition)
 		}
-		return fmt.Errorf("clear legacy user block fields failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+	}
+	if err := forEachAssociationBatch(unrecordedBlockedPartitions, func(batch []string) error {
+		args := []string{"-i", "-Q", "modify", "user", "where",
+			fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
+			fmt.Sprintf("partition=%s", strings.Join(batch, ",")),
+			fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+		args = append(args, userBlockLimitArgs(false)...)
+		return executeAssociationModification(ctx, "restore unrecorded user limits", args)
+	}); err != nil {
+		return err
 	}
 
-	logrus.Infof("UnblockUserInAccount: cleared legacy user block fields for user=%s account=%s partitions=%v", user, account, partitions)
+	// 相同原值的分区合并为一次 sacctmgr 调用，减少用户分区较多时的命令数量。
+	grouped := make(map[associationLimitPair][]string)
+	for _, record := range records {
+		grouped[record.Original] = append(grouped[record.Original], record.Partition)
+	}
+	for limits, partitions := range grouped {
+		if err := forEachAssociationBatch(partitions, func(batch []string) error {
+			args := []string{"-i", "-Q", "modify", "user", "where",
+				fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
+				fmt.Sprintf("partition=%s", strings.Join(batch, ",")),
+				fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+			args = append(args, userLimitArgs(limits.Jobs, limits.SubmitJobs)...)
+			return executeAssociationModification(ctx, "restore user limits", args)
+		}); err != nil {
+			return err
+		}
+	}
+	// 只有全部分区恢复成功后才能删除记录；中途失败时保留记录供接口重试。
+	if err := deleteUserBlockRecords(account, user); err != nil {
+		return err
+	}
 	return nil
+}
+
+// executeAssociationModification 统一处理 association 修改命令的错误语义。
+// sacctmgr 在目标值已经生效时可能输出 Nothing modified；该情况满足幂等操作的目标，按成功处理。
+func executeAssociationModification(ctx context.Context, operation string, args []string) error {
+	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
+	if err == nil || strings.TrimSpace(stdout) == "Nothing modified" {
+		return nil
+	}
+	if exitCode == -1 {
+		return fmt.Errorf("%s system error: %v", operation, err)
+	}
+	return fmt.Errorf("%s failed (exit %d), stdout: %s, stderr: %s", operation, exitCode, stdout, strings.TrimSpace(stderr))
 }
 
 // CheckJobExists 检查作业是否存在
@@ -1238,148 +1424,197 @@ func ResumeNode(nodeName string) error {
 	return nil
 }
 
-// BlockUserAssociationInAccountPartitionByAccountState 仅封锁单个用户在指定账户+分区下的账户-分区关联。
-// 只将该 association 的账户-分区提交限制设为 0，不修改用户维度封锁字段，
-// 并在封锁成功后持久化该用户原始账户-分区提交限制，供后续账户/分区解封时精确恢复。
-func BlockUserAssociationInAccountPartitionByAccountState(user, account, partition string) error {
-	originalSubmitLimit, found, err := GetUserAccountPartitionSubmitLimit(user, account, partition)
+// BlockAccountUseAssociation 封锁账户在指定分区下的所有用户 association。
+// 当前 Slurm association 层级不存在“账户+分区、用户为空”的父节点，因此必须在该分区
+// 的所有用户叶子 association 上写 GrpJobs=0、GrpSubmitJobs=0。
+func BlockAccountUseAssociation(ctx context.Context, account, partition string) error {
+	// 恢复记录存在时说明该分区以前已经由 SCOW 封锁。重复封锁不得覆盖第一次保存的原值，
+	// 命令失败时也只能删除本次新建的记录。
+	existingRecords, err := getAccountBlockRecords(account, partition)
 	if err != nil {
-		return fmt.Errorf("get user account-partition submit limit failed: %w", err)
+		return err
 	}
-	if !found {
-		return fmt.Errorf("user %s not found in account=%s partition=%s", user, account, partition)
-	}
-	if originalSubmitLimit == associationBlockedLimit {
-		logrus.Infof("BlockUserAssociationInAccountPartitionByAccountState: user %s already blocked in account=%s partition=%s, skip", user, account, partition)
-		return nil
-	}
-
-	args := []string{"-i", "-Q", "modify", "user", "where",
-		fmt.Sprintf("name=%s", user),
-		fmt.Sprintf("account=%s", account),
-		fmt.Sprintf("partition=%s", partition),
-		"set", accountPartitionBlockLimitArg(true)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+	wasBlocked := len(existingRecords) > 0
+	// 每个用户 association 的管理员限制可能不同，逐用户读取原值用于解封恢复。
+	userOriginalValues, err := GetUsersGroupLimits(account, partition)
 	if err != nil {
-		if exitCode == -1 {
-			return fmt.Errorf("system error: %v", err)
-		}
-		if strings.TrimSpace(stdout) == "Nothing modified" {
-			return nil
-		}
-		return fmt.Errorf("block user association failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
-	}
-
-	if err := upsertPermissionRecord(account, partition, user, originalSubmitLimit); err != nil {
-		logrus.Warnf("BlockUserAssociationInAccountPartitionByAccountState: save original account-partition submit limit for user %s failed: %v", user, err)
-	}
-	return nil
-}
-
-// BlockAccountUseAssociation 封锁账户在指定分区下的所有用户（将账户-分区提交限制设为 0）。
-// 先执行 sacctmgr 封锁命令，成功后再将原始账户-分区提交限制持久化到数据库，
-// 确保 DB 记录仅在 Slurm 侧已实际封锁后写入，避免命令失败时原始值被覆盖。
-func BlockAccountUseAssociation(account, partition string) error {
-	// 1. 查询该账户+分区下所有用户的当前账户-分区封锁字段值
-	userOriginalValues, err := GetUsersAndAccountPartitionSubmitLimits(account, partition)
-	if err != nil {
-		return fmt.Errorf("get users account-partition submit limits failed: %w", err)
+		return err
 	}
 	if len(userOriginalValues) == 0 {
-		logrus.Infof("BlockAccountUseAssociation: no users found for account=%s partition=%s, skip", account, partition)
-		return nil
+		return fmt.Errorf("no user associations found for account=%s partition=%s", account, partition)
 	}
 
-	// 2. 先执行 sacctmgr 封锁，仅在命令成功后才持久化原始值
+	records := make([]accountBlockRecord, 0, len(userOriginalValues))
+	for user, original := range userOriginalValues {
+		records = append(records, accountBlockRecord{
+			Account: account, Partition: partition, User: user, Original: normalizeOriginalLimits(original),
+		})
+	}
+	if err := saveAccountBlockRecords(records); err != nil {
+		if !wasBlocked {
+			_ = deleteAccountBlockRecords(account, partition)
+		}
+		return err
+	}
+
+	// 一次命令修改目标分区下全部用户，避免逐用户修改产生较长的不一致窗口。
 	args := []string{"-i", "-Q", "modify", "user", "where",
 		fmt.Sprintf("account=%s", account), fmt.Sprintf("partition=%s", partition),
-		"set", accountPartitionBlockLimitArg(true)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
-	if err != nil {
-		if exitCode == -1 {
-			return fmt.Errorf("system error: %v", err)
+		fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName),
+		"set"}
+	args = append(args, accountPartitionBlockLimitArgs(true)...)
+	if err := executeAssociationModification(ctx, "block account partition", args); err != nil {
+		// 仅第一次封锁失败时删除本次新建的记录；重复封锁失败时必须保留第一次保存的原值和分区记录。
+		if !wasBlocked {
+			_ = deleteAccountBlockRecords(account, partition)
 		}
-		if strings.TrimSpace(stdout) == "Nothing modified" {
-			return nil
-		}
-		return fmt.Errorf("modify user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
-	}
-
-	// 3. 封锁成功后持久化原始值（upsert：重复封锁时更新记录）
-	for user, originalVal := range userOriginalValues {
-		if err := upsertPermissionRecord(account, partition, user, originalVal); err != nil {
-			// DB 写入失败仅告警，不回滚已生效的封锁；解封时将回退到无限制。
-			logrus.Warnf("BlockAccountUseAssociation: save original account-partition submit limit for user %s failed: %v", user, err)
-		}
+		return err
 	}
 	return nil
 }
 
-// UnblockAccountUseAssociation 解封账户在指定分区下的所有用户，
-// 从持久化表中读取每个用户封锁前的账户-分区封锁字段原始值并还原。
-// 相同原始值的用户合并为一次 sacctmgr 调用，减少命令执行次数。
-// 若无持久化记录（如旧数据或异常情况），回退为统一设置为无限制。
-func UnblockAccountUseAssociation(account, partition string) error {
-	// 1. 读取持久化的原始值
-	records, err := getPermissionRecords(account, partition)
+// UnblockAccountUseAssociation 恢复账户指定分区下所有用户 association 的原始 Grp 限制。
+// 该操作只恢复账户封锁修改的 Grp*，不会修改用户封锁使用的 Max*。
+func UnblockAccountUseAssociation(ctx context.Context, account, partition string) error {
+	records, err := getAccountBlockRecords(account, partition)
 	if err != nil {
-		return fmt.Errorf("get permission records failed: %w", err)
+		return err
 	}
-
 	if len(records) == 0 {
-		// 无历史记录：回退到统一解封账户级限制。用户级封锁由用户封锁字段独立表达，不影响账户-分区封锁字段恢复。
-		logrus.Warnf("UnblockAccountUseAssociation: no saved records for account=%s partition=%s, fallback to unlimited account-partition submit limit", account, partition)
+		// 兼容旧版本只有 Grp*=0、没有恢复记录的数据。SCOW 已要求授权该分区，
+		// 因此必须把实际 association 清为无限制，不能因为没有恢复记录就跳过。
+		currentLimits, err := GetUsersGroupLimits(account, partition)
+		if err != nil {
+			return err
+		}
+		if len(currentLimits) == 0 {
+			return nil
+		}
 		args := []string{"-i", "-Q", "modify", "user", "where",
 			fmt.Sprintf("account=%s", account), fmt.Sprintf("partition=%s", partition),
-			"set", accountPartitionBlockLimitArg(false)}
-		exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
-		if err != nil {
-			if exitCode == -1 {
-				return fmt.Errorf("system error: %v", err)
-			}
-			if strings.TrimSpace(stdout) == "Nothing modified" {
-				return nil
-			}
-			return fmt.Errorf("unblock account partition submit limit failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+			fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+		args = append(args, accountPartitionBlockLimitArgs(false)...)
+		if err := executeAssociationModification(ctx, "unblock account partition", args); err != nil {
+			return err
 		}
 		return nil
 	}
 
-	// 2. 按相同 originalVal 分组，每组合并为一次 sacctmgr 批量调用。
-	valueToUsers := make(map[int32][]string)
-	for user, val := range records {
-		valueToUsers[val] = append(valueToUsers[val], user)
+	// 异常中断或旧版本数据可能导致分区中新 association 没有恢复记录。
+	// 先只把这些无记录且仍受限的用户恢复为 -1，再按记录恢复其他用户的原值。
+	currentLimits, err := GetUsersGroupLimits(account, partition)
+	if err != nil {
+		return err
 	}
-	for val, users := range valueToUsers {
-		if err := setUsersAccountPartitionSubmitLimit(users, account, partition, val); err != nil {
-			return fmt.Errorf("restore account-partition submit limit=%d for users %v failed: %w", val, users, err)
+	recordedUsers := make(map[string]struct{}, len(records))
+	for _, record := range records {
+		recordedUsers[record.User] = struct{}{}
+	}
+	var unrecordedBlockedUsers []string
+	for user, limits := range currentLimits {
+		if _, recorded := recordedUsers[user]; recorded {
+			continue
+		}
+		if limits.Jobs == associationBlockedLimit || limits.SubmitJobs == associationBlockedLimit {
+			unrecordedBlockedUsers = append(unrecordedBlockedUsers, user)
 		}
 	}
+	if err := forEachAssociationBatch(unrecordedBlockedUsers, func(batch []string) error {
+		args := []string{"-i", "-Q", "modify", "user", "where",
+			fmt.Sprintf("name=%s", strings.Join(batch, ",")), fmt.Sprintf("account=%s", account),
+			fmt.Sprintf("partition=%s", partition),
+			fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+		args = append(args, accountPartitionBlockLimitArgs(false)...)
+		return executeAssociationModification(ctx, "restore unrecorded account partition limits", args)
+	}); err != nil {
+		return err
+	}
 
-	// 3. 清理持久化记录（失败仅告警，不影响解封结果）
-	if err := deletePermissionRecords(account, partition); err != nil {
-		logrus.Warnf("UnblockAccountUseAssociation: delete permission records failed: %v", err)
+	// 将原值相同的用户合并，既保留逐 association 的恢复精度，又减少 sacctmgr 调用次数。
+	grouped := make(map[associationLimitPair][]string)
+	for _, record := range records {
+		grouped[record.Original] = append(grouped[record.Original], record.User)
+	}
+	for limits, users := range grouped {
+		if err := forEachAssociationBatch(users, func(batch []string) error {
+			args := []string{"-i", "-Q", "modify", "user", "where",
+				fmt.Sprintf("name=%s", strings.Join(batch, ",")), fmt.Sprintf("account=%s", account),
+				fmt.Sprintf("partition=%s", partition),
+				fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+			args = append(args, accountGroupLimitArgs(limits.Jobs, limits.SubmitJobs)...)
+			return executeAssociationModification(ctx, "restore account partition group limits", args)
+		}); err != nil {
+			return err
+		}
+	}
+	// 先恢复 Slurm 中的值，再删除原值记录；失败时保留记录供重试。
+	return deleteAccountBlockRecords(account, partition)
+}
+
+// BlockWholeAccountUseAssociation 在账户父 association 上封锁整个账户。
+// 父节点的 GrpJobs=0、GrpSubmitJobs=0 会向所有现有及未来子 association 生效，
+// 因而无需枚举分区和用户，也不会遗漏封锁期间新增的关系。
+func BlockWholeAccountUseAssociation(ctx context.Context, account string) error {
+	// 恢复记录存在时不能直接返回：记录只表示第一次封锁前的值，父 association
+	// 仍可能被意外改回非零。同步必须再次执行幂等命令，使 Slurm 收敛到 SCOW 的封锁状态。
+	blocked, err := IsWholeAccountBlockRecorded(account)
+	if err != nil {
+		return err
+	}
+	actual, found, err := GetAccountGroupLimits(account)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("account association not found: %s", account)
+	}
+	if !blocked {
+		// 只保存 User、Partition 均为空的账户父 association，不能误取用户叶子记录。
+		if err := saveAccountBlockRecord(account, "", "", normalizeOriginalLimits(actual)); err != nil {
+			return err
+		}
+	}
+	if actual.Jobs == associationBlockedLimit && actual.SubmitJobs == associationBlockedLimit {
+		// 实际值已经满足 SCOW 的封锁要求。上面仍会为旧版双零数据补一条 -1 恢复记录。
+		return nil
+	}
+	// modify account 精确作用于账户级 association；cluster 条件避免影响同名跨集群账户。
+	args := []string{"-i", "-Q", "modify", "account", "where", fmt.Sprintf("name=%s", account),
+		fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+	args = append(args, accountPartitionBlockLimitArgs(true)...)
+	if err := executeAssociationModification(ctx, "block whole account", args); err != nil {
+		// 只回滚本次新建的记录；已有记录保存的是第一次封锁前的值，不能删除。
+		if !blocked {
+			_ = deleteAccountBlockRecords(account, "")
+		}
+		return err
 	}
 	return nil
 }
 
-// setUsersAccountPartitionSubmitLimit 将多个用户在同一账户+分区关联中的账户-分区封锁字段批量设为给定值，
-// 使用 name=u1,u2,u3 语法合并为单次 sacctmgr 调用，避免用户数多时的串行开销。
-func setUsersAccountPartitionSubmitLimit(users []string, account, partition string, limit int32) error {
-	args := []string{"-i", "-Q", "modify", "user", "where",
-		fmt.Sprintf("name=%s", strings.Join(users, ",")),
-		fmt.Sprintf("account=%s", account),
-		fmt.Sprintf("partition=%s", partition),
-		"set", accountPartitionSubmitLimitArg(limit)}
-	exitCode, stdout, stderr, err := ExecuteCommand(client.SACCTMGR, args...)
+// UnblockWholeAccountUseAssociation 只恢复账户父 association 的原始 Grp*。
+// 分区用户 association 上的 Grp* 和用户封锁使用的 Max* 不在此处恢复。
+func UnblockWholeAccountUseAssociation(ctx context.Context, account string) error {
+	records, err := getAccountBlockRecords(account, "")
 	if err != nil {
-		if exitCode == -1 {
-			return fmt.Errorf("system error: %v", err)
-		}
-		if strings.TrimSpace(stdout) == "Nothing modified" {
-			return nil
-		}
-		return fmt.Errorf("set account-partition submit limit failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
+		return err
+	}
+	// 有记录时恢复第一次封锁前的值；没有记录时说明是旧版本数据或持久化记录缺失。
+	// 此时 SCOW 已明确要求解封，因此回退为 -1，使 Slurm 实际状态服从 SCOW。
+	original := associationLimitPair{Jobs: associationUnlimitedLimit, SubmitJobs: associationUnlimitedLimit}
+	if len(records) > 0 {
+		// 整体账户封锁由 (account,"","") 唯一键保证只有一条恢复记录。
+		original = records[0].Original
+	}
+	args := []string{"-i", "-Q", "modify", "account", "where", fmt.Sprintf("name=%s", account),
+		fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+	args = append(args, accountGroupLimitArgs(original.Jobs, original.SubmitJobs)...)
+	if err := executeAssociationModification(ctx, "unblock whole account", args); err != nil {
+		return err
+	}
+	// Slurm 恢复成功后才删除记录，保证命令失败时仍可以重试。
+	if len(records) > 0 {
+		return deleteAccountBlockRecords(account, "")
 	}
 	return nil
 }

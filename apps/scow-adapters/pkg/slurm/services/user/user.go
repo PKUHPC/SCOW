@@ -3,11 +3,11 @@ package user
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "scow-adapters/gen/go"
 	ce "scow-adapters/pkg/common/error"
@@ -20,6 +20,12 @@ type ServerUser struct {
 
 func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccountRequest) (*pb.AddUserToAccountResponse, error) {
 	logrus.Tracef("Received request AddUserToAccount: %v", in)
+	// 新增 association 必须与同账户的同步、删除和封锁操作串行。
+	unlock, err := utils.LockAccountAssociationMutation(ctx, in.AccountName)
+	if err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	defer unlock()
 	// 检查账户名和用户名中是否包含大写字母
 	if err := utils.CheckAccount(in.AccountName); err != nil {
 		logrus.Errorf("AddUserToAccount failed: %v", err)
@@ -42,7 +48,7 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccou
 		return nil, ce.RichError(codes.NotFound, "ACCOUNT_NOT_FOUND", err.Error())
 	}
 
-	// usablePartitions 表示新增用户当前实际可使用分区；Slurm 仍维护全量 association。
+	// usablePartitions 是该账户有权使用的分区；Slurm 中仍为新用户创建所有分区的 association。
 	allPartitions, err := utils.GetPartitionsName()
 	if err != nil {
 		logrus.Errorf("AddUserToAccount failed: %v", err)
@@ -90,68 +96,23 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccou
 		logrus.Errorf("AddUserToAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-	userExistedBefore := exist
-	associationCreated := false
 	if exist {
 		// 用户已存在，先检查账户和用户之间是否存在关联关系
 		if err = utils.CheckUserAndAccountAssociate(in.UserId, in.AccountName); err != nil {
 			// 不存在关联关系，则将用户加入账户
-			if err = utils.AddUserToAccount(in.UserId, in.AccountName, baseQos, allPartitions); err != nil {
+			if err = utils.AddUserToAccount(ctx, in.UserId, in.AccountName, baseQos, allPartitions, openPartitions); err != nil {
 				logrus.Errorf("AddUserToAccount failed: %v", err)
 				return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 			}
-			associationCreated = true
 		} else {
 			// 存在关联关系，则返回用户已存在
 			err = fmt.Errorf("AddUserToAccount failed: User %s is already exists in account %s", in.UserId, in.AccountName)
 			logrus.Errorf("AddUserToAccount failed: %v", err)
 			return nil, ce.RichError(codes.AlreadyExists, "USER_ACCOUNT_ALREADY_EXISTS", err.Error())
 		}
-	} else if err = utils.AddUserToAccount(in.UserId, in.AccountName, baseQos, allPartitions); err != nil {
+	} else if err = utils.AddUserToAccount(ctx, in.UserId, in.AccountName, baseQos, allPartitions, openPartitions); err != nil {
 		logrus.Errorf("AddUserToAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
-	} else {
-		associationCreated = true
-	}
-
-	blockedPartitions := make([]string, 0)
-	rollbackAddedUserAccount := func(cause error) error {
-		if !associationCreated {
-			return cause
-		}
-
-		var rollbackErr error
-		if userExistedBefore {
-			// 用户调用前已存在时，只撤本次新增的 user-account association，避免改动用户本体。
-			rollbackErr = utils.DeleteUserAccountAssociation(in.UserId, in.AccountName)
-		} else {
-			// 用户调用前不存在时，删除本次创建的 user，恢复到调用前状态。
-			rollbackErr = utils.DeleteUser(in.UserId)
-		}
-
-		if rollbackErr != nil {
-			logrus.Errorf("AddUserToAccount rollback failed: %v, user is: %v, account is: %v", rollbackErr, in.UserId, in.AccountName)
-			return cause
-		}
-		// 分区封锁成功后会持久化原始 MaxSubmitJobs；新增关系已回滚删除时，这些恢复记录也要清理，避免后续重建后读到旧值。
-		for _, partition := range blockedPartitions {
-			if permissionErr := utils.DeletePermissionRecord(in.AccountName, partition, in.UserId); permissionErr != nil {
-				logrus.Errorf("AddUserToAccount rollback cleanup permission record failed: %v, user is: %v, account is: %v, partition is: %v", permissionErr, in.UserId, in.AccountName, partition)
-			}
-		}
-		return cause
-	}
-
-	for _, partition := range allPartitions {
-		if slices.Contains(openPartitions, partition) {
-			continue
-		}
-		if err = utils.BlockUserAssociationInAccountPartitionByAccountState(in.UserId, in.AccountName, partition); err != nil {
-			err = rollbackAddedUserAccount(err)
-			logrus.Errorf("AddUserToAccount block partition failed: %v, user is: %v, account is: %v, partition is: %v", err, in.UserId, in.AccountName, partition)
-			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
-		}
-		blockedPartitions = append(blockedPartitions, partition)
 	}
 
 	logrus.Infof("AddUserToAccount sucess! User is: %v, Account is: %v", in.UserId, in.AccountName)
@@ -160,6 +121,12 @@ func (s *ServerUser) AddUserToAccount(ctx context.Context, in *pb.AddUserToAccou
 
 func (s *ServerUser) RemoveUserFromAccount(ctx context.Context, in *pb.RemoveUserFromAccountRequest) (*pb.RemoveUserFromAccountResponse, error) {
 	logrus.Tracef("Received request RemoveUserFromAccount: %v", in)
+	// 删除 association 及其恢复记录时，不能让同账户的同步或封锁操作同时修改它们。
+	unlock, err := utils.LockAccountAssociationMutation(ctx, in.AccountName)
+	if err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	defer unlock()
 	// 检查账户名和用户名中是否包含大写字母
 	if err := utils.CheckAccount(in.AccountName); err != nil {
 		logrus.Errorf("RemoveUserFromAccount failed: %v", err)
@@ -237,9 +204,13 @@ func (s *ServerUser) RemoveUserFromAccount(ctx context.Context, in *pb.RemoveUse
 	// 用户只关联这个账户的情况
 	if len(acctList) == 0 {
 		// 没作业下直接删除用户
-		if err = utils.DeleteUser(in.UserId); err != nil {
+		if err = utils.DeleteUser(ctx, in.UserId); err != nil {
 			logrus.Errorf("RemoveUserFromAccount failed: %v", err)
 			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+		}
+		if err := utils.DeleteUserBlockRecords(in.UserId); err != nil {
+			// 用户的全部 association 已删除，需要清理其在所有账户下的恢复记录。
+			logrus.Warnf("RemoveUserFromAccount cleanup block records failed: %v", err)
 		}
 
 		logrus.Infof("RemoveUserFromAccount sucess! User is: %v, Account is: %v", in.UserId, in.AccountName)
@@ -247,9 +218,13 @@ func (s *ServerUser) RemoveUserFromAccount(ctx context.Context, in *pb.RemoveUse
 	}
 
 	// 用户还关联其他账户的情况，还需更改默认账号并删除用户
-	if err = utils.DeleteUserWithAccount(in.UserId, in.AccountName, acctList); err != nil {
+	if err = utils.DeleteUserWithAccount(ctx, in.UserId, in.AccountName, acctList); err != nil {
 		logrus.Errorf("RemoveUserFromAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+	if err := utils.DeleteUserAssociationBlockRecords(in.AccountName, in.UserId); err != nil {
+		// 用户仍关联其他账户时，只删除当前账户下的封锁记录，其他账户的数据不受影响。
+		logrus.Warnf("RemoveUserFromAccount cleanup block records failed: %v", err)
 	}
 
 	logrus.Infof("RemoveUserFromAccount sucess! User is: %v, Account is: %v", in.UserId, in.AccountName)
@@ -258,6 +233,12 @@ func (s *ServerUser) RemoveUserFromAccount(ctx context.Context, in *pb.RemoveUse
 
 func (s *ServerUser) BlockUserInAccount(ctx context.Context, in *pb.BlockUserInAccountRequest) (*pb.BlockUserInAccountResponse, error) {
 	logrus.Tracef("Received request BlockUserInAccount: %v", in)
+	// 与用户解封共用互斥锁，避免解封过程中删除另一个封锁请求刚保存的 Max* 原值。
+	unlock, err := utils.LockAccountAssociationMutation(ctx, in.AccountName)
+	if err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	defer unlock()
 	// 检查账户名和用户名中是否包含大写字母
 	if err := utils.CheckAccount(in.AccountName); err != nil {
 		logrus.Errorf("BlockUserInAccount failed: %v", err)
@@ -299,7 +280,7 @@ func (s *ServerUser) BlockUserInAccount(ctx context.Context, in *pb.BlockUserInA
 	}
 
 	// 关联存在的情况下封锁账户
-	if err := utils.BlockUserInAccount(in.UserId, in.AccountName); err != nil {
+	if err := utils.BlockUserInAccount(ctx, in.UserId, in.AccountName); err != nil {
 		logrus.Errorf("BlockUserInAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 	}
@@ -309,6 +290,12 @@ func (s *ServerUser) BlockUserInAccount(ctx context.Context, in *pb.BlockUserInA
 
 func (s *ServerUser) UnblockUserInAccount(ctx context.Context, in *pb.UnblockUserInAccountRequest) (*pb.UnblockUserInAccountResponse, error) {
 	logrus.Tracef("Received request UnblockUserInAccount: %v", in)
+	// 与用户封锁共用互斥锁，避免读取 Max* 原值后，另一个请求又修改 association。
+	unlock, err := utils.LockAccountAssociationMutation(ctx, in.AccountName)
+	if err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	defer unlock()
 	// 检查账户名和用户名中是否包含大写字母
 	if err := utils.CheckAccount(in.AccountName); err != nil {
 		logrus.Errorf("UnblockUserInAccount failed: %v", err)
@@ -356,7 +343,7 @@ func (s *ServerUser) UnblockUserInAccount(ctx context.Context, in *pb.UnblockUse
 	}
 
 	// 用户从账户中解封
-	if err := utils.UnblockUserInAccount(in.UserId, in.AccountName); err != nil {
+	if err := utils.UnblockUserInAccount(ctx, in.UserId, in.AccountName); err != nil {
 		logrus.Errorf("UnblockUserInAccount failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 	}
@@ -418,6 +405,12 @@ func (s *ServerUser) QueryUserInAccountBlockStatus(ctx context.Context, in *pb.Q
 
 func (s *ServerUser) DeleteUser(ctx context.Context, in *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	logrus.Tracef("Received request DeleteUser: %v", in)
+	// DeleteUser 不指定账户，会删除该用户的全部 association，因此必须等待所有账户级修改完成。
+	unlock, err := utils.LockAllAssociationMutations(ctx)
+	if err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	defer unlock()
 	// 该用户作业的判断
 	runningJobs, err := utils.GetJobsInUser(in.UserId)
 	if err != nil {
@@ -435,15 +428,24 @@ func (s *ServerUser) DeleteUser(ctx context.Context, in *pb.DeleteUserRequest) (
 		logrus.Errorf("DeleteUser failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-	// 用户已删除或不存在，不做操作
+	// 用户已删除或不存在时仍尝试清理恢复记录，使此前清理失败的请求能够通过重试收敛。
 	if deleted {
+		if err := utils.DeleteUserBlockRecords(in.UserId); err != nil {
+			logrus.Errorf("DeleteUser cleanup block records failed: %v", err)
+			return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
+		}
 		logrus.Infof("user %s deleted alredy or not found", in.UserId)
 		return &pb.DeleteUserResponse{}, nil
 	}
 	// 未删除的用户需要调用slurm命令删除
-	if err = utils.DeleteUser(in.UserId); err != nil {
+	if err = utils.DeleteUser(ctx, in.UserId); err != nil {
 		logrus.Errorf("DeleteUser failed: %v", err)
 		return nil, err
+	}
+	if err := utils.DeleteUserBlockRecords(in.UserId); err != nil {
+		// Slurm 用户已经删除，返回错误以便调用方重试；幂等分支会再次执行记录清理。
+		logrus.Errorf("DeleteUser cleanup block records failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
 	logrus.Infof("Delete User: %v sucess!", in.UserId)
 	return &pb.DeleteUserResponse{}, nil

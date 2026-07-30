@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
@@ -18,6 +19,8 @@ import (
 	pb "scow-adapters/gen/go"
 	"scow-adapters/pkg/slurm/config"
 )
+
+const associationCommandMaxDuration = 5 * time.Minute
 
 // 预编译正则表达式以提高性能
 var (
@@ -65,6 +68,24 @@ func extractValue(input string, re *regexp.Regexp) string {
 // ExecuteCommand 执行系统命令并返回退出码、标准输出、标准错误和错误信息
 func ExecuteCommand(command string, args ...string) (int, string, string, error) {
 	cmd := exec.Command(command, args...)
+	return runCommand(cmd)
+}
+
+// ExecuteCommandContext 执行会修改 association 的外部命令。
+// 命令同时受请求 context 和服务端最大执行时间约束，任一先到都会终止子进程。
+func ExecuteCommandContext(ctx context.Context, command string, args ...string) (int, string, string, error) {
+	commandCtx, cancel := context.WithTimeout(ctx, associationCommandMaxDuration)
+	defer cancel()
+
+	cmd := exec.CommandContext(commandCtx, command, args...)
+	exitCode, stdout, stderr, err := runCommand(cmd)
+	if commandCtx.Err() != nil {
+		return -1, stdout, stderr, commandCtx.Err()
+	}
+	return exitCode, stdout, stderr, err
+}
+
+func runCommand(cmd *exec.Cmd) (int, string, string, error) {
 
 	// 捕获标准输出和错误输出
 	var stdout, stderr bytes.Buffer

@@ -1,6 +1,7 @@
 package sync_account_user
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -10,7 +11,7 @@ import (
 )
 
 // DeleteUserInAccount 同步删除用户
-func DeleteUserInAccount(users []*pb.SyncAccountInfo_UserInAccount, accountName string) []*pb.SyncAccountUserInfoResponse_SyncOperationResult {
+func DeleteUserInAccount(ctx context.Context, users []*pb.SyncAccountInfo_UserInAccount, accountName string) []*pb.SyncAccountUserInfoResponse_SyncOperationResult {
 	var (
 		responseInfo    []*pb.SyncAccountUserInfoResponse_SyncOperationResult
 		message         string
@@ -69,8 +70,14 @@ func DeleteUserInAccount(users []*pb.SyncAccountInfo_UserInAccount, accountName 
 
 		// 用户只关联这个账户的情况, 直接删除用户
 		if len(acctList) == 0 {
-			if err = utils.DeleteUser(user); err != nil {
+			if err = utils.DeleteUser(ctx, user); err != nil {
 				message = fmt.Sprintf("remove user %v from account %v, delete user failed: %v", user, accountName, err)
+				logrus.Errorf("[SyncAccountUser] %v", message)
+				responseInfo = append(responseInfo, RemoveUserFromAccountFailedOperation(accountName, user, message))
+				continue
+			}
+			if err = utils.DeleteUserBlockRecords(user); err != nil {
+				message = fmt.Sprintf("remove user %v from account %v succeeded, but cleanup block records failed: %v", user, accountName, err)
 				logrus.Errorf("[SyncAccountUser] %v", message)
 				responseInfo = append(responseInfo, RemoveUserFromAccountFailedOperation(accountName, user, message))
 				continue
@@ -82,8 +89,14 @@ func DeleteUserInAccount(users []*pb.SyncAccountInfo_UserInAccount, accountName 
 		}
 
 		// 用户还关联其他账户的情况，还需更改默认账号并删除用户
-		if err = utils.DeleteUserWithAccount(user, accountName, acctList); err != nil {
+		if err = utils.DeleteUserWithAccount(ctx, user, accountName, acctList); err != nil {
 			message = fmt.Sprintf("remove user %v from account %v failed(user associate other account): %v", user, accountName, err)
+			logrus.Errorf("[SyncAccountUser] %v", message)
+			responseInfo = append(responseInfo, RemoveUserFromAccountFailedOperation(accountName, user, message))
+			continue
+		}
+		if err = utils.DeleteUserAssociationBlockRecords(accountName, user); err != nil {
+			message = fmt.Sprintf("remove user %v from account %v succeeded, but cleanup block records failed: %v", user, accountName, err)
 			logrus.Errorf("[SyncAccountUser] %v", message)
 			responseInfo = append(responseInfo, RemoveUserFromAccountFailedOperation(accountName, user, message))
 			continue

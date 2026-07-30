@@ -1,8 +1,9 @@
 package sync_account_user
 
 import (
+	"context"
 	"fmt"
-	"slices"
+	"strings"
 
 	pb "scow-adapters/gen/go"
 	"scow-adapters/pkg/slurm/utils"
@@ -11,21 +12,21 @@ import (
 )
 
 // 同步账户的封锁情况
-func syncAccountBlockStatus(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
+func syncAccountBlockStatus(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
 	var result *pb.SyncAccountUserInfoResponse_SyncOperationResult
 
 	// 同步账户的封锁
 	if syncData.BlockedInCluster {
-		result = BlockAccount(syncData)
+		result = BlockAccount(ctx, syncData)
 	} else {
 		// 同步账户的解封
-		result = UnBlockAccount(syncData)
+		result = UnBlockAccount(ctx, syncData)
 	}
 
 	return result
 }
 
-func BlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
+func BlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
 	if syncData.WhitelistId != nil {
 		message := fmt.Sprintf("The account is in the whitelist and does not need to be blocked")
 		logrus.Infof("[SyncAccountUser], %v", message)
@@ -33,42 +34,19 @@ func BlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_
 	}
 
 	account := syncData.AccountName
-
-	partitions, err := utils.GetPartitionsName()
-	if err != nil {
-		message := fmt.Sprintf("block account: get cluster partitions failed: %v", err)
+	// 同步接口与 BlockAccount 使用相同实现：把账户父 association 的
+	// GrpJobs、GrpSubmitJobs 设为 0。父级限制会同时约束账户下现有和以后新增的 association。
+	if err := utils.BlockWholeAccountUseAssociation(ctx, account); err != nil {
+		message := fmt.Sprintf("block account %s failed: %v", account, err)
 		logrus.Errorf("[SyncAccountUser], %v", message)
 		return BlockAccountFailedOperation(syncData.AccountName, message)
 	}
-	if err = ensureAccountUsersAssociationInPartitions(account, partitions); err != nil {
-		message := fmt.Sprintf("block account: ensure associations failed: %v", err)
+	// 父级先封锁，确保后续同步叶子分区权限期间账户始终不能提交或运行作业。
+	// 叶子 association 仍按 SCOW 请求表达真实分区权限，供欠费期间的资源查询使用。
+	if _, err := reconcileAccountPartitions(ctx, syncData); err != nil {
+		message := fmt.Sprintf("block account %s succeeded, but reconcile partition permissions failed: %v", account, err)
 		logrus.Errorf("[SyncAccountUser], %v", message)
 		return BlockAccountFailedOperation(syncData.AccountName, message)
-	}
-
-	// 只封锁当前尚未封锁的分区，避免对已封锁分区的 no-op 操作被误计为同步变更
-	needToBlock, err := utils.GetAccountAssociatedAllowedPartitionInDatabase(account)
-	if err != nil {
-		message := fmt.Sprintf("block account: get allowed partitions failed: %v", err)
-		logrus.Errorf("[SyncAccountUser], %v", message)
-		return BlockAccountFailedOperation(syncData.AccountName, message)
-	}
-	if len(needToBlock) == 0 {
-		// 所有分区已封锁，无需操作
-		logrus.Infof("[SyncAccountUser], block account: %v already fully blocked, skip", account)
-		return nil
-	}
-
-	blockFailedPartitions, blockSuccessPartitions := blockAccount(syncData, needToBlock)
-
-	if len(blockFailedPartitions) > 0 {
-		message := fmt.Sprintf("block account: %v failed, failed partition: %v", syncData.AccountName, blockFailedPartitions)
-		logrus.Errorf("[SyncAccountUser], %v", message)
-		return BlockAccountFailedOperation(syncData.AccountName, message)
-	}
-
-	if len(blockSuccessPartitions) == 0 {
-		return nil
 	}
 
 	message := fmt.Sprintf("block account: %v success", syncData.AccountName)
@@ -76,94 +54,43 @@ func BlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_
 	return BlockAccountSuccessOperation(syncData.AccountName)
 }
 
-func UnBlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
-	var (
-		message                  string
-		unBlockFailedPartitions  []string
-		unBlockSuccessPartitions []string
-	)
-
+func UnBlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
 	account := syncData.AccountName
-	partitions, err := utils.GetPartitionsName()
+	var message string
+	// 必须先同步叶子分区权限，再解除父级欠费封锁。这样任何分区同步失败时，
+	// 父 association 仍保持 Grp*=0，不会让账户在权限尚未收敛时运行作业。
+	changed, err := reconcileAccountPartitions(ctx, syncData)
 	if err != nil {
-		message = fmt.Sprintf("unblock account failed, get cluster partitions failed: %v", err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
-		return UnblockAccountFailedOperation(syncData.AccountName, message)
-	}
-	if err = ensureAccountUsersAssociationInPartitions(account, partitions); err != nil {
-		message = fmt.Sprintf("unblock account failed, ensure associations failed: %v", err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
+		message := fmt.Sprintf("unblock account %s failed to reconcile partition permissions: %v", account, err)
+		logrus.Errorf("[SyncAccountUser], %v", message)
 		return UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
 
-	// 获取unblockedPartitions分区，该分区需要解封
-	unblockPartition, err := getUnblockPartition(syncData)
+	// 恢复记录用于找回原值，但不能作为是否解封的唯一依据：旧版本可能已经把
+	// 父 association 设为 Grp*=0，却没有记录。
+	wholeBlocked, err := utils.IsWholeAccountBlockRecorded(account)
 	if err != nil {
-		message = fmt.Sprintf("unblock account failed, get partition failed: %v", err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
+		message = fmt.Sprintf("unblock account failed, get whole account status failed: %v", err)
 		return UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
-
-	// 获取账户的授权分区
-	AllowedPartitions, err := utils.GetAccountAssociatedAllowedPartitionInDatabase(account)
+	_, parentHasBlockLimit, parentFound, err := utils.GetAccountGroupBlockState(account)
 	if err != nil {
-		message = fmt.Sprintf("unblock account failed, get account block partition failed: %v", err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
+		message = fmt.Sprintf("unblock account failed, get account association status failed: %v", err)
 		return UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
-	// DB 中存储的分区名大小写可能与 scontrol 返回的不一致，统一规范化后再比较
-	AllowedPartitions, err = utils.NormalizePartitionNames(AllowedPartitions)
-	if err != nil {
-		message = fmt.Sprintf("unblock account failed, normalize partition names failed: %v", err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
+	if !parentFound {
+		message = fmt.Sprintf("unblock account failed, account association not found: %s", account)
 		return UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
-
-	for _, partition := range unblockPartition {
-		if slices.Contains(AllowedPartitions, partition) {
-			logrus.Infof("[SyncAccountUser]: account %v no need unblock in partition %v", account, partition)
-			continue
+	if wholeBlocked || parentHasBlockLimit {
+		if err := utils.UnblockWholeAccountUseAssociation(ctx, account); err != nil {
+			message = fmt.Sprintf("unblock account failed: %v", err)
+			return UnblockAccountFailedOperation(syncData.AccountName, message)
 		}
-
-		err = utils.EnsureAccountUsersAssociationInPartition(account, partition)
-		if err != nil {
-			unBlockFailedPartitions = append(unBlockFailedPartitions, partition)
-			message = fmt.Sprintf("unblock account: %v ensure association failed in partition %v, error: %v", account, partition, err)
-			logrus.Errorf("[SyncAccountUser] %v", message)
-			continue
-		}
-
-		err = utils.UnblockAccountUseAssociation(account, partition)
-		if err != nil {
-			unBlockFailedPartitions = append(unBlockFailedPartitions, partition)
-			message = fmt.Sprintf("unblock account: %v failed in partition %v, error: %v", account, partition, err)
-			logrus.Errorf("[SyncAccountUser] %v", message)
-			continue
-		}
-		unBlockSuccessPartitions = append(unBlockSuccessPartitions, partition)
-		message = fmt.Sprintf("unblock account: %v success in partition %v", account, partition)
-		logrus.Infof("[SyncAccountUser], %v", message)
+		changed = true
 	}
 
-	// 非unblockedPartitions分区需要封锁：只对当前尚未封锁（在 AllowedPartitions 中）且不在 unblockPartition 中的分区执行封锁，
-	// 避免对已封锁分区的 no-op 操作被误计为同步变更
-	var needToBlock []string
-	for _, p := range AllowedPartitions {
-		if !slices.Contains(unblockPartition, p) {
-			needToBlock = append(needToBlock, p)
-		}
-	}
-	blockFailedPartitions, blockSuccessPartitions := blockAccount(syncData, needToBlock)
-
-	logrus.Infof("unBlockFailedPartitions: %v, unBlockSuccessPartitions: %v, blockFailedPartitions: %v, blockSuccessPartitions: %v", unBlockFailedPartitions, unBlockSuccessPartitions, blockFailedPartitions, blockSuccessPartitions)
-	// 只要任何一个分区解封或者封锁失败，都返回失败
-	if len(unBlockFailedPartitions) > 0 || len(blockFailedPartitions) > 0 {
-		message = fmt.Sprintf("unblock account failed, fail unblock partitions: %v, fail block partitions: %v", unBlockFailedPartitions, blockFailedPartitions)
-		logrus.Errorf("[SyncAccountUser] %v", message)
-		return UnblockAccountFailedOperation(syncData.AccountName, message)
-	}
-
-	if len(unBlockSuccessPartitions) == 0 && len(blockSuccessPartitions) == 0 {
+	if !changed {
 		return nil
 	}
 
@@ -172,45 +99,69 @@ func UnBlockAccount(syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoRespons
 	return UnblockAccountSuccessOperation(syncData.AccountName)
 }
 
-// blockAccount 将syncData中的账户在actualData中的分区中封锁，unblockPartitions中包含的分区不用封锁，返回封锁成功及失败的分区
-func blockAccount(syncData *pb.SyncAccountInfo, partitions []string) ([]string, []string) {
-	var (
-		message                string
-		blockFailedPartitions  []string
-		blockSuccessPartitions []string
-	)
-	account := syncData.AccountName
-
-	for _, partition := range partitions {
-		err := utils.EnsureAccountUsersAssociationInPartition(account, partition)
-		if err != nil {
-			blockFailedPartitions = append(blockFailedPartitions, partition)
-			message = fmt.Sprintf("block account: %v ensure association failed in partition %v, error: %v", account, partition, err)
-			logrus.Errorf("[SyncAccountUser] %v", message)
-			continue
-		}
-
-		err = utils.BlockAccountUseAssociation(account, partition)
-		if err != nil {
-			blockFailedPartitions = append(blockFailedPartitions, partition)
-			message = fmt.Sprintf("block account: %v failed in partition %v, error: %v", account, partition, err)
-			logrus.Errorf("[SyncAccountUser] %v", message)
-			continue
-		}
-		blockSuccessPartitions = append(blockSuccessPartitions, partition)
-		message = fmt.Sprintf("block account: %v success in partition %v", account, partition)
+// needsPartitionReconciliation 比较 SCOW 的分区授权期望和 Slurm association 实际限制。
+func needsPartitionReconciliation(shouldAllow bool, actual utils.AccountPartitionAssociationState) bool {
+	if shouldAllow {
+		return actual.HasAssociations && actual.HasBlockLimit
 	}
-
-	return blockFailedPartitions, blockSuccessPartitions
+	return !actual.HasAssociations || !actual.Blocked
 }
 
-func ensureAccountUsersAssociationInPartitions(account string, partitions []string) error {
+// reconcileAccountPartitions 使用 SyncAccountInfo 中的完整分区权限收敛叶子 association。
+// SCOW 是期望状态的唯一来源；assoc_table 的 Grp* 只表示 Slurm 当前实际状态。
+func reconcileAccountPartitions(ctx context.Context, syncData *pb.SyncAccountInfo) (bool, error) {
+	account := syncData.AccountName
+	partitions, err := utils.GetPartitionsName()
+	if err != nil {
+		return false, fmt.Errorf("get cluster partitions failed: %w", err)
+	}
+	allowedPartitions, err := getUnblockPartition(syncData)
+	if err != nil {
+		return false, err
+	}
+	allowedPartitions, err = utils.NormalizePartitionNames(allowedPartitions)
+	if err != nil {
+		return false, fmt.Errorf("normalize partition names failed: %w", err)
+	}
+	desiredAllowed := make(map[string]struct{}, len(allowedPartitions))
+	for _, partition := range allowedPartitions {
+		desiredAllowed[strings.ToLower(partition)] = struct{}{}
+	}
+	// 补齐缺失 association 时直接使用 SCOW 的目标权限，避免先创建为可用状态再封锁。
 	for _, partition := range partitions {
-		if err := utils.EnsureAccountUsersAssociationInPartition(account, partition); err != nil {
-			return fmt.Errorf("ensure association failed in partition %s: %w", partition, err)
+		_, shouldAllow := desiredAllowed[strings.ToLower(partition)]
+		if err := utils.EnsureAccountUsersAssociationInPartition(ctx, account, partition, !shouldAllow); err != nil {
+			return false, fmt.Errorf("ensure association failed in partition %s: %w", partition, err)
 		}
 	}
-	return nil
+
+	associationStates, err := utils.GetAccountPartitionAssociationStates(account)
+	if err != nil {
+		return false, fmt.Errorf("get actual partition limits failed: %w", err)
+	}
+	actualByLowerName := make(map[string]utils.AccountPartitionAssociationState, len(associationStates))
+	for partition, state := range associationStates {
+		actualByLowerName[strings.ToLower(partition)] = state
+	}
+
+	changed := false
+	for _, partition := range partitions {
+		_, shouldAllow := desiredAllowed[strings.ToLower(partition)]
+		actual := actualByLowerName[strings.ToLower(partition)]
+		if !needsPartitionReconciliation(shouldAllow, actual) {
+			continue
+		}
+
+		if shouldAllow {
+			if err := utils.UnblockAccountUseAssociation(ctx, account, partition); err != nil {
+				return changed, fmt.Errorf("unblock partition %s failed: %w", partition, err)
+			}
+		} else if err := utils.BlockAccountUseAssociation(ctx, account, partition); err != nil {
+			return changed, fmt.Errorf("block partition %s failed: %w", partition, err)
+		}
+		changed = true
+	}
+	return changed, nil
 }
 
 func getUnblockPartition(syncData *pb.SyncAccountInfo) ([]string, error) {
@@ -223,7 +174,11 @@ func getUnblockPartition(syncData *pb.SyncAccountInfo) ([]string, error) {
 			return nil, err
 		}
 	} else {
-		partitions = syncData.GetUnblockedPartitions().(*pb.SyncAccountInfo_AssignedPartitions_).AssignedPartitions.Partitions
+		assigned := syncData.GetAssignedPartitions()
+		if assigned == nil {
+			return nil, fmt.Errorf("sync account partition permissions are missing")
+		}
+		partitions = assigned.Partitions
 	}
 
 	return partitions, nil

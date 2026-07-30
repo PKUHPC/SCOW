@@ -1,11 +1,30 @@
 package utils
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func TestExecuteCommandContextStopsCommandWhenContextExpires(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+
+	started := time.Now()
+	exitCode, _, _, err := ExecuteCommandContext(ctx, "/bin/sleep", "10")
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("expected context deadline exceeded, got %v", err)
+	}
+	if exitCode != -1 {
+		t.Fatalf("expected canceled command exit code -1, got %d", exitCode)
+	}
+	if elapsed := time.Since(started); elapsed > time.Second {
+		t.Fatalf("command was not stopped promptly: %v", elapsed)
+	}
+}
 
 func TestNormalizeAllowAcctList(t *testing.T) {
 	// 定义测试用例表

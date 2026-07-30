@@ -75,8 +75,8 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *pb.GetAva
 		return nil, ce.RichError(codes.NotFound, "USER_ACCOUNT_NOT_FOUND", err.Error())
 	}
 
-	// 基于账户-分区封锁字段：查询该账户下有未封锁用户的分区列表
-	whitelistPartition, err = utils.GetAccountAssociatedAllowedPartitionInDatabase(in.AccountName)
+	// 这里只按资源授权过滤分区。账户欠费封锁只限制提交和运行，不能隐藏用户已有权限的资源。
+	whitelistPartition, err = utils.GetAccountAuthorizedPartitionsInDatabase(in.AccountName)
 	if err != nil {
 		logrus.Errorf("GetAvailablePartitions failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
@@ -207,8 +207,8 @@ func (s *ServerConfig) GetSummaryClusterInfo(ctx context.Context, in *pb.GetSumm
 
 	clusterName := config.SlurmValue.MySQLConfig.ClusterName
 
-	// 基于账户-分区封锁字段：查询各账户下有未封锁用户的分区
-	accountPartitionBlockInfo, err := utils.GetAccountAllowedPartitionByAssociation()
+	// 仪表盘只按资源授权关系筛选分区，整体欠费封锁账户仍参与授权分区并集和资源统计。
+	accountPartitionBlockInfo, err := utils.GetAccountAuthorizedPartitionByAssociation()
 	if err != nil {
 		logrus.Errorf("GetSummaryClusterInfo failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())

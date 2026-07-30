@@ -1,6 +1,7 @@
 package sync_account_user
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -9,7 +10,7 @@ import (
 	"scow-adapters/pkg/slurm/utils"
 )
 
-func createAccount(syncData *pb.SyncAccountInfo) (*pb.SyncAccountUserInfoResponse_SyncOperationResult, error) {
+func createAccount(ctx context.Context, syncData *pb.SyncAccountInfo) (*pb.SyncAccountUserInfoResponse_SyncOperationResult, error) {
 	var result *pb.SyncAccountUserInfoResponse_SyncOperationResult
 	// 如果账户为空，直接返回
 	if syncData.AccountName == "" {
@@ -25,7 +26,7 @@ func createAccount(syncData *pb.SyncAccountInfo) (*pb.SyncAccountUserInfoRespons
 		return CreateAccountFailedOperation(syncData.AccountName, message), fmt.Errorf("get account in database failed %v", syncData.AccountName)
 	}
 	if !exist {
-		if err = utils.CreateAccount(syncData.AccountName); err != nil {
+		if err = utils.CreateAccount(ctx, syncData.AccountName); err != nil {
 			message := fmt.Sprintf("create account %v failed: %v", syncData.AccountName, err)
 			logrus.Errorf("[SyncAccountUser] %v", message)
 			return CreateAccountFailedOperation(syncData.AccountName, message), err
