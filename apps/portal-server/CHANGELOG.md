@@ -1,5 +1,13 @@
 # @scow/portal-server
 
+## 1.11.5
+
+### Patch Changes
+
+- Updated dependencies [560108c]
+  - @scow/scowd-protos@0.8.0
+  - @scow/lib-scowd@1.2.10
+
 ## 1.11.4
 
 ### Patch Changes

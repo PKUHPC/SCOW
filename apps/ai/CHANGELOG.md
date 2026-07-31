@@ -1,5 +1,16 @@
 # @scow/ai
 
+## 0.5.8
+
+### Patch Changes
+
+- 45d378c: "开发机增加账号加速卡配额及容器部署引起的 bug 修复"
+- 7c629a6: ai 未筛选 portal 的集群修复
+- 560108c: 优化数据资产的分享及复制在 scow 及 scowd 之间维持原子性操作
+- Updated dependencies [560108c]
+  - @scow/scowd-protos@0.8.0
+  - @scow/lib-scowd@1.2.10
+
 ## 0.5.7
 
 ### Patch Changes

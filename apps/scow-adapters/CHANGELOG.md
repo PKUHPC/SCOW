@@ -1,5 +1,14 @@
 # @scow/scow-adapters
 
+## 1.11.5
+
+### Patch Changes
+
+- 45d378c: "开发机增加账号加速卡配额及容器部署引起的 bug 修复"
+- 9a9b4fa: 同步时，账户是封锁的，slurm 中账户也是封锁的，这时不用收敛账户的分区权限
+- 584166e: 修复账户欠费封锁后之前 Pending 的作业依然能运行的问题
+- 7554ba2: 修复添加用户是执行命令报 Nothing added 却认为失败的问题
+
 ## 1.11.4
 
 ### Patch Changes

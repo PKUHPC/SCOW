@@ -1,5 +1,11 @@
 # @scow/portal-web
 
+## 1.11.5
+
+### Patch Changes
+
+- 560108c: 优化数据资产的分享及复制在 scow 及 scowd 之间维持原子性操作
+
 ## 1.11.4
 
 ### Patch Changes

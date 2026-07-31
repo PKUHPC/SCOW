@@ -1,5 +1,12 @@
 # @scow/mis-server
 
+## 1.11.5
+
+### Patch Changes
+
+- 2fd4e63: 修复周期同步作业功能配置为关闭时页面错误显示为开启
+  - @scow/lib-scowd@1.2.10
+
 ## 1.11.4
 
 ### Patch Changes

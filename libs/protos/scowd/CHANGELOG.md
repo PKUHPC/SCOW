@@ -1,5 +1,12 @@
 # @scow/scowd-protos
 
+## 0.8.0
+
+### Minor Changes
+
+- 560108c: 在 scowd proto 中增加 shareFileOrDir 接口，copy 接口中增加 mode 及 chmod_recursive 的可选参数
+  以保证数据资产的分享及复制的相关操作在 scow 与 scowd 之间维持原子性
+
 ## 0.7.0
 
 ### Minor Changes

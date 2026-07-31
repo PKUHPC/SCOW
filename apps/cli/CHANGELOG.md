@@ -1,5 +1,11 @@
 # @scow/cli
 
+## 1.11.5
+
+### Patch Changes
+
+- @scow/lib-scowd@1.2.10
+
 ## 1.11.4
 
 ### Patch Changes

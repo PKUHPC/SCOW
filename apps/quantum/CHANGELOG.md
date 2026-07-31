@@ -1,5 +1,11 @@
 # @scow/quantum
 
+## 0.1.19
+
+### Patch Changes
+
+- @scow/lib-scowd@1.2.10
+
 ## 0.1.18
 
 ### Patch Changes

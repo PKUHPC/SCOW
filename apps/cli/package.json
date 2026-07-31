@@ -1,6 +1,6 @@
 {
   "name": "@scow/cli",
-  "version": "1.11.4",
+  "version": "1.11.5",
   "private": true,
   "description": "CLI to manage SCOW",
   "keywords": [],
