@@ -21,9 +21,11 @@ import (
 // 预编译正则表达式以提高性能
 var allowAccountsRe = regexp.MustCompile(`AllowAccounts=(\S+)`)
 
-// AddUserToAccount 将用户加入账户，并在创建 association 时直接应用 SCOW 的完整分区权限。
-// partitions 是集群全部分区，allowedPartitions 是该账户当前授权分区；
-// 未授权分区的 association 创建时就写入 GrpJobs=0、GrpSubmitJobs=0，避免先可用再封锁的窗口。
+// AddUserToAccount 将用户加入账户，并根据 SCOW 的完整分区权限设置 association。
+// partitions 是集群全部分区，allowedPartitions 是该账户当前授权分区。
+// Slurm 不能稳定地通过多次 create user 为同一用户、账户追加分区，因此先一次创建
+// 全部分区 association 并默认封锁，再只恢复授权分区。后续步骤失败时会保持默认拒绝，
+// 避免用户在未授权分区获得短暂或持续的作业提交权限。
 func AddUserToAccount(ctx context.Context, user, account, baseQos string, partitions, allowedPartitions []string) error {
 	defaultQos := config.SlurmValue.Slurm.DefaultQOS
 	allowedSet := make(map[string]struct{}, len(allowedPartitions))
@@ -40,12 +42,15 @@ func AddUserToAccount(ctx context.Context, user, account, baseQos string, partit
 		}
 	}
 
-	// 先创建未授权分区，即使后续创建授权分区失败，新用户也不会在未授权分区短暂获得资源权限。
-	if err := createUserInAccountPartitions(ctx, user, account, blocked, true); err != nil {
+	if err := createUserInAccountPartitions(ctx, user, account, partitions); err != nil {
 		return rollbackAddedUserToAccount(ctx, user, account, err,
 			DeleteUserAccountAssociation, DeleteUserAssociationBlockRecords)
 	}
-	if err := createUserInAccountPartitions(ctx, user, account, allowed, false); err != nil {
+	if err := blockUserInAccountPartitionsByPermission(ctx, user, account, blocked); err != nil {
+		return rollbackAddedUserToAccount(ctx, user, account, err,
+			DeleteUserAccountAssociation, DeleteUserAssociationBlockRecords)
+	}
+	if err := allowUserInAccountPartitionsByPermission(ctx, user, account, allowed); err != nil {
 		return rollbackAddedUserToAccount(ctx, user, account, err,
 			DeleteUserAccountAssociation, DeleteUserAssociationBlockRecords)
 	}
@@ -87,37 +92,71 @@ func rollbackAddedUserToAccount(
 	return cause
 }
 
-// createUserInAccountPartitions 一次为用户创建一组权限相同的分区 association。
-func createUserInAccountPartitions(ctx context.Context, user, account string, partitions []string, blocked bool) error {
+// createUserInAccountPartitions 一次创建用户在账户全部分区中的 association。
+// 创建时把所有分区默认设为 GrpJobs=0、GrpSubmitJobs=0，使权限收敛过程始终失败关闭。
+func createUserInAccountPartitions(ctx context.Context, user, account string, partitions []string) error {
 	if len(partitions) == 0 {
 		return nil
 	}
 	args := []string{"-i", "create", "user", fmt.Sprintf("name=%s", user),
 		fmt.Sprintf("partition=%s", strings.Join(partitions, ",")), fmt.Sprintf("account=%s", account)}
-	if blocked {
-		args = append(args, accountPartitionBlockLimitArgs(true)...)
-	}
+	args = append(args, accountPartitionBlockLimitArgs(true)...)
 	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
+		// sacctmgr 对已存在的用户 association 可能以非 0 退出，但 Nothing added
+		// 表示请求是幂等的 no-op，不应导致整个 SCOW 同步失败。
+		if strings.Contains(stdout+"\n"+stderr, "Nothing added") {
+			return nil
+		}
 		if exitCode == -1 {
 			return fmt.Errorf("system error: %v", err)
 		}
 		return fmt.Errorf("create user failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))
 	}
-	if !blocked {
+	return nil
+}
+
+// blockUserInAccountPartitionsByPermission 确保新用户在未授权分区中保持封锁。
+// create user 已为全部分区写入 Grp*=0，这里再执行一次幂等修改，以兼容
+// create user 返回 Nothing added 但现有 association 状态与 SCOW 期望不一致的情况。
+// 恢复记录保存的 -1 是 SCOW 解除该分区限制时应恢复的值。
+func blockUserInAccountPartitionsByPermission(ctx context.Context, user, account string, partitions []string) error {
+	if len(partitions) == 0 {
 		return nil
 	}
-
-	// 新 association 尚未配置自定义 Grp* 限制，因此封锁前原值为 -1。
-	// 记录只用于以后恢复，不参与权限状态判断。
+	defaultLimits := associationLimitPair{Jobs: associationUnlimitedLimit, SubmitJobs: associationUnlimitedLimit}
 	records := make([]accountBlockRecord, 0, len(partitions))
 	for _, partition := range partitions {
 		records = append(records, accountBlockRecord{
 			Account: account, Partition: partition, User: user,
-			Original: associationLimitPair{Jobs: associationUnlimitedLimit, SubmitJobs: associationUnlimitedLimit},
+			Original: defaultLimits,
 		})
 	}
-	return saveAccountBlockRecords(records)
+	if err := saveAccountBlockRecords(records); err != nil {
+		return err
+	}
+
+	return forEachAssociationBatch(partitions, func(batch []string) error {
+		args := []string{"-i", "-Q", "modify", "user", "where",
+			fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
+			fmt.Sprintf("partition=%s", strings.Join(batch, ",")),
+			fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+		args = append(args, accountPartitionBlockLimitArgs(true)...)
+		return executeAssociationModification(ctx, "block new user unauthorized partitions", args)
+	})
+}
+
+// allowUserInAccountPartitionsByPermission 只恢复 SCOW 明确授权的分区。
+// 未授权分区始终保持 Grp*=0；即使本步失败，也只会导致授权分区暂时不可用。
+func allowUserInAccountPartitionsByPermission(ctx context.Context, user, account string, partitions []string) error {
+	return forEachAssociationBatch(partitions, func(batch []string) error {
+		args := []string{"-i", "-Q", "modify", "user", "where",
+			fmt.Sprintf("name=%s", user), fmt.Sprintf("account=%s", account),
+			fmt.Sprintf("partition=%s", strings.Join(batch, ",")),
+			fmt.Sprintf("cluster=%s", config.SlurmValue.MySQLConfig.ClusterName), "set"}
+		args = append(args, accountPartitionBlockLimitArgs(false)...)
+		return executeAssociationModification(ctx, "allow new user authorized partitions", args)
+	})
 }
 
 func createUserAssociationsInAccountPartition(ctx context.Context, users []string, account, partition string, partitionBlocked bool) error {
@@ -293,6 +332,11 @@ func CreateAccount(ctx context.Context, account string) error {
 	args := []string{"-i", "create", "account", fmt.Sprintf("name=%s", account)}
 	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
+		// 同步期间账户可能已被其他步骤创建。sacctmgr 此时会返回非 0 和
+		// Nothing added，但目标状态已满足，应按幂等成功处理。
+		if strings.Contains(stdout+"\n"+stderr, "Nothing added") {
+			return nil
+		}
 		if exitCode == -1 {
 			// 命令执行前就失败了
 			return fmt.Errorf("system error: %v", err)
