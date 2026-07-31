@@ -34,17 +34,30 @@ func BlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncAcc
 	}
 
 	account := syncData.AccountName
-	// 同步接口与 BlockAccount 使用相同实现：把账户父 association 的
-	// GrpJobs、GrpSubmitJobs 设为 0。父级限制会同时约束账户下现有和以后新增的 association。
-	if err := utils.BlockWholeAccountUseAssociation(ctx, account); err != nil {
-		message := fmt.Sprintf("block account %s failed: %v", account, err)
+	// 欠费封锁只改变账户父 association，不改变各分区叶子 association 上保存的资源权限。
+	// 同步请求在 BlockedInCluster=true 时可能不携带完整分区授权；如果此时根据空的
+	// AssignedPartitions 收敛分区，会错误地把账户原有的全部分区权限清除。
+	parentBlocked, _, parentFound, err := utils.GetAccountGroupBlockState(account)
+	if err != nil {
+		message := fmt.Sprintf("block account %s failed to get account association status: %v", account, err)
 		logrus.Errorf("[SyncAccountUser], %v", message)
 		return BlockAccountFailedOperation(syncData.AccountName, message)
 	}
-	// 父级先封锁，确保后续同步叶子分区权限期间账户始终不能提交或运行作业。
-	// 叶子 association 仍按 SCOW 请求表达真实分区权限，供欠费期间的资源查询使用。
-	if _, err := reconcileAccountPartitions(ctx, syncData); err != nil {
-		message := fmt.Sprintf("block account %s succeeded, but reconcile partition permissions failed: %v", account, err)
+	if !parentFound {
+		message := fmt.Sprintf("block account failed, account association not found: %s", account)
+		logrus.Errorf("[SyncAccountUser], %v", message)
+		return BlockAccountFailedOperation(syncData.AccountName, message)
+	}
+	if parentBlocked {
+		// Slurm 实际状态已经与 SCOW 一致，本轮没有发生修改，不向 SCOW 重复上报“封锁成功”。
+		logrus.Infof("[SyncAccountUser], account %s is already blocked, no synchronization is required", account)
+		return nil
+	}
+
+	// 把父 association 的 GrpJobs、GrpSubmitJobs 设为 0。父级限制会同时约束账户下
+	// 现有和以后新增的 association，因此无需逐分区执行封锁。
+	if err := utils.BlockWholeAccountUseAssociation(ctx, account); err != nil {
+		message := fmt.Sprintf("block account %s failed: %v", account, err)
 		logrus.Errorf("[SyncAccountUser], %v", message)
 		return BlockAccountFailedOperation(syncData.AccountName, message)
 	}
