@@ -107,12 +107,16 @@ func (s *ServerConfig) GetClusterNodesInfo(ctx context.Context, in *protos.GetCl
 }
 
 func (s *ServerConfig) GetClusterInfo(ctx context.Context, in *protos.GetClusterInfoRequest) (*protos.GetClusterInfoResponse, error) {
-	var partitions []*protos.PartitionInfo
+	var (
+		partitions     []*protos.PartitionInfo
+		partitionNames []string
+	)
 	logrus.Infof("Received request GetClusterInfo: %v", in)
 	for _, part := range client.CConfig.Partitions { // 遍历每个计算分区、分别获取信息  分区从接口获取
 		var state protos.PartitionInfo_PartitionStatus
 		// 根据分区名获取分区信息
 		partitionName := part.Name
+		partitionNames = append(partitionNames, partitionName)
 
 		partitionInfo, err := utils.GetPartitionByName(partitionName)
 		if err != nil {
@@ -187,8 +191,32 @@ func (s *ServerConfig) GetClusterInfo(ctx context.Context, in *protos.GetCluster
 
 	}
 
+	clusterInfo, err := utils.GetSummaryClusterNodesInfo(partitionNames)
+	if err != nil {
+		logrus.Errorf("GetClusterInfo failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
+	}
+
 	logrus.Tracef("GetClusterInfo Partitions info: %v", partitions)
-	return &protos.GetClusterInfoResponse{ClusterName: client.CConfig.ClusterName, Partitions: partitions}, nil
+	return &protos.GetClusterInfoResponse{
+		ClusterName:           client.CConfig.ClusterName,
+		Partitions:            partitions,
+		NodeCount:             clusterInfo.NodeCount,
+		RunningNodeCount:      clusterInfo.RunningNodeCount,
+		IdleNodeCount:         clusterInfo.IdleNodeCount,
+		NotAvailableNodeCount: clusterInfo.NotAvailableNodeCount,
+		CpuCoreCount:          clusterInfo.CpuCoreCount,
+		RunningCpuCount:       clusterInfo.RunningCpuCount,
+		IdleCpuCount:          clusterInfo.IdleCpuCount,
+		NotAvailableCpuCount:  clusterInfo.NotAvailableCpuCount,
+		GpuCoreCount:          clusterInfo.GpuCoreCount,
+		RunningGpuCount:       clusterInfo.RunningGpuCount,
+		IdleGpuCount:          clusterInfo.IdleGpuCount,
+		NotAvailableGpuCount:  clusterInfo.NotAvailableGpuCount,
+		JobCount:              clusterInfo.JobCount,
+		RunningJobCount:       clusterInfo.RunningJobCount,
+		PendingJobCount:       clusterInfo.PendingJobCount,
+	}, nil
 }
 
 func (s *ServerConfig) GetSummaryClusterInfo(ctx context.Context, in *protos.GetSummaryClusterInfoRequest) (*protos.GetSummaryClusterInfoResponse, error) {
