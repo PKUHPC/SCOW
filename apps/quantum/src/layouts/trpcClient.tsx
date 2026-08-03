@@ -54,28 +54,11 @@ export function ClientProvider(props: { basePath: string; children: React.ReactN
         }),
         mutationCache: new MutationCache({
           onError: (error, variables, context, mutation) => {
-            const { data, message: errMessage } = error as TRPCClientError<AppRouter>;
+            const { data } = error as TRPCClientError<AppRouter>;
             const { onError } = mutation.options;
             if (data?.code && data?.code === "UNAUTHORIZED") {
               setIsRedirecting(true);
               window.location.href = join(props.basePath, "/api/auth");
-            } else if (
-              data?.path?.startsWith("file") &&
-              data?.code === "PRECONDITION_FAILED" &&
-              errMessage.startsWith("SSH_ERROR:")
-            ) {
-              message.error(
-                "Unable to connect to the login node as a user. Please confirm if your home " +
-                  "directory permissions are 700, 750, or 755, or if you have permission to perform operations here",
-              );
-            } else if (
-              data?.path?.startsWith("file") &&
-              data?.code === "BAD_REQUEST" &&
-              errMessage.startsWith("SFTP_ERROR:")
-            ) {
-              message.error(
-                errMessage || "SFTP operation failed, please confirm if you have the permission to operate",
-              );
             } else if (!onError) {
               message.error("There have been some issues, please try again later!");
             }

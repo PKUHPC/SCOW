@@ -962,11 +962,8 @@ export default {
       },
     },
     _app: {
-      sshError: "无法以用户身份连接到登录节点。请确认您的家目录的权限为700、750或者755",
 
       textExceedsLength: "终端登录提示信息过多，请减少'~/.bashrc'等文件中不必要的信息输出!",
-
-      sftpError: "SFTP操作失败，请确认您是否有操作的权限",
       otherError: "服务器出错啦！",
       adapterConnectionError: "{} 集群无法连接，请稍后重试 ",
       adapterTimeoutError: "{} 集群适配器响应超时，请稍后重试或联系管理员。",

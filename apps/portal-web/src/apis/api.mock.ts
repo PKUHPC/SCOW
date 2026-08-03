@@ -499,7 +499,6 @@ export const mockApi: MockApi<typeof api> = {
   startFileTransfer: null,
   queryFileTransferProgress: null,
   terminateFileTransfer: null,
-  checkTransferKey: null,
 
   getAvailablePartitionsForCluster: async () => ({ partitions: [] }),
   getClusterConfigFiles: async () => ({

@@ -15,9 +15,8 @@ import { clusters } from "src/server/trpc/route/config";
 import { getScowdClient, mapConnectErrorToTRPCError } from "src/server/trpc/scowd/scowd";
 import { getCurrentClusters } from "src/server/utils/clusters";
 import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
-import { clusterNotFound } from "src/server/utils/errors";
+import { clusterBackendNotSupported } from "src/server/utils/errors";
 import { logger } from "src/server/utils/logger";
-import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
@@ -609,13 +608,9 @@ export const file = router({
       if (!cluster) {
         throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
       }
-      const host = getClusterLoginNode(clusterId);
-      if (!host) {
-        throw clusterNotFound(clusterId);
-      }
 
       if (!cluster.scowd?.enabled) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
+        throw clusterBackendNotSupported(clusterId);
       }
 
       // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
@@ -702,13 +697,9 @@ export const file = router({
       if (!cluster) {
         throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
       }
-      const host = getClusterLoginNode(clusterId);
-      if (!host) {
-        throw clusterNotFound(clusterId);
-      }
 
       if (!cluster.scowd?.enabled) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
+        throw clusterBackendNotSupported(clusterId);
       }
 
       // 如果是平台管理员访问集群的公共目录时，则不需要检查权限

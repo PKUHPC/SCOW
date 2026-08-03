@@ -12,7 +12,7 @@ import { getPermissionsFromMode } from "src/server/utils/getPermissionsFromMode"
 import { Logger } from "ts-log";
 
 import { callback, FileDriver, SHARED_DIR, shareOkCallback, ShareParams } from "./fileDriver";
-import { getContentType, readableStreamToNodeReadable } from "./sshFileDriver";
+import { getContentType, readableStreamToNodeReadable } from "./fileDriverUtils";
 
 export class ScowdFileDriver implements FileDriver {
   private client: ScowdClient;

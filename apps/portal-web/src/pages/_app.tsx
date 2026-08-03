@@ -67,20 +67,6 @@ const FailEventHandler: React.FC = () => {
         return;
       }
 
-      if (e.data?.code === "SSH_ERROR") {
-        message.error(tArgs("pages._app.sshError"));
-        return;
-      }
-
-      if (e.data?.code === "SFTP_ERROR") {
-        message.error(
-          e.data?.details.length > 150
-            ? e.data?.details.substring(0, 150) + "..."
-            : e.data?.details || tArgs("pages._app.sftpError"),
-        );
-        return;
-      }
-
       if (e.data?.code === "ADAPTER_CALL_ON_ONE_ERROR") {
         const clusterError = e.data.clusterErrorsArray?.[0];
         const clusterId = clusterError?.clusterId;

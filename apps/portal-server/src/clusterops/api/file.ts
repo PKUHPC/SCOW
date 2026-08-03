@@ -175,15 +175,6 @@ export interface TerminateFileTransferRequest {
 
 export interface TerminateFileTransferReply {}
 
-// export interface CheckTransferKeyRequest {
-//   fromCluster: string;
-//   toCluster: string;
-//   userId: string;
-// }
-
-// export interface CheckTransferKeyReply {
-// }
-
 export interface StartFileTransferRequest {
   fromCluster: string;
   toCluster: string;
@@ -221,15 +212,6 @@ export interface TerminateFileTransferRequest {
 
 export interface TerminateFileTransferReply {}
 
-// export interface CheckTransferKeyRequest {
-//   fromCluster: string;
-//   toCluster: string;
-//   userId: string;
-// }
-
-// export interface CheckTransferKeyReply {
-// }
-
 export interface FileOps {
   copy(req: CopyRequest, logger: Logger): Promise<CopyReply>;
   move(req: MoveRequest, logger: Logger): Promise<MoveReply>;
@@ -253,5 +235,4 @@ export interface FileOps {
   startFileTransfer(req: StartFileTransferRequest, logger: Logger): Promise<StartFileTransferReply>;
   queryFileTransfer(req: QueryFileTransferRequest, logger: Logger): Promise<QueryFileTransferReply>;
   terminateFileTransfer(req: TerminateFileTransferRequest, logger: Logger): Promise<TerminateFileTransferReply>;
-  // checkTransferKey(req: CheckTransferKeyRequest, logger: Logger): Promise<CheckTransferKeyReply>;
 }

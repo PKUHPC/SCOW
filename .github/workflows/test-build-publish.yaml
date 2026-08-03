@@ -127,7 +127,7 @@ jobs:
         uses: codecov/codecov-action@v4
         if: vars.RUN_TESTS == 'true'
         with:
-          files: ./libs/auth/coverage/lcov.info,./libs/ssh/coverage/lcov.info,./libs/libconfig/coverage/lcov.info,./libs/decimal/coverage/lcov.info,./libs/server/coverage/lcov.info,./apps/cli/coverage/lcov.info,./apps/auth/coverage/lcov.info,./apps/mis-server/coverage/lcov.info,./apps/portal-server/coverage/lcov.info,./apps/gateway/coverage/lcov.info,./apps/audit-server/coverage/lcov.info
+          files: ./libs/auth/coverage/lcov.info,./libs/libconfig/coverage/lcov.info,./libs/decimal/coverage/lcov.info,./libs/server/coverage/lcov.info,./apps/cli/coverage/lcov.info,./apps/auth/coverage/lcov.info,./apps/mis-server/coverage/lcov.info,./apps/portal-server/coverage/lcov.info,./apps/gateway/coverage/lcov.info,./apps/audit-server/coverage/lcov.info
 
       - name: Create Release Pull Request
         id: changesets

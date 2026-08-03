@@ -138,7 +138,7 @@ export const ClusterConfigSchema = Type.Object({
   ),
   scowd: Type.Optional(
     Type.Object({
-      enabled: Type.Optional(Type.Boolean({ description: "是否开启 scowd", default: false })),
+      enabled: Type.Optional(Type.Boolean({ description: "是否开启 scowd", default: true })),
     }),
   ),
   loginNodes: Type.Union([
@@ -326,6 +326,12 @@ export const getClusterConfigs: GetClusterConfigFn<Record<string, ClusterConfigS
   for (const cluster in config) {
     if (Object.hasOwnProperty.call(config, cluster)) {
       const clusterInfo = config[cluster];
+      if (clusterInfo?.scowd?.enabled === false) {
+        throw new Error(
+          `Cluster ${cluster} sets scowd.enabled to false, but SSH backend is no longer supported. Please enable scowd for this cluster.`,
+        );
+      }
+
       if (clusterInfo && clusterInfo.loginNodes.length > 0) {
         clusterInfo.loginNodes.map((ln) => {
           if (typeof ln === "string") {

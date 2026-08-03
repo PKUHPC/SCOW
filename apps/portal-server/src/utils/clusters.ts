@@ -13,14 +13,13 @@ import {
   libCheckActivatedClusters,
   libGetCurrentActivatedClusters,
 } from "@scow/lib-server/build/misCommon/clustersActivation";
-import { testRootUserSshLogin } from "@scow/lib-ssh";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
-import { config, rootKeyPair } from "src/config/env";
+import { config } from "src/config/env";
 import { logger as pinoLogger } from "src/utils/logger";
 import { Logger } from "ts-log";
 
-import { clusterNotFound, loginNodeNotFound } from "./errors";
+import { clusterBackendNotSupported, clusterNotFound, loginNodeNotFound } from "./errors";
 import { getScowdClient } from "./scowd";
 
 export const certificates = createAdapterCertificates(config);
@@ -144,15 +143,14 @@ export const checkUserClusterPermission = async ({
 
 export async function checkClusters(logger: Logger, activatedClusters: Record<string, ClusterConfigSchema>) {
   const scowdClusters: Record<string, ClusterConfigSchema> = {};
-  const sshClusters: Record<string, ClusterConfigSchema> = {};
   Object.entries(activatedClusters).map(([id, config]) => {
     if (config.scowd?.enabled) {
       scowdClusters[id] = config;
       return;
     }
-    sshClusters[id] = config;
+
+    throw clusterBackendNotSupported(id);
   });
-  await checkClustersRootUserLogin(logger, sshClusters);
   await checkClustersScowdHealth(logger, scowdClusters);
 }
 
@@ -181,30 +179,6 @@ export async function checkClustersScowdHealth(logger: Logger, clusters: Record<
       }
     }),
   );
-}
-
-/**
- * Check whether clusters can be logged in as root user
- */
-export async function checkClustersRootUserLogin(logger: Logger, clusters: Record<string, ClusterConfigSchema>) {
-  const checkClusterLogin = async ({ displayName, loginNodes }: ClusterConfigSchema) => {
-    const node = getLoginNode(loginNodes[0]);
-    logger.info("Checking if root can login to %s by login node %s", displayName, node.name);
-
-    const error = await testRootUserSshLogin(node.address, rootKeyPair, console);
-    if (error) {
-      logger.info("Root cannot login to %s by login node %s. err: %o", displayName, node.name, error);
-      throw error;
-    } else {
-      logger.info("Root can login to %s by login node %s", displayName, node.name);
-    }
-  };
-
-  try {
-    await Promise.all(Object.values(clusters).map(checkClusterLogin));
-  } catch (error) {
-    logger.error("One or more clusters failed root login check: %o", error);
-  }
 }
 
 /**

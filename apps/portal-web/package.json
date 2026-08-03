@@ -48,7 +48,6 @@
     "@scow/lib-notification": "workspace:*",
     "@scow/lib-operation-log": "workspace:*",
     "@scow/lib-scow-resource": "workspace:*",
-    "@scow/lib-ssh": "workspace:*",
     "@scow/lib-web": "workspace:*",
     "@scow/notification-protos": "workspace:*",
     "@scow/protos": "workspace:*",

@@ -15,8 +15,6 @@ import { jobServiceServer } from "src/services/job";
 import { shellServiceServer } from "src/services/shell";
 import { checkClusters } from "src/utils/clusters";
 import { loggerOptions } from "src/utils/logger";
-import { setupProxyGateway } from "src/utils/proxy";
-import { initShellFile } from "src/utils/shell";
 
 export async function createServer() {
   const server = new Server({
@@ -58,16 +56,6 @@ export async function createServer() {
     );
 
     await checkClusters(server.logger, activatedClusters);
-    await Promise.all(
-      Object.entries(activatedClusters).map(async ([id, config]) => {
-        if (config.scowd?.enabled) {
-          server.logger.info(`The scowd of cluster ${id} is already enabled, skipping initShellFile.`);
-          return;
-        }
-        await initShellFile(id, server.logger);
-      }),
-    );
-    await setupProxyGateway(server.logger, activatedClusters);
   }
 
   return server;

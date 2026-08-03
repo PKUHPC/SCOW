@@ -713,13 +713,9 @@ export default {
       },
     },
     _app: {
-      sshError:
-        "No es posible conectarse como usuario al nodo de acceso." +
-        " Asegúrate de que los permisos de tu directorio home sean 700, 750 o 755",
       textExceedsLength:
         "Hay demasiados mensajes de inicio de sesión en el terminal." +
         " Reduce la salida innecesaria en archivos como '~/.bashrc'",
-      sftpError: "Operación SFTP fallida. Por favor confirma que tienes los permisos necesarios",
       otherError: "¡Error del servidor!",
       adapterConnectionError: "El cluster {} no está disponible actualmente. Inténtalo de nuevo más tarde",
       adapterTimeoutError:

@@ -33,7 +33,6 @@ import type { KillDesktopSchema } from "src/pages/api/desktop/killDesktop";
 import type { LaunchDesktopSchema } from "src/pages/api/desktop/launchDesktop";
 import type { ListAvailableWmsSchema } from "src/pages/api/desktop/listAvailableWms";
 import type { ListDesktopsSchema } from "src/pages/api/desktop/listDesktops";
-import type { CheckTransferKeySchema } from "src/pages/api/file/checkTransferKey";
 import type { CompleteMultipartUploadSchema } from "src/pages/api/file/completeMultipartUpload";
 import type { CompressAndDownloadFileSchema } from "src/pages/api/file/compressAndDownload";
 import type { CompressFilesSchema } from "src/pages/api/file/compressFiles";
@@ -118,7 +117,6 @@ export const api = {
   launchDesktop: apiClient.fromTypeboxRoute<typeof LaunchDesktopSchema>("POST", "/api/desktop/launchDesktop"),
   listAvailableWms: apiClient.fromTypeboxRoute<typeof ListAvailableWmsSchema>("GET", "/api/desktop/listAvailableWms"),
   listDesktops: apiClient.fromTypeboxRoute<typeof ListDesktopsSchema>("POST", "/api/desktop/listDesktops"),
-  checkTransferKey: apiClient.fromTypeboxRoute<typeof CheckTransferKeySchema>("POST", "/api/file/checkTransferKey"),
   completeMultipartUpload: apiClient.fromTypeboxRoute<typeof CompleteMultipartUploadSchema>("POST", "/api/file/completeMultipartUpload"),
   compressAndDownloadFile: apiClient.fromTypeboxRoute<typeof CompressAndDownloadFileSchema>("GET", "/api/file/compressAndDownload"),
   compressFiles: apiClient.fromTypeboxRoute<typeof CompressFilesSchema>("PATCH", "/api/file/compressFiles"),

@@ -717,12 +717,8 @@ export default {
       },
     },
     _app: {
-      sshError:
-        "Impossible de se connecter en tant qu'utilisateur au nœud de connexion." +
-        " Assurez-vous que les permissions de votre répertoire personnel sont 700, 750 ou 755",
       textExceedsLength:
         "Trop de messages de connexion au terminal." + " Réduisez les sorties inutiles dans '~/.bashrc' et autres",
-      sftpError: "Opération SFTP échouée. Vérifiez vos permissions",
       otherError: "Erreur du serveur",
       adapterConnectionError: "Le cluster {} est actuellement inaccessible. Réessayez plus tard",
       adapterTimeoutError:

@@ -11,12 +11,10 @@ import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
 import { AppSession, CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { TrainJobInput } from "src/server/trpc/route/jobs/jobs";
-import { clusterNotFound } from "src/server/utils/errors";
-import { getClusterLoginNode } from "src/server/utils/ssh";
+import { clusterBackendNotSupported } from "src/server/utils/errors";
 import { Logger } from "ts-log";
 
 import { ScowdJobDriver } from "./scowdJobDriver";
-import { SshJobDriver } from "./sshJobDriver";
 
 type WithMountTarget<T> = T & { target: string };
 
@@ -29,7 +27,7 @@ export interface CreateAppExtraParams {
   modelVersions: WithMountTarget<ModelVersion>[];
   app: AppConfigSchema;
   proxyBasePath: string;
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface ConnectToAppResponse {
@@ -42,7 +40,7 @@ export interface ConnectToAppResponse {
 export interface SubmitInferJobExtraParams {
   isModelPrivates: boolean[];
   modelVersions: WithMountTarget<ModelVersion>[];
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface SubmitTrainJobExtraParams {
@@ -52,11 +50,11 @@ export interface SubmitTrainJobExtraParams {
   algorithmVersions: WithMountTarget<AlgorithmVersion>[];
   datasetVersions: WithMountTarget<DatasetVersion>[];
   modelVersions: WithMountTarget<ModelVersion>[];
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface CreateDevHostExtraParams {
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface JobDriver {
@@ -72,28 +70,36 @@ export interface JobDriver {
   getDevHostParams(sessionId: string, jobId: number): Promise<CreateDevHostInput>;
 }
 
-function createJobDriver(opts: {
-  clusterId: string;
-  userId: string;
-  logger: Logger;
-}): JobDriver {
+interface JobDriverProvider {
+  supports(clusterId: string): boolean;
+  create(opts: { clusterId: string; userId: string; logger: Logger }): JobDriver;
+}
+
+// 后续新增作业driver时在这里注册 provider，不要在 route 中增加分支。
+// supports() 只应在集群明确启用对应后端时返回 true，create() 必须返回完整的 JobDriver 实现。
+// provider 会按顺序匹配；如果新driver优先级高于 scowd，请放在 scowd 前面。
+const jobDriverProviders: JobDriverProvider[] = [
+  {
+    supports: (clusterId) => clusters[clusterId]?.scowd?.enabled === true,
+    create: ({ clusterId, userId, logger }) => new ScowdJobDriver(clusterId, userId, logger),
+  },
+];
+
+function createJobDriver(opts: { clusterId: string; userId: string; logger: Logger }): JobDriver {
   const { clusterId, userId, logger } = opts;
   const cluster = clusters[clusterId];
-  const host = getClusterLoginNode(clusterId);
 
   if (!cluster) {
     throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
   }
 
-  if (!host) { throw clusterNotFound(clusterId); }
-
-  if (cluster.scowd?.enabled) {
-    return new ScowdJobDriver(clusterId, userId, logger);
+  const provider = jobDriverProviders.find((provider) => provider.supports(clusterId));
+  if (!provider) {
+    throw clusterBackendNotSupported(clusterId);
   }
 
-  return new SshJobDriver(host, userId, logger);
+  return provider.create({ clusterId, userId, logger });
 }
-
 
 export async function withJobDriver<T>(
   params: {
@@ -103,7 +109,6 @@ export async function withJobDriver<T>(
   handler: (driver: JobDriver) => Promise<T>,
   logger: Logger,
 ) {
-
   const driver = createJobDriver({
     clusterId: params.clusterId,
     userId: params.user,

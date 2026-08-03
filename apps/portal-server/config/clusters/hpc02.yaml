@@ -5,7 +5,7 @@ loginNodes:
     address: localhost:22
 crossClusterFileTransfer:
   enabled: true
-  transferNode: localhost:222
+  transferNode: login01:8999
 # slurm:
 #   partitions:
 #       - name: GPU

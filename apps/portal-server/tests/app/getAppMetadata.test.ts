@@ -21,8 +21,6 @@ interface AppCustomAttribute {
   select: SelectOption[];
 }
 
-// import { actualPath, cluster, connectToTestServer,
-//   createTestItems, expectGrpcThrow, resetTestServer, TestSshServer, userId } from "./utils";
 
 let server: Server;
 let client: AppServiceClient;

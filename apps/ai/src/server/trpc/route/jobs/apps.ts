@@ -38,7 +38,6 @@ import {
 } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
 import { getCurrentClusters } from "src/server/utils/clusters";
-import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { getProtoAppType } from "src/server/utils/getProtoAppType";
 import { allProtoAiJobTypes, getProtoJobTypes } from "src/server/utils/getProtoJobType";
@@ -49,7 +48,6 @@ import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/
 import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getUserAssignedResourceDetails } from "src/server/utils/resource";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
-import { getClusterLoginNode } from "src/server/utils/ssh";
 import { fetchSubmitRecord } from "src/server/utils/submitRecord";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
@@ -1017,12 +1015,6 @@ export const listAppSessions = procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    const host = getClusterLoginNode(clusterId);
-
-    if (!host) {
-      throw clusterNotFound(clusterId);
-    }
-
     const filteredSessions = await driver.withJobDriver(
       {
         clusterId,
@@ -1145,12 +1137,6 @@ export const getJobDetails = procedure
 
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
-
-    const clusterHost = getClusterLoginNode(clusterId);
-
-    if (!clusterHost) {
-      throw clusterNotFound(clusterId);
-    }
 
     const apps = getClusterAppConfigs(clusterId);
 
@@ -1517,11 +1503,6 @@ export const connectToApp = procedure
     const { cluster, sessionId } = input;
     const userId = user.identityId;
 
-    const host = getClusterLoginNode(cluster);
-    if (!host) {
-      throw clusterNotFound(cluster);
-    }
-
     const apps = getClusterAppConfigs(cluster);
 
     const reply = await driver.withJobDriver(
@@ -1603,11 +1584,6 @@ export const connectToDevHostApp = procedure
     }
 
     const userId = user.identityId;
-
-    const host = getClusterLoginNode(cluster);
-    if (!host) {
-      throw clusterNotFound(cluster);
-    }
 
     const reply = await driver.withJobDriver(
       {

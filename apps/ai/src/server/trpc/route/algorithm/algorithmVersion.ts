@@ -13,7 +13,6 @@
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import path, { basename, dirname, join } from "path";
-import { clusters } from "src/server/config/clusters";
 import { Algorithm } from "src/server/entities/Algorithm";
 import { AlgorithmVersion, SharedStatus } from "src/server/entities/AlgorithmVersion";
 import { callLog } from "src/server/setup/operationLog";
@@ -691,10 +690,7 @@ export const deleteAlgorithmVersion = procedure
             logger,
           );
         } catch (e) {
-          logger.error(
-            "ssh failure occurred when unshare" + `algorithmVersion ${algorithmVersionId} of algorithm ${algorithmId}`,
-            e,
-          );
+          logger.error(`Failed to unshare algorithmVersion ${algorithmVersionId} of algorithm ${algorithmId}`, e);
         }
       }
 
@@ -1195,15 +1191,8 @@ export const copyPublicAlgorithmVersion = procedure
       await withFileDriver(
         { clusterId: algorithmVersion.algorithm.$.clusterId, user: user.identityId },
         async (driver) => {
-          const cluster = clusters[algorithmVersion.algorithm.$.clusterId];
-
           // scowd复制需要再路径最后加上文件夹名
-          await driver.copyWithMode(
-            algorithmVersion.path,
-            cluster.scowd?.enabled ? targetCopiedPath : input.path,
-            "0750",
-            checkIsPublicPathsResult,
-          );
+          await driver.copyWithMode(algorithmVersion.path, targetCopiedPath, "0750", checkIsPublicPathsResult);
         },
         logger,
       );

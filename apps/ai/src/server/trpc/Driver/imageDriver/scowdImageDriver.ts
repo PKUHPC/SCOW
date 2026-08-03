@@ -97,7 +97,6 @@ export class ScowdImageDriver implements ImageDriver {
                 cause: ErrorCode.FILE_NOT_READABLE,
               });
             }
-            // 以上是ssh中的checkSharePermission
 
             // 检查是否为tar文件
             if (!sourcePath.endsWith(".tar")) {

@@ -5,8 +5,6 @@ import { GetServerSideProps, NextPage } from "next";
 import { useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { USE_MOCK } from "src/apis/useMock";
-import { getTokenFromCookie } from "src/auth/cookie";
 import { requireAuth } from "src/auth/requireAuth";
 import { AuthResultError, ssrAuthenticate } from "src/auth/server";
 import { UnifiedErrorPage } from "src/components/errorPages/UnifiedErrorPage";
@@ -25,7 +23,7 @@ type Props =
       error: AuthResultError;
     }
   | {
-      scowdEnabledClusters: string[];
+      error?: undefined;
     };
 
 interface ButtonProps {
@@ -35,7 +33,6 @@ interface ButtonProps {
   dstCluster: Cluster | undefined;
   selectedKeys: FileInfoKey[];
   toPath: string;
-  scowdEnabledClusters: string[];
 }
 
 const p = prefix("pages.files.fileTransfer.");
@@ -45,7 +42,7 @@ const OperationButton: React.FC<ButtonProps> = (props) => {
   const t = useI18nTranslateToString();
   const { message, modal } = App.useApp();
 
-  const { icon, disabled, srcCluster, dstCluster, selectedKeys, toPath, scowdEnabledClusters } = props;
+  const { icon, disabled, srcCluster, dstCluster, selectedKeys, toPath } = props;
 
   return (
     <Button
@@ -60,10 +57,6 @@ const OperationButton: React.FC<ButtonProps> = (props) => {
             content: t(p("confirmTransferContent"), [srcClusterName, dstClusterName]),
             okText: t(p("confirmOk")),
             onOk: async () => {
-              // scowd 跨集群文件传输无需检查 key
-              if (!scowdEnabledClusters.includes(srcCluster.id)) {
-                await api.checkTransferKey({ body: { fromCluster: srcCluster.id, toCluster: dstCluster.id } });
-              }
               Promise.all(
                 selectedKeys.map(async (key) => {
                   await api
@@ -89,7 +82,7 @@ const OperationButton: React.FC<ButtonProps> = (props) => {
 };
 
 export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props: Props) => {
-  if ("error" in props) {
+  if (props.error !== undefined) {
     return <UnifiedErrorPage code={props.error} />;
   }
 
@@ -136,7 +129,6 @@ export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props:
               dstCluster={clusterRight}
               selectedKeys={selectedKeysLeft}
               toPath={pathRight}
-              scowdEnabledClusters={props.scowdEnabledClusters}
             />
           </Row>
 
@@ -148,7 +140,6 @@ export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props:
               dstCluster={clusterLeft}
               selectedKeys={selectedKeysRight}
               toPath={pathLeft}
-              scowdEnabledClusters={props.scowdEnabledClusters}
             />
           </Row>
         </Col>
@@ -177,27 +168,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
     return { props: { error: info } };
   }
 
-  // Cannot directly call api routes here, so mock is not available directly.
-  // manually call mock
-  if (USE_MOCK) {
-    return {
-      props: {
-        scowdEnabledClusters: ["hpc01"],
-      },
-    };
-  }
-
-  const token = getTokenFromCookie({ req });
-  const resp = await api.getClusterConfigFiles({ query: { token } });
-
-  const scowdEnabledClusters: string[] = Object.entries(resp.clusterConfigs)
-    .filter(([_, config]) => !!config.scowd?.enabled)
-    .map(([cluster, _]) => cluster);
-
-  return {
-    props: {
-      scowdEnabledClusters,
-    },
-  };
+  return { props: {} };
 };
 export default FileTransferPage;

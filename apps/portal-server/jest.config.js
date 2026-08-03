@@ -7,6 +7,7 @@ const { compilerOptions } = require("./tsconfig");
 const dotenv = require("dotenv");
 
 dotenv.config({ path: "env/.env.test" });
+process.env.NODE_ENV = "test";
 
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {

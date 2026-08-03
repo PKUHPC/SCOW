@@ -17,6 +17,19 @@ import { reloadEntity } from "src/utils/orm";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
 
+jest.mock("src/utils/scowd", () => {
+  const actual = jest.requireActual("src/utils/scowd");
+
+  return {
+    ...actual,
+    getScowdClient: jest.fn(() => ({
+      system: {
+        checkHealth: jest.fn().mockResolvedValue({}),
+      },
+    })),
+  };
+});
+
 let server: Server;
 let client: ConfigServiceClient;
 let clusterItem: Cluster;

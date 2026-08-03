@@ -19,6 +19,10 @@ priority: 0
 # 调度器适配器地址(ip地址:端口号)
 adapterUrl: localhost:8972
 
+# socwd是否启动，默认开启，目前不开启scowd系统不可用
+# scowd:
+#   enabled: true
+
 loginNodes:
     # 登录节点展示名称
   - name: login01
@@ -26,8 +30,12 @@ loginNodes:
     # 如果设置的是域名，请确认此节点的/etc/hosts中包含了域名到IP的解析信息
     # 如果部署了多集群，需保证多集群下登录节点的IP或者域名也不能重复
     address: 192.168.88.102
+    scowd:
+      port: 8999
   - name: login02
     address: 192.168.88.103
+    scowd:
+      port: 8999
 
 # 登录节点桌面功能
 loginDesktop:
@@ -71,7 +79,7 @@ crossClusterFileTransfer:
   # 不启用跨集群传输功能可以设置为false
   enabled: true
   # 传输节点的地址(ip地址:端口号)
-  transferNode: localhost:22222
+  transferNode: login01:8999
 
 # 集群在HPC中是否启用，默认为true
 # 纯 AI 集群（如 k8s 集群）请显式配置为 false，避免管理系统对该集群调用 HPC 相关逻辑。

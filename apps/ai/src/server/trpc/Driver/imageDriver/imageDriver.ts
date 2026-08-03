@@ -1,13 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { clusters } from "src/server/config/clusters";
 import { Source } from "src/server/entities/Image";
-import { clusterNotFound } from "src/server/utils/errors";
+import { clusterBackendNotSupported } from "src/server/utils/errors";
 import { LoginInfo } from "src/server/utils/image";
-import { getClusterLoginNode } from "src/server/utils/ssh";
 import { Logger } from "ts-log";
 
 import { ScowdImageDriver } from "./scowdImageDriver";
-import { SshImageDriver } from "./sshImageDriver";
 
 export interface CreateImageParams {
   source: Source;
@@ -42,24 +40,32 @@ export interface ImageDriver {
   saveImage(params: saveImageParams): Promise<void>;
 }
 
+interface ImageDriverProvider {
+  supports(clusterId: string): boolean;
+  create(opts: { clusterId: string; userId: string; logger: Logger }): ImageDriver;
+}
+
+const imageDriverProviders: ImageDriverProvider[] = [
+  {
+    supports: (clusterId) => clusters[clusterId]?.scowd?.enabled === true,
+    create: ({ clusterId, userId, logger }) => new ScowdImageDriver(clusterId, userId, logger),
+  },
+];
+
 function createImageDriver(opts: { clusterId: string; userId: string; logger: Logger }): ImageDriver {
   const { clusterId, userId, logger } = opts;
   const cluster = clusters[clusterId];
-  const host = getClusterLoginNode(clusterId);
 
   if (!cluster) {
     throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
   }
 
-  if (!host) {
-    throw clusterNotFound(clusterId);
+  const provider = imageDriverProviders.find((provider) => provider.supports(clusterId));
+  if (!provider) {
+    throw clusterBackendNotSupported(clusterId);
   }
 
-  if (cluster.scowd?.enabled) {
-    return new ScowdImageDriver(clusterId, userId, logger);
-  }
-
-  return new SshImageDriver(clusterId, host, userId, logger);
+  return provider.create({ clusterId, userId, logger });
 }
 
 export async function withImageDriver<T>(

@@ -2,7 +2,6 @@ import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import path, { basename, dirname, join } from "path";
 import { SharedStatus } from "src/models/common";
-import { clusters } from "src/server/config/clusters";
 import { Dataset } from "src/server/entities/Dataset";
 import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { callLog } from "src/server/setup/operationLog";
@@ -219,15 +218,15 @@ export const getAllDatasetVersions = procedure
     const versions =
       datasetIds.length > 0
         ? await em.find(
-          DatasetVersion,
-          {
-            dataset: { $in: datasetIds },
-          },
-          {
-            populate: ["dataset"],
-            orderBy: { createTime: "desc" },
-          },
-        )
+            DatasetVersion,
+            {
+              dataset: { $in: datasetIds },
+            },
+            {
+              populate: ["dataset"],
+              orderBy: { createTime: "desc" },
+            },
+          )
         : [];
 
     const versionMap = buildVersionMap(versions, (version) => version.dataset.id);
@@ -679,11 +678,11 @@ export const deleteDatasetVersion = procedure
 
           const pathToUnshare =
             dataset.versions.filter((v) => v.id !== datasetVersionId && v.sharedStatus === SharedStatus.SHARED).length >
-              0
+            0
               ? // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
-              dirname(datasetVersion.path)
+                dirname(datasetVersion.path)
               : // 除了此版本以外没有其他已分享的版本则取消分享整个数据集
-              dirname(dirname(datasetVersion.path));
+                dirname(dirname(datasetVersion.path));
 
           await driver.withFileDriver(
             {
@@ -696,10 +695,7 @@ export const deleteDatasetVersion = procedure
             logger,
           );
         } catch (e) {
-          logger.error(
-            `ssh failure occured when unshare datasetVersion ${datasetVersionId}` + `of dataset ${datasetId} `,
-            e,
-          );
+          logger.error(`Failed to unshare datasetVersion ${datasetVersionId} of dataset ${datasetId}`, e);
         }
       }
 
@@ -1060,9 +1056,9 @@ export const unShareDatasetVersion = procedure
     const sharedDatasetVersionPath =
       dataset.versions.filter((v) => v.sharedStatus === SharedStatus.SHARED).length > 0
         ? // 如果还有其他的已分享版本则只取消此版本的分享
-        dirname(datasetVersion.path)
+          dirname(datasetVersion.path)
         : // 如果没有其他的已分享版本则取消整个数据集的分享
-        dirname(dirname(datasetVersion.path));
+          dirname(dirname(datasetVersion.path));
 
     driver.withFileDriver(
       {
@@ -1236,15 +1232,8 @@ export const copyPublicDatasetVersion = procedure
       await withFileDriver(
         { clusterId: datasetVersion.dataset.$.clusterId, user: user.identityId },
         async (driver) => {
-          const cluster = clusters[datasetVersion.dataset.$.clusterId];
-
           // scowd复制需要再路径最后加上文件夹名
-          await driver.copyWithMode(
-            datasetVersion.path,
-            cluster.scowd?.enabled ? targetCopiedPath : input.path,
-            "0750",
-            checkIsPublicPathsResult,
-          );
+          await driver.copyWithMode(datasetVersion.path, targetCopiedPath, "0750", checkIsPublicPathsResult);
         },
         logger,
       );

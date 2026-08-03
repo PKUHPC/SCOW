@@ -37,7 +37,6 @@ import { blockUserInAccount, unblockUserInAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { processExpiredWhitelist } from "src/bl/whitelist";
 import { authUrl } from "src/config";
-import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
@@ -48,7 +47,7 @@ import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entit
 import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo, getUserStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
-import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
+import { createUserInDatabase } from "src/utils/createUser";
 import { logger } from "src/utils/logger";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
@@ -854,18 +853,6 @@ export const userServiceServer = plugin((server) => {
         { identityId: user.userId, id: user.id, mail: user.email, name: user.name, password },
         server.logger,
       )
-        .then(async () => {
-          // insert public key
-          // 插入公钥失败也认为是创建用户成功
-          // 在所有集群下执行
-          // 如果 SCOWD 开启则不需要插入公钥
-          const filterClusterConfig = Object.fromEntries(
-            Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true),
-          );
-
-          await insertKeyToNewUser(identityId, password, server.logger, filterClusterConfig).catch(() => {});
-          return true;
-        })
         .then(async () => {
           // 设置用户的存储配额
           await setNewUserStorageQuota(em, tenantName, identityId);

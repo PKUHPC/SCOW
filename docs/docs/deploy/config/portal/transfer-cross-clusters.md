@@ -32,7 +32,7 @@ loginNodes:
     address: localhost:22222
 crossClusterFileTransfer:
   enabled: true
-  transferNode: localhost:22222
+  transferNode: login01:8999
 ```
 :::tip
 

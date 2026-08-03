@@ -4,7 +4,7 @@ import { ShellServiceServer, ShellServiceService } from "@scow/protos/build/port
 import { getClusterOps } from "src/clusterops";
 import { checkUserClusterPermission } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
-import { getClusterLoginNode } from "src/utils/ssh";
+import { getClusterLoginNode } from "src/utils/clusterNodes";
 
 export const shellServiceServer = plugin((server) => {
   server.addService<ShellServiceServer>(ShellServiceService, {

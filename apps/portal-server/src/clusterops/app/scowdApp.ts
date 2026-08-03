@@ -516,7 +516,7 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
             // judge whether the app is ready
             if (runningJobInfo && runningJobInfo.state === "RUNNING") {
               // 对于k8s这种通过容器运行作业的集群，当把容器中的作业工作目录挂载到宿主机中时，目录中新生成的文件不会马上反映到宿主机中，
-              // 具体体现为sftpExists无法找到新生成的SERVER_SESSION_INFO和VNC_SESSION_INFO文件，必须实际读取一次目录，才能识别到它们
+              // 具体体现为文件接口可能无法立即找到新生成的SERVER_SESSION_INFO和VNC_SESSION_INFO文件，必须实际读取一次目录，才能识别到它们
               try {
                 await client.file.readDirectory({ userId, dirPath: jobDir });
               } catch (error: any) {
@@ -799,7 +799,7 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
 
               if (displayId) {
                 // the server is run at the compute node
-                // scowd 无需考虑代理网关节点，可以直接 ssh 到计算节点
+                // scowd 会在对应节点上刷新 VNC 密码，无需再通过代理网关处理
                 const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
 
                 const { password } = await client.app

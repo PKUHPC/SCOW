@@ -1,7 +1,4 @@
 import { bool, envConfig, host, port, str } from "@scow/lib-config";
-import { getKeyPair } from "@scow/lib-ssh";
-import { homedir } from "os";
-import { join } from "path";
 
 export const config = envConfig({
   HOST: host({ default: "0.0.0.0", desc: "监听地址" }),
@@ -11,9 +8,6 @@ export const config = envConfig({
     desc: "日志等级",
   }),
   LOG_PRETTY: bool({ desc: "以可读的方式输出log", default: false }),
-
-  SSH_PRIVATE_KEY_PATH: str({ desc: "SSH私钥路径", default: join(homedir(), ".ssh", "id_rsa") }),
-  SSH_PUBLIC_KEY_PATH: str({ desc: "SSH公钥路径", default: join(homedir(), ".ssh", "id_rsa.pub") }),
 
   AUTH_URL: str({ desc: "认证系统 URL", default: "" }),
 
@@ -37,5 +31,3 @@ export const config = envConfig({
     default: "./adapter/certs/scow.key",
   }),
 });
-
-export const rootKeyPair = getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);

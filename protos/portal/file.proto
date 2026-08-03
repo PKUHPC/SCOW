@@ -259,16 +259,6 @@ message TerminateFileTransferResponse {
 
 }
 
-message CheckTransferKeyRequest {
-  string from_cluster = 1;
-  string to_cluster = 2;
-  string user_id = 3;
-}
-
-message CheckTransferKeyResponse {
-
-}
-
 message DecompressFileRequest {
   string user_id = 1;
   string cluster_id = 2;
@@ -320,6 +310,4 @@ service FileService {
   rpc QueryFileTransfer(QueryFileTransferRequest) returns (QueryFileTransferResponse);
 
   rpc TerminateFileTransfer(TerminateFileTransferRequest) returns (TerminateFileTransferResponse);
-
-  rpc CheckTransferKey(CheckTransferKeyRequest) returns (CheckTransferKeyResponse);
 }

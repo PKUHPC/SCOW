@@ -7,7 +7,7 @@ import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { TenantUserStorageQuota } from "src/entities/TenantUserStorageQuota";
 import { User } from "src/entities/User";
 
-import { getScowdClient } from "./scowd";
+import { ensureScowdCluster, getScowdClient } from "./scowd";
 
 export const checkClusterStorageQuotaEnabled = (clusterConfig: ClusterConfigSchema, paths: string[]) => {
   if (!clusterConfig.storage?.enabled) {
@@ -49,7 +49,9 @@ export async function setNewUserStorageQuota(
 ) {
   // 所有开启了存储配额的集群中均需完成设置
   for (const [cluster, config] of Object.entries(configClusters)) {
-    if (config.storage?.enabled && config.scowd?.enabled) {
+    if (config.storage?.enabled) {
+      ensureScowdCluster(cluster);
+
       const tenantQuotas = await em.find(TenantStorageQuota, { tenant: { name: tenantName } });
       const scowdClient = getScowdClient(cluster);
 

@@ -1,7 +1,4 @@
 import { bool, envConfig, num, str } from "@scow/lib-config";
-import { getKeyPair } from "@scow/lib-ssh";
-import { homedir } from "os";
-import { join } from "path";
 
 const specs = {
   LOG_LEVEL: str({
@@ -17,9 +14,6 @@ const specs = {
   AUTH_INTERNAL_URL: str({ desc: "认证服务内网地址", default: "http://auth:5000" }),
 
   LOGIN_NODES: str({ desc: "集群的登录节点。将会覆写配置文件。格式：集群ID=登录节点,集群ID=登录节点", default: "" }),
-
-  SSH_PRIVATE_KEY_PATH: str({ desc: "SSH私钥路径", default: join(homedir(), ".ssh", "id_rsa") }),
-  SSH_PUBLIC_KEY_PATH: str({ desc: "SSH公钥路径", default: join(homedir(), ".ssh", "id_rsa.pub") }),
 
   MOCK_USER_ID: str({ desc: "开发和测试的时候所使用的user id", default: undefined }),
 
@@ -74,11 +68,3 @@ const specs = {
 };
 
 export const config = envConfig(specs);
-
-const building = process.env.BUILDING === "1";
-export const rootKeyPair = building
-  ? {
-      publicKey: "",
-      privateKey: "",
-    }
-  : getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);

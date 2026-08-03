@@ -4,7 +4,6 @@ import { getUserInfo } from "src/server/auth/server";
 import { withFileDriver } from "src/server/trpc/Driver/fileDriver/fileDriver";
 import { shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { logger } from "src/server/utils/logger";
-import { getClusterLoginNode } from "src/server/utils/ssh";
 import { z } from "zod";
 
 const queryZod = z.object({
@@ -33,12 +32,6 @@ export async function POST(request: NextRequest) {
   // // File is only an interface. Blob is class
   if (!uploadedFile || !(uploadedFile instanceof Blob)) {
     return NextResponse.json({ code: "INVALID_FILE" }, { status: 400 });
-  }
-
-  const host = getClusterLoginNode(clusterId);
-
-  if (!host) {
-    return NextResponse.json({ code: "INVALID_CLUSTER" }, { status: 400 });
   }
 
   return await withFileDriver(

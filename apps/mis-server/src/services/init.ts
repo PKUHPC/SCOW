@@ -11,8 +11,8 @@ import { SystemState } from "src/entities/SystemState";
 import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
-import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
-import { getScowdClient } from "src/utils/scowd";
+import { createUserInDatabase } from "src/utils/createUser";
+import { ensureScowdCluster, getScowdClient } from "src/utils/scowd";
 import { userExists } from "src/utils/userExists";
 
 export const initServiceServer = plugin((server) => {
@@ -66,21 +66,11 @@ export const initServiceServer = plugin((server) => {
         server.logger,
       )
         .then(async () => {
-          // 插入公钥失败也认为是创建用户成功
-          // 在所有集群下执行
-          // 如果 SCOWD 开启则不需要插入公钥
-          const filterClusterConfig = Object.fromEntries(
-            Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true),
-          );
-
-          await insertKeyToNewUser(userId, password, server.logger, filterClusterConfig).catch(() => {});
-
-          return true;
-        })
-        .then(async () => {
           // 设置用户的存储配额
           for (const [cluster, config] of Object.entries(configClusters)) {
-            if (config.storage?.enabled && config.scowd?.enabled) {
+            if (config.storage?.enabled) {
+              ensureScowdCluster(cluster);
+
               const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
               const scowdClient = getScowdClient(cluster);
 

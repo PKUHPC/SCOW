@@ -12,6 +12,13 @@ export const clusterNotFound = (cluster: string) => {
   return { code: Status.NOT_FOUND, message: `cluster ${cluster} is not found` } as ServiceError;
 };
 
+export const clusterBackendNotSupported = (cluster: string) => {
+  return {
+    code: Status.FAILED_PRECONDITION,
+    message: `cluster ${cluster} does not support the current backend. Please enable scowd for this cluster.`,
+  } as ServiceError;
+};
+
 export const jobNotFound = (jobId: number) => {
   return { code: Status.NOT_FOUND, message: `job id ${jobId} is not found` } as ServiceError;
 };

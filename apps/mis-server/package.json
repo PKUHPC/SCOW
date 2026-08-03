@@ -44,7 +44,6 @@
     "@scow/lib-scow-resource": "workspace:*",
     "@scow/lib-scowd": "workspace:*",
     "@scow/lib-server": "workspace:*",
-    "@scow/lib-ssh": "workspace:*",
     "@scow/notification-protos": "workspace:*",
     "@scow/protos": "workspace:*",
     "@scow/scheduler-adapter-protos": "workspace:*",

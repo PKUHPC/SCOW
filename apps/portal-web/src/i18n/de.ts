@@ -709,12 +709,8 @@ export default {
       },
     },
     _app: {
-      sshError:
-        "Verbindung als Benutzer zum Login-Knoten nicht möglich." +
-        " Stellen Sie sicher, dass die Berechtigungen Ihres Home-Verzeichnisses 700, 750 oder 755 sind",
       textExceedsLength:
         "Zu viele Terminal-Login-Meldungen." + " Bitte reduzieren Sie unnötige Ausgaben in Dateien wie ~/.bashrc",
-      sftpError: "SFTP-Vorgang fehlgeschlagen. Haben Sie die nötigen Berechtigungen?",
       otherError: "Serverfehler",
       adapterConnectionError: "Cluster {} ist derzeit nicht erreichbar. Bitte versuchen Sie es später erneut",
       adapterTimeoutError:

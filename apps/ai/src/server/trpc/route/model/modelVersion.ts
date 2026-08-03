@@ -14,7 +14,6 @@ import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import path, { basename, dirname, join } from "path";
 import { SharedStatus } from "src/models/common";
-import { clusters } from "src/server/config/clusters";
 import { Model } from "src/server/entities/Model";
 import { ModelVersion } from "src/server/entities/ModelVersion";
 import { callLog } from "src/server/setup/operationLog";
@@ -23,13 +22,11 @@ import { PlatformRole } from "src/server/trpc/route/auth";
 import { buildUserMap } from "src/server/trpc/route/utils/userMap";
 import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
 import { checkClusterAvailable, checkIsPublicPaths, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
-import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
 import { SHARED_TARGET } from "src/server/utils/share";
-import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
@@ -376,11 +373,6 @@ export const createModelVersion = procedure
 
     const noCheckPermission = shouldPathsSkipPermissionCheck(model.clusterId, [input.path], isPlatformOwned ?? false);
 
-    const host = getClusterLoginNode(model.clusterId);
-
-    if (!host) {
-      throw clusterNotFound(model.clusterId);
-    }
     // 检查目录是否存在
     const isPathExisted = await withFileDriver(
       { clusterId: model.clusterId, user: user.identityId },
@@ -691,7 +683,7 @@ export const deleteModelVersion = procedure
             logger,
           );
         } catch (e) {
-          logger.error(`ssh failure occured when unshare modelVersion ${input.versionId} of model ${input.modelId}`, e);
+          logger.error(`Failed to unshare modelVersion ${input.versionId} of model ${input.modelId}`, e);
         }
       }
 
@@ -1182,14 +1174,7 @@ export const copyPublicModelVersion = procedure
       await withFileDriver(
         { clusterId: modelVersion.model.$.clusterId, user: user.identityId },
         async (driver) => {
-          const cluster = clusters[modelVersion.model.$.clusterId];
-
-          await driver.copyWithMode(
-            modelVersion.path,
-            cluster.scowd?.enabled ? targetCopiedPath : input.path,
-            "0750",
-            checkIsPublicPathsResult,
-          );
+          await driver.copyWithMode(modelVersion.path, targetCopiedPath, "0750", checkIsPublicPathsResult);
         },
         logger,
       );

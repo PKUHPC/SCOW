@@ -1,10 +1,15 @@
 displayName: hpc00
 adapterUrl: localhost:6000
+scowd:
+  enabled: true
 loginNodes:
   - name: login
     address: localhost:22222
+    scowd:
+      port: 5000
 crossClusterFileTransfer:
   enabled: false
+  transferNode: login01:8999
 #   partitions:
 #     - name: C032M0128G
 #       mem: 131072

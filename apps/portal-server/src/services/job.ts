@@ -14,7 +14,7 @@ import { filterAccountsByStatus } from "src/utils/app";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { convertMaxTimeToMinutes, validateMaxRunningTimeMinutes, HPCJobLabelType } from "src/utils/maxRunningTime";
-import { getClusterLoginNode } from "src/utils/ssh";
+import { getClusterLoginNode } from "src/utils/clusterNodes";
 import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
 
 export const jobServiceServer = plugin((server) => {

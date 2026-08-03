@@ -697,9 +697,7 @@ export default {
       },
     },
     _app: {
-      sshError: "로그인 노드에 사용자로 연결할 수 없습니다. 홈 디렉토리 권한이 700, 750, 755인지 확인하세요",
       textExceedsLength: "터미널 로그인 메시지가 너무 많습니다. '~/.bashrc' 등에서 불필요한 출력을 줄여주세요",
-      sftpError: "SFTP 작업 실패. 권한이 있는지 확인하세요",
       otherError: "서버 오류 발생",
       adapterConnectionError: "{} 클러스터에 현재 연결할 수 없습니다. 나중에 다시 시도하세요",
       adapterTimeoutError:

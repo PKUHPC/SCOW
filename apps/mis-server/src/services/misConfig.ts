@@ -3,7 +3,6 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { getLoginNode } from "@scow/config/build/cluster";
-import { testRootUserSshLogin } from "@scow/lib-ssh";
 import { NodeInfo_NodeState, nodeInfo_NodeStateFromJSON } from "@scow/protos/build/common/config";
 import {
   ClusterRuntimeInfo_LastActivationOperation,
@@ -14,7 +13,6 @@ import {
 } from "@scow/protos/build/server/config";
 import { getActivatedClusters, getClustersRuntimeInfo } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
-import { rootKeyPair } from "src/config/env";
 import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
 import {
   getUniqueMigrationGroups,
@@ -25,7 +23,7 @@ import {
   performClusterChecks,
   validateMigratableClustersConfig,
 } from "src/utils/migrateNode";
-import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
+import { clusterBackendNotSupported, getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 export const misConfigServiceServer = plugin((server) => {
   server.addService<ConfigServiceServer>(ConfigServiceService, {
@@ -111,48 +109,29 @@ export const misConfigServiceServer = plugin((server) => {
           return [{ executed: false }];
         }
 
-        // check root user ssh login in the target cluster
         const targetClusterLoginNodes = configClusters[clusterId].loginNodes;
 
         const loginNode = getLoginNode(targetClusterLoginNodes[0]);
-        const address = loginNode.address;
         const node = loginNode.name;
 
-        if (configClusters[clusterId].scowd?.enabled) {
-          const client = getScowdClient(clusterId);
+        if (!configClusters[clusterId].scowd?.enabled) {
+          throw clusterBackendNotSupported(clusterId);
+        }
 
-          try {
-            logger.info("Checking whether scowd is running normally on cluster %s", clusterId);
+        const client = getScowdClient(clusterId);
 
-            await client.system.checkHealth({});
-            logger.info("Scowd runs normally on the login node %s of cluster %s.", node, clusterId);
-          } catch (err) {
-            logger.info("Scowd is not functioning properly on cluster %s. err: %o", clusterId, err);
+        try {
+          logger.info("Checking whether scowd is running normally on cluster %s", clusterId);
 
-            if (err instanceof ConnectError) {
-              throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
-            }
-            throw err;
+          await client.system.checkHealth({});
+          logger.info("Scowd runs normally on the login node %s of cluster %s.", node, clusterId);
+        } catch (err) {
+          logger.info("Scowd is not functioning properly on cluster %s. err: %o", clusterId, err);
+
+          if (err instanceof ConnectError) {
+            throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
           }
-        } else {
-          logger.info("Checking if root can login to cluster (clusterId: %s) by login node %s", clusterId, node);
-
-          const error = await testRootUserSshLogin(address, rootKeyPair, logger);
-
-          if (error) {
-            logger.info(
-              "Root cannot login to cluster (clusterId: %s) by login node %s. err: %o",
-              clusterId,
-              node,
-              error,
-            );
-            throw {
-              code: status.FAILED_PRECONDITION,
-              message: `Activate cluster failed, root login check failed in Cluster（ Cluster ID: ${clusterId}） .`,
-            } as ServiceError;
-          } else {
-            logger.info("Root can login to cluster (clusterId: %s) by login node %s", clusterId, node);
-          }
+          throw err;
         }
 
         cluster.activationStatus = ClusterActivationStatus.ACTIVATED;

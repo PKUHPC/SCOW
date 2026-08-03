@@ -1,7 +1,4 @@
 import { bool, envConfig, host, num, port, str } from "@scow/lib-config";
-import { getKeyPair } from "@scow/lib-ssh";
-import { homedir } from "os";
-import { join } from "path";
 
 export const config = envConfig({
   HOST: host({ default: "0.0.0.0", desc: "监听地址" }),
@@ -16,9 +13,6 @@ export const config = envConfig({
 
   MIS_DEPLOYED: bool({ desc: "是否部署了管理系统", default: false }),
   MIS_SERVER_URL: str({ desc: "如果部署了管理系统，管理系统后端服务的路径", default: "" }),
-
-  SSH_PRIVATE_KEY_PATH: str({ desc: "SSH私钥路径", default: join(homedir(), ".ssh", "id_rsa") }),
-  SSH_PUBLIC_KEY_PATH: str({ desc: "SSH公钥路径", default: join(homedir(), ".ssh", "id_rsa.pub") }),
 
   DOWNLOAD_CHUNK_SIZE: num({ desc: "grpc下载文件时，每个message中的chunk的大小。单位字节", default: 3 * 1024 * 1024 }),
 
@@ -35,5 +29,3 @@ export const config = envConfig({
     default: "./adapter/certs/scow.key",
   }),
 });
-
-export const rootKeyPair = getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);

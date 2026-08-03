@@ -9,11 +9,10 @@ import {
 } from "@scow/lib-scheduler-adapter";
 import { getScowdClient } from "@scow/lib-scowd/build/client";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
-import { testRootUserSshLogin } from "@scow/lib-ssh";
 import { getActivatedClusters, updateCluster } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
-import { config, rootKeyPair } from "src/config/env";
-import { certificates as scowdCertificates, generateScowdUrl } from "src/utils/scowd";
+import { config } from "src/config/env";
+import { certificates as scowdCertificates, clusterBackendNotSupported, generateScowdUrl } from "src/utils/scowd";
 
 type CallOnAllResult<T> = {
   cluster: string;
@@ -62,39 +61,33 @@ export const clustersPlugin = plugin(async (f) => {
   await updateCluster(f.ext.orm.em.fork(), configClusterIds, f.logger);
 
   if (process.env.NODE_ENV === "production") {
-    // only check activated clusters' root user login when system is starting
+    // only check activated clusters' scowd health when system is starting
     const activatedClusters = await getActivatedClusters(f.ext.orm.em.fork(), f.logger).catch((e) => {
-      f.logger.info("!!![important] No available activated clusters.This will skip root ssh login check in cluster!!!");
+      f.logger.info("!!![important] No available activated clusters. This will skip scowd health check in cluster!!!");
       f.logger.info(e);
       return {};
     });
 
     await Promise.all(
-      Object.values(activatedClusters).map(async ({ displayName, scowd, loginNodes }) => {
+      Object.entries(activatedClusters).map(async ([clusterId, { displayName, scowd, loginNodes }]) => {
         const loginNode = getLoginNode(loginNodes[0]);
         const address = loginNode.address;
         const node = loginNode.name;
         const scowdPort = loginNode.scowdPort;
 
-        if (scowd?.enabled && scowdPort) {
-          f.logger.info("Checking whether scowd on cluster %s is running normally", displayName);
-          const scowdUrl = generateScowdUrl(address, scowdPort);
-          const client = getScowdClient(scowdUrl, scowdCertificates);
+        if (!scowd?.enabled || !scowdPort) {
+          throw clusterBackendNotSupported(clusterId);
+        }
 
-          try {
-            await client.system.checkHealth({}, { timeoutMs: 10000 });
-            f.logger.info("Scowd runs normally on the login node %s of cluster %s.", node, displayName);
-          } catch (err) {
-            f.logger.info("Scowd is not functioning properly on cluster %s. err: %o", displayName, err);
-          }
-        } else {
-          f.logger.info("Checking if root can login to %s by login node %s", displayName, node);
-          const error = await testRootUserSshLogin(address, rootKeyPair, f.logger);
-          if (error) {
-            f.logger.info("Root cannot login to %s by login node %s. err: %o", displayName, node, error);
-          } else {
-            f.logger.info("Root can login to %s by login node %s", displayName, node);
-          }
+        f.logger.info("Checking whether scowd on cluster %s is running normally", displayName);
+        const scowdUrl = generateScowdUrl(address, scowdPort);
+        const client = getScowdClient(scowdUrl, scowdCertificates);
+
+        try {
+          await client.system.checkHealth({}, { timeoutMs: 10000 });
+          f.logger.info("Scowd runs normally on the login node %s of cluster %s.", node, displayName);
+        } catch (err) {
+          f.logger.info("Scowd is not functioning properly on cluster %s. err: %o", displayName, err);
         }
       }),
     );

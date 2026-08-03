@@ -5,7 +5,7 @@ loginNodes:
     address: login01
 crossClusterFileTransfer:
   enabled: true
-  transferNode: localhost:22222
+  transferNode: login01:8999
 # misIgnore: true
 # slurm:
 #   mis:

@@ -33,7 +33,6 @@
     "@scow/lib-scow-resource": "workspace:*",
     "@scow/lib-scowd": "workspace:*",
     "@scow/lib-server": "workspace:*",
-    "@scow/lib-ssh": "workspace:*",
     "@scow/protos": "workspace:*",
     "@scow/rich-error-model": "workspace:*",
     "@scow/scheduler-adapter-protos": "workspace:*",
@@ -43,7 +42,6 @@
     "dayjs": "1.11.13",
     "dotenv": "16.4.7",
     "node-cron": "3.0.3",
-    "node-ssh": "13.2.0",
     "pino": "9.6.0",
     "pino-pretty": "13.0.0",
     "shell-quote": "1.8.2",
@@ -55,7 +53,6 @@
   "devDependencies": {
     "@types/node-cron": "3.0.11",
     "@types/shell-quote": "1.7.5",
-    "@types/ssh2": "1.15.4",
     "@types/wait-on": "5.3.4",
     "form-data": "4.0.1"
   },

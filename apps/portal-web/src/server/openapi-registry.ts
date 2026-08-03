@@ -32,7 +32,6 @@ import { KillDesktopSchema } from "src/pages/api/desktop/killDesktop";
 import { LaunchDesktopSchema } from "src/pages/api/desktop/launchDesktop";
 import { ListAvailableWmsSchema } from "src/pages/api/desktop/listAvailableWms";
 import { ListDesktopsSchema } from "src/pages/api/desktop/listDesktops";
-import { CheckTransferKeySchema } from "src/pages/api/file/checkTransferKey";
 import { CompleteMultipartUploadSchema } from "src/pages/api/file/completeMultipartUpload";
 import { CompressAndDownloadFileSchema } from "src/pages/api/file/compressAndDownload";
 import { CompressFilesSchema } from "src/pages/api/file/compressFiles";
@@ -118,7 +117,6 @@ export const openapiRoutes: RouteEntry[] = [
   { schema: LaunchDesktopSchema, method: "POST", url: "/api/desktop/launchDesktop" },
   { schema: ListAvailableWmsSchema, method: "GET", url: "/api/desktop/listAvailableWms" },
   { schema: ListDesktopsSchema, method: "POST", url: "/api/desktop/listDesktops" },
-  { schema: CheckTransferKeySchema, method: "POST", url: "/api/file/checkTransferKey" },
   { schema: CompleteMultipartUploadSchema, method: "POST", url: "/api/file/completeMultipartUpload" },
   { schema: CompressAndDownloadFileSchema, method: "GET", url: "/api/file/compressAndDownload" },
   { schema: CompressFilesSchema, method: "PATCH", url: "/api/file/compressFiles" },

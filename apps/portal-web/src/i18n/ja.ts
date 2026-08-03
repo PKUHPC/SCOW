@@ -699,11 +699,8 @@ export default {
       },
     },
     _app: {
-      sshError:
-        "ログインノードにユーザーとして接続できません。ホームディレクトリの権限が 700、750、755 のいずれかであることを確認してください",
       textExceedsLength:
         "ターミナルのログインメッセージが多すぎます。~/.bashrc などのファイルで不要な出力を減らしてください",
-      sftpError: "SFTP 操作に失敗しました。権限をご確認ください",
       otherError: "サーバーでエラーが発生しました",
       adapterConnectionError: "{} クラスターに現在接続できません。後でもう一度お試しください",
       adapterTimeoutError:

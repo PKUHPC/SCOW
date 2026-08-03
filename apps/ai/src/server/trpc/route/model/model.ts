@@ -9,12 +9,10 @@ import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { PlatformRole } from "src/server/trpc/route/auth";
 import { checkClusterAvailable } from "src/server/utils/clusters";
-import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { getClusterLoginNode } from "src/server/utils/ssh";
 import { getUsersName } from "src/server/utils/user";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
@@ -524,11 +522,6 @@ export const deleteModel = procedure
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, model.clusterId);
-
-      const host = getClusterLoginNode(model.clusterId);
-      if (!host) {
-        throw clusterNotFound(model.clusterId);
-      }
 
       await driver.withFileDriver(
         {

@@ -709,11 +709,7 @@ export default {
       },
     },
     _app: {
-      sshError:
-        "Não é possível conectar ao nó de login como utilizador." +
-        " Certifique-se que as permissões do diretório home são 700, 750 ou 755.",
       textExceedsLength: "Há demasiadas mensagens no terminal. Reduza a saída desnecessária em '~/.bashrc' etc.",
-      sftpError: "Operação SFTP falhou. Confirme as permissões",
       otherError: "Erro no servidor!",
       adapterConnectionError: "O cluster {} está indisponível. Tente novamente mais tarde.",
       adapterTimeoutError:

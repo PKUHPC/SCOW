@@ -3,7 +3,6 @@ import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { DEFAULT_CONFIG_BASE_PATH } from "@scow/config/build/constants";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
-import { sftpExists, sftpReadFile } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
 import { PREDEFINED_ENV_VAR, shouldOmitEnvFromPayload } from "src/models/envVars";
@@ -13,7 +12,6 @@ import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { Image as ImageEntity } from "src/server/entities/Image";
 import { ModelVersion } from "src/server/entities/ModelVersion";
 import { isParentOrSameFolder } from "src/utils/file";
-import { SFTPWrapper } from "ssh2";
 import { Logger } from "ts-log";
 import { z } from "zod";
 
@@ -204,33 +202,6 @@ export const checkAppExist = (apps: Record<string, AppConfigSchema>, appId: stri
     });
   }
   return app;
-};
-
-export const sshFetchJobInputParams = async <T>(
-  inputParamsPath: string,
-  sftp: SFTPWrapper,
-  schema: z.ZodSchema<T>,
-  logger: Logger,
-): Promise<T> => {
-  if (!(await sftpExists(sftp, inputParamsPath))) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: `Input params file ${inputParamsPath} is not found`,
-    });
-  }
-
-  try {
-    const inputContent = await sftpReadFile(sftp)(inputParamsPath);
-    const parsedContent = JSON.parse(inputContent.toString());
-    const normalizedContent = normalizeLegacyMountPoints(parsedContent);
-    return schema.parse(normalizedContent);
-  } catch (e) {
-    logger.error(`Failed to parse input params file ${inputParamsPath}: ${e as any}`);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: `Failed to parse input params file ${inputParamsPath}`,
-    });
-  }
 };
 
 const normalizeLegacyMountPoints = (input: unknown) => {

@@ -14,6 +14,15 @@ const getWmIconPath = (wm: object) => {
   return "iconPath" in wm && typeof wm.iconPath === "string" ? wm.iconPath : undefined;
 };
 
+const getExistingClusterOps = (cluster: string) => {
+  const clusterops = getClusterOps(cluster);
+  if (!clusterops) {
+    throw clusterNotFound(cluster);
+  }
+
+  return clusterops;
+};
+
 export const desktopServiceServer = plugin((server) => {
   server.addService<DesktopServiceServer>(DesktopServiceService, {
     createDesktop: async ({ request, logger }) => {
@@ -22,7 +31,7 @@ export const desktopServiceServer = plugin((server) => {
 
       const maxDesktops: number = getDesktopConfig(cluster)?.maxDesktops || 0;
 
-      const clusterops = getClusterOps(cluster);
+      const clusterops = getExistingClusterOps(cluster);
       const clusters = configClusters;
       const loginNodes = clusters[cluster]?.loginNodes?.map(getLoginNode);
       if (!loginNodes) {
@@ -71,7 +80,7 @@ export const desktopServiceServer = plugin((server) => {
 
         checkLoginNodeInCluster(cluster, host);
 
-        const clusterops = getClusterOps(cluster);
+        const clusterops = getExistingClusterOps(cluster);
 
         const reply = await clusterops.desktop.createDesktop(
           { loginNode: host, wm, userId, desktopName: desktopName ?? "" },
@@ -102,7 +111,7 @@ export const desktopServiceServer = plugin((server) => {
 
       checkLoginNodeInCluster(cluster, host);
 
-      const clusterops = getClusterOps(cluster);
+      const clusterops = getExistingClusterOps(cluster);
 
       await clusterops.desktop.killDesktop(
         {
@@ -126,7 +135,7 @@ export const desktopServiceServer = plugin((server) => {
       checkLoginNodeInCluster(cluster, host);
       if (desktopInfo?.desktop?.$case === "shadowdesk") {
         const desktopName = desktopInfo.desktop.shadowdesk.desktopName;
-        const clusterops = getClusterOps(cluster);
+        const clusterops = getExistingClusterOps(cluster);
         const desktopsListRes = await clusterops.desktop.listUserDesktops({ loginNode: host, userId }, logger);
         let shadowdeskUrl;
 
@@ -153,7 +162,7 @@ export const desktopServiceServer = plugin((server) => {
         }
         return [{ shadowdeskUrl, host: "", port: 0, password: "" }];
       } else {
-        const clusterops = getClusterOps(cluster);
+        const clusterops = getExistingClusterOps(cluster);
 
         const reply = await clusterops.desktop.connectToDesktop({ loginNode: host, userId, displayId, id }, logger);
 
@@ -202,7 +211,7 @@ export const desktopServiceServer = plugin((server) => {
           ensureEnabled(cluster);
 
           const availableWms = getDesktopConfig(cluster).wms;
-          const clusterops = getClusterOps(cluster);
+          const clusterops = getExistingClusterOps(cluster);
 
           const clusterLoginNodes =
             loginNodes.length > 0

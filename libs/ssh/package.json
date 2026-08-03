@@ -11,10 +11,11 @@
     "!**/*.map"
   ],
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "scripts": {
     "dev": "concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\"",
     "build": "rimraf build && tsc -p tsconfig.build.json",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "node-ssh": "13.2.0",
@@ -22,7 +23,6 @@
   },
   "devDependencies": {
     "@types/shell-quote": "1.7.5",
-    "@types/ssh2": "1.15.4",
     "ts-log": "2.2.7"
   },
   "volta": {

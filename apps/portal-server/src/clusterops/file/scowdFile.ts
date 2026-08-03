@@ -7,7 +7,7 @@ import { FileOps } from "src/clusterops/api/file";
 import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
 import { generateScowdUrl, getScowdClientByUrl, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
-import { getClusterTransferNode, tryGetClusterTransferNode } from "src/utils/ssh";
+import { getClusterTransferNode, tryGetClusterTransferNode } from "src/utils/clusterNodes";
 
 export const scowdFileServices = (getClient: (userId: string) => ScowdClient): FileOps => ({
   copy: async (request, logger) => {
