@@ -1,6 +1,14 @@
 import { FormInstance } from "antd";
 import { RuleObject } from "antd/es/form";
-import { posix as pathPosix } from "path";
+import {
+  DEFAULT_FORBIDDEN_CONTAINER_PATHS,
+  PathValidationMessages,
+  validateContainerMountTargetPath,
+  validateHomeScopedPath,
+  validateLinuxAbsolutePath,
+  validateRelativeToHomePath,
+  validateSafePath,
+} from "@scow/utils";
 
 import { getCurrentLangLibWebText } from "./libWebI18n/libI18n";
 
@@ -119,113 +127,8 @@ export const createK8sNameValidator = (message?: string) => () => ({
   },
 });
 
-/** 自定义路径校验提示文案，由各业务场景传入自己的 i18n 文案。 */
-export interface PathValidationMessages {
-  unsafeCharacter?: string;
-  pathTraversal?: string;
-  currentDirectory?: string;
-  absoluteRequired?: string;
-  rootNotAllowed?: string;
-  systemPathNotAllowed?: string;
-  homeDirRequired?: string;
-  notInHomeDir?: string;
-}
-
-/** 容器挂载目标默认禁止覆盖的 Linux 系统目录。 */
-export const DEFAULT_FORBIDDEN_CONTAINER_PATHS = [
-  "/bin",
-  "/boot",
-  "/dev",
-  "/etc",
-  "/lib",
-  "/lib64",
-  "/proc",
-  "/root",
-  "/run",
-  "/sbin",
-  "/sys",
-  "/usr",
-  "/var",
-];
-
-/**
- * 路径中禁止出现的字符：
- * - 空白字符：空格、tab、换行等；
- * - ASCII 控制字符：\u0000-\u001F、\u007F；
- * - 容易造成 shell 或参数解析歧义的字符：, ; | & > < ` $ " ' \ * ? [ ] { } ( )。
- */
-const UNSAFE_PATH_CHAR_PATTERN = /[\s\u0000-\u001F\u007F,;|&><`$"'\\*?[\]{}()]/;
-
-/** 去掉路径末尾多余的斜杠，保留根目录 "/" 本身。 */
-const trimTrailingSlashes = (path: string) => {
-  const trimmedPath = path.replace(/\/+$/, "");
-  return trimmedPath === "" && path.startsWith("/") ? "/" : trimmedPath;
-};
-
-/** 统一路径表示，避免重复的 "/" 绕过路径范围或黑名单校验。 */
-const normalizePathForValidation = (path: string) => {
-  if (path === "") {
-    return path;
-  }
-
-  return trimTrailingSlashes(pathPosix.normalize(path));
-};
-
-/** 将路径按 "/" 拆成有效路径段，用于识别 "." 和 ".."。 */
-const splitPathSegments = (path: string) => path.split("/").filter(Boolean);
-
-/** 判断 childPath 是否等于 parentPath，或位于 parentPath 的子目录下。 */
-const isSameOrChildPath = (parentPath: string, childPath: string) => {
-  const normalizedParentPath = normalizePathForValidation(parentPath);
-  const normalizedChildPath = normalizePathForValidation(childPath);
-  if (normalizedParentPath === "/") {
-    return normalizedChildPath.startsWith("/");
-  }
-  return normalizedChildPath === normalizedParentPath || normalizedChildPath.startsWith(`${normalizedParentPath}/`);
-};
-
 /** 统一创建 Ant Design validator 需要的 rejected Promise。 */
 const rejectPath = (message: string) => Promise.reject(new Error(message));
-
-/**
- * 执行所有路径场景共用的基础安全校验，返回第一条错误文案。
- *
- * 通用禁止规则：
- * - 禁止 UNSAFE_PATH_CHAR_PATTERN 中定义的字符；
- * - 禁止任意路径段为 ".."，避免路径穿越；
- * - options.absolute 为 true 时，路径必须以 "/" 开头；
- * - options.forbidCurrentDirectory 为 true 时，禁止任意路径段为 "."。
- *
- * 空值不在这里拦截，由调用方使用 Ant Design required 规则处理。
- */
-const validateSafePathValue = (
-  value: unknown,
-  messages: PathValidationMessages,
-  options?: { absolute?: boolean; forbidCurrentDirectory?: boolean },
-) => {
-  if (!value) {
-    return undefined;
-  }
-
-  const path = String(value);
-  if (UNSAFE_PATH_CHAR_PATTERN.test(path)) {
-    return messages.unsafeCharacter ?? "路径不能包含空格、逗号或特殊字符";
-  }
-
-  if (options?.absolute && !path.startsWith("/")) {
-    return messages.absoluteRequired ?? "路径必须以 / 开头";
-  }
-
-  const segments = splitPathSegments(path);
-  if (segments.includes("..")) {
-    return messages.pathTraversal ?? "路径不能包含 ..";
-  }
-  if (options?.forbidCurrentDirectory && segments.includes(".")) {
-    return messages.currentDirectory ?? "路径不能包含 .";
-  }
-
-  return undefined;
-};
 
 /**
  * 创建基础路径安全校验规则。
@@ -249,7 +152,7 @@ export const createSafePathValidator =
   (messages: PathValidationMessages = {}) =>
   () => ({
     validator(_: RuleObject, value: unknown) {
-      const error = validateSafePathValue(value, messages);
+      const error = validateSafePath(value, messages);
       return error ? rejectPath(error) : Promise.resolve();
     },
   });
@@ -276,16 +179,8 @@ export const createLinuxAbsolutePathValidator =
   (messages: PathValidationMessages = {}, options: { rootAllowed?: boolean } = {}) =>
   () => ({
     validator(_: RuleObject, value: unknown) {
-      const error = validateSafePathValue(value, messages, { absolute: true, forbidCurrentDirectory: true });
-      if (error) {
-        return rejectPath(error);
-      }
-
-      if (!options.rootAllowed && normalizePathForValidation(String(value)) === "/") {
-        return rejectPath(messages.rootNotAllowed ?? "路径不能为根目录 (/)");
-      }
-
-      return Promise.resolve();
+      const error = validateLinuxAbsolutePath(value, messages, options);
+      return error ? rejectPath(error) : Promise.resolve();
     },
   });
 
@@ -313,20 +208,8 @@ export const createRelativeToHomePathValidator =
   (homeDir: string | undefined, messages: PathValidationMessages = {}) =>
   () => ({
     validator(_: RuleObject, value: unknown) {
-      const error = validateSafePathValue(value, messages, { forbidCurrentDirectory: true });
-      if (error) {
-        return rejectPath(error);
-      }
-      if (!value || !String(value).startsWith("/")) {
-        return Promise.resolve();
-      }
-      if (!homeDir) {
-        return rejectPath(messages.homeDirRequired ?? "无法获取用户家目录");
-      }
-      if (!isSameOrChildPath(homeDir, String(value))) {
-        return rejectPath(messages.notInHomeDir ?? "绝对路径必须位于用户家目录下");
-      }
-      return Promise.resolve();
+      const error = validateRelativeToHomePath(value, homeDir, messages);
+      return error ? rejectPath(error) : Promise.resolve();
     },
   });
 
@@ -355,22 +238,8 @@ export const createHomeScopedPathValidator =
   (homeDir: string | undefined, messages: PathValidationMessages = {}) =>
   () => ({
     validator(_: RuleObject, value: unknown) {
-      const error = validateSafePathValue(value, messages, { absolute: true, forbidCurrentDirectory: true });
-      if (error) {
-        return rejectPath(error);
-      }
-
-      if (!value) {
-        return Promise.resolve();
-      }
-      if (!homeDir) {
-        return rejectPath(messages.homeDirRequired ?? "无法获取用户家目录");
-      }
-      if (!isSameOrChildPath(homeDir, String(value))) {
-        return rejectPath(messages.notInHomeDir ?? "路径必须位于用户家目录下");
-      }
-
-      return Promise.resolve();
+      const error = validateHomeScopedPath(value, homeDir, messages);
+      return error ? rejectPath(error) : Promise.resolve();
     },
   });
 
@@ -400,26 +269,8 @@ export const createContainerMountTargetPathValidator =
   (messages: PathValidationMessages = {}, forbiddenPaths: string[] = DEFAULT_FORBIDDEN_CONTAINER_PATHS) =>
   () => ({
     validator(_: RuleObject, value: unknown) {
-      const error = validateSafePathValue(value, messages, { absolute: true, forbidCurrentDirectory: true });
-      if (error) {
-        return rejectPath(error);
-      }
-
-      if (!value) {
-        return Promise.resolve();
-      }
-
-      const targetPath = normalizePathForValidation(String(value));
-      if (targetPath === "/") {
-        return rejectPath(messages.rootNotAllowed ?? "挂载目标路径不能为根目录 (/)");
-      }
-
-      const normalizedForbiddenPaths = forbiddenPaths.map(normalizePathForValidation);
-      if (normalizedForbiddenPaths.some((path) => isSameOrChildPath(path, targetPath))) {
-        return rejectPath(messages.systemPathNotAllowed ?? "挂载目标路径不能为系统目录");
-      }
-
-      return Promise.resolve();
+      const error = validateContainerMountTargetPath(value, messages, forbiddenPaths);
+      return error ? rejectPath(error) : Promise.resolve();
     },
   });
 

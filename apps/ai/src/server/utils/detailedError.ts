@@ -12,7 +12,9 @@ export type DetailedError =
       accountName: string;
       partitionName: string | undefined;
     }
-  | { type: "app_not_available"; appId: string | undefined; accountName: string };
+  | { type: "app_not_available"; appId: string | undefined; accountName: string }
+  | { type: "path_validation_failed"; message: string }
+  | { type: "image_address_validation_failed"; message: string };
 
 // 包含详细信息的自定义TRPCError
 export class DetailedTRPCError extends TRPCError {

@@ -365,6 +365,14 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     },
     onError: (error) => {
       const detail = error.data?.detailedError;
+      if (detail?.type === "path_validation_failed") {
+        message.error(detail.message);
+        return;
+      }
+      if (detail?.type === "image_address_validation_failed") {
+        message.error(detail.message);
+        return;
+      }
       if (detail?.type === "account_user_not_available") {
         message.error(
           `${t(pInfer("submitInferFailed"))}: ` +

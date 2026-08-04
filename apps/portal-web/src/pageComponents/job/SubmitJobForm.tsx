@@ -621,6 +621,13 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
             throw e;
           }
         })
+        .httpError(400, (e) => {
+          if (e.code === "INVALID_ARGUMENT") {
+            modal.error({ title: t(p("errorMessage")), content: e.message });
+          } else {
+            throw e;
+          }
+        })
         .httpError(403, (e) => {
           if (e.code === "USER_ACCOUNT_NOT_AVAILABLE") {
             modal.error({

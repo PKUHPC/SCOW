@@ -12,7 +12,7 @@ import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/server/utils/app";
+import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment, validateRemoteImageUrl } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -170,8 +170,19 @@ export const trainJob = procedure
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-    const { clusterId, trainJobName, algorithms, image, datasets, models, maxTime, account, partition, mountPoints } =
-      input;
+    const {
+      clusterId,
+      trainJobName,
+      algorithms,
+      image,
+      datasets,
+      models,
+      maxTime,
+      account,
+      partition,
+      mountPoints,
+      remoteImageUrl,
+    } = input;
 
     const { ids: algorithmIds, isPrivates: isAlgorithmPrivates, targets: algorithmTargets } = getIdPrivate(algorithms);
     const { ids: modelIds, isPrivates: isModelPrivates, targets: modelTargets } = getIdPrivate(models);
@@ -185,6 +196,7 @@ export const trainJob = procedure
     }
 
     validateMaxRunningTimeMinutes(maxTime, clusters[clusterId]?.ai.train?.maxRunningTimeHours, AIJobLabelType.train);
+    validateRemoteImageUrl(remoteImageUrl);
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
       throw new TRPCError({

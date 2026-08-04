@@ -6,7 +6,7 @@ import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/server/utils/app";
+import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment, validateRemoteImageUrl } from "src/server/utils/app";
 import { checkClusterAvailable, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -94,7 +94,7 @@ export const createDevHost = procedure
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-    const { clusterId, devHostName, image, maxTimeMinutes, mountPoints } = input;
+    const { clusterId, devHostName, image, maxTimeMinutes, mountPoints, remoteImageUrl } = input;
 
     const devHostConfig = clusters[clusterId]?.ai?.devHost;
     if (!devHostConfig?.enabled) {
@@ -112,6 +112,7 @@ export const createDevHost = procedure
     }
 
     validateMaxRunningTimeMinutes(maxTimeMinutes, devHostConfig.maxRunningTimeHours, AIJobLabelType.devHost);
+    validateRemoteImageUrl(remoteImageUrl);
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
       throw new TRPCError({

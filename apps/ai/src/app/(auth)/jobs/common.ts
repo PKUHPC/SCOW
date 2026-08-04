@@ -1,4 +1,5 @@
 import { createContainerMountTargetPathValidator } from "@scow/lib-web/build/utils/form";
+import { normalizePathForValidation } from "@scow/utils";
 import { PREDEFINED_ENV_VAR } from "src/models/envVars";
 import { styled } from "styled-components";
 
@@ -74,7 +75,7 @@ export const validateMountPoints = (
   workingDirText: string = "",
 ) => ({ getFieldValue }: { getFieldValue: (name: string) => any }) => ({
   validator(_: any, value?: string) {
-    const currentValueNormalized = (value ?? "").replace(/\/+$/, "");
+    const currentValueNormalized = normalizePathForValidation(value ?? "");
 
     const rawMountPoints: unknown[] = getFieldValue("mountPoints") ?? [];
     const mountPoints = rawMountPoints
@@ -88,7 +89,7 @@ export const validateMountPoints = (
         return undefined;
       })
       .filter((mountPoint): mountPoint is string => Boolean(mountPoint))
-      .map((mountPoint) => mountPoint.replace(/\/+$/, ""));
+      .map((mountPoint) => normalizePathForValidation(mountPoint));
 
     const currentIndex = mountPoints.findIndex((point) => point === currentValueNormalized);
 
@@ -99,7 +100,7 @@ export const validateMountPoints = (
 
     const envVars: { key?: string; value?: string }[] = getFieldValue("envVariables") ?? [];
     const workingDirectory = envVars.find((e) => e?.key === PREDEFINED_ENV_VAR.WORK_DIR)?.value?.toString();
-    if (workingDirectory && workingDirectory.replace(/\/+$/, "") === currentValueNormalized) {
+    if (workingDirectory && normalizePathForValidation(workingDirectory) === currentValueNormalized) {
       return Promise.reject(new Error(workingDirText));
     }
 
@@ -131,7 +132,7 @@ export const validateTargetUnique = (
     if (!value || !value.trim()) {
       return Promise.resolve();
     }
-    const normalized = value.trim().replace(/\/+$/, "");
+    const normalized = normalizePathForValidation(value.trim());
 
     const allTargets: { listName: string; index: number; target: string }[] = [];
     for (const listName of allListNames) {
@@ -140,7 +141,7 @@ export const validateTargetUnique = (
         if (!item || typeof item !== "object") return;
         const raw = (item as Record<string, unknown>)["target"];
         if (typeof raw !== "string" || !raw.trim()) return;
-        allTargets.push({ listName, index, target: raw.trim().replace(/\/+$/, "") });
+        allTargets.push({ listName, index, target: normalizePathForValidation(raw.trim()) });
       });
     }
 

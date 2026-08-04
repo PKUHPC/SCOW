@@ -9,6 +9,7 @@ import {
   SectionTitle,
   TitledSectionCard as SectionCard,
 } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { createHomeScopedPathValidator } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance, Space, Switch } from "antd";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
@@ -56,6 +57,8 @@ interface AppConfigSectionProps {
 }
 
 const p = prefix("app.jobs.appConfigSection.");
+const pEnvironmentVariableList = prefix("app.jobs.environmentVariableList.");
+const pPathValidation = prefix("common.pathValidation.");
 
 export const TrainConfigSection = ({
   form,
@@ -264,7 +267,17 @@ export const TrainConfigSection = ({
               <Form.Item
                 name="tensorBoardDataPath"
                 style={{ flex: 1, marginBottom: 0 }}
-                rules={[{ required: true, message: t(p("tensorBoard.dataPathRequired")) }]}
+                rules={[
+                  { required: true, message: t(p("tensorBoard.dataPathRequired")) },
+                  createHomeScopedPathValidator(homeDir, {
+                    unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                    pathTraversal: t(pPathValidation("pathTraversal")),
+                    currentDirectory: t(pPathValidation("currentDirectory")),
+                    absoluteRequired: t(pPathValidation("absoluteRequired")),
+                    homeDirRequired: t(pPathValidation("homeDirRequired")),
+                    notInHomeDir: t(pEnvironmentVariableList("notInHomeDir")),
+                  }),
+                ]}
               >
                 <RoundedInput
                   size="large"

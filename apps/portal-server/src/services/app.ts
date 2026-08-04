@@ -3,6 +3,7 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType, AttributeType } from "@scow/config/build/app";
+import { validateLinuxAbsolutePath } from "@scow/utils";
 import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
 import {
   AppScope,
@@ -201,6 +202,16 @@ export const appServiceServer = plugin((server) => {
             break;
 
           case AttributeType.file:
+            if (customAttributes[attribute.name]) {
+              const error = validateLinuxAbsolutePath(customAttributes[attribute.name]);
+              if (error) {
+                throw new DetailedError({
+                  code: Status.INVALID_ARGUMENT,
+                  message: `custom form attribute ${attribute.name} should be a valid Linux absolute path: ${error}`,
+                  details: [errorInfo("INVALID ARGUMENT")],
+                });
+              }
+            }
             break;
 
           case AttributeType.select:

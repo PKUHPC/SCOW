@@ -35,6 +35,7 @@ import {
   getAllTags,
   getClusterAppConfigs,
   hasNonUtf8Segment,
+  validateRemoteImageUrl,
 } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
 import { getCurrentClusters } from "src/server/utils/clusters";
@@ -623,6 +624,7 @@ export const createAppSession = procedure
       account,
       partition,
       mountPoints,
+      remoteImageUrl,
     } = input;
 
     const { ids: algorithmIds, isPrivates: isAlgorithmPrivates, targets: algorithmTargets } = getIdPrivate(algorithms);
@@ -637,6 +639,7 @@ export const createAppSession = procedure
     }
 
     validateMaxRunningTimeMinutes(maxTime, clusters[clusterId]?.ai.app?.maxRunningTimeHours, AIJobLabelType.app);
+    validateRemoteImageUrl(remoteImageUrl);
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
       throw new TRPCError({

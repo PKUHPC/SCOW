@@ -6,7 +6,7 @@ import { config } from "src/server/config/env";
 import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/server/utils/app";
+import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment, validateRemoteImageUrl } from "src/server/utils/app";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -137,7 +137,8 @@ export const submitInferJob = procedure
       });
     }
 
-    const { clusterId, InferenceJobName, image, models, account, partition, mountPoints, maxTime } = input;
+    const { clusterId, InferenceJobName, image, models, account, partition, mountPoints, maxTime, remoteImageUrl } =
+      input;
     const { ids: modelIds, isPrivates: isModelPrivates, targets: modelTargets } = getIdPrivate(models);
 
     if (InferenceJobName.length > MAX_JOB_NAME_LENGTH) {
@@ -161,6 +162,7 @@ export const submitInferJob = procedure
     if (maxTime !== 0) {
       validateMaxRunningTimeMinutes(maxTime, inferMaxRunningTimeHours, AIJobLabelType.infer);
     }
+    validateRemoteImageUrl(remoteImageUrl);
 
     if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
       throw new TRPCError({

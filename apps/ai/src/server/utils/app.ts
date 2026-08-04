@@ -3,6 +3,7 @@ import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { DEFAULT_CONFIG_BASE_PATH } from "@scow/config/build/constants";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
+import { normalizePathForValidation, validateContainerMountTargetPath, validateHomeScopedPath } from "@scow/utils";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
 import { PREDEFINED_ENV_VAR, shouldOmitEnvFromPayload } from "src/models/envVars";
@@ -11,7 +12,6 @@ import { AlgorithmVersion, SharedStatus } from "src/server/entities/AlgorithmVer
 import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { Image as ImageEntity } from "src/server/entities/Image";
 import { ModelVersion } from "src/server/entities/ModelVersion";
-import { isParentOrSameFolder } from "src/utils/file";
 import { Logger } from "ts-log";
 import { z } from "zod";
 
@@ -21,6 +21,8 @@ import { CreateAppInput, ExtraDisplayInputs } from "../trpc/route/jobs/apps";
 import { InferenceJobInput } from "../trpc/route/jobs/infer";
 import { TrainJobInput } from "../trpc/route/jobs/jobs";
 import { wrap } from "../trpc/scowd/scowd";
+import { DetailedTRPCError } from "./detailedError";
+import { isValidImageAddress } from "./image";
 
 export const getClusterAppConfigs = (cluster: string) => {
   const commonApps = getAiAppConfigs();
@@ -408,6 +410,90 @@ export const hasNonUtf8Segment = (targetPath: string) =>
     .filter(Boolean)
     .some((segment) => segment.startsWith(NON_UTF8_PREFIX));
 
+const throwPathValidationError = (message: string) => {
+  throw new DetailedTRPCError({
+    code: "BAD_REQUEST",
+    message,
+    detail: {
+      type: "path_validation_failed",
+      message,
+    },
+  });
+};
+
+export const validateMountPoints = (mountPoints: { path: string; target: string }[], homeDir: string) => {
+  mountPoints.forEach(({ path, target }) => {
+    const sourceError = validateHomeScopedPath(path, homeDir);
+    if (sourceError) {
+      throwPathValidationError(sourceError);
+    }
+
+    const targetError = validateContainerMountTargetPath(target);
+    if (targetError) {
+      throwPathValidationError(targetError);
+    }
+  });
+};
+
+export const validateResourceMountTargets = (items: { target: string }[]) => {
+  items.forEach(({ target }) => {
+    if (!target) {
+      return;
+    }
+
+    const error = validateContainerMountTargetPath(target);
+    if (error) {
+      throwPathValidationError(error);
+    }
+  });
+};
+
+export const validateUniqueMountTargets = (targets: (string | undefined)[]) => {
+  const targetSet = new Set<string>();
+
+  targets.forEach((target) => {
+    if (!target) {
+      return;
+    }
+
+    const normalizedTarget = normalizePathForValidation(target);
+    if (targetSet.has(normalizedTarget)) {
+      throwPathValidationError(`Mount target path '${target}' is duplicated`);
+    }
+
+    targetSet.add(normalizedTarget);
+  });
+};
+
+export const validateOptionalHomeScopedPath = (path: string | undefined, homeDir: string) => {
+  if (!path) {
+    return;
+  }
+
+  const error = validateHomeScopedPath(path, homeDir);
+  if (error) {
+    throwPathValidationError(error);
+  }
+};
+
+export const validateRemoteImageUrl = (remoteImageUrl: string | undefined) => {
+  if (!remoteImageUrl) {
+    return;
+  }
+
+  if (!isValidImageAddress(remoteImageUrl)) {
+    const message = `Remote image address ${remoteImageUrl} is not valid.`;
+    throw new DetailedTRPCError({
+      code: "BAD_REQUEST",
+      message,
+      detail: {
+        type: "image_address_validation_failed",
+        message,
+      },
+    });
+  }
+};
+
 /**
  * 从 envVariables 中提取 WORK_DIR，并校验其必须存在且位于 homeDir 下。
  * 不满足条件时直接抛出 TRPCError，调用方无需额外处理。
@@ -422,11 +508,9 @@ export const extractAndValidateWorkDir = (envVariables: { key: string; value: st
     });
   }
 
-  if (!isParentOrSameFolder(homeDir, workingDirectory)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "WORK_DIR should be in homeDir",
-    });
+  const error = validateHomeScopedPath(workingDirectory, homeDir);
+  if (error) {
+    throwPathValidationError(error);
   }
 
   return workingDirectory;

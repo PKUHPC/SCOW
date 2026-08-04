@@ -1,15 +1,30 @@
-import { ServiceError } from "@ddadaal/tsgrpc-common";
-import { status } from "@grpc/grpc-js";
+import { Status } from "@grpc/grpc-js/build/src/constants";
+import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
+import { validateRelativeToHomePath } from "@scow/utils";
 import path from "path";
 
+const errorInfo = (reason: string) => encodeMessage(ErrorInfo, { domain: "", reason, metadata: {} });
+
+const invalidArgument = (details: string) =>
+  new DetailedError({
+    code: Status.INVALID_ARGUMENT,
+    message: details,
+    details: [errorInfo("INVALID ARGUMENT")],
+  });
+
 /**
- * 解析提交作业工作目录。
+ * 解析提交作业的工作目录。
  *
- * - 用户填写绝对路径时，仅做 path.normalize 后原样使用；
- * - 用户填写相对路径时，按用户家目录解析为 `${userHomeDir}/${workingDirectory}`；
- * - 相对路径解析后必须仍位于用户家目录下，避免通过 `..` 等路径段逃逸。
+ * - 绝对路径位于 userHomeDir 下时，规范化后返回；
+ * - 相对路径按 `${userHomeDir}/${workingDirectory}` 解析；
+ * - 拒绝不安全的路径语法以及逃逸出 userHomeDir 的路径。
  */
 export const resolveSubmitJobWorkingDirectory = (workingDirectory: string, userHomeDir: string) => {
+  const error = validateRelativeToHomePath(workingDirectory, userHomeDir);
+  if (error) {
+    throw invalidArgument(error);
+  }
+
   if (path.isAbsolute(workingDirectory)) {
     return path.normalize(workingDirectory);
   }
@@ -20,11 +35,11 @@ export const resolveSubmitJobWorkingDirectory = (workingDirectory: string, userH
     ? normalizedHomeDir
     : `${normalizedHomeDir}${path.sep}`;
 
-  if (resolvedWorkingDirectory !== normalizedHomeDir && !resolvedWorkingDirectory.startsWith(homeDirWithTrailingSlash)) {
-    throw {
-      code: status.INVALID_ARGUMENT,
-      details: "Relative working directory must be under user's home directory",
-    } as ServiceError;
+  if (
+    resolvedWorkingDirectory !== normalizedHomeDir &&
+    !resolvedWorkingDirectory.startsWith(homeDirWithTrailingSlash)
+  ) {
+    throw invalidArgument("Relative working directory must be under user's home directory");
   }
 
   return resolvedWorkingDirectory;

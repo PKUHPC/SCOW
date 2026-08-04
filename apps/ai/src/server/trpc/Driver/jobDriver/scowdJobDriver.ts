@@ -43,13 +43,16 @@ import {
   genPublicOrPrivateDataJsonString,
   getClusterAppConfigs,
   scowdFetchJobInputParams,
+  validateMountPoints,
+  validateOptionalHomeScopedPath,
+  validateResourceMountTargets,
+  validateUniqueMountTargets,
   validateUniquePaths,
 } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
 import { allProtoAiJobTypes } from "src/server/utils/getProtoJobType";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { formatTime } from "src/utils/datetime";
-import { isParentOrSameFolder } from "src/utils/file";
 import { BASE_PATH } from "src/utils/processEnv";
 import { Logger } from "ts-log";
 import { z } from "zod";
@@ -531,14 +534,14 @@ export class ScowdJobDriver implements JobDriver {
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    normalizedMountPoints.forEach(({ path }) => {
-      if (path && !isParentOrSameFolder(homeDir, path)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "mountPoint should be in homeDir",
-        });
-      }
-    });
+    validateMountPoints(normalizedMountPoints, homeDir);
+    validateResourceMountTargets([...algorithmVersions, ...datasetVersions, ...modelVersions]);
+    validateUniqueMountTargets([
+      ...algorithmVersions.map(({ target }) => target),
+      ...datasetVersions.map(({ target }) => target),
+      ...modelVersions.map(({ target }) => target),
+      ...normalizedMountPoints.map(({ target }) => target),
+    ]);
 
     // 检查挂载点是否为目录，不能是软链接
     for (const { path } of normalizedMountPoints) {
@@ -1085,14 +1088,12 @@ export class ScowdJobDriver implements JobDriver {
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    normalizedMountPoints.forEach(({ path }) => {
-      if (path && !isParentOrSameFolder(homeDir, path)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "mountPoint should be in homeDir",
-        });
-      }
-    });
+    validateMountPoints(normalizedMountPoints, homeDir);
+    validateResourceMountTargets(modelVersions);
+    validateUniqueMountTargets([
+      ...modelVersions.map(({ target }) => target),
+      ...normalizedMountPoints.map(({ target }) => target),
+    ]);
 
     const scowWorkDirectoryName = `${clusterId}-job-${dayjs().format("YYYYMMDD-HHmmss")}`;
     const inferJobsDirectory = join(aiConfig.appJobsDir, scowWorkDirectoryName);
@@ -1327,21 +1328,15 @@ export class ScowdJobDriver implements JobDriver {
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    normalizedMountPoints.forEach(({ path }) => {
-      if (path && !isParentOrSameFolder(homeDir, path)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "mountPoint should be in homeDir",
-        });
-      }
-    });
-
-    if (tensorBoardDataPath && !isParentOrSameFolder(homeDir, tensorBoardDataPath)) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "tensorBoardDataPath should be in homeDir",
-      });
-    }
+    validateMountPoints(normalizedMountPoints, homeDir);
+    validateResourceMountTargets([...algorithmVersions, ...datasetVersions, ...modelVersions]);
+    validateUniqueMountTargets([
+      ...algorithmVersions.map(({ target }) => target),
+      ...datasetVersions.map(({ target }) => target),
+      ...modelVersions.map(({ target }) => target),
+      ...normalizedMountPoints.map(({ target }) => target),
+    ]);
+    validateOptionalHomeScopedPath(tensorBoardDataPath, homeDir);
 
     const scowWorkDirectoryName = `${clusterId}-job-${dayjs().format("YYYYMMDD-HHmmss")}`;
     const trainJobsDirectory = join(aiConfig.appJobsDir, scowWorkDirectoryName);
@@ -1605,14 +1600,8 @@ export class ScowdJobDriver implements JobDriver {
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    normalizedMountPoints.forEach(({ path }) => {
-      if (path && !isParentOrSameFolder(homeDir, path)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "mountPoint should be in homeDir",
-        });
-      }
-    });
+    validateMountPoints(normalizedMountPoints, homeDir);
+    validateUniqueMountTargets(normalizedMountPoints.map(({ target }) => target));
 
     const scowWorkDirectoryName = `${clusterId}-devHost-${dayjs().format("YYYYMMDD-HHmmss")}`;
     const devHostDir = join(aiConfig.appJobsDir, scowWorkDirectoryName);

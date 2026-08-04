@@ -744,8 +744,7 @@ export const LaunchAppForm: React.FC<Props> = ({
             qos: resourceValues.qos,
             nodeCount: resourceValues.nodeCount ?? 1,
             coreCount: templateGpuCount
-              ? templateGpuCount *
-                Math.floor((selectedPartitionInfo?.cores ?? 1) / (selectedPartitionInfo?.gpus ?? 1))
+              ? templateGpuCount * Math.floor((selectedPartitionInfo?.cores ?? 1) / (selectedPartitionInfo?.gpus ?? 1))
               : (resourceValues.coreCount ?? 1),
             gpuCount: templateGpuCount ?? 0,
             memoryMb: totalMemoryMb,

@@ -46,6 +46,7 @@ export const SubmitJobSchema = typeboxRouteSchema({
     }),
 
     400: Type.Object({
+      code: Type.Literal("INVALID_ARGUMENT"),
       message: Type.String(),
     }),
 
@@ -159,6 +160,9 @@ export default route(SubmitJobSchema, async (req, res) => {
       handlegRPCError(
         {
           [status.INTERNAL]: (err) => ({ 500: { code: "SCHEDULER_FAILED", message: err.details } }) as const,
+          [status.INVALID_ARGUMENT]: (err) => ({
+            400: { code: "INVALID_ARGUMENT" as const, message: err.details },
+          }),
           [status.PERMISSION_DENIED]: (err) => {
             const { findDetails } = parseErrorStatus(err.metadata);
             const errors = findDetails(ErrorInfo);
