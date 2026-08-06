@@ -43,6 +43,7 @@ export const SetJobChargeLimitSchema = typeboxRouteSchema({
 
 export default route(SetJobChargeLimitSchema, async (req, res) => {
   const { accountName, userIds, limit } = req.body;
+  const uniqueUserIds = Array.from(new Set(userIds));
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
@@ -60,7 +61,7 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
 
   const client = getClient(JobChargeLimitServiceClient);
 
-  const logInfos = userIds.map((userId) => {
+  const logInfos = uniqueUserIds.map((userId) => {
     return {
       operatorUserId: info.identityId,
       operatorIp: parseIp(req) ?? "",
@@ -76,23 +77,21 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
   return await asyncClientCall(client, "setJobChargeLimit", {
     tenantName: info.tenant,
     accountName,
-    userIds,
+    userIds: uniqueUserIds,
     limit: numberToMoney(limit),
   })
     .then(async (res) => {
-      if (res.success) {
-        logInfos.forEach(async (logInfo) => {
-          await callLog(logInfo, OperationResult.SUCCESS);
-        });
-      } else {
-        logInfos.forEach(async (logInfo) => {
-          if (res.results?.find((f) => f.success)) {
-            await callLog(logInfo, OperationResult.SUCCESS);
-          } else {
-            await callLog(logInfo, OperationResult.FAIL);
-          }
-        });
-      }
+      await Promise.all(
+        logInfos.map((logInfo) => {
+          const userId = logInfo.operationTypePayload.userId;
+          const result = res.results?.find((result) => result.userId === userId);
+
+          return callLog(
+            logInfo,
+            res.success || result?.success ? OperationResult.SUCCESS : OperationResult.FAIL,
+          );
+        }),
+      );
 
       return { 200: res };
     })
@@ -104,10 +103,9 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
           [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
           [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
         },
-        async () =>
-          logInfos.forEach(async (logInfo) => {
-            await callLog(logInfo, OperationResult.FAIL);
-          }),
+        async () => {
+          await Promise.all(logInfos.map((logInfo) => callLog(logInfo, OperationResult.FAIL)));
+        },
       ),
     );
 });
