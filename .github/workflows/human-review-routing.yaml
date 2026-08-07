@@ -1,0 +1,37 @@
+name: Human Review Routing
+
+on:
+  pull_request_target:
+    types: [ready_for_review, reopened, synchronize, converted_to_draft, review_requested, review_request_removed]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: human-review-routing-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  route-reviewers:
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+    steps:
+      # 只使用默认分支中的可信路由代码，不 checkout PR 分支。
+      - name: Check out routing script from the default branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Route human reviewers
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const routing = require("./.github/scripts/human-review-routing.cjs");
+            const allowStart =
+              context.eventName === "pull_request_target" &&
+              ["ready_for_review", "reopened"].includes(context.payload.action);
+            await routing.routeHumanReviewers({ github, context, core, allowStart });

@@ -1,0 +1,6 @@
+name: PR-Agent
+description: Run PR-Agent through CCRepo
+
+runs:
+  using: docker
+  image: docker://ccrepo.pku.edu.cn/dockerhub/pragent/pr-agent:github_action

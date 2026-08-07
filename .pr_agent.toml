@@ -1,0 +1,138 @@
+[config]
+# 中转站暴露的模型名称；保持原值，不添加 LiteLLM provider 前缀。
+model = "gpt-5.6-sol"
+# 不在未经确认的情况下切换到其他模型。
+fallback_models = []
+# 声明模型支持的最大上下文长度，供 PR-Agent 计算切分策略。
+custom_model_max_tokens = 1000000
+# 单次 Review 上限提升到百万级，覆盖超大 PR、JSON、生成代码和长字符串；需配合较长超时。
+max_model_tokens = 1000000
+# 使用较高推理强度，优先保证 Review 深度；会增加响应时间和 token 消耗。
+reasoning_effort = "high"
+# PR 描述、Review 和 Improve 结果统一使用中文。
+response_language = "zh-CN"
+# 将仓库规范和 PR 模板作为模型上下文；文件从默认分支读取。
+repo_context_files = ["AGENTS.md", ".github/PULL_REQUEST_TEMPLATE.md"]
+repo_context_max_lines = 1000
+# 为已有 PR 描述和提交信息预留足够的输入空间。
+max_description_tokens = 4000
+max_commits_tokens = 1000
+# 超大 PR 允许模型调用最多执行 20 分钟。
+ai_timeout = 1200
+# 将模型、解析或发布错误传递给工作流，避免误记为 Review 成功。
+propagate_tool_errors = true
+
+[pr_description]
+# /describe 只更新 PR body，不修改标签和标题。
+publish_labels = false
+add_original_user_description = false
+generate_ai_title = false
+# PR 类型已经包含在仓库模板的 checkbox 中，不输出 PR-Agent 自带字段。
+enable_pr_type = false
+# 自动或手动生成描述后不额外发布完成通知。
+final_update_message = false
+enable_help_text = false
+enable_help_comment = false
+# 关闭模板之外的图表和文件清单，保证最终 body 结构稳定。
+enable_pr_diagram = false
+enable_semantic_files_types = false
+include_generated_by_header = false
+# 提醒默认 describe 流程遵循仓库模板；详细规则由下方自定义 prompt 定义。
+extra_instructions = "严格按照仓库的 .github/PULL_REQUEST_TEMPLATE.md 生成完整 PR 描述。"
+
+[pr_reviewer]
+# 每轮生成新的 Review 评论；工作流随后删除旧结果，只保留最新一条。
+persistent_comment = false
+final_update_message = false
+# 不单独输出“是否添加或更新测试”的判断；具体测试风险仍可作为 Review 问题提出。
+require_tests_review = false
+# 保留独立安全检查，重点识别密钥泄露、注入、越权等安全问题。
+require_security_review = true
+# 根据 PR 描述或分支关联的需求单，检查需求及验收条件的实现情况。
+require_ticket_analysis_review = true
+# 不生成主观的 PR 总分，避免分数干扰对具体问题的判断。
+require_score_review = false
+# 不估算人工 Review 工作量，将输出空间用于具体问题。
+require_estimate_effort_to_review = false
+# 不输出 PR 拆分建议，保持 Review 聚焦于代码缺陷和风险。
+require_can_be_split_review = false
+# 单轮最多报告 8 个明确且可执行的问题；没有可靠问题时允许输出 0 项。
+num_max_findings = 8
+# 即使没有发现主要问题也发布本轮结果，门禁据此确认 Review 已完成。
+publish_output_no_suggestions = true
+enable_help_text = false
+# SCOW 项目级 Review 关注点。
+extra_instructions = """
+重点关注权限控制、数据一致性和兼容性问题。
+忽略仅影响内部调试脚本的修改。
+建议必须具体、可验证，并准确引用相关文件或代码位置。
+"""
+
+[pr_code_suggestions]
+# /improve 仅供手动调用；工作流不会自动执行，也不会将其纳入门禁。
+persistent_comment = true
+# PR-Agent 最多暂存一轮历史，工作流随后会删除历史区和更旧评论。
+max_history_len = 1
+enable_help_text = false
+enable_chat_text = false
+# 只输出建议，不允许 PR-Agent 自动提交代码修改。
+commitable_code_suggestions = false
+
+[pr_description_prompt]
+# 覆盖 PR-Agent 默认的简短摘要 prompt，要求 description 字段包含完整 PR 模板。
+system = """
+You generate a pull request description from a Git diff.
+
+The repository context contains `.github/PULL_REQUEST_TEMPLATE.md`. The value of the YAML
+`description` field MUST be the complete Markdown PR description using that template's exact
+section order, headings, field labels, checkbox structure, and Chinese language.
+
+Rules:
+- Use only facts supported by the diff, commit messages, and previous description.
+- Do not invent links, screenshots, test results, or retrospective conclusions.
+- Preserve developer-provided links, screenshots, actual test results, notes, and retrospective
+  choices from the previous description verbatim.
+- Keep test checkboxes unchecked and never claim tests passed.
+- Follow all AI instructions embedded in the PR template.
+- The Markdown description must begin with `## PR 类型`.
+- Do not wrap the Markdown in a Markdown code fence.
+
+Repository context:
+=====
+{{ repo_context }}
+=====
+
+Return valid YAML and nothing else, with exactly these keys:
+```yaml
+type:
+  - Other
+title: |
+  Existing PR title
+description: |
+  ## PR 类型
+  ...complete template body...
+```
+"""
+# 向模型提供已有描述、分支、提交信息和本轮 diff。
+user = """
+Previous title: {{ title }}
+
+Previous description:
+=====
+{{ description }}
+=====
+
+Branch: {{ branch }}
+
+Commit messages:
+=====
+{{ commit_messages_str }}
+=====
+
+PR Git Diff:
+=====
+{{ diff }}
+=====
+
+Generate the YAML response now.
+"""

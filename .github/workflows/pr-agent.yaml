@@ -1,0 +1,167 @@
+name: PR Agent Review
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: pr-agent-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  review-and-gate:
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       github.event.sender.type != 'Bot')
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+
+    steps:
+      # pull_request_target 必须只使用默认分支中的可信代码，不能 checkout PR 分支。
+      - name: Check out gate scripts from the default branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Prepare PR-Agent event
+        id: prepare
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.prepare({ github, context, core });
+
+      - name: Evaluate draft gate before AI
+        id: pre_gate
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.evaluateGate({ github, context, core });
+
+      - name: Convert PR to draft before AI
+        id: pre_draft
+        if: steps.pre_gate.outputs.needs_draft == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          # PAT 只执行 Draft mutation，不读取或编辑门禁评论。
+          github-token: ${{ secrets.PR_AGENT_DRAFT_GATE_TOKEN }}
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.convertPullRequestToDraft({ github, context });
+
+      - name: Log in to CCRepo
+        if: steps.prepare.outputs.run_agent == 'true'
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ccrepo.pku.edu.cn
+          username: ${{ secrets.CCREPO_USERNAME }}
+          password: ${{ secrets.CCREPO_PASSWORD }}
+
+      # GitHub Runner 启动本地 Docker Action 时不会复用 login-action 的拉取凭据，
+      # 因此先显式拉取镜像，让后续 Action 直接使用本地镜像。
+      - name: Pull PR-Agent image
+        if: steps.prepare.outputs.run_agent == 'true'
+        run: docker pull ccrepo.pku.edu.cn/dockerhub/pragent/pr-agent:github_action
+
+      - name: Run PR-Agent
+        id: pr_agent
+        if: steps.prepare.outputs.run_agent == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/pr-agent
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          OPENAI_KEY: ${{ secrets.PR_AGENT_OPENAI_API_KEY }}
+          OPENAI__KEY: ${{ secrets.PR_AGENT_OPENAI_API_KEY }}
+          OPENAI__API_BASE: ${{ secrets.PR_AGENT_OPENAI_API_BASE }}
+          HTTPS_PROXY: ${{ vars.HTTPS_PROXY }}
+          HTTP_PROXY: ${{ vars.HTTPS_PROXY }}
+          NO_PROXY: ${{ vars.NO_PROXY }}
+          github_action_config.auto_describe: ${{ steps.prepare.outputs.auto_describe }}
+          github_action_config.auto_review: "true"
+          github_action_config.auto_improve: "false"
+          github_action_config.pr_actions: '["opened", "synchronize"]'
+          github_action_config.handle_push_trigger: "false"
+          config.propagate_tool_errors: "true"
+          pr_description.final_update_message: "false"
+
+      - name: Normalize generated PR description
+        id: normalize
+        if: always() && steps.prepare.outputs.normalize_description == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          SNAPSHOT_PATH: ${{ steps.prepare.outputs.snapshot_path }}
+        with:
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.normalizePullDescription({ github, context, core });
+
+      - name: Keep only the latest AI result
+        id: cleanup
+        if: >-
+          steps.pr_agent.outcome == 'success' &&
+          steps.prepare.outputs.cleanup_kind != ''
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          CLEANUP_KIND: ${{ steps.prepare.outputs.cleanup_kind }}
+          COMMENTS_SNAPSHOT_PATH: ${{ steps.prepare.outputs.comments_snapshot_path }}
+        with:
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.cleanupAiComments({ github, context, core });
+
+      - name: Update AI review state
+        id: update_state
+        if: always() && steps.prepare.outcome == 'success'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          TOOL: ${{ steps.prepare.outputs.tool }}
+          RUN_ID: ${{ github.run_id }}
+          AGENT_OUTCOME: ${{ steps.pr_agent.outcome }}
+          NORMALIZE_OUTCOME: ${{ steps.normalize.outcome }}
+          CLEANUP_KIND: ${{ steps.prepare.outputs.cleanup_kind }}
+          CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
+        with:
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.updateStateAfterRun({ github, context, core });
+
+      - name: Evaluate final AI review gate
+        id: final_gate
+        if: always() && steps.prepare.outcome == 'success'
+        uses: actions/github-script@v8
+        env:
+          RUN_AGENT: ${{ steps.prepare.outputs.run_agent }}
+          NORMALIZE_DESCRIPTION: ${{ steps.prepare.outputs.normalize_description }}
+          CLEANUP_KIND: ${{ steps.prepare.outputs.cleanup_kind }}
+          AGENT_OUTCOME: ${{ steps.pr_agent.outcome }}
+          NORMALIZE_OUTCOME: ${{ steps.normalize.outcome }}
+          CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
+          STATE_OUTCOME: ${{ steps.update_state.outcome }}
+        with:
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.evaluateGate({ github, context, core });
+
+      - name: Convert PR to draft after AI
+        if: always() && steps.final_gate.outputs.needs_draft == 'true'
+        uses: actions/github-script@v8
+        with:
+          # Actions 内置 GITHUB_TOKEN 无权调用 convertPullRequestToDraft。
+          github-token: ${{ secrets.PR_AGENT_DRAFT_GATE_TOKEN }}
+          script: |
+            const workflow = require("./.github/scripts/pr-agent-workflow.cjs");
+            await workflow.convertPullRequestToDraft({ github, context });
