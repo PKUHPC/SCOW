@@ -12,7 +12,7 @@ import { calcActiveKeys } from "@scow/lib-web/build/layouts/base/common";
 import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { SideNav } from "@scow/lib-web/build/layouts/base/SideNav";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
-import { arrayContainsElement } from "@scow/utils";
+import { arrayContainsElement, joinWithUrl } from "@scow/utils";
 import { Grid, Layout } from "antd";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
@@ -211,6 +211,8 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         userLinks={[]}
         languageId={languageId}
         right={headerRightContent}
+        showOperationLog={!!(publicConfig?.AUDIT_DEPLOYED && publicConfig.MIS_DEPLOYED && publicConfig.MIS_URL)}
+        operationLogUrl={publicConfig?.MIS_URL ? joinWithUrl(publicConfig.MIS_URL, "/operationLog") : undefined}
       />
       <StyledLayout>
         {hasSidebar ? (

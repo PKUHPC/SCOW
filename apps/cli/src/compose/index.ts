@@ -608,6 +608,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         PORTAL_SERVER_URL: config.portal?.enabled ? "portal-server:5000" : "",
         AI_URL: join(BASE_PATH, AI_PATH),
         AI_DEPLOYED: config.ai?.enabled ? "true" : "false",
+        AUDIT_DEPLOYED: config.audit ? "true" : "false",
         PUBLIC_PATH: join(BASE_PATH, publicPath),
         PROTOCOL: config.gateway.protocol,
         AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),

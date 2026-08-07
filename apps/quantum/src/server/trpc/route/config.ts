@@ -53,6 +53,7 @@ export const configRouter = router({
       basePath: config.NEXT_PUBLIC_RUNTIME_BASE_PATH,
       portalUrl: config.PORTAL_URL,
       misUrl: config.MIS_URL,
+      auditDeployed: config.AUDIT_DEPLOYED,
       aiUrl: config.AI_DEPLOYED ? config.AI_URL : "",
       versionTag: readVersionFile()?.tag,
 

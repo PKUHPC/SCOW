@@ -65,6 +65,7 @@ type Props = PropsWithChildren<{
   from: "portal" | "mis";
   extensionStoreData?: UiExtensionStoreData;
   showOperationLog?: boolean;
+  operationLogUrl?: string;
 }>;
 
 export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
@@ -82,6 +83,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   from,
   headerRightContent,
   showOperationLog,
+  operationLogUrl,
 }) => {
   const router = useRouter();
 
@@ -171,6 +173,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         from={from}
         activeKeys={activeKeys}
         showOperationLog={showOperationLog}
+        operationLogUrl={operationLogUrl}
       />
       <StyledLayout>
         {hasSidebar ? <SideNav activeKeys={activeKeys} pathname={router.asPath} routes={sidebarRoutes} /> : undefined}

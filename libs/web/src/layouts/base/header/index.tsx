@@ -99,6 +99,7 @@ interface Props {
   routeQuery: ExtensionRouteQuery;
   activeKeys: string[];
   showOperationLog?: boolean;
+  operationLogUrl?: string;
 }
 
 interface SourcedHeaderNavbarLink {
@@ -122,6 +123,7 @@ export const Header: React.FC<Props> = ({
   from,
   routeQuery,
   showOperationLog,
+  operationLogUrl,
 }) => {
   const [links, setLinks] = useState<SourcedHeaderNavbarLink[]>([]);
 
@@ -203,7 +205,14 @@ export const Header: React.FC<Props> = ({
         <SystemSelect links={staticNavbarLinks ?? []}></SystemSelect>
         {right}
         <IndicatorPart>
-          <UserIndicator user={user} logout={logout} userLinks={userLinks} languageId={languageId} showOperationLog={showOperationLog} />
+          <UserIndicator
+            user={user}
+            logout={logout}
+            userLinks={userLinks}
+            languageId={languageId}
+            showOperationLog={showOperationLog}
+            operationLogUrl={operationLogUrl}
+          />
         </IndicatorPart>
       </RightContentPart>
     </Container>

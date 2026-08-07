@@ -17,6 +17,7 @@ interface Props {
   userLinks?: UserLink[];
   languageId: string;
   showOperationLog?: boolean;
+  operationLogUrl?: string;
 }
 
 const Container = styled.div`
@@ -42,7 +43,14 @@ const HiddenOnSmallScreen = styled.span`
   }
 `;
 
-export const UserIndicator: React.FC<Props> = ({ user, logout, userLinks, languageId, showOperationLog }) => {
+export const UserIndicator: React.FC<Props> = ({
+  user,
+  logout,
+  userLinks,
+  languageId,
+  showOperationLog,
+  operationLogUrl,
+}) => {
   const { token } = useToken();
 
   return (
@@ -61,7 +69,12 @@ export const UserIndicator: React.FC<Props> = ({ user, logout, userLinks, langua
                 ? [
                     {
                       key: "operationLogLink",
-                      label: (
+                      // 跨系统入口传入 operationLogUrl 并在新标签页打开；MIS 不传 URL，保留原有站内路由行为。
+                      label: operationLogUrl ? (
+                        <Typography.Link href={operationLogUrl} target="_blank" rel="noopener noreferrer">
+                          {getCurrentLangLibWebText(languageId, "userIndicatorOperationLog")}
+                        </Typography.Link>
+                      ) : (
                         <Link href="/operationLog">
                           {getCurrentLangLibWebText(languageId, "userIndicatorOperationLog")}
                         </Link>

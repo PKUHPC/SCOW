@@ -98,6 +98,8 @@ interface Props {
   right?: React.ReactNode;
   extensions: ExtensionManifestWithUrl[];
   routeQuery: ExtensionRouteQuery;
+  showOperationLog?: boolean;
+  operationLogUrl?: string;
 }
 
 export const Header: React.FC<Props> = ({
@@ -110,6 +112,8 @@ export const Header: React.FC<Props> = ({
   right,
   extensions,
   routeQuery,
+  showOperationLog,
+  operationLogUrl,
 }) => {
   const [links, setLinks] = useState<SourcedHeaderNavbarLink[]>([]);
 
@@ -192,7 +196,14 @@ export const Header: React.FC<Props> = ({
       <LinksPart>{navbarLinkComponents}</LinksPart>
       {right}
       <IndicatorPart>
-        <UserIndicator user={user} logout={logout} userLinks={userLinks} languageId={languageId} />
+        <UserIndicator
+          user={user}
+          logout={logout}
+          userLinks={userLinks}
+          languageId={languageId}
+          showOperationLog={showOperationLog}
+          operationLogUrl={operationLogUrl}
+        />
       </IndicatorPart>
     </Container>
   );

@@ -105,6 +105,8 @@ const grafanaConfigSchema = z.object({
 
 const PublicConfigSchema = z.object({
   ENABLE_CHANGE_PASSWORD: z.boolean().optional(),
+  AUDIT_DEPLOYED: z.boolean(),
+  MIS_DEPLOYED: z.boolean(),
   MIS_URL: z.string().optional(),
   PORTAL_URL: z.string().optional(),
   QUANTUM_URL: z.string().optional(),
@@ -203,15 +205,21 @@ const StorageConfigSchema = z.object({
 });
 
 const ClusterAiConfigSchema = z.object({
-  app: z.object({
-    maxRunningTimeHours: z.number().optional(),
-  }).optional(),
-  train: z.object({
-    maxRunningTimeHours: z.number().optional(),
-  }).optional(),
-  infer: z.object({
-    maxRunningTimeHours: z.number().optional(),
-  }).optional(),
+  app: z
+    .object({
+      maxRunningTimeHours: z.number().optional(),
+    })
+    .optional(),
+  train: z
+    .object({
+      maxRunningTimeHours: z.number().optional(),
+    })
+    .optional(),
+  infer: z
+    .object({
+      maxRunningTimeHours: z.number().optional(),
+    })
+    .optional(),
   devHost: z.object({
     enabled: z.boolean(),
     vscodeInfo: z.object({
@@ -274,6 +282,8 @@ export const config = router({
 
       return {
         ENABLE_CHANGE_PASSWORD: capabilities.changePassword,
+        AUDIT_DEPLOYED: envConfig.AUDIT_DEPLOYED,
+        MIS_DEPLOYED: envConfig.MIS_DEPLOYED,
 
         MIS_URL: envConfig.MIS_URL,
 

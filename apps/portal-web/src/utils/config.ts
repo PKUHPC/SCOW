@@ -54,6 +54,8 @@ export interface PublicRuntimeConfig {
 
   MIS_SERVER_URL: string | undefined;
 
+  AUDIT_DEPLOYED: boolean;
+
   AI_URL: string | undefined;
 
   QUANTUM_URL: string | undefined;

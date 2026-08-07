@@ -157,6 +157,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     MIS_DEPLOYED: config.MIS_DEPLOYED,
     MIS_SERVER_URL: config.MIS_DEPLOYED ? config.MIS_SERVER_URL : undefined,
 
+    AUDIT_DEPLOYED: config.AUDIT_DEPLOYED,
+
     AI_URL: config.AI_DEPLOYED ? config.AI_URL || portalConfig.aiUrl : undefined,
 
     QUANTUM_URL: config.QUANTUM_DEPLOYED ? config.QUANTUM_URL || portalConfig.quantumUrl : undefined,

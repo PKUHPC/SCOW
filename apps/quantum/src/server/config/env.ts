@@ -18,6 +18,8 @@ export const config = envConfig({
   MIS_URL: str({ desc: "管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件", default: "" }),
   MIS_SERVER_URL: str({ desc: "管理系统后端服务的路径", default: "" }),
 
+  AUDIT_DEPLOYED: bool({ desc: "是否部署了审计系统", default: false }),
+
   AI_DEPLOYED: bool({ desc: "是否部署了AI系统", default: false }),
   AI_URL: str({
     desc: "如果部署了AI系统，AI系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署AI系统",

@@ -46,6 +46,7 @@ it("sets quantum portal internal url with portal base path", async () => {
     basePath: "/quantum",
     qobody: { image: "qobody:test", token: "test-token" },
   };
+  config.audit = { dbPassword: "must!chang3this", mysqlImage: "" };
 
   rmSync(generatedUchipConfigPath, { recursive: true, force: true });
 
@@ -56,6 +57,7 @@ it("sets quantum portal internal url with portal base path", async () => {
     expect(composeConfig.services.quantum.environment).toContain(
       "PORTAL_INTERNAL_URL=http://portal-web:3000/scow/portal",
     );
+    expect(composeConfig.services.quantum.environment).toContain("AUDIT_DEPLOYED=true");
   } finally {
     rmSync(generatedUchipConfigPath, { recursive: true, force: true });
   }
