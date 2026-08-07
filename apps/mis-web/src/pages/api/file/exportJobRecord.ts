@@ -10,7 +10,7 @@ import { getT, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { SearchType } from "src/models/job";
 import { OperationResult } from "src/models/operationLog";
-import { TenantRole } from "src/models/User";
+import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { buildJobsRequestTarget } from "src/pages/api/job/jobInfo";
 import { callLog } from "src/server/operationLog";
@@ -42,6 +42,7 @@ export const ExportJobRecordSchema = typeboxRouteSchema({
     ownerIdOrName: Type.Optional(Type.String()),
     clusters: Type.Optional(Type.Array(Type.String())),
     accountName: Type.Optional(Type.String()),
+    tenantName: Type.Optional(Type.String()),
     encoding: Type.Enum(Encoding),
     timeZone: Type.Optional(Type.String()),
     jobId: Type.Optional(Type.Number()),
@@ -54,13 +55,20 @@ export const ExportJobRecordSchema = typeboxRouteSchema({
   responses: {
     200: Type.Any(),
 
+    403: Type.Null(),
+
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
   },
 });
 
 export default route(ExportJobRecordSchema, async (req, res) => {
   // 和getJobInfo的auth保持一致
-  const auth = authenticate((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
+  const auth = authenticate(
+    (u) =>
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+      u.accountAffiliations.length > 0,
+  );
 
   const info = await auth(req, res);
 
@@ -79,6 +87,7 @@ export default route(ExportJobRecordSchema, async (req, res) => {
     userId,
     userIdOrName,
     ownerIdOrName,
+    tenantName,
     encoding,
     timeZone,
     jobId,
@@ -90,10 +99,33 @@ export default route(ExportJobRecordSchema, async (req, res) => {
   let { clusters } = query;
 
   const trimmedIds = parseJobIds(jobIds);
+  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
+  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  const isSelf = userId === info.identityId;
+
+  if (
+    !isPlatformAdmin &&
+    !(
+      (isTenantAdmin && tenantName === info.tenant) ||
+      (accountName &&
+        info.accountAffiliations.find(
+          (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
+        )) ||
+      isSelf
+    )
+  ) {
+    return { 403: null };
+  }
 
   clusters = clusters ?? [];
   clusters = clusters.filter((i) => i !== "");
-  const target = buildJobsRequestTarget(info.tenant, jobId, accountName, userId, trimmedIds);
+  const target = buildJobsRequestTarget(
+    tenantName ?? "",
+    jobId,
+    accountName,
+    userId,
+    trimmedIds,
+  );
 
   const logInfo = {
     operatorUserId: info.identityId,
@@ -137,6 +169,7 @@ export default route(ExportJobRecordSchema, async (req, res) => {
 
     const formatJobRecord = (x: JobInfo) => {
       return {
+        tenantName: x.tenantName,
         idJob: x.idJob,
         jobName: x.jobName,
         account: x.account,
@@ -172,6 +205,7 @@ export default route(ExportJobRecordSchema, async (req, res) => {
     const clusterColumnsName = searchType === SearchType.NORMAL ? t(pCommon("clusterName")) : t(pCommon("cluster"));
 
     const headerColumns = {
+      tenantName: t(pCommon("tenant")),
       jobName: t(pCommon("workName")),
       idJob: t(pCommon("clusterWorkId")),
       user: t(pCommon("userId")),

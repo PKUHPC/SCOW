@@ -53,10 +53,6 @@ export const UsersPage: NextPage = requireAuth((i) => i.accountAffiliations.some
         update={update}
         accountName={accountName}
         canSetAdmin={account.role === UserRole.OWNER}
-        getJobsPageUrl={(userId) => ({
-          pathname: `/accounts/${accountName}/userJobs`,
-          query: { userId },
-        })}
       />
     </div>
   );

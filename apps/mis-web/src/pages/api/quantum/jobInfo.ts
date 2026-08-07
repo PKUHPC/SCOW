@@ -13,7 +13,7 @@ import { getTokenFromCookie } from "src/auth/cookie";
 import { authenticate } from "src/auth/server";
 import { JobSortOrder } from "src/models/job";
 import { JobSortBy } from "src/models/quantumJob";
-import { TenantRole } from "src/models/User";
+import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
@@ -41,6 +41,7 @@ export const GetJobFilter = Type.Object({
   jobId: Type.Optional(Type.Integer({ minimum: 0 })),
   userId: Type.Optional(Type.String()),
   accountName: Type.Optional(Type.String()),
+  tenantName: Type.Optional(Type.String()),
   qubits: Type.Optional(Type.Integer()),
   shots: Type.Optional(Type.Integer()),
 });
@@ -48,6 +49,7 @@ export type GetJobFilter = Static<typeof GetJobFilter>;
 
 export const JobInfo = Type.Object({
   jobId: Type.Number(),
+  tenantName: Type.Optional(Type.String()),
   account: Type.String(),
   user: Type.String(),
   submitTime: Type.String(),
@@ -102,7 +104,12 @@ export const getQuantumJobInfo = async (request: GetQuantumJobsRequest) => {
 };
 
 export default /* #__PURE__*/ route(GetQuantumJobInfoSchema, async (req, res) => {
-  const auth = authenticate((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
+  const auth = authenticate(
+    (u) =>
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+      u.accountAffiliations.length > 0,
+  );
 
   const info = await auth(req, res);
   const userToken = getTokenFromCookie({ req });
@@ -111,10 +118,24 @@ export default /* #__PURE__*/ route(GetQuantumJobInfoSchema, async (req, res) =>
     return;
   }
 
-  const { page = 1, accountName, userId, jobId, pageSize, sortBy, sortOrder, qubits, shots } = req.query;
+  const {
+    page = 1,
+    accountName,
+    tenantName,
+    userId,
+    jobId,
+    pageSize,
+    sortBy,
+    sortOrder,
+    qubits,
+    shots,
+  } = req.query;
+  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
+  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  const isSelf = userId === info.identityId;
 
   const filter: QuantumJobFilter = {
-    tenantName: info.tenant,
+    tenantName: tenantName ?? "",
     accountName,
     jobId,
     qubits,
@@ -123,9 +144,13 @@ export default /* #__PURE__*/ route(GetQuantumJobInfoSchema, async (req, res) =>
   };
 
   if (
-    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-    userId === info.identityId ||
-    (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
+    isPlatformAdmin ||
+    (isTenantAdmin && tenantName === info.tenant) ||
+    (accountName &&
+      info.accountAffiliations.find(
+        (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
+      )) ||
+    isSelf
   ) {
     filter.userId = userId;
     filter.accountName = accountName;

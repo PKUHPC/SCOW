@@ -17,9 +17,10 @@ const p = prefix("page.accounts.accountName.historyJobs.");
 export const HistoryJobsPage: NextPage = requireAuth(
   (u) => u.accountAffiliations.length > 0,
   checkQueryAccountNameIsAdmin,
-)(() => {
+)(({ userStore }) => {
   const t = useI18nTranslateToString();
   const accountName = useAccountPagesAccountName();
+  const tenantName = userStore.user.tenant;
 
   const title = t(p("title"), [accountName]);
   return (
@@ -36,6 +37,7 @@ export const HistoryJobsPage: NextPage = requireAuth(
               children: (
                 <JobTable
                   accountNames={accountName}
+                  tenantName={tenantName}
                   filterAccountName={false}
                   showAccount={false}
                   showUser={true}
@@ -50,6 +52,7 @@ export const HistoryJobsPage: NextPage = requireAuth(
               children: (
                 <QuantumJobTable
                   accountName={accountName}
+                  tenantName={tenantName}
                   filterAccountName={false}
                   showAccount={false}
                   showUser={true}
@@ -61,6 +64,7 @@ export const HistoryJobsPage: NextPage = requireAuth(
       ) : (
         <JobTable
           accountNames={accountName}
+          tenantName={tenantName}
           filterAccountName={false}
           showAccount={false}
           showUser={true}

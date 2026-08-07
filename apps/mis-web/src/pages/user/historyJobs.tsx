@@ -34,6 +34,7 @@ export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.lengt
               children: (
                 <JobTable
                   accountNames={accountNames}
+                  tenantName={userStore.user.tenant}
                   userId={userStore.user.identityId}
                   showAccount={true}
                   showUser={false}
@@ -50,6 +51,7 @@ export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.lengt
               children: (
                 <QuantumJobTable
                   userId={userStore.user.identityId}
+                  tenantName={userStore.user.tenant}
                   showAccount={true}
                   showUser={false}
                   filterUserId={false}
@@ -61,6 +63,7 @@ export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.lengt
       ) : (
         <JobTable
           accountNames={accountNames}
+          tenantName={userStore.user.tenant}
           userId={userStore.user.identityId}
           showAccount={true}
           showUser={false}

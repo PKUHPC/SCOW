@@ -71,7 +71,6 @@ export const AccountUsersPage: NextPage = requireAuth((i) => i.tenantRoles.inclu
         accountName={accountName}
         data={data}
         isLoading={isLoading}
-        getJobsPageUrl={(userId) => `/tenant/accounts/${accountName}/users/${userId}/jobs`}
       />
     </div>
   );

@@ -705,7 +705,9 @@ export const exportServiceServer = plugin((server) => {
       const { jobEndTimeStart, jobEndTimeEnd, target, count, clusters, userIdOrName, ownerIdOrName } =
         ensureNotUndefined(request, ["target"]);
       // 定义查询条件
-      const searchParam = getJobsTargetSearchParam(target);
+      const targetSearchParam = getJobsTargetSearchParam(target);
+      const { tenant: _targetTenant, ...searchParamWithoutTenant } = targetSearchParam;
+      const searchParam = _targetTenant === "" ? searchParamWithoutTenant : targetSearchParam;
 
       const trimmedUserIdOrName = userIdOrName?.trim();
       const trimmedOwnerIdOrName = ownerIdOrName?.trim();
@@ -782,6 +784,7 @@ export const exportServiceServer = plugin((server) => {
         userName: x.userName,
         accountOwnerId: x.accountOwnerId ?? "-",
         accountOwnerName: x.accountOwnerName ?? "-",
+        tenantName: x.tenant,
       });
 
       type RecordFormatReturnType = ReturnType<typeof recordFormat>;

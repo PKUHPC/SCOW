@@ -6,7 +6,6 @@ import { RefreshLink } from "@scow/lib-web/build/utils/refreshToken";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
 import { App, Popover, Space, Table, Tag } from "antd";
-import { LinkProps } from "next/link";
 import React, { Key, useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
@@ -29,7 +28,6 @@ interface Props {
   update: () => void;
   accountName: string;
   canSetAdmin: boolean;
-  getJobsPageUrl: (userId: string) => LinkProps["href"];
 }
 
 const p = prefix("pageComp.user.userTable.");

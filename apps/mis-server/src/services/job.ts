@@ -94,7 +94,7 @@ function filterJobs(
                 }
               : {}),
           }),
-    tenant: tenantName,
+    ...(tenantName ? { tenant: tenantName } : {}),
   } as FilterQuery<JobInfoEntity>;
 }
 
@@ -385,6 +385,10 @@ export const jobServiceServer = plugin((server) => {
             )
           : [];
 
+      if (tenantName !== undefined && tenantAccounts.length === 0) {
+        return [{ jobs: [] }];
+      }
+
       if (tenantAccounts.length > 0 && !!accountName && !tenantAccounts.includes(accountName)) {
         return [{ jobs: [] }];
       }
@@ -479,8 +483,18 @@ export const jobServiceServer = plugin((server) => {
         }
       }
 
+      const accountTenantMap = new Map<string, string>();
       const accountOwnerMap = new Map<string, { accountOwnerId: string; accountOwnerName: string }>();
       if (runningAccounts.length > 0) {
+        const accounts = await em.find(
+          Account,
+          { accountName: { $in: runningAccounts } },
+          { fields: ["accountName"], populate: ["tenant"] },
+        );
+        for (const account of accounts) {
+          accountTenantMap.set(account.accountName, account.tenant.$.name);
+        }
+
         const ownerRelations = await em.find(
           UserAccount,
           {
@@ -506,6 +520,7 @@ export const jobServiceServer = plugin((server) => {
         job.userName = userNameMap.get(job.user);
         job.accountOwnerId = owner?.accountOwnerId;
         job.accountOwnerName = owner?.accountOwnerName;
+        job.tenantName = accountTenantMap.get(job.account);
 
         return job;
       });

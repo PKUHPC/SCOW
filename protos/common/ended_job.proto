@@ -34,4 +34,5 @@ message JobInfo {
   optional string user_name = 26;
   optional string account_owner_id = 27;
   optional string account_owner_name = 28;
+  optional string tenant_name = 29;
 }

@@ -14,7 +14,7 @@ const p = prefix("page.accounts.accountName.runningJobs.");
 export const RunningJobsPage: NextPage = requireAuth(
   (u) => u.accountAffiliations.length > 0,
   checkQueryAccountNameIsAdmin,
-)(() => {
+)(({ userStore }) => {
   const t = useI18nTranslateToString();
   const tArgs = useI18nTranslate();
 
@@ -26,7 +26,13 @@ export const RunningJobsPage: NextPage = requireAuth(
     <div>
       <Head title={title} />
       <PageTitle titleText={pageTitle} />
-      <RunningJobQueryTable accountNames={accountName} showAccount={false} filterAccountName={false} showUser={true} />
+      <RunningJobQueryTable
+        accountNames={accountName}
+        tenantName={userStore.user.tenant}
+        showAccount={false}
+        filterAccountName={false}
+        showUser={true}
+      />
     </div>
   );
 });

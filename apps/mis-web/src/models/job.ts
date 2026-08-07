@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import { Lang } from "react-typed-i18n";
 import en from "src/i18n/en";
 
-export type RunningJobInfo = RunningJob & { cluster: Cluster; runningOrQueueTime: string };
+export type RunningJobInfo = RunningJob & { cluster: Cluster; runningOrQueueTime: string; tenantName?: string };
 
 export const RunningJobInfo = {
   fromGrpc: (info: RunningJob, cluster: Cluster): RunningJobInfo => ({

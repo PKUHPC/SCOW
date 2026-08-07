@@ -3,7 +3,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { GetRunningJobsRequest, JobServiceClient } from "@scow/protos/build/server/job";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { TenantRole } from "src/models/User";
+import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
@@ -22,6 +22,7 @@ export const RunningJob = Type.Object({
   account: Type.String(),
   accountOwnerId: Type.Optional(Type.String()),
   accountOwnerName: Type.Optional(Type.String()),
+  tenantName: Type.Optional(Type.String()),
   cores: Type.String(),
   gpus: Type.String(),
   qos: Type.String(),
@@ -68,6 +69,7 @@ export const GetRunningJobsSchema = typeboxRouteSchema({
     userIdOrName: Type.Optional(Type.String()),
     ownerIdOrName: Type.Optional(Type.String()),
     accountName: Type.Optional(Type.String()),
+    tenantName: Type.Optional(Type.String()),
 
     cluster: Type.String(),
   }),
@@ -100,8 +102,9 @@ export const getRunningJobs = async (request: GetRunningJobsRequest) => {
 export default /* #__PURE__*/ route(GetRunningJobsSchema, async (req, res) => {
   const auth = authenticate(
     (u) =>
-      // u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0,
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+      u.accountAffiliations.length > 0,
   );
 
   const info = await auth(req, res);
@@ -110,7 +113,10 @@ export default /* #__PURE__*/ route(GetRunningJobsSchema, async (req, res) => {
     return;
   }
 
-  const { cluster, userId, userIdOrName, ownerIdOrName, accountName } = req.query;
+  const { cluster, userId, userIdOrName, ownerIdOrName, accountName, tenantName } = req.query;
+  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
+  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  const isSelf = userId === info.identityId;
 
   const filter: GetRunningJobsRequest = {
     cluster,
@@ -120,11 +126,15 @@ export default /* #__PURE__*/ route(GetRunningJobsSchema, async (req, res) => {
   };
 
   if (
-    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-    userId === info.identityId ||
-    (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
+    isPlatformAdmin ||
+    (isTenantAdmin && tenantName === info.tenant) ||
+    (accountName &&
+      info.accountAffiliations.find(
+        (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
+      )) ||
+    isSelf
   ) {
-    filter.tenantName = info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ? info.tenant : undefined;
+    filter.tenantName = tenantName;
     filter.userId = userId;
     filter.accountName = accountName;
   } else {

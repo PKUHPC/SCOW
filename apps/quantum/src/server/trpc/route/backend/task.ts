@@ -302,6 +302,7 @@ export const task = router({
           FindTaskSchema.parse({
             ...job.info,
             jobId: job.id,
+            tenantName: job.tenantName,
             submitTime: new Date(job.submitTime.getTime()).toString(),
             lastSyncTime: job.lastSyncTime,
             account: job.accountName,

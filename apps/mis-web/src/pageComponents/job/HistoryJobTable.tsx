@@ -57,6 +57,7 @@ interface FilterForm {
 
 interface Props {
   userId?: string;
+  tenantName?: string;
   accountNames: string[] | string;
   filterAccountName?: boolean;
   filterUser?: boolean;
@@ -73,6 +74,7 @@ interface Sorter {
 }
 
 interface DiffQuery {
+  tenantName?: string;
   userId?: string;
   userIdOrName?: string;
   ownerIdOrName?: string;
@@ -91,6 +93,7 @@ const priceText = {
 
 export const JobTable: React.FC<Props> = ({
   userId,
+  tenantName,
   accountNames,
   filterAccountName = true,
   filterUser = true,
@@ -165,6 +168,7 @@ export const JobTable: React.FC<Props> = ({
     // accountName 根据accountNames是否数组来判断顶部导航类型，如是用户空间用输入值，账户管理则用props中的accountNames限制搜索范围
     const diffQuery = rangeSearch.current
       ? {
+          tenantName,
           ...fixedUserQuery,
           ...(!userId ? { userIdOrName: query.userIdOrName || undefined } : {}),
           ownerIdOrName: query.ownerIdOrName || undefined,
@@ -173,6 +177,7 @@ export const JobTable: React.FC<Props> = ({
           jobEndTimeEnd: query.jobEndTime[1].toISOString(),
         }
       : {
+          tenantName,
           ...fixedUserQuery,
           jobId: query.jobId,
           accountName: Array.isArray(accountNames) ? undefined : accountNames,
@@ -199,7 +204,7 @@ export const JobTable: React.FC<Props> = ({
           throw e;
         }
       });
-  }, [pageInfo, query, sorter, clusterIds]);
+  }, [pageInfo, query, sorter, clusterIds, tenantName]);
 
   const { data, isLoading } = useAsync({ promiseFn });
 

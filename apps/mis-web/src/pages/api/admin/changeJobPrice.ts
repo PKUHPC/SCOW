@@ -35,7 +35,7 @@ export const ChangeJobPriceSchema = typeboxRouteSchema({
 
   responses: {
     200: Type.Object({ count: Type.Number() }),
-    /** 非租户管理员不能修改作业的账户价格；非平台管理员不能修改作业的租户价格 */
+    /** 非租户管理员不能修改作业的账户价格；非平台管理员不能修改作业的租户价格或修改其他租户的作业价格 */
     403: Type.Null(),
     // 账户未找到或已删除，或作业未找到
     404: Type.Object({ message: Type.String() }),
@@ -65,24 +65,30 @@ export default route(ChangeJobPriceSchema, async (req, res) => {
     jobEndTimeStart,
     jobId,
     userId,
+    tenantName,
     target,
   } = req.body;
 
+  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
+  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+
   if (
-    (target === "account" && !info.tenantRoles.includes(TenantRole.TENANT_ADMIN)) ||
-    (target === "tenant" && !info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))
+    (target === "account" && (!isTenantAdmin || (tenantName !== undefined && tenantName !== info.tenant))) ||
+    (target === "tenant" && !isPlatformAdmin)
   ) {
     return { 403: null };
   }
 
   const client = getClient(JobServiceClient);
+  const filterTenantName = target === "account" ? info.tenant : (tenantName ?? "");
 
   const money = numberToMoney(price);
+  const operationTypeName = target === "tenant" ? OperationType.changeJobPlatformPrice : OperationType.changeJobPrice;
 
   const baseLogInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.changeJobPrice,
+    operationTypeName,
   };
 
   const logs = (jobIds ?? []).map((jid, i) => ({
@@ -102,7 +108,7 @@ export default route(ChangeJobPriceSchema, async (req, res) => {
 
   return await asyncClientCall(client, "changeJobPrice", {
     filter: {
-      tenantName: info.tenant,
+      tenantName: filterTenantName,
       clusters: clusters ?? [],
       accountName,
       jobEndTimeEnd,

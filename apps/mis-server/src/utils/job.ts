@@ -39,6 +39,7 @@ export function toGrpc(x: JobInfoEntity) {
     timeWait: x.timeWait,
     timelimit: x.timelimit,
     user: x.user,
+    tenantName: x.tenant,
     tenantPrice: decimalToMoney(x.tenantPrice),
     accountPrice: decimalToMoney(x.accountPrice),
   } as JobInfo;

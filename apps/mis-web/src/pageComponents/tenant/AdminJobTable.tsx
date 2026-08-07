@@ -24,6 +24,7 @@ import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
 import { JobPriceChangeModal } from "src/pageComponents/tenant/JobPriceChangeModal";
+import { TenantSelector } from "src/pageComponents/tenant/TenantSelector";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
@@ -36,12 +37,15 @@ interface PageInfo {
   pageSize?: number;
 }
 
-interface Props {}
+interface Props {
+  tenantName?: string;
+}
 
 interface DiffQuery {
   userIdOrName?: string | undefined;
   ownerIdOrName?: string | undefined;
   accountName?: string | undefined;
+  tenantName?: string | undefined;
   jobIds?: string | undefined;
   jobEndTimeStart?: string | undefined;
   jobEndTimeEnd?: string | undefined;
@@ -53,7 +57,9 @@ interface JobItem {
   biJobIndex: number;
   jobName: string;
   accountPrice?: Money;
+  tenantPrice?: Money;
   cluster: string;
+  tenantName?: string;
   [key: string]: any;
 }
 
@@ -61,10 +67,12 @@ const endedJobRowKey = (i: Pick<JobInfo, "cluster" | "biJobIndex" | "idJob">) =>
   `${i.cluster}::${i.biJobIndex}::${i.idJob}`;
 
 const p = prefix("pageComp.tenant.adminJobTable.");
+const pJobPriceChangeModal = prefix("pageComp.tenant.jobPriceChangeModal.");
 const pCommon = prefix("common.");
 
 const filterFormToQuery = (query: FilterForm, rangeSearch: boolean): GetJobFilter => {
   return {
+    tenantName: query.tenantName || undefined,
     userIdOrName: rangeSearch ? query.userIdOrName || undefined : undefined,
     ownerIdOrName: rangeSearch ? query.ownerIdOrName || undefined : undefined,
     accountName: rangeSearch ? query.accountName || undefined : undefined,
@@ -75,18 +83,18 @@ const filterFormToQuery = (query: FilterForm, rangeSearch: boolean): GetJobFilte
   };
 };
 
-export const AdminJobTable: React.FC<Props> = () => {
+export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platform = false, tenantName }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
   const { message } = App.useApp();
   const resourceEnabled = publicConfig.SCOW_RESOURCE_ENABLED;
+  const tenantResourceEnabled = resourceEnabled && !platform;
 
   const rangeSearch = useRef(true);
   const [currentDiffQuery, setCurrentDiffQuery] = useState<DiffQuery | undefined>(undefined);
 
   const { publicConfigClusters } = useStore(ClusterInfoStore);
-
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
     return {
@@ -94,6 +102,7 @@ export const AdminJobTable: React.FC<Props> = () => {
       userIdOrName: "",
       ownerIdOrName: "",
       accountName: "",
+      tenantName: undefined,
       jobEndTime: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
       clusters: [],
     };
@@ -105,7 +114,7 @@ export const AdminJobTable: React.FC<Props> = () => {
     return Object.keys(resp.assignedClusterPartitions ?? {});
   }, []);
 
-  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, resourceEnabled, fetchAuthorizedClusterIds);
+  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, tenantResourceEnabled, fetchAuthorizedClusterIds);
 
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
 
@@ -117,6 +126,7 @@ export const AdminJobTable: React.FC<Props> = () => {
   const promiseFn = useCallback(async () => {
     const diffQuery = {
       ...filterFormToQuery(query, rangeSearch.current),
+      tenantName: platform ? query.tenantName || undefined : tenantName,
       clusters: clusterIds,
     };
     setCurrentDiffQuery(diffQuery);
@@ -127,7 +137,7 @@ export const AdminJobTable: React.FC<Props> = () => {
         pageSize: pageInfo.pageSize,
       },
     });
-  }, [pageInfo, query, clusterIds]);
+  }, [pageInfo, query, clusterIds, platform, tenantName]);
 
   const { data, isLoading, reload } = useAsync({ promiseFn });
 
@@ -148,7 +158,7 @@ export const AdminJobTable: React.FC<Props> = () => {
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportJobRecord",
-        columns: [...exportJobColumns, "tenantPrice"],
+        columns: [...(platform ? ["tenantName"] : []), ...exportJobColumns, "tenantPrice"],
         count: totalCount,
         timeZone,
         query: {
@@ -179,6 +189,7 @@ export const AdminJobTable: React.FC<Props> = () => {
               userIdOrName: currentQuery.userIdOrName?.trim() ?? "",
               ownerIdOrName: currentQuery.ownerIdOrName?.trim() ?? "",
               accountName: currentQuery.accountName?.trim() ?? "",
+              tenantName: platform ? currentQuery.tenantName || undefined : tenantName,
             });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
@@ -203,7 +214,7 @@ export const AdminJobTable: React.FC<Props> = () => {
                       label={
                         <Space>
                           {t(pCommon("cluster"))}
-                          {resourceEnabled ? (
+                          {tenantResourceEnabled ? (
                             <Popover title={t("component.others.allClustersTooltip")}>
                               <QuestionCircleOutlined />
                             </Popover>
@@ -212,8 +223,15 @@ export const AdminJobTable: React.FC<Props> = () => {
                       }
                       name="clusters"
                     >
-                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
+                      <ClusterSelector
+                        authorizedClusterIds={tenantResourceEnabled ? authorizedClusterIds : undefined}
+                      />
                     </Form.Item>
+                    {platform ? (
+                      <Form.Item label={t(pCommon("tenant"))} name="tenantName">
+                        <TenantSelector placeholder={t(pCommon("selectTenant"))} />
+                      </Form.Item>
+                    ) : undefined}
                     <Form.Item label={t(pCommon("user"))} name="userIdOrName">
                       <TrimInput placeholder={t(p("userIdOrNamePlaceholder"))} />
                     </Form.Item>
@@ -238,7 +256,7 @@ export const AdminJobTable: React.FC<Props> = () => {
                       label={
                         <Space>
                           {t(pCommon("cluster"))}
-                          {resourceEnabled ? (
+                          {tenantResourceEnabled ? (
                             <Popover title={t("component.others.allClustersTooltip")}>
                               <QuestionCircleOutlined />
                             </Popover>
@@ -247,7 +265,9 @@ export const AdminJobTable: React.FC<Props> = () => {
                       }
                       name="clusters"
                     >
-                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
+                      <ClusterSelector
+                        authorizedClusterIds={tenantResourceEnabled ? authorizedClusterIds : undefined}
+                      />
                     </Form.Item>
                     <Form.Item
                       label={t(pCommon("clusterWorkId"))}
@@ -268,6 +288,11 @@ export const AdminJobTable: React.FC<Props> = () => {
                         onChange={jobIdsHandlers.handleChange}
                       />
                     </Form.Item>
+                    {platform ? (
+                      <Form.Item label={t(pCommon("tenant"))} name="tenantName">
+                        <TenantSelector placeholder={t(pCommon("selectTenant"))} />
+                      </Form.Item>
+                    ) : undefined}
                   </>
                 ),
               },
@@ -283,6 +308,8 @@ export const AdminJobTable: React.FC<Props> = () => {
         setPageInfo={setPageInfo}
         filter={query}
         rangeSearch={rangeSearch.current}
+        platform={platform}
+        tenantName={tenantName}
       />
     </div>
   );
@@ -292,17 +319,19 @@ const ChangePriceButton: React.FC<{
   filter: GetJobFilter;
   count: number;
   selectedJobs: JobItem[];
+  target: "account" | "tenant";
   reload: () => void;
   setOpen: (openFlag: boolean) => void;
   setSelectedJobs: (selectJobs: JobItem[]) => void;
   open: boolean;
-}> = ({ filter, count, selectedJobs, open, reload, setOpen, setSelectedJobs }) => {
+}> = ({ filter, count, selectedJobs, target, open, reload, setOpen, setSelectedJobs }) => {
   const t = useI18nTranslateToString();
+  const targetPriceText = target === "account" ? t(pJobPriceChangeModal("jobPrice")) : t(p("platformPrice"));
 
   return (
     <>
       <Button onClick={() => setOpen(true)} disabled={!(selectedJobs?.length > 0)}>
-        {t(p("adjustTenantPrice"))}
+        {t(p("adjustPrice"), [targetPriceText])}
       </Button>
       <JobPriceChangeModal
         jobs={selectedJobs}
@@ -312,6 +341,7 @@ const ChangePriceButton: React.FC<{
         setSelectedJobs={setSelectedJobs}
         filter={filter}
         jobCount={count}
+        target={target}
       />
     </>
   );
@@ -325,6 +355,8 @@ interface JobInfoTableProps {
   filter: FilterForm;
   reload: () => void;
   rangeSearch: boolean;
+  platform: boolean;
+  tenantName?: string;
 }
 
 const JobInfoTable: React.FC<JobInfoTableProps> = ({
@@ -335,6 +367,8 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
   filter,
   reload,
   rangeSearch,
+  platform,
+  tenantName,
 }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
@@ -343,6 +377,13 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
   const [previewItem, setPreviewItem] = useState<JobInfo | undefined>(undefined);
   const [selectedJobs, setSelectedJobs] = useState<JobItem[]>([]);
   const [open, setOpen] = useState(false);
+  const changePriceFilter = useMemo(
+    () => ({
+      ...filterFormToQuery(filter, rangeSearch),
+      tenantName: platform ? filter.tenantName || undefined : tenantName,
+    }),
+    [filter, rangeSearch, platform, tenantName],
+  );
 
   return (
     <>
@@ -372,9 +413,10 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
         <Space>
           <ChangePriceButton
             reload={reload}
-            filter={useMemo(() => filterFormToQuery(filter, rangeSearch), [filter, rangeSearch])}
+            filter={changePriceFilter}
             count={data ? data.totalCount : 0}
             selectedJobs={selectedJobs}
+            target={platform ? "tenant" : "account"}
             setSelectedJobs={setSelectedJobs}
             setOpen={setOpen}
             open={open}
@@ -408,17 +450,18 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
         }}
       >
         <Table.Column dataIndex="idJob" width="4.5%" title={t(pCommon("clusterWorkId"))} />
-        <Table.Column dataIndex="jobName" width="10%" ellipsis title={t(pCommon("workName"))} />
+        {platform ? <Table.Column dataIndex="tenantName" width="8%" ellipsis title={t(pCommon("tenant"))} /> : null}
+        <Table.Column dataIndex="jobName" width="12%" ellipsis title={t(pCommon("workName"))} />
         <Table.Column<JobInfo>
           dataIndex="user"
           width="9%"
           ellipsis
           title={t(pCommon("user"))}
-          render={(user, record) => !record.userName
-            ? t(pCommon("nonPlatformUser"))
-            : `${record.userName} (ID:${user})`}
+          render={(user, record) =>
+            !record.userName ? t(pCommon("nonPlatformUser")) : `${record.userName} (ID:${user})`
+          }
         />
-        <Table.Column dataIndex="account" ellipsis title={t(pCommon("account"))} />
+        <Table.Column dataIndex="account" width="7%" ellipsis title={t(pCommon("account"))} />
         <Table.Column<JobInfo>
           dataIndex="accountOwnerName"
           width="9%"
@@ -428,6 +471,7 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
         />
         <Table.Column<JobInfo>
           dataIndex="cluster"
+          width="5%"
           ellipsis
           title={t(pCommon("cluster"))}
           render={(cluster) => getClusterName(cluster, languageId, publicConfigClusters)}
@@ -471,7 +515,9 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
                 }}
                 style={{ marginRight: 10 }}
               >
-                {t(pCommon("adjustBill"))}
+                {t(pJobPriceChangeModal("adjustBill"), [
+                  platform ? t(p("platformPrice")) : t(pJobPriceChangeModal("jobPrice")),
+                ])}
               </a>
               <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
             </Space>

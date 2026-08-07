@@ -90,6 +90,16 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
               text: t(pPlatform("jobBillingTable")),
               path: "/admin/jobBilling",
             },
+            {
+              Icon: RunningJobsIcon,
+              text: t(pPlatform("runningJobs")),
+              path: "/admin/runningJobs",
+            },
+            {
+              Icon: HistoryJobsIcon,
+              text: t(pPlatform("finishedJobs")),
+              path: "/admin/historyJobs",
+            },
             ...(publicConfig.AUTH_PPOLICY_CONFIG?.defaultOlcPPolicyDn &&
             publicConfig.AUTH_PPOLICY_CONFIG?.pwdMaxFailures
               ? [

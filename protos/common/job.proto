@@ -45,6 +45,7 @@ message RunningJob {
   optional string user_name = 28;
   optional string account_owner_id = 29;
   optional string account_owner_name = 30;
+  optional string tenant_name = 31;
   message ChargingPeriod {
     google.protobuf.Timestamp start_time = 1;
     google.protobuf.Timestamp end_time = 2;

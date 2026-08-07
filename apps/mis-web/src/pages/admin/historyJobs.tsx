@@ -1,20 +1,18 @@
 import { Tabs } from "antd";
 import { NextPage } from "next";
-import { useStore } from "simstate";
 import { requireAuth } from "src/auth/requireAuth";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
-import { TenantRole } from "src/models/User";
+import { PlatformRole } from "src/models/User";
 import { QuantumJobTable } from "src/pageComponents/quantumJob/HistoryJobTable";
 import { AdminJobTable } from "src/pageComponents/tenant/AdminJobTable";
-import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-export const AdminJobsPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(() => {
+export const AdminHistoryJobsPage: NextPage = requireAuth((u) =>
+  u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
+)(() => {
   const t = useI18nTranslateToString();
-  const userStore = useStore(UserStore);
-  const tenantName = userStore.user?.tenant;
 
   return (
     <div>
@@ -27,20 +25,20 @@ export const AdminJobsPage: NextPage = requireAuth((u) => u.tenantRoles.includes
             {
               key: "HPCAI",
               label: t("common.HPCAI"),
-              children: <AdminJobTable tenantName={tenantName} />,
+              children: <AdminJobTable platform={true} />,
             },
             {
               key: "quantum",
               label: t("common.quantum"),
-              children: <QuantumJobTable showAccount={true} showUser={true} tenantName={tenantName} />,
+              children: <QuantumJobTable platform={true} showAccount={true} showUser={true} />,
             },
           ]}
         ></Tabs>
       ) : (
-        <AdminJobTable tenantName={tenantName} />
+        <AdminJobTable platform={true} />
       )}
     </div>
   );
 });
 
-export default AdminJobsPage;
+export default AdminHistoryJobsPage;

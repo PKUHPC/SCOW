@@ -29,6 +29,7 @@ export const JobsSection: React.FC<Props> = ({ user }) => {
               query: {
                 cluster: id,
                 userId: user.identityId,
+                tenantName: user.tenant,
               },
             })
             .then(({ results }) => results.map((x) => RunningJobInfo.fromGrpc(x, { id, name })))

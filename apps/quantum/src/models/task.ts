@@ -107,6 +107,7 @@ export type DetailTask = z.infer<typeof DetailTaskSchema>;
 // 这是findTask 接口返回的任务信息
 export const FindTaskSchema = FoundTaskSchema.extend({
   jobId: z.number(),
+  tenantName: z.string(),
   lastSyncTime: z.date(),
   submitTime: z.string(),
   account: z.string(),

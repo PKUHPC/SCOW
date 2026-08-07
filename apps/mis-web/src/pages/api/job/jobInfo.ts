@@ -18,7 +18,7 @@ import {
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { JobSortBy, JobSortOrder } from "src/models/job";
-import { TenantRole } from "src/models/User";
+import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
 import { safeGetStringProperty } from "src/utils/format";
@@ -68,6 +68,7 @@ export const GetJobFilter = Type.Object({
   userIdOrName: Type.Optional(Type.String()),
   ownerIdOrName: Type.Optional(Type.String()),
   accountName: Type.Optional(Type.String()),
+  tenantName: Type.Optional(Type.String()),
 
   clusters: Type.Optional(Type.Array(Type.String())),
 
@@ -106,6 +107,7 @@ export const JobInfo = Type.Object({
   userName: Type.Optional(Type.String()),
   accountOwnerId: Type.String(),
   accountOwnerName: Type.String(),
+  tenantName: Type.Optional(Type.String()),
 });
 export type JobInfo = Static<typeof JobInfo>;
 
@@ -152,7 +154,12 @@ export const getJobInfo = async (request: GetJobsRequest) => {
 };
 
 export default /* #__PURE__*/ route(GetJobInfoSchema, async (req, res) => {
-  const auth = authenticate((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
+  const auth = authenticate(
+    (u) =>
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+      u.accountAffiliations.length > 0,
+  );
 
   const info = await auth(req, res);
 
@@ -174,12 +181,16 @@ export default /* #__PURE__*/ route(GetJobInfoSchema, async (req, res) => {
     sortBy,
     sortOrder,
     jobIds,
+    tenantName,
   } = req.query;
 
   const trimmedIds = parseJobIds(jobIds);
+  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
+  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  const isSelf = userId === info.identityId;
 
   const filter: JobFilter = {
-    tenantName: info.tenant,
+    tenantName: tenantName ?? "",
     accountName,
     jobEndTimeEnd,
     jobEndTimeStart,
@@ -190,9 +201,13 @@ export default /* #__PURE__*/ route(GetJobInfoSchema, async (req, res) => {
   };
 
   if (
-    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-    userId === info.identityId ||
-    (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
+    isPlatformAdmin ||
+    (isTenantAdmin && tenantName === info.tenant) ||
+    (accountName &&
+      info.accountAffiliations.find(
+        (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
+      )) ||
+    isSelf
   ) {
     filter.userId = userId;
     filter.userIdOrName = userIdOrName?.trim() || undefined;

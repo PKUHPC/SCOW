@@ -2,25 +2,29 @@ import { NextPage } from "next";
 import { requireAuth } from "src/auth/requireAuth";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
+import { PlatformRole } from "src/models/User";
 import { RunningJobQueryTable } from "src/pageComponents/job/RunningJobTable";
 import { Head } from "src/utils/head";
 
-export const RunningJobsPage: NextPage = requireAuth((u) => u.accountAffiliations.length > 0)(({ userStore }) => {
+export const AdminRunningJobsPage: NextPage = requireAuth((u) =>
+  u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
+)(() => {
   const t = useI18nTranslateToString();
+
   return (
     <div>
-      <Head title={t("runningJob.title")} />
-      <PageTitle titleText={t("runningJob.title")} />
+      <Head title={t("common.unfinishedJob")} />
+      <PageTitle titleText={t("common.unfinishedJob")} />
       <RunningJobQueryTable
-        userId={userStore.user.identityId}
-        tenantName={userStore.user.tenant}
-        accountNames={userStore.user.accountAffiliations.map((x) => x.accountName)}
+        platform={true}
+        showUser={true}
         showAccount={true}
-        showUser={false}
         showOwner={true}
+        showChangeTimeLimit={true}
+        accountNames={undefined}
       />
     </div>
   );
 });
 
-export default RunningJobsPage;
+export default AdminRunningJobsPage;

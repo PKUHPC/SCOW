@@ -9,6 +9,7 @@ export interface FilterForm {
   jobEndTime: [dayjs.Dayjs, dayjs.Dayjs];
   jobIds?: string;
   accountName: string;
+  tenantName?: string;
   userIdOrName: string;
   ownerIdOrName: string;
   clusters: Cluster[];

@@ -14,6 +14,7 @@ import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { JobSortOrder, statusColors } from "src/models/job";
 import { JobSortBy } from "src/models/quantumJob";
+import { TenantSelector } from "src/pageComponents/tenant/TenantSelector";
 
 interface FilterForm {
   jobId?: number;
@@ -21,15 +22,18 @@ interface FilterForm {
   shots?: number;
   accountName?: string;
   userId?: string;
+  tenantName?: string;
 }
 
 interface Props {
   userId?: string;
   accountName?: string;
+  tenantName?: string;
   showUser: boolean;
   showAccount: boolean;
   filterAccountName?: boolean;
   filterUserId?: boolean;
+  platform?: boolean;
 }
 
 interface Sorter {
@@ -43,8 +47,10 @@ const EMPTY_STRING = "-";
 
 export const QuantumJobTable: React.FC<Props> = ({
   accountName,
+  tenantName,
   filterAccountName = true,
   filterUserId = true,
+  platform = false,
   showAccount,
   showUser,
   userId,
@@ -82,6 +88,7 @@ export const QuantumJobTable: React.FC<Props> = ({
           pageSize: pageInfo.pageSize,
           ...query,
           accountName: query.accountName?.trim(),
+          tenantName: platform ? query.tenantName : tenantName,
           userId: query.userId?.trim(),
         },
       })
@@ -93,7 +100,7 @@ export const QuantumJobTable: React.FC<Props> = ({
           throw e;
         }
       });
-  }, [pageInfo, query, sorter]);
+  }, [pageInfo, query, sorter, platform, tenantName]);
 
   const { data, isLoading } = useAsync({ promiseFn });
 
@@ -107,6 +114,7 @@ export const QuantumJobTable: React.FC<Props> = ({
             const finalValues = {
               ...values,
               accountName: filterAccountName ? values.accountName : accountName,
+              tenantName: platform ? values.tenantName : tenantName,
               userId: filterUserId ? values.userId : userId,
             };
             setQuery(finalValues);
@@ -116,6 +124,11 @@ export const QuantumJobTable: React.FC<Props> = ({
           <Form.Item label={t(pCommon("clusterWorkId"))} name="jobId">
             <InputNumber style={{ minWidth: "120px" }} min={1} />
           </Form.Item>
+          {platform && (
+            <Form.Item label={t(pCommon("tenant"))} name="tenantName">
+              <TenantSelector placeholder={t(pCommon("selectTenant"))} />
+            </Form.Item>
+          )}
           {filterAccountName && (
             <Form.Item label={t(pCommon("account"))} name="accountName">
               <Input style={{ minWidth: "120px" }} />
@@ -148,6 +161,7 @@ export const QuantumJobTable: React.FC<Props> = ({
         pageInfo={pageInfo}
         setPageInfo={setPageInfo}
         setSorter={setSorter}
+        platform={platform}
         showAccount={showAccount}
         showUser={showUser}
       />
@@ -161,6 +175,7 @@ interface JobInfoTableProps {
   setPageInfo?: (info: { page: number; pageSize: number }) => void;
   isLoading: boolean;
   setSorter: (sorter: Sorter) => void;
+  platform: boolean;
   showAccount: boolean;
   showUser: boolean;
 }
@@ -171,6 +186,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
   setPageInfo,
   setSorter,
   isLoading,
+  platform,
   showAccount,
   showUser,
 }) => {
@@ -228,9 +244,12 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
             : false
         }
         tableLayout="fixed"
-        scroll={{ x: data?.jobs?.length ? 1450 : true }}
+        scroll={{ x: data?.jobs?.length ? 1550 : true }}
       >
         <Table.Column<JobInfo> dataIndex="jobId" width="30px" title={t(pCommon("clusterWorkId"))} sorter={true} />
+        {platform ? (
+          <Table.Column<JobInfo> dataIndex="tenantName" width="50px" ellipsis title={t(pCommon("tenant"))} />
+        ) : undefined}
         {showUser ? (
           <Table.Column<JobInfo> dataIndex="user" width="50px" ellipsis title={t(pCommon("userId"))} sorter={true} />
         ) : undefined}

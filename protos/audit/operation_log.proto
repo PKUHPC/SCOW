@@ -524,6 +524,12 @@ message ChangeJobPrice {
   common.Money price = 3;
 }
 
+message ChangeJobPlatformPrice {
+  uint64 job_id = 1;
+  string cluster = 2;
+  common.Money price = 3;
+}
+
 message ExportOperationLog {
   message User {
     string user_id = 1;
@@ -1055,6 +1061,7 @@ message CreateOperationLogRequest {
     AddToDefaultPartitions add_to_default_partitions = 129;
     RemoveFromDefaultPartitions remove_from_default_partitions = 130;
     ChangeJobPrice change_job_price = 131;
+    ChangeJobPlatformPrice change_job_platform_price = 132;
   }
 }
 
@@ -1194,6 +1201,7 @@ message OperationLog {
     AddToDefaultPartitions add_to_default_partitions = 131;
     RemoveFromDefaultPartitions remove_from_default_partitions = 132;
     ChangeJobPrice change_job_price = 133;
+    ChangeJobPlatformPrice change_job_platform_price = 134;
   }
 }
 

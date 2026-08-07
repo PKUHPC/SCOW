@@ -202,6 +202,7 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): { [key in Lib
     addToDefaultPartitions: t(pTypes("addToDefaultPartitions")),
     removeFromDefaultPartitions: t(pTypes("removeFromDefaultPartitions")),
     changeJobPrice: t(pTypes("changeJobPrice")),
+    changeJobPlatformPrice: t(pTypes("changeJobPlatformPrice")),
   };
 };
 
@@ -806,6 +807,15 @@ export const getOperationDetail = (
         const clusterId = operationEvent[logEvent].cluster;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("changeJobPrice"), [
+          clusterName,
+          operationEvent[logEvent].jobId,
+          nullableMoneyToString(operationEvent[logEvent].price),
+        ]);
+      }
+      case "changeJobPlatformPrice": {
+        const clusterId = operationEvent[logEvent].cluster;
+        const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
+        return t(pDetails("changeJobPlatformPrice"), [
           clusterName,
           operationEvent[logEvent].jobId,
           nullableMoneyToString(operationEvent[logEvent].price),

@@ -25,6 +25,7 @@ import { statusColors } from "src/models/job";
 import { BatchChangeJobTimeLimitButton } from "src/pageComponents/job/BatchChangeJobTimeLimitButton";
 import { ChangeJobTimeLimitModal } from "src/pageComponents/job/ChangeJobTimeLimitModal";
 import { RunningJobDrawer } from "src/pageComponents/job/RunningJobDrawer";
+import { TenantSelector } from "src/pageComponents/tenant/TenantSelector";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { publicConfig } from "src/utils/config";
 import { getAiExceptionJobI18nReason } from "src/utils/form";
@@ -33,6 +34,7 @@ interface FilterForm {
   jobId: number | undefined;
   cluster: Cluster;
   accountName?: string;
+  tenantName?: string;
   userIdOrName?: string;
   ownerIdOrName?: string;
 }
@@ -40,15 +42,18 @@ interface FilterForm {
 interface Props {
   userId?: string;
   accountNames?: string[] | string;
+  tenantName?: string;
   filterAccountName?: boolean;
   showAccount: boolean;
   showUser: boolean;
   showOwner?: boolean;
   showChangeTimeLimit?: boolean;
+  platform?: boolean;
 }
 
 type ColumnWidthKey =
   | "cluster"
+  | "tenant"
   | "jobId"
   | "name"
   | "user"
@@ -68,6 +73,7 @@ type ColumnWidthKey =
 
 const COLUMN_WIDTH_WEIGHT: Record<ColumnWidthKey, number> = {
   cluster: 9.5,
+  tenant: 8,
   jobId: 5,
   name: 10,
   user: 10,
@@ -92,11 +98,13 @@ const pCommon = prefix("common.");
 export const RunningJobQueryTable: React.FC<Props> = ({
   userId,
   accountNames,
+  tenantName,
   showUser,
   showAccount,
   showOwner = false,
   filterAccountName = true,
   showChangeTimeLimit = false,
+  platform = false,
 }) => {
   const t = useI18nTranslateToString();
 
@@ -152,15 +160,19 @@ export const RunningJobQueryTable: React.FC<Props> = ({
       query: {
         userId: userId || undefined,
         cluster: query.cluster.id,
+        tenantName: platform ? query.tenantName || undefined : tenantName,
         ...diffAccountNameQuery,
         ...diffSearchQuery,
       },
     });
   }, [
     userId,
+    tenantName,
+    platform,
     searchType.current,
     query.cluster,
     query.accountName,
+    query.tenantName,
     query.jobId,
     query.userIdOrName,
     query.ownerIdOrName,
@@ -195,6 +207,7 @@ export const RunningJobQueryTable: React.FC<Props> = ({
               ...query,
               ...values,
               accountName: values.accountName?.trim(),
+              tenantName: platform ? values.tenantName || undefined : tenantName,
               userIdOrName: values.userIdOrName?.trim(),
               ownerIdOrName: values.ownerIdOrName?.trim(),
             });
@@ -223,6 +236,11 @@ export const RunningJobQueryTable: React.FC<Props> = ({
                     <Form.Item label={t(pCommon("cluster"))} name="cluster">
                       <SingleClusterSelector />
                     </Form.Item>
+                    {platform ? (
+                      <Form.Item label={t(pCommon("tenant"))} name="tenantName">
+                        <TenantSelector placeholder={t(pCommon("selectTenant"))} />
+                      </Form.Item>
+                    ) : undefined}
                     {showUser && (
                       <Form.Item label={t(pCommon("user"))} name="userIdOrName" style={{ marginLeft: "0.5em" }}>
                         <Input placeholder={t(p("userIdOrNamePlaceholder"))} />
@@ -270,6 +288,11 @@ export const RunningJobQueryTable: React.FC<Props> = ({
                     <Form.Item label={t(pCommon("workId"))} name="jobId">
                       <InputNumber style={{ minWidth: "160px" }} min={1} />
                     </Form.Item>
+                    {platform ? (
+                      <Form.Item label={t(pCommon("tenant"))} name="tenantName">
+                        <TenantSelector placeholder={t(pCommon("selectTenant"))} />
+                      </Form.Item>
+                    ) : undefined}
                   </>
                 ),
               },
@@ -283,6 +306,7 @@ export const RunningJobQueryTable: React.FC<Props> = ({
         showAccount={showAccount}
         showUser={showUser}
         showOwner={showOwner}
+        showTenant={platform}
         showCluster={false}
         showChangeTimeLimit={showChangeTimeLimit}
         reload={reload}
@@ -300,6 +324,7 @@ interface JobInfoTableProps {
   isLoading: boolean;
   showAccount: boolean;
   showOwner?: boolean;
+  showTenant?: boolean;
   showCluster: boolean;
   showUser: boolean;
   showChangeTimeLimit?: boolean;
@@ -318,6 +343,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
   reload,
   showAccount,
   showOwner = false,
+  showTenant = false,
   showUser,
   showCluster,
   selection,
@@ -408,6 +434,9 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
     if (showCluster) {
       visibleColumns.push("cluster");
     }
+    if (showTenant) {
+      visibleColumns.push("tenant");
+    }
     visibleColumns.push("jobId", "name");
     if (showUser) {
       visibleColumns.push("user");
@@ -433,7 +462,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
 
     const totalWeight = visibleColumns.reduce((sum, key) => sum + COLUMN_WIDTH_WEIGHT[key], 0);
     return (key: ColumnWidthKey) => `${((COLUMN_WIDTH_WEIGHT[key] / totalWeight) * 100).toFixed(3)}%`;
-  }, [compactOperation, showAccount, showCluster, showOwner, showUser]);
+  }, [compactOperation, showAccount, showCluster, showOwner, showTenant, showUser]);
 
   return (
     <>
@@ -487,6 +516,15 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
                 const clusterB = getI18nConfigCurrentText(b.cluster.name, languageId);
                 return compareNullableString(clusterA, clusterB);
               }}
+            />
+          )}
+          {showTenant && (
+            <Table.Column<RunningJobInfo>
+              dataIndex="tenantName"
+              width={visibleColumnWeights("tenant")}
+              ellipsis
+              title={t(pCommon("tenant"))}
+              sorter={(a, b) => (a.tenantName ?? "").localeCompare(b.tenantName ?? "")}
             />
           )}
           <Table.Column<RunningJobInfo>

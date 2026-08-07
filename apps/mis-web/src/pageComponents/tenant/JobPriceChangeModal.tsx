@@ -16,6 +16,7 @@ interface Props {
   filter: GetJobFilter;
   reload: () => void;
   jobs: JobItem[];
+  target: "account" | "tenant";
   setSelectedJobs: (selectJobs: JobItem[]) => void;
 }
 
@@ -29,14 +30,24 @@ interface JobItem {
   biJobIndex: number;
   jobName: string;
   accountPrice?: Money;
+  tenantPrice?: Money;
   cluster: string;
 }
 
 const p = prefix("pageComp.tenant.jobPriceChangeModal.");
 const pCommon = prefix("common.");
 
-export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, reload, setSelectedJobs }) => {
+export const JobPriceChangeModal: React.FC<Props> = ({
+  open,
+  onClose,
+  jobs,
+  reload,
+  target,
+  setSelectedJobs,
+  filter,
+}) => {
   const t = useI18nTranslateToString();
+  const targetPriceText = target === "account" ? t(p("jobPrice")) : t(p("platformPrice"));
 
   const [form] = Form.useForm<FormProps>();
   const [loading, setLoading] = useState(false);
@@ -57,8 +68,9 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
   const jobNames = jobs?.map((record) => {
     return record?.jobName;
   });
-  const accountPrices = jobs?.map((record) => {
-    return record?.accountPrice ? moneyToString(record.accountPrice) : 0;
+  const currentPrices = jobs?.map((record) => {
+    const price = target === "account" ? record?.accountPrice : record?.tenantPrice;
+    return price ? moneyToString(price) : 0;
   });
 
   /**
@@ -149,7 +161,7 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
   return (
     <Modal
       open={open}
-      title={t(p("adjustBill"))}
+      title={t(p("adjustBill"), [targetPriceText])}
       okText={t(pCommon("ok"))}
       cancelText={t(pCommon("cancel"))}
       onCancel={onClose}
@@ -159,7 +171,17 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
 
         setLoading(true);
         await api
-          .changeJobPrice({ body: { jobIds, biJobIndexs, price, reason, target: "account", clusters } })
+          .changeJobPrice({
+            body: {
+              ...filter,
+              jobIds,
+              biJobIndexs,
+              price,
+              reason,
+              target,
+              clusters,
+            },
+          })
           .httpError(404, (e) => {
             message.error({
               content: e.message.split(": ")[1],
@@ -215,10 +237,10 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
                   paddingRight: "24px",
                 }}
               >
-                {t(p("currentPrice"))}
+                {t(p("currentPrice"), [targetPriceText])}
               </td>
               <td style={{ verticalAlign: "top", paddingTop: "4px", paddingBottom: "16px" }}>
-                <span>{formatPrices(accountPrices)}</span>
+                <span>{formatPrices(currentPrices)}</span>
               </td>
             </tr>
 
@@ -236,13 +258,17 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
                   required
                   label={
                     <Space>
-                      {t(p("setBill"))}
-                      <Popover
-                        placement="right"
-                        content={<div style={{ maxWidth: "320px" }}>{t(p("annotation"))}</div>}
-                      >
-                        <QuestionCircleOutlined />
-                      </Popover>
+                      {t(p("setBill"), [targetPriceText])}
+                      {target === "account" ? (
+                        <Popover
+                          placement="right"
+                          content={<div style={{ maxWidth: "320px" }}>{t(p("annotation"))}</div>}
+                        >
+                          <QuestionCircleOutlined />
+                        </Popover>
+                      ) : (
+                        ""
+                      )}
                     </Space>
                   }
                   colon={false}

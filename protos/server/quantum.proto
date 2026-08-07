@@ -38,6 +38,7 @@ message QuantumJobInfo {
   string device = 10;
   optional uint32 qubits = 11;
   QuantumJobState state = 12;
+  optional string tenant_name = 13;
 }
 
 message GetQuantumJobsRequest {
