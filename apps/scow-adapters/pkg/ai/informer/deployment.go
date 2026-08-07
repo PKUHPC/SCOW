@@ -160,7 +160,7 @@ func (i *K8sInformer) getDeploymentPods(deployment *appv1.Deployment) ([]*corev1
 
 // resolveDeployStatus 综合 deploy.Status 和 Pod 级别状态返回最终状态、开始时间和结束时间。
 func (i *K8sInformer) resolveDeployStatus(deploy *appv1.Deployment) (status string, startTime uint64, endTime uint64) {
-	status, startTime, endTime = parseDeployStatus(deploy)
+	status, startTime, endTime = ParseDeployStatus(deploy)
 	if status != utils.PendingStatus {
 		return
 	}
@@ -179,42 +179,66 @@ func (i *K8sInformer) resolveDeployStatus(deploy *appv1.Deployment) (status stri
 	return
 }
 
-// parseDeployStatus 从 Deployment.Status.Conditions 和副本数判断状态。
-func parseDeployStatus(deploy *appv1.Deployment) (status string, startTime uint64, endTime uint64) {
+// ParseDeployStatus 按副本状态和 Conditions 判断 Deployment 状态。
+func ParseDeployStatus(deploy *appv1.Deployment) (status string, startTime uint64, endTime uint64) {
 	desired := int32(1)
 	if deploy.Spec.Replicas != nil {
 		desired = *deploy.Spec.Replicas
 	}
 	creationTime := deployTimeUnix(deploy.CreationTimestamp)
-
-	for _, cond := range deploy.Status.Conditions {
-		// 副本创建失败（资源配额不足等）
-		if cond.Type == appv1.DeploymentReplicaFailure &&
-			cond.Status == corev1.ConditionTrue {
-			failTime := failedDeployTime(deploy, cond)
-			return utils.FailedStatus, failTime, failTime
-		}
-		// 部署超时
-		if cond.Type == appv1.DeploymentProgressing &&
-			cond.Reason == "ProgressDeadlineExceeded" {
-			failTime := failedDeployTime(deploy, cond)
-			return utils.FailedStatus, failTime, failTime
-		}
-	}
-
 	s := deploy.Status
-	logrus.Tracef("Deployment %s status: desired=%d, ready=%d", deploy.Name, desired, s.ReadyReplicas)
-	switch {
-	case s.ReadyReplicas >= desired:
-		for _, cond := range deploy.Status.Conditions {
+
+	// Deployment 可能在超过 progress deadline 后继续恢复，运行状态应优先于历史失败条件。
+	if s.ReadyReplicas >= desired && desired > 0 {
+		for _, cond := range s.Conditions {
 			if cond.Type == appv1.DeploymentAvailable && cond.Status == corev1.ConditionTrue {
-				return utils.RunningStatus, deployTimeUnix(cond.LastTransitionTime), 0
+				startTime := deployTimeUnix(cond.LastTransitionTime)
+				if startTime == 0 {
+					startTime = creationTime
+				}
+				logrus.Tracef("Deployment %s status resolved to %s: desired=%d, ready=%d, Available=True",
+					deploy.Name, utils.RunningStatus, desired, s.ReadyReplicas)
+				return utils.RunningStatus, startTime, 0
 			}
 		}
+		logrus.Tracef("Deployment %s status resolved to %s: desired=%d, ready=%d",
+			deploy.Name, utils.RunningStatus, desired, s.ReadyReplicas)
 		return utils.RunningStatus, creationTime, 0
-	default:
+	}
+
+	var replicaFailure, progressDeadlineExceeded *appv1.DeploymentCondition
+	for idx := range s.Conditions {
+		cond := &s.Conditions[idx]
+		switch {
+		case cond.Type == appv1.DeploymentReplicaFailure && cond.Status == corev1.ConditionTrue:
+			replicaFailure = cond
+		case cond.Type == appv1.DeploymentProgressing && cond.Reason == "ProgressDeadlineExceeded":
+			progressDeadlineExceeded = cond
+		}
+	}
+
+	if replicaFailure != nil {
+		// 副本创建失败（资源配额不足等）
+		failTime := failedDeployTime(deploy, *replicaFailure)
+		logrus.Tracef("Deployment %s status resolved to %s: desired=%d, ready=%d, condition=%s, reason=%s",
+			deploy.Name, utils.FailedStatus, desired, s.ReadyReplicas, replicaFailure.Type, replicaFailure.Reason)
+		return utils.FailedStatus, failTime, failTime
+	}
+
+	if progressDeadlineExceeded != nil {
+		deadlineSeconds := int32(600)
+		if deploy.Spec.ProgressDeadlineSeconds != nil {
+			deadlineSeconds = *deploy.Spec.ProgressDeadlineSeconds
+		}
+		logrus.Infof("Deployment %s made no deployment progress for %s: transitionTime=%d; keep status %s",
+			deploy.Name, time.Duration(deadlineSeconds)*time.Second,
+			deployTimeUnix(progressDeadlineExceeded.LastTransitionTime), utils.PendingStatus)
 		return utils.PendingStatus, 0, 0
 	}
+
+	logrus.Tracef("Deployment %s status resolved to %s: desired=%d, updated=%d, ready=%d, available=%d",
+		deploy.Name, utils.PendingStatus, desired, s.UpdatedReplicas, s.ReadyReplicas, s.AvailableReplicas)
+	return utils.PendingStatus, 0, 0
 }
 
 func failedDeployTime(deploy *appv1.Deployment, cond appv1.DeploymentCondition) uint64 {

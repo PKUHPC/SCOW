@@ -56,6 +56,11 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 	if len(in.ExtraOptions) == 0 || (in.ExtraOptions[0] != utils.APP && in.ExtraOptions[0] != utils.Train) {
 		return nil, ce.RichError(codes.Unimplemented, "HPC_JOBS_UNSUPPORTED", "AI adapter does not support HPC jobs.")
 	}
+	if in.NodeCount < 1 {
+		err := fmt.Errorf("node count must be greater than 0")
+		logrus.Errorf("SubmitJob failed %v", err)
+		return nil, ce.RichError(codes.InvalidArgument, "NODE_COUNT_INVALID", err.Error())
+	}
 	checkJobName := utils.IsValidString(in.JobName)
 	if !checkJobName {
 		err := fmt.Errorf("regex used for validation is '[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?'")
@@ -762,6 +767,12 @@ func (s *ServerJob) QueryJobTimeLimit(ctx context.Context, in *pb.QueryJobTimeLi
 func (s *ServerJob) SubmitInferJob(ctx context.Context, in *pb.SubmitInferJobRequest) (*pb.SubmitInferJobResponse, error) {
 	var jobTable models.JobTable
 	logrus.Infof("Received request SubmitInferJob: %v", in)
+
+	if in.NodeCount < 1 {
+		err := fmt.Errorf("node count must be greater than 0")
+		logrus.Errorf("SubmitInferJob failed %v", err)
+		return nil, ce.RichError(codes.InvalidArgument, "NODE_COUNT_INVALID", err.Error())
+	}
 
 	checkJobName := utils.IsValidString(in.JobName)
 	if !checkJobName {
