@@ -107,10 +107,35 @@ test("the independent human workflow owns initial reviewer routing", () => {
 
   assert.doesNotMatch(prAgentWorkflow, /Route human reviewers|routeHumanReviewers/);
   assert.match(routingWorkflow, /types: \[[^\]]*ready_for_review[^\]]*reopened/);
+  assert.match(routingWorkflow, /issue_comment:/);
+  assert.match(routingWorkflow, /types: \[created, edited\]/);
   assert.doesNotMatch(routingWorkflow, /(?:types: \[|, )opened(?:,|\])/);
-  assert.match(routingWorkflow, /\["ready_for_review", "reopened"\]\.includes\(context\.payload\.action\)/);
+  assert.match(routingWorkflow, /routing\.shouldAllowStart\(context\)/);
   assert.match(routingWorkflow, /routeHumanReviewers\(\{ github, context, core, allowStart \}\)/);
   assert.equal(fs.existsSync(".github/pkuhpc-review-bot.yml"), false);
+});
+
+test("an eligible AI gate comment can start routing for a formal PR", () => {
+  const state = { ...gate.createState(), reviewHeadSha: HEAD_SHA, reviewRunId: "42" };
+  assert.equal(
+    routing.shouldAllowStart({
+      eventName: "issue_comment",
+      payload: { action: "edited", comment: { body: gate.renderState(state, { head: { sha: HEAD_SHA } }) } },
+    }),
+    true,
+  );
+  assert.equal(
+    routing.shouldAllowStart({
+      eventName: "issue_comment",
+      payload: {
+        action: "edited",
+        comment: {
+          body: gate.renderState({ ...state, humanReviewStarted: true }, { head: { sha: HEAD_SHA } }),
+        },
+      },
+    }),
+    false,
+  );
 });
 
 test("only an eligible AI gate can start routing for a new formal PR", async () => {

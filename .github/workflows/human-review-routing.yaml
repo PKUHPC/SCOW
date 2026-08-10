@@ -5,6 +5,8 @@ on:
     types: [ready_for_review, reopened, synchronize, converted_to_draft, review_requested, review_request_removed]
   pull_request_review:
     types: [submitted, dismissed]
+  issue_comment:
+    types: [created, edited]
 
 permissions:
   contents: read
@@ -12,11 +14,12 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: human-review-routing-${{ github.event.pull_request.number }}
+  group: human-review-routing-${{ github.event.pull_request.number || github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
   route-reviewers:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
     steps:
       # 只使用默认分支中的可信路由代码，不 checkout PR 分支。
@@ -31,7 +34,5 @@ jobs:
         with:
           script: |
             const routing = require("./.github/scripts/human-review-routing.cjs");
-            const allowStart =
-              context.eventName === "pull_request_target" &&
-              ["ready_for_review", "reopened"].includes(context.payload.action);
+            const allowStart = routing.shouldAllowStart(context);
             await routing.routeHumanReviewers({ github, context, core, allowStart });

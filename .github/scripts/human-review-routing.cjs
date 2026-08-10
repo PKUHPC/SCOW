@@ -101,6 +101,25 @@ function buildRoutingPlan({ author, autoRequest = true, files, labels, requested
   };
 }
 
+function shouldAllowStart(context) {
+  if (
+    context.eventName === "pull_request_target" &&
+    ["ready_for_review", "reopened"].includes(context.payload.action)
+  ) {
+    return true;
+  }
+
+  if (
+    context.eventName === "issue_comment" &&
+    ["created", "edited"].includes(context.payload.action)
+  ) {
+    const state = decodeState(context.payload.comment?.body);
+    return Boolean(state && !state.humanReviewStarted);
+  }
+
+  return false;
+}
+
 async function listComments(github, context, issueNumber) {
   return github.paginate(github.rest.issues.listComments, {
     ...context.repo,
@@ -173,7 +192,7 @@ async function syncLabels(github, context, pullRequest, desiredLabels) {
 }
 
 async function routeHumanReviewers({ github, context, core, allowStart = false }) {
-  const pullNumber = context.payload.pull_request?.number;
+  const pullNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
   if (!pullNumber) throw new Error("当前事件未关联 Pull Request");
   const { data: pullRequest } = await github.rest.pulls.get({
     ...context.repo,
@@ -245,4 +264,5 @@ module.exports = {
   buildRoutingPlan,
   latestDecisions,
   routeHumanReviewers,
+  shouldAllowStart,
 };
