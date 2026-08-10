@@ -1,6 +1,12 @@
 name: Human Review Routing
 
 on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to reconcile
+        required: true
+        type: string
   pull_request_target:
     types: [ready_for_review, reopened, synchronize, converted_to_draft, review_requested, review_request_removed]
   pull_request_review:
@@ -14,12 +20,15 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: human-review-routing-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: human-review-routing-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
   cancel-in-progress: false
 
 jobs:
   route-reviewers:
-    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request &&
+       contains(github.event.comment.body, '<!-- scow-pr-agent-gate-state:'))
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
     steps:
       # 只使用默认分支中的可信路由代码，不 checkout PR 分支。

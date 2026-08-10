@@ -48,6 +48,20 @@ test("matching adapter changes require Code2 before Code3", () => {
   assert.deepEqual(sorted(plan.desiredLabels), sorted(["Code1-Approved", "Code2-ReviewRequested"]));
 });
 
+test("an already requested future reviewer keeps its label while Code2 is requested", () => {
+  const plan = buildPlan({
+    files: ["apps/scow-adapters/pkg/ai/controller.go"],
+    requestedReviewers: new Set(["Miracle575"]),
+    reviews: [{ id: 1, state: "APPROVED", user: { login: "piccaSun" } }],
+  });
+
+  assert.deepEqual(plan.reviewersToRequest, ["283713406"]);
+  assert.deepEqual(
+    sorted(plan.desiredLabels),
+    sorted(["Code1-Approved", "Code2-ReviewRequested", "Code3-ReviewRequested"]),
+  );
+});
+
 test("all required approvals add ReadyForMerge", () => {
   const plan = buildPlan({
     reviews: [
@@ -125,10 +139,45 @@ test("the independent human workflow owns initial reviewer routing", () => {
   assert.match(routingWorkflow, /types: \[[^\]]*ready_for_review[^\]]*reopened/);
   assert.match(routingWorkflow, /issue_comment:/);
   assert.match(routingWorkflow, /types: \[created, edited\]/);
+  assert.match(routingWorkflow, /workflow_dispatch:/);
+  assert.match(routingWorkflow, /contains\(github\.event\.comment\.body, '<!-- scow-pr-agent-gate-state:'\)/);
+  assert.doesNotMatch(routingWorkflow, /github\.event\.sender\.type == 'Bot'/);
   assert.doesNotMatch(routingWorkflow, /(?:types: \[|, )opened(?:,|\])/);
   assert.match(routingWorkflow, /routing\.shouldAllowStart\(context\)/);
   assert.match(routingWorkflow, /routeHumanReviewers\(\{ github, context, core, allowStart \}\)/);
   assert.equal(fs.existsSync(".github/pkuhpc-review-bot.yml"), false);
+});
+
+test("ordinary PR comments are ignored by human review routing", () => {
+  assert.equal(
+    routing.shouldHandleEvent({ eventName: "issue_comment", payload: { comment: { body: "/review" } } }),
+    false,
+  );
+  assert.equal(
+    routing.shouldHandleEvent({
+      eventName: "issue_comment",
+      payload: { comment: { body: gate.renderState(gate.createState(), { head: { sha: HEAD_SHA } }) } },
+    }),
+    true,
+  );
+  assert.equal(
+    routing.shouldHandleEvent({
+      eventName: "issue_comment",
+      payload: {
+        comment: {
+          body: gate.renderState(
+            { ...gate.createState(), humanReviewStarted: true },
+            { head: { sha: HEAD_SHA } },
+          ),
+        },
+      },
+    }),
+    false,
+  );
+});
+
+test("manual reconciliation can start and request the current pending stage", () => {
+  assert.equal(routing.shouldAllowStart({ eventName: "workflow_dispatch", payload: {} }), true);
 });
 
 test("an eligible AI gate comment can start routing for a formal PR", () => {

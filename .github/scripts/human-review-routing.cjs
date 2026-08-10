@@ -70,7 +70,9 @@ function buildRoutingPlan({ author, autoRequest = true, files, labels, requested
     }
 
     statuses.set(stage.name, stageStatus);
-    const label = stageReached ? statusLabel(stage, stageStatus) : null;
+    // A reviewer may have been requested manually before this stage is reached.
+    // Keep that real GitHub state visible without exposing inferred future statuses.
+    const label = stageReached || stageStatus === "requested" ? statusLabel(stage, stageStatus) : null;
     if (label) desiredLabels.add(label);
     if (!isSatisfied(stageStatus)) previousStagesSatisfied = false;
   }
@@ -104,6 +106,8 @@ function buildRoutingPlan({ author, autoRequest = true, files, labels, requested
 }
 
 function shouldAllowStart(context) {
+  if (context.eventName === "workflow_dispatch") return true;
+
   if (
     context.eventName === "pull_request_target" &&
     ["ready_for_review", "reopened"].includes(context.payload.action)
@@ -120,6 +124,12 @@ function shouldAllowStart(context) {
   }
 
   return false;
+}
+
+function shouldHandleEvent(context) {
+  if (context.eventName !== "issue_comment") return true;
+  const state = decodeState(context.payload.comment?.body);
+  return Boolean(state && !state.humanReviewStarted);
 }
 
 async function listComments(github, context, issueNumber) {
@@ -194,7 +204,13 @@ async function syncLabels(github, context, pullRequest, desiredLabels) {
 }
 
 async function routeHumanReviewers({ github, context, core, allowStart = false }) {
-  const pullNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
+  if (!shouldHandleEvent(context)) {
+    core.setOutput("routing_status", "ignored-comment");
+    return;
+  }
+
+  const pullNumber =
+    context.payload.pull_request?.number ?? context.payload.issue?.number ?? Number(context.payload.inputs?.pr_number);
   if (!pullNumber) throw new Error("当前事件未关联 Pull Request");
   const { data: pullRequest } = await github.rest.pulls.get({
     ...context.repo,
@@ -242,7 +258,10 @@ async function routeHumanReviewers({ github, context, core, allowStart = false }
   const requestedReviewers = new Set(pullRequest.requested_reviewers.map((reviewer) => reviewer.login));
   const plan = buildRoutingPlan({
     author: pullRequest.user.login,
-    autoRequest: allowStart || (context.eventName === "pull_request_review" && context.payload.action === "submitted"),
+    autoRequest:
+      allowStart ||
+      context.eventName === "workflow_dispatch" ||
+      (context.eventName === "pull_request_review" && context.payload.action === "submitted"),
     files: files.map((file) => file.filename),
     labels: currentLabels,
     requestedReviewers,
@@ -267,4 +286,5 @@ module.exports = {
   latestDecisions,
   routeHumanReviewers,
   shouldAllowStart,
+  shouldHandleEvent,
 };
