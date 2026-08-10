@@ -85,6 +85,22 @@ test("the PR author is skipped when they are the configured reviewer", () => {
   assert.deepEqual(sorted(plan.desiredLabels), sorted(["Code1-Skipped", "Code3-ReviewRequested"]));
 });
 
+test("a future skipped stage is not labeled before the preceding review finishes", () => {
+  const reviewingCode1 = buildPlan({ author: "Miracle575" });
+  assert.deepEqual(reviewingCode1.reviewersToRequest, ["piccaSun"]);
+  assert.deepEqual(reviewingCode1.desiredLabels, ["Code1-ReviewRequested"]);
+
+  const code1Approved = buildPlan({
+    author: "Miracle575",
+    reviews: [{ id: 1, state: "APPROVED", user: { login: "piccaSun" } }],
+  });
+  assert.deepEqual(code1Approved.reviewersToRequest, []);
+  assert.deepEqual(
+    sorted(code1Approved.desiredLabels),
+    sorted(["Code1-Approved", "Code3-Skipped", "ReadyForMerge"]),
+  );
+});
+
 test("optional E2E blocks ReadyForMerge only after it is manually activated", () => {
   const reviews = [
     { id: 1, state: "APPROVED", user: { login: "piccaSun" } },

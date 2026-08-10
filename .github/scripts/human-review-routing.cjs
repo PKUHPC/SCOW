@@ -60,8 +60,9 @@ function buildRoutingPlan({ author, autoRequest = true, files, labels, requested
   let previousStagesSatisfied = true;
 
   for (const stage of mainStages) {
+    const stageReached = previousStagesSatisfied;
     let stageStatus = getStageStatus(stage, { author, decisions, requestedReviewers });
-    if (stageStatus === "pending" && previousStagesSatisfied && autoRequest) {
+    if (stageStatus === "pending" && stageReached && autoRequest) {
       stageStatus = "requested";
       for (const reviewer of stage.reviewers) {
         if (reviewer !== author && !requestedReviewers.has(reviewer)) reviewersToRequest.add(reviewer);
@@ -69,7 +70,7 @@ function buildRoutingPlan({ author, autoRequest = true, files, labels, requested
     }
 
     statuses.set(stage.name, stageStatus);
-    const label = statusLabel(stage, stageStatus);
+    const label = stageReached ? statusLabel(stage, stageStatus) : null;
     if (label) desiredLabels.add(label);
     if (!isSatisfied(stageStatus)) previousStagesSatisfied = false;
   }
@@ -78,15 +79,16 @@ function buildRoutingPlan({ author, autoRequest = true, files, labels, requested
     E2E_STAGE.reviewers.some((reviewer) => requestedReviewers.has(reviewer) || decisions.has(reviewer)) ||
     [...labels].some((label) => label.startsWith("E2E-"));
   if (e2eActive) {
+    const stageReached = previousStagesSatisfied;
     let stageStatus = getStageStatus(E2E_STAGE, { author, decisions, requestedReviewers });
-    if (stageStatus === "pending" && previousStagesSatisfied && autoRequest) {
+    if (stageStatus === "pending" && stageReached && autoRequest) {
       stageStatus = "requested";
       for (const reviewer of E2E_STAGE.reviewers) {
         if (reviewer !== author && !requestedReviewers.has(reviewer)) reviewersToRequest.add(reviewer);
       }
     }
     statuses.set(E2E_STAGE.name, stageStatus);
-    const label = statusLabel(E2E_STAGE, stageStatus);
+    const label = stageReached ? statusLabel(E2E_STAGE, stageStatus) : null;
     if (label) desiredLabels.add(label);
   }
 
