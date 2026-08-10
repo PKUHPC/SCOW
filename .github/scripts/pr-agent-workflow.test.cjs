@@ -22,6 +22,14 @@ test("opened PRs run describe and review, while AI-stage pushes run review only"
   assert.equal(workflow.getTool("pull_request_target", { action: "ready_for_review" }), "");
 });
 
+test("automatic synchronize reviews use the same cleanup as manual reviews", () => {
+  assert.equal(workflow.getCleanupKind("automatic"), "review");
+  assert.equal(workflow.getCleanupKind("automatic_review"), "review");
+  assert.equal(workflow.getCleanupKind("review"), "review");
+  assert.equal(workflow.getCleanupKind("improve"), "improve");
+  assert.equal(workflow.getCleanupKind("describe"), "");
+});
+
 test("synchronize auto-runs review without auto-regenerating the description", () => {
   const workflowDefinition = fs.readFileSync(".github/workflows/pr-agent.yaml", "utf8");
 

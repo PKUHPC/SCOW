@@ -74,6 +74,12 @@ function getTool(eventName, payload, { humanReviewStarted = false } = {}) {
   return match?.[1]?.toLowerCase() ?? "";
 }
 
+function getCleanupKind(tool) {
+  if (tool === "automatic" || tool === "automatic_review" || tool === "review") return "review";
+  if (tool === "improve") return "improve";
+  return "";
+}
+
 function encodeState(state) {
   return Buffer.from(JSON.stringify(state)).toString("base64url");
 }
@@ -388,7 +394,7 @@ async function prepare({ github, context, core }) {
   core.setOutput("run_agent", String(Boolean(tool)));
   core.setOutput("auto_describe", String(tool === "automatic"));
   core.setOutput("normalize_description", String(tool === "automatic" || tool === "describe"));
-  core.setOutput("cleanup_kind", tool === "automatic" ? "review" : ["review", "improve"].includes(tool) ? tool : "");
+  core.setOutput("cleanup_kind", getCleanupKind(tool));
   core.setOutput("snapshot_path", snapshotPath);
   core.setOutput("comments_snapshot_path", commentsSnapshotPath);
 }
@@ -598,6 +604,7 @@ module.exports = {
   evaluateGate,
   eventCheckboxChecked,
   getTool,
+  getCleanupKind,
   isAcknowledged,
   isEligible,
   isReviewCurrent,
