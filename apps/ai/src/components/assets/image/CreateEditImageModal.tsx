@@ -13,6 +13,7 @@ import { TRPCClientError } from "@trpc/client";
 import { App, Form, type InputNumberProps } from "antd";
 import React, { type ComponentType, useEffect } from "react";
 import { useDefaultCluster } from "src/app/(auth)/defaultClusterContext";
+import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
 import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -190,6 +191,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
       confirmLoading={isEdit ? editMutation.isPending : createMutation.isPending}
       onCancel={onClose}
       width={800}
+      style={{ top: 30 }}
     >
       <Form
         form={form}
@@ -291,7 +293,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
             <RoundedSelect
               style={{ minWidth: "100px" }}
               onChange={() => {
-                form.setFieldsValue({ sourcePath: "" });
+                form.resetFields(["sourcePath"]);
               }}
               options={Object.entries(sourceText).map(([key, value]) => ({ label: value, value: key }))}
             />
@@ -354,7 +356,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
           </>
         )}
         <CustomFormItem label={renderLabel(t(p("startCommand")))} name="startCommand">
-          <RoundedTextArea />
+          <CommandInputField name="startCommand" />
         </CustomFormItem>
         <CustomFormItem label={renderLabel(t(p("description")))} name="description">
           <RoundedTextArea />

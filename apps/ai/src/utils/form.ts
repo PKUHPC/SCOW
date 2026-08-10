@@ -2,6 +2,8 @@ import type { InputNumberProps } from "antd";
 
 import { RuleObject } from "antd/lib/form/index";
 
+import { isValidImageAddress } from "./imageAddress";
+
 export { confirmPasswordFormItemProps, getEmailRule } from "@scow/lib-web/build/utils/form";
 
 export const noWhiteSpaceRule = {
@@ -58,23 +60,19 @@ export const imageTagValidation = (_: RuleObject, value: any) => {
   return Promise.reject('由字母、数字、"_"、"-"和"."组成，不能以符号开始或结束');
 };
 
-const IMAGE_ADDRESS_REGEX = new RegExp(
-  "^(?:[a-zA-Z0-9.-]+(?::\\d+)?\\/)?" + // 可选的 registry（如 docker.io, myregistry.com:5000）
-    "[a-z0-9._-]+(?:\\/[a-z0-9._-]+)*" + // 镜像名称（支持多级路径）
-    "(?::[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$", // 可选的 tag 或 sha256 digest
-);
-
-export const createImageAddressValidator = (message?: string, shouldValidate = true) => () => ({
-  validator(_: RuleObject, value: string) {
-    if (!value || !shouldValidate) {
+export const createImageAddressValidator =
+  (message?: string, shouldValidate = true) =>
+  () => ({
+    validator(_: RuleObject, value: string) {
+      if (!value || !shouldValidate) {
+        return Promise.resolve();
+      }
+      if (!isValidImageAddress(value)) {
+        return Promise.reject(new Error(message ?? "镜像地址不合法"));
+      }
       return Promise.resolve();
-    }
-    if (!IMAGE_ADDRESS_REGEX.test(value)) {
-      return Promise.reject(new Error(message ?? "镜像地址不合法"));
-    }
-    return Promise.resolve();
-  },
-});
+    },
+  });
 
 export const createInterdependentValidator =
   <T>(dependentField: keyof T, message: string = "") =>

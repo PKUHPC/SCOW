@@ -99,6 +99,10 @@ export const AppRouterStyledModal = styled(Modal)`
     .ant-form-item-label > label {
       height: 42px;
     }
+
+    .ant-form-item-control-input {
+      min-height: 42px;
+    }
   }
 `;
 

@@ -121,27 +121,7 @@ export const RoundedTextArea: ComponentType<TextAreaProps> = styled(Input.TextAr
 `;
 
 export const RoundedPasswordInput = styled(Input.Password)`
-  font-size: 14px !important;
-  font-weight: lighter;
-  border-radius: 4px;
-  flex: 1;
-  width: 100%;
-  height: 36px;
-  box-sizing: border-box !important;
-  box-shadow: none !important;
-
-  .ant-input {
-    border-radius: 4px !important;
-    border: 1px solid ${({ theme }) => theme.palette.gray[4]};
-    padding: 6px 16px !important;
-  }
-
-  .ant-input::placeholder {
-    color: ${({ theme }) => theme.palette.gray[4]} !important;
-    opacity: 1 !important;
-  }
-
-  ${focusedBorderAndShadowStyle}
+  ${commonInputStyles}
 `;
 
 export const RoundedInputNumber: ComponentType<InputNumberProps> = styled(InputNumber)`

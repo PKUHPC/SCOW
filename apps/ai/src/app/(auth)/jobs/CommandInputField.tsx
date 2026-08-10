@@ -8,22 +8,23 @@ import { CodeEditor } from "./CodeEditor";
 
 interface Props {
   defaultCommand?: string;
+  name?: string;
 }
 
 const p = prefix("app.jobs.commandInputField.");
 
-export const CommandInputField = ({ defaultCommand }: Props) => {
+export const CommandInputField = ({ defaultCommand, name = "command" }: Props) => {
   const formInstance = Form.useFormInstance();
-  const commandValue = Form.useWatch("command", formInstance) ?? "";
+  const commandValue = Form.useWatch(name, formInstance) ?? "";
   const isAtDefault = commandValue === (defaultCommand ?? "");
   const t = useI18nTranslateToString();
 
   const handleChange = (value: string) => {
-    formInstance.setFieldsValue({ command: value });
+    formInstance.setFieldValue(name, value);
   };
 
   const handleReset = () => {
-    formInstance.setFieldsValue({ command: defaultCommand ?? "" });
+    formInstance.setFieldValue(name, defaultCommand ?? "");
   };
 
   return (

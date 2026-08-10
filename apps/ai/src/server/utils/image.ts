@@ -3,6 +3,12 @@ import { Logger } from "ts-log";
 
 import { getHarborConfig, HarborClient, harborUrl } from "./harbor";
 
+export { isValidImageAddress } from "src/utils/imageAddress";
+
+const LOADED_IMAGE_REGEX = "Loaded image: ([\\w./-]+(?::[\\w.-]+)?)";
+
+export const loadedImageRegex = new RegExp(LOADED_IMAGE_REGEX);
+
 export function getUserHarborProjectName(userId: string, isPlatformOwned?: boolean) {
   return isPlatformOwned ? "admin_public_asset" : `u_${userId}`;
 }
@@ -51,15 +57,6 @@ export async function createHarborImageUrl(
 export interface LoginInfo {
   userName?: string;
   password?: string;
-}
-
-export function isValidImageAddress(imageAddress: string) {
-  const ImageAddressRegex = new RegExp(
-    "^(?:[a-zA-Z0-9.-]+(?::\\d+)?\\/)?" + // 可选的 registry（如 docker.io, myregistry.com:5000）
-      "[a-z0-9._-]+(?:\\/[a-z0-9._-]+)*" + // 镜像名称（支持多级路径）
-      "(?::[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$", // 可选的 tag 或 sha256 digest
-  );
-  return ImageAddressRegex.test(imageAddress);
 }
 
 // 把字节转 GB，保留 2 位
