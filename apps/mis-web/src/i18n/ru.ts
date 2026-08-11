@@ -1353,6 +1353,8 @@ export default {
           remark: "Примечание",
           createAccount: "Создать аккаунт",
           createAccountFailed: "Не удалось создать аккаунт",
+          createAccountTimeoutTitle: "Время ожидания операции истекло",
+          createAccountTimeout: "Время ожидания создания аккаунта истекло. Повторите попытку позже.",
         },
         accountName: {
           users: {

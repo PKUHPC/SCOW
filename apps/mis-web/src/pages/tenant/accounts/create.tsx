@@ -1,5 +1,6 @@
 import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { FormLayout } from "@scow/lib-web/build/layouts/FormLayout";
+import { hasSchedulerAdapterTimeoutError } from "@scow/utils";
 import { App, Button, Form, Input } from "antd";
 import { NextPage } from "next";
 import React, { useState } from "react";
@@ -33,7 +34,7 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
 
   const [loading, setLoading] = useState(false);
 
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
 
   const submit = async () => {
     const { accountName, ownerId, ownerName, comment } = await form.validateFields();
@@ -70,6 +71,24 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       })
       .httpError(401, (e) => {
         message.error(e.message);
+      })
+      .httpError(500, (e) => {
+        if (e.code === "CLUSTEROPS_ERROR") {
+          if (hasSchedulerAdapterTimeoutError(e)) {
+            modal.error({
+              title: t(p("createAccountTimeoutTitle")),
+              content: t(p("createAccountTimeout")),
+            });
+          } else {
+            modal.error({
+              title: t("page._app.multiClusterOpErrorTitle"),
+              content: `${t("page._app.multiClusterOpErrorContent")}(${e.details})`,
+            });
+          }
+          return;
+        }
+
+        message.error(t(p("createAccountFailed")));
       })
       .then(() => {
         message.success(t(p("createSuccess")));

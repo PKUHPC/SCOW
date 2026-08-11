@@ -1283,6 +1283,8 @@ export default {
           remark: "비고",
           createAccount: "계정 생성",
           createAccountFailed: "계정 생성 실패",
+          createAccountTimeoutTitle: "작업 시간 초과",
+          createAccountTimeout: "계정 생성 시간이 초과되었습니다. 나중에 다시 시도해 주세요.",
         },
         accountName: {
           users: {

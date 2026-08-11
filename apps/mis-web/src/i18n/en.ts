@@ -1391,6 +1391,8 @@ export default {
           remark: "Remark",
           createAccount: "Create Account",
           createAccountFailed: "Create Account Failed",
+          createAccountTimeoutTitle: "Operation Timed Out",
+          createAccountTimeout: "Account creation timed out. Please try again later.",
         },
         accountName: {
           users: {

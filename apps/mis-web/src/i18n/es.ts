@@ -1362,6 +1362,8 @@ export default {
           remark: "Observación",
           createAccount: "Crear cuenta",
           createAccountFailed: "Error al crear la cuenta",
+          createAccountTimeoutTitle: "Tiempo de espera agotado",
+          createAccountTimeout: "Se agotó el tiempo de espera al crear la cuenta. Inténtelo de nuevo más tarde.",
         },
         accountName: {
           users: {

@@ -1288,6 +1288,8 @@ export default {
           remark: "備考",
           createAccount: "アカウント作成",
           createAccountFailed: "アカウントの作成に失敗しました",
+          createAccountTimeoutTitle: "操作がタイムアウトしました",
+          createAccountTimeout: "アカウントの作成がタイムアウトしました。後でもう一度お試しください。",
         },
         accountName: {
           users: {

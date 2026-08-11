@@ -1378,6 +1378,8 @@ export default {
           remark: "Bemerkung",
           createAccount: "Konto erstellen",
           createAccountFailed: "Kontoerstellung fehlgeschlagen",
+          createAccountTimeoutTitle: "Zeitüberschreitung beim Vorgang",
+          createAccountTimeout: "Zeitüberschreitung bei der Kontoerstellung. Bitte versuchen Sie es später erneut.",
         },
         accountName: {
           users: {

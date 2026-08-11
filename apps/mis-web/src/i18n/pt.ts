@@ -1354,6 +1354,8 @@ export default {
           remark: "Observação",
           createAccount: "Criar conta",
           createAccountFailed: "Falha ao criar conta",
+          createAccountTimeoutTitle: "Tempo limite da operação excedido",
+          createAccountTimeout: "A criação da conta expirou. Tente novamente mais tarde.",
         },
         accountName: {
           users: {

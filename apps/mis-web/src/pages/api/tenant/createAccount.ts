@@ -11,7 +11,7 @@ import { checkNameMatch } from "src/server/checkIdNameMatch";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
-import { route } from "src/utils/route";
+import { route, ScowErrorResponse } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
 // Cannot use CreateAccountResponse from protos
@@ -42,6 +42,7 @@ export const CreateAccountSchema = typeboxRouteSchema({
       code: Type.Union([Type.Literal("ALREADY_EXISTS"), Type.Literal("FAILED_PRECONDITION")]),
     }),
     401: Type.Object({ message: Type.String() }),
+    500: ScowErrorResponse,
   },
 });
 

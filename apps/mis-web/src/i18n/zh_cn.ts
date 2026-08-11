@@ -1318,6 +1318,8 @@ export default {
           remark: "备注",
           createAccount: "创建账户",
           createAccountFailed: "创建账户失败",
+          createAccountTimeoutTitle: "操作超时",
+          createAccountTimeout: "创建账户超时，请稍后再试。",
         },
         accountName: {
           users: {

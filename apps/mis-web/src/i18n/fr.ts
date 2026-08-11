@@ -1370,6 +1370,8 @@ export default {
           remark: "Remarque",
           createAccount: "Créer un compte",
           createAccountFailed: "Échec de la création du compte",
+          createAccountTimeoutTitle: "Délai d'attente dépassé",
+          createAccountTimeout: "La création du compte a expiré. Veuillez réessayer plus tard.",
         },
         accountName: {
           users: {

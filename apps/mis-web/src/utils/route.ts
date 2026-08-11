@@ -1,10 +1,20 @@
 import { typeboxRoute } from "@ddadaal/next-typed-api-routes-runtime";
 import { Metadata } from "@grpc/grpc-js";
+import { Static, Type } from "@sinclair/typebox";
 
-interface ClusterErrorMetadata {
-  clusterId: string;
-  details: string;
-}
+const ClusterErrorMetadata = Type.Object({
+  clusterId: Type.String(),
+  details: Type.String(),
+});
+
+type ClusterErrorMetadata = Static<typeof ClusterErrorMetadata>;
+
+export const ScowErrorResponse = Type.Object({
+  code: Type.Optional(Type.String()),
+  details: Type.Optional(Type.String()),
+  currentActivatedClusterIds: Type.Optional(Type.Array(Type.String())),
+  clusterErrorsArray: Type.Optional(Type.Array(ClusterErrorMetadata)),
+});
 
 export const route: typeof typeboxRoute = (schema, handler) => {
   return typeboxRoute(schema, async (req, res) => {
