@@ -147,8 +147,9 @@ export async function processSynchronization(
 
       const chunkResultsToPersist: ClusterTotalSyncResultProto[] = [];
       // 多集群并发
-      await Promise.allSettled(
-        Object.entries(adapterClientPool).map(async ([clusterId, clusterClient]) => {
+      const clusterClients = Object.entries(adapterClientPool);
+      const clusterSyncTasks = await Promise.allSettled(
+        clusterClients.map(async ([clusterId, clusterClient]) => {
           // 初始化
           if (clustersTimeUsed[clusterId] === undefined) clustersTimeUsed[clusterId] = 0;
           if (clustersShouldContinue[clusterId] === undefined) clustersShouldContinue[clusterId] = true;
@@ -374,6 +375,39 @@ export async function processSynchronization(
             });
         }),
       );
+
+      clusterSyncTasks.forEach((result, index) => {
+        const clusterId = clusterClients[index][0];
+        subLogger.trace(
+          "[Cluster: %s] Synchronization chunk %s task settled with status: %s",
+          clusterId,
+          chunkIndex,
+          result.status,
+        );
+        if (result.status === "fulfilled") return;
+
+        subLogger.error(
+          result.reason,
+          "[Cluster: %s] Unexpected error occurred while synchronizing chunk: %s",
+          clusterId,
+          chunkIndex,
+        );
+        chunkResultsToPersist.push({
+          clusterId,
+          clusterSyncStatus: isLastChunk ? SyncStatusProto.COMPLETED : SyncStatusProto.RUNNING,
+          clusterSyncResult: SyncResultProto.FAILED,
+          executedChunkCount: chunkIndex,
+          isAllChunkExecuted: isLastChunk,
+          clusterSyncExceptions: [
+            {
+              exceptionType: SyncExceptionTypeProto.CHUNK_FAILED,
+              exceptionMessage: "Chunk failed.",
+            },
+          ],
+          successfulTotalSyncCount: 0,
+          completedTotalSyncCount: 0,
+        });
+      });
 
       // 一个chunk内记录一次各集群同步情况
       subLogger.info("Current synchronization in chunk %s, %o", chunkIndex, chunkResultsToPersist);
@@ -676,6 +710,24 @@ export async function getSyncAccountsWithPartitions(
     : undefined;
 
   logger.trace("[Cluster: %s] Partitions fetched of [%o]", clusterId, reply);
+
+  // 增加兜底处理
+  // 如果上述reply正常返回，但是缺少了某些 account 的结果（不包括分区为空的情况 accountA: { partitionNames: [] }）
+  // 跳过这些账户并记录为失败未处理，防止传递错误信息封锁账户
+  if (reply) {
+    const missingAccounts = queryAccounts
+      .filter(({ accountName }) => !Object.prototype.hasOwnProperty.call(reply, accountName))
+      .map(({ accountName }) => accountName);
+
+    if (missingAccounts.length > 0) {
+      partitionsFetchFailedAccounts = missingAccounts;
+      logger.error(
+        "[Cluster: %s] Assigned partitions response is missing accounts: [%s]",
+        clusterId,
+        missingAccounts.join(","),
+      );
+    }
+  }
 
   syncAccounts = accounts
     .filter((account) => {

@@ -1,4 +1,4 @@
-import { ConnectRouter } from "@connectrpc/connect";
+import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
 import { checkScowApiToken } from "@scow/lib-server";
 import {
   AssignAccountOnCreateRequest,
@@ -73,7 +73,10 @@ export default (router: ConnectRouter) => {
      * 批量获取账户在某集群下已授权的分区
      * 用于账户分区同步等账户的批量操作
      * 防止获取单一账户授权分区时创建大量并发连接
-     * 如果当前没有可用集群，则返回空
+     *
+     * 如果当前访问不在线集群会抛出错误
+     * 如果当前获取集群分区失败将会抛出错误
+     * 如果当前在线集群下没有授权分区返回 []
      * @param request
      * @returns
      */
@@ -84,6 +87,11 @@ export default (router: ConnectRouter) => {
         logger.warn("No available cluster partitions when querying scow-resource.");
         return {};
       });
+      if (currentClusterPartitions[clusterId] === undefined) {
+        const message = `Failed to get partitions for cluster ${clusterId} from Resource System.`;
+        logger.error(message);
+        throw new ConnectError(message, Code.Unavailable);
+      }
       const data = await getAccountsAssignedPartitionsInCluster(
         accountsWithTenants,
         clusterId,

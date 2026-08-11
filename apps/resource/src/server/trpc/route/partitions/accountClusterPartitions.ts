@@ -189,7 +189,10 @@ export const accountsAssignedDetails = adminAuthProcedure
         });
         // 映射分区规则
         // 先把租户的有效集群已授权的分区存入 Set 提高查找速度
-        const validPartitionRules = tenantPartitionRules.filter((p) => !noPartitionClusterIds.includes(p.clusterId));
+        // 在当前已授权分区中过滤仅在集群分区中存在得分区
+        const validPartitionRules = tenantPartitionRules.filter((p) =>
+          currentClusterPartitions[p.clusterId]?.includes(p.partition),
+        );
         const validPartitions = new Set(validPartitionRules.map((p) => `${p.clusterId}:${p.partition}`));
         allPartitionRules.forEach((rule) => {
           const entry = accountClusterPartitionMap.get(rule.accountName);
