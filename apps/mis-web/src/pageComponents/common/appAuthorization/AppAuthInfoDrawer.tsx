@@ -41,7 +41,7 @@ export const AppAuthInfoDrawer: React.FC<Props> = (props) => {
     ],
     [t(p("cluster")), "clusterId", getClusterName],
     [t(p("authorizedAppsCount")), "availableAppsCount", (v) => v.toString()],
-    [t(p("authorizedApps")), "availableAppNames", (v) => v.join(", ")],
+    [t(p("authorizedApps")), "availableAppNames", (v) => (v.length > 0 ? v.join(", ") : "-")],
   ] as [string, keyof Partial<TargetAppsDrawerItem>, (v: any) => string][];
 
   return (
@@ -49,16 +49,16 @@ export const AppAuthInfoDrawer: React.FC<Props> = (props) => {
       {item ? (
         <Descriptions column={1} bordered size="small">
           {drawerItems
+            .filter(([label, key]) => label != null && item[key] !== undefined)
             .map(([label, key, format]) => (
-              <Descriptions.Item key={item.targetName} label={label}>
+              <Descriptions.Item key={key} label={label}>
                 {format
                   ? key === "clusterId"
                     ? getClusterName(item[key], languageId, publicConfigClusters)
                     : format(item[key])
                   : (item[key] as string)}
               </Descriptions.Item>
-            ))
-            .filter((x) => x)}
+            ))}
         </Descriptions>
       ) : undefined}
     </Drawer>

@@ -1,9 +1,10 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
+import { AppAuthorizationServiceClient, AppScope as AppScopeProto } from "@scow/protos/build/server/app_authorization";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
+import { AppScope } from "src/models/app";
 import { TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
@@ -22,6 +23,7 @@ export const GetTenantAppsSchema = typeboxRouteSchema({
 
   query: Type.Object({
     clusterId: Type.String(),
+    appScope: Type.Enum(AppScope),
   }),
 
   responses: {
@@ -32,11 +34,19 @@ export const GetTenantAppsSchema = typeboxRouteSchema({
       code: Type.Literal("FAILED_PRECONDITION"),
       message: Type.Optional(Type.String()),
     }),
+    400: Type.Object({
+      code: Type.Literal("INVALID_ARGUMENT"),
+      message: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      code: Type.Literal("NOT_FOUND"),
+      message: Type.Optional(Type.String()),
+    }),
   },
 });
 
 export default route(GetTenantAppsSchema, async (req, res) => {
-  const { clusterId } = req.query;
+  const { clusterId, appScope } = req.query;
 
   const auth = authenticate((info) => {
     return info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -51,6 +61,7 @@ export default route(GetTenantAppsSchema, async (req, res) => {
 
   return await asyncUnaryCall(client, "getTenantApps", {
     clusterId,
+    appScope: AppScopeProto[appScope],
     tenantName: info.tenant,
   })
     .then((reply) => ({
@@ -60,10 +71,22 @@ export default route(GetTenantAppsSchema, async (req, res) => {
     }))
     .catch(
       handlegRPCError({
+        [Status.INVALID_ARGUMENT]: (e) => ({
+          400: {
+            code: "INVALID_ARGUMENT" as const,
+            message: e.details || e.message,
+          },
+        }),
         [Status.FAILED_PRECONDITION]: (e) => ({
           409: {
             code: "FAILED_PRECONDITION" as const,
-            message: e.message,
+            message: e.details || e.message,
+          },
+        }),
+        [Status.NOT_FOUND]: (e) => ({
+          404: {
+            code: "NOT_FOUND" as const,
+            message: e.details || e.message,
           },
         }),
       }),

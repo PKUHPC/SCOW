@@ -445,6 +445,7 @@ export default {
       },
       createApps: {
         notFoundMessage: "Aucune application disponible à créer",
+        appUnauthorized: "L'application actuelle n'est pas autorisée.",
         loading: "Chargement des applications disponibles...",
         create: "Créer",
         searchPlaceholder: "Saisir le nom de l'application",

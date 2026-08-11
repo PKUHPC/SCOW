@@ -41,6 +41,7 @@ export default {
     prompt: "Aviso",
     role: "Função",
     add: "Adicionar",
+    remove: "Remover",
     modify: "Modificar",
     cancel: "Cancelar",
     cluster: "Cluster",
@@ -883,12 +884,13 @@ export default {
       defaultApps: {
         defaultAppsTable: {
           appName: "Nome do aplicativo",
+          isDefault: "Aplicativo autorizado padrão",
+          yes: "Sim",
+          no: "Não",
           operation: "Operação",
+          removeAction: "Remover",
           removeFromDefaultApps: {
             title: "Remover aplicativo autorizado padrão",
-            confirmContent:
-              "Confirmar remoção do aplicativo {2} dos aplicativos autorizados padrão " +
-              "para o inquilino {0} no cluster {1}?",
             confirmWarn:
               "Após remover dos aplicativos autorizados padrão, todas as contas " +
               "sob este inquilino cancelarão sincronizadamente a autorização deste aplicativo",
@@ -896,15 +898,8 @@ export default {
             removeFailedMessage: "Falha ao remover aplicativo autorizado padrão",
           },
           addToDefaultApps: {
+            confirmWarn: "Após adicionar, todas as contas deste locatário serão autorizadas a usar o aplicativo",
             title: "Adicionar aplicativo autorizado padrão",
-            tenant: "Inquilino",
-            cluster: "Cluster",
-            modalWarn:
-              "Após adicionar aos aplicativos autorizados padrão, todas as contas sob este inquilino " +
-              "adicionarão sincronizadamente a autorização deste aplicativo",
-            app: "Aplicativo",
-            appDefaultPlaceholder: "Selecione um aplicativo",
-            noAppsPlaceholder: "Sem aplicativos disponíveis",
             addSuccessMessage: "Aplicativo autorizado padrão adicionado",
             addFailedMessage: "Falha ao adicionar aplicativo autorizado padrão",
           },
@@ -2010,11 +2005,13 @@ export default {
         "Usuários: {0}, Cluster: {1}, Caminho: {2}, Quota de armazenamento: {3}, Usar padrão do inquilino: {4}",
       setTenantUserDefaultQuota: "Inquilino: {0}, Cluster: {1}, Caminho: {2}, Quota de armazenamento: {3}",
       syncTenantUsersStorageUsage: "Inquilino: {0}, Cluster: {1}, Caminho: {2}",
-      tenantAppAuthorizationLog: "Cluster: {0}, Aplicação: {1}, Inquilino: {2}",
-      accountAppAuthorizationLog: "Cluster: {0}, Aplicação: {1}, Conta: {2}",
+      hpcAppScope: "HPC",
+      aiAppScope: "AI",
+      tenantAppAuthorizationLog: "Cluster: {0}, Aplicação: {1} ({3}), Inquilino: {2}",
+      accountAppAuthorizationLog: "Cluster: {0}, Aplicação: {1} ({3}), Conta: {2}",
       migrateNode: "Nó: {}, Cluster de origem: {}, Cluster de destino: {}",
       activateNode: "Nó: {}, Cluster: {}",
-      updateDefaultApp: "Cluster: {0}, Aplicação: {1}, Inquilino: {2}",
+      updateDefaultApp: "Cluster: {0}, Aplicação: {1} ({3}), Inquilino: {2}",
       changeJobPrice: "Cluster: {}, ID do job: {}, Preço (CNY): {}",
       changeJobPlatformPrice: "Cluster: {}, ID do job: {}, Cobrança de plataforma (CNY): {}",
     },

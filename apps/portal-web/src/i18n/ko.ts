@@ -431,6 +431,7 @@ export default {
       },
       createApps: {
         notFoundMessage: "생성 가능한 애플리케이션이 없습니다",
+        appUnauthorized: "현재 애플리케이션이 승인되지 않았습니다.",
         loading: "생성 가능한 애플리케이션을 불러오는 중...",
         create: "생성",
         searchPlaceholder: "애플리케이션 이름을 입력하세요",

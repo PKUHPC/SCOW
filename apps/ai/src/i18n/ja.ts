@@ -310,6 +310,7 @@ export default {
         searchPlaceholder: "アプリケーション名を入力",
         noSearchResult: "'{}'に関連するインタラクティブアプリケーションが見つかりませんでした",
         appNotFoundMessage: "作成可能なインタラクティブアプリケーションがありません。",
+        appUnauthorized: "現在のアプリケーションは許可されていません。",
         loading: "作成可能なアプリケーションを読み込んでいます",
       },
       historyJobs: {

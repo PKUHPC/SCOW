@@ -154,15 +154,11 @@ export const libGetAppForbiddenAccounts = async (
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
 
-  try {
-    const reply = await asyncClientCall(client, "getAppForbiddenAccounts", {
-      clusterId,
-      appId,
-      appScope,
-    });
-    return reply.accountNames;
-  } catch (e: any) {
-    console.error(e.details);
-    return [];
-  }
+  // 后端报错会正常抛出
+  const reply = await asyncClientCall(client, "getAppForbiddenAccounts", {
+    clusterId,
+    appId,
+    appScope,
+  });
+  return reply.accountNames;
 };

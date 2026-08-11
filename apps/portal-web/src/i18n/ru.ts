@@ -442,6 +442,7 @@ export default {
       },
       createApps: {
         notFoundMessage: "Нет приложений, доступных для создания",
+        appUnauthorized: "Текущее приложение не авторизовано.",
         loading: "Загрузка доступных приложений...",
         create: "Создать",
         searchPlaceholder: "Введите название приложения",

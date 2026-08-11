@@ -26,6 +26,7 @@ message GetTargetAppAuthorizationsRequest {
   optional string filter_target_name = 6;
   // 当 target_type 为 ACCOUNT 时，查询的账户主管理员ID或姓名
   optional string filter_account_owner_id_or_name = 7;
+  optional AppScope app_scope = 8;
 }
 
 message AppAuthorizationInfo {
@@ -68,6 +69,7 @@ message AuthorizeAppRequest {
     string account_name = 5;
     string tenant_name = 6;
   }
+  optional AppScope app_scope = 7;
 }
 
 message AuthorizeAppResponse {
@@ -119,6 +121,7 @@ message CheckAppIsDisabledResponse {
 message GetTenantAppsRequest {
   string cluster_id = 1;
   string tenant_name = 2;
+  optional AppScope app_scope = 3;
 }
 
 message GetTenantAppsResponse {
@@ -141,6 +144,7 @@ message UpdateDefaultAppRequest {
   }
   UpdateAction update_action = 4;
   string operator_id = 5;
+  optional AppScope app_scope = 6;
 }
 
 message UpdateDefaultAppResponse {

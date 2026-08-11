@@ -41,6 +41,7 @@ export default {
     prompt: "Message",
     role: "Rôle",
     add: "Ajouter",
+    remove: "Retirer",
     modify: "Modifier",
     cancel: "Annuler",
     cluster: "Cluster",
@@ -686,7 +687,8 @@ export default {
         timeLimit: "Temps d'exécution maximum (minutes)",
         timeUsed: "Durée d'exécution du job (secondes)",
         timeWait: "Temps d'attente du job (secondes)",
-        timeWaitTip: "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
+        timeWaitTip:
+          "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
         recordTime: "Heure d'enregistrement",
         workFee: "Facturation du job (CNY)",
         tenantFee: "Facturation du locataire (CNY)",
@@ -745,7 +747,8 @@ export default {
         timeLimit: "Temps d'exécution maximum",
         timeUsed: "Durée d'exécution",
         timeWait: "Temps d'attente",
-        timeWaitTip: "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
+        timeWaitTip:
+          "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
         detail: "Détails du job non terminé",
       },
       runningJobTable: {
@@ -884,12 +887,13 @@ export default {
       defaultApps: {
         defaultAppsTable: {
           appName: "Nom de l'application",
+          isDefault: "Application autorisée par défaut",
+          yes: "Oui",
+          no: "Non",
           operation: "Opération",
+          removeAction: "Retirer",
           removeFromDefaultApps: {
             title: "Supprimer l'application autorisée par défaut",
-            confirmContent:
-              "Confirmer la suppression de l'application {2} des applications autorisées par défaut " +
-              "pour le locataire {0} dans le cluster {1} ?",
             confirmWarn:
               "Après suppression des applications autorisées par défaut, tous les comptes " +
               "de ce locataire révoqueront simultanément l'autorisation de cette application",
@@ -897,15 +901,8 @@ export default {
             removeFailedMessage: "Échec de la suppression de l'application autorisée par défaut",
           },
           addToDefaultApps: {
+            confirmWarn: "Après l'ajout, tous les comptes de ce locataire seront autorisés à utiliser l'application",
             title: "Ajouter une application autorisée par défaut",
-            tenant: "Locataire",
-            cluster: "Cluster",
-            modalWarn:
-              "Après l'ajout aux applications autorisées par défaut, tous les comptes de ce locataire " +
-              "ajouteront simultanément l'autorisation de cette application",
-            app: "Application",
-            appDefaultPlaceholder: "Veuillez sélectionner une application",
-            noAppsPlaceholder: "Aucune application disponible",
             addSuccessMessage: "Application autorisée par défaut ajoutée",
             addFailedMessage: "Échec de l'ajout de l'application autorisée par défaut",
           },
@@ -2025,11 +2022,13 @@ export default {
       batchSetTenantUsersQuota: "Users: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}, Use Tenant Default: {4}",
       setTenantUserDefaultQuota: "Tenant: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}",
       syncTenantUsersStorageUsage: "Tenant: {0}, Cluster: {1}, Path: {2}",
-      tenantAppAuthorizationLog: "Cluster: {0}, Application: {1}, Tenant: {2}",
-      accountAppAuthorizationLog: "Cluster: {0}, Application: {1}, Account: {2}",
+      hpcAppScope: "HPC",
+      aiAppScope: "AI",
+      tenantAppAuthorizationLog: "Cluster: {0}, Application: {1} ({3}), Tenant: {2}",
+      accountAppAuthorizationLog: "Cluster: {0}, Application: {1} ({3}), Account: {2}",
       migrateNode: "Node: {}, Source Cluster: {}, Target cluster: {}",
       activateNode: "Node: {}, Cluster: {}",
-      updateDefaultApp: "Cluster: {0}, Application: {1}, Tenant: {2}",
+      updateDefaultApp: "Cluster: {0}, Application: {1} ({3}), Tenant: {2}",
       changeJobPrice: "Cluster: {}, Job ID: {}, Prix (CNY): {}",
       changeJobPlatformPrice: "Cluster: {}, Job ID: {}, Frais de plateforme (CNY): {}",
     },

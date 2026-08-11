@@ -312,6 +312,7 @@ export default {
         searchPlaceholder: "Digite o nome da aplicação",
         noSearchResult: "Nenhuma aplicação interativa relacionada a '{}' foi encontrada",
         appNotFoundMessage: "Nenhuma aplicação interativa disponível para criação.",
+        appUnauthorized: "A aplicação atual não está autorizada.",
         loading: "Carregando aplicações disponíveis",
       },
       historyJobs: {

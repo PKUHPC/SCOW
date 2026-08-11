@@ -182,6 +182,7 @@ export async function importUsers(
             account: account,
             cluster: t.cluster,
             appId: t.appId,
+            appScope: t.appScope,
           });
         });
       });

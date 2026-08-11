@@ -369,6 +369,7 @@ export default {
         searchPlaceholder: "Enter application name",
         noSearchResult: "No interactive application related to '{}' was found",
         appNotFoundMessage: "No interactive application available for creation.",
+        appUnauthorized: "The current application is not authorized.",
         loading: "Loading available applications",
       },
       jobList: {

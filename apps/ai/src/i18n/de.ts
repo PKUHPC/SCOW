@@ -312,6 +312,7 @@ export default {
         searchPlaceholder: "Anwendungsnamen eingeben",
         noSearchResult: "Keine interaktive Anwendung bezogen auf '{}' wurde gefunden",
         appNotFoundMessage: "Keine interaktive Anwendung zur Erstellung verfügbar.",
+        appUnauthorized: "Die aktuelle Anwendung ist nicht autorisiert.",
         loading: "Anwendungen werden geladen",
       },
       historyJobs: {

@@ -12,6 +12,11 @@ export const AppAuthTargetTypeProto = {
 } as const;
 export type AppAuthTargetTypeProto = ValueOf<typeof AppAuthTargetTypeProto>;
 
+export enum AppScope {
+  HPC = "HPC",
+  AI = "AI",
+}
+
 export const AuthorizeAction = {
   AUTHORIZE: 0,
   UNAUTHORIZE: 1,
@@ -23,3 +28,8 @@ export const UpdateDefaultAppAction = {
   REMOVE_FROM_DEFAULT_APPS: 1,
 } as const;
 export type UpdateDefaultAppAction = ValueOf<typeof UpdateDefaultAppAction>;
+
+export const YesOrNoColors: Record<string, string> = {
+  YES: "#46B600",
+  NO: "#D93566",
+};

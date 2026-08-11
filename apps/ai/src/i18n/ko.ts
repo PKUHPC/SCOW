@@ -310,6 +310,7 @@ export default {
         searchPlaceholder: "응용 프로그램 이름 입력",
         noSearchResult: "'{}' 관련 인터랙티브 응용 프로그램을 찾을 수 없습니다",
         appNotFoundMessage: "생성 가능한 인터랙티브 응용 프로그램이 없습니다.",
+        appUnauthorized: "현재 애플리케이션이 승인되지 않았습니다.",
         loading: "사용 가능한 응용 프로그램 로드 중",
       },
       historyJobs: {

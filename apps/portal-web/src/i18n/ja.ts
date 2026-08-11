@@ -432,6 +432,7 @@ export default {
       },
       createApps: {
         notFoundMessage: "作成可能なアプリはありません",
+        appUnauthorized: "現在のアプリケーションは許可されていません。",
         loading: "作成可能なアプリを読み込み中...",
         create: "作成",
         searchPlaceholder: "アプリ名を入力",

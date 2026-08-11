@@ -64,6 +64,14 @@ const pRes = prefix("operationLog.resultTexts.");
 const pTypes = prefix("operationLog.operationTypeTexts.");
 const pDetails = prefix("operationLog.operationDetails.");
 
+const getAppScopeText = (appScope: string, t: OperationTextsTransType) =>
+  appScope === "HPC"
+    ? t(pDetails("hpcAppScope"))
+    : appScope === "AI"
+      ? t(pDetails("aiAppScope"))
+      : // 操作日志的历史数据不展示应用所属平台只展示为 "-"
+        appScope || "-";
+
 export const getOperationResultTexts = (t: OperationTextsTransType) => {
   return {
     [OperationResult.UNKNOWN]: t(pRes("unknown")),
@@ -730,17 +738,22 @@ export const getOperationDetail = (
       case "unauthorizeApp": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return operationEvent[logEvent].target?.$case === "accountName"
-          ? t(pDetails("accountAppAuthorizationLog"), [
-              clusterName,
-              operationEvent[logEvent].appName,
-              operationEvent[logEvent].target.accountName,
-            ])
-          : t(pDetails("tenantAppAuthorizationLog"), [
-              clusterName,
-              operationEvent[logEvent].appName,
-              operationEvent[logEvent].target.tenantName,
-            ]);
+        const appScope = getAppScopeText(operationEvent[logEvent].appScope, t);
+        const detail =
+          operationEvent[logEvent].target?.$case === "accountName"
+            ? t(pDetails("accountAppAuthorizationLog"), [
+                clusterName,
+                operationEvent[logEvent].appName,
+                operationEvent[logEvent].target.accountName,
+                appScope,
+              ])
+            : t(pDetails("tenantAppAuthorizationLog"), [
+                clusterName,
+                operationEvent[logEvent].appName,
+                operationEvent[logEvent].target.tenantName,
+                appScope,
+              ]);
+        return detail;
       }
       case "migrateNode":
         return t(pDetails("migrateNode"), [
@@ -757,11 +770,14 @@ export const getOperationDetail = (
       case "removeFromDefaultApps": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("updateDefaultApp"), [
+        const appScope = getAppScopeText(operationEvent[logEvent].appScope, t);
+        const detail = t(pDetails("updateDefaultApp"), [
           clusterName,
           operationEvent[logEvent].appName,
           operationEvent[logEvent].tenantName,
+          appScope,
         ]);
+        return detail;
       }
       case "authorizeCluster":
       case "unauthorizeCluster": {

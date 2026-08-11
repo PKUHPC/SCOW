@@ -2,10 +2,10 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { OperationType } from "@scow/lib-operation-log";
-import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
+import { AppAuthorizationServiceClient, AppScope as AppScopeProto } from "@scow/protos/build/server/app_authorization";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { UpdateDefaultAppAction } from "src/models/app";
+import { AppScope, UpdateDefaultAppAction } from "src/models/app";
 import { OperationResult } from "src/models/operationLog";
 import { TenantRole } from "src/models/User";
 import { callLog } from "src/server/operationLog";
@@ -18,6 +18,7 @@ export const UpdateDefaultAppSchema = typeboxRouteSchema({
 
   body: Type.Object({
     clusterId: Type.String(),
+    appScope: Type.Enum(AppScope),
     appId: Type.String(),
     appName: Type.String(),
     updateAction: Type.Enum(UpdateDefaultAppAction),
@@ -32,7 +33,7 @@ export const UpdateDefaultAppSchema = typeboxRouteSchema({
 });
 
 export default route(UpdateDefaultAppSchema, async (req, res) => {
-  const { clusterId, appId, appName, updateAction } = req.body;
+  const { clusterId, appScope, appId, appName, updateAction } = req.body;
 
   const auth = authenticate((info) => {
     return info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -52,6 +53,7 @@ export default route(UpdateDefaultAppSchema, async (req, res) => {
         : OperationType.removeFromDefaultApps,
     operationTypePayload: {
       clusterId,
+      appScope,
       appName,
       tenantName: info.tenant,
     },
@@ -61,6 +63,7 @@ export default route(UpdateDefaultAppSchema, async (req, res) => {
 
   return await asyncUnaryCall(client, "updateDefaultApp", {
     clusterId,
+    appScope: AppScopeProto[appScope],
     tenantName: info.tenant,
     appId,
     updateAction,
@@ -73,9 +76,10 @@ export default route(UpdateDefaultAppSchema, async (req, res) => {
     .catch(
       handlegRPCError(
         {
-          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.message } }),
-          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.message } }),
-          [Status.ALREADY_EXISTS]: (e) => ({ 200: { executed: false, reason: e.message } }),
+          [Status.INVALID_ARGUMENT]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
+          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
+          [Status.ALREADY_EXISTS]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
         },
         async () => await callLog(logInfo, OperationResult.FAIL),
       ),

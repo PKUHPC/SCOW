@@ -1,10 +1,13 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
-import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
+import {
+  AppAuthorizationServiceClient,
+  AppScope as AppScopeProto,
+} from "@scow/protos/build/server/app_authorization";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { AppAuthTargetType, AppAuthTargetTypeProto } from "src/models/app";
+import { AppAuthTargetType, AppAuthTargetTypeProto, AppScope } from "src/models/app";
 import { PlatformRole, TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { safeGetStringProperty } from "src/utils/format";
@@ -43,6 +46,7 @@ export const GetTargetAppAuthorizationsSchema = typeboxRouteSchema({
     pageSize: Type.Integer(),
 
     clusterId: Type.String(),
+    appScope: Type.Enum(AppScope),
 
     // 查询类型，租户或账户
     targetType: Type.Enum(AppAuthTargetType),
@@ -61,6 +65,10 @@ export const GetTargetAppAuthorizationsSchema = typeboxRouteSchema({
     }),
     400: Type.Object({
       code: Type.Literal("INVALID_ARGUMENT"),
+      message: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      code: Type.Literal("NOT_FOUND"),
       message: Type.Optional(Type.String()),
     }),
     409: Type.Object({
@@ -82,7 +90,7 @@ const formatTargetTypeProto = (targetType: AppAuthTargetType): AppAuthTargetType
 };
 
 export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
-  const { page, pageSize, clusterId, targetType, filterTargetName, filterAccountOwnerIdOrName } = req.query;
+  const { page, pageSize, clusterId, appScope, targetType, filterTargetName, filterAccountOwnerIdOrName } = req.query;
 
   const auth = authenticate((info) => {
     return targetType === AppAuthTargetType.TENANT
@@ -101,6 +109,7 @@ export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
     page,
     pageSize,
     clusterId,
+    appScope: AppScopeProto[appScope],
     targetType: formatTargetTypeProto(targetType),
     filterTargetName,
     tenantName: targetType === AppAuthTargetType.ACCOUNT ? info.tenant : undefined,
@@ -123,13 +132,19 @@ export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
         [status.FAILED_PRECONDITION]: (e) => ({
           409: {
             code: "FAILED_PRECONDITION" as const,
-            message: e.message,
+            message: e.details || e.message,
           },
         }),
         [status.INVALID_ARGUMENT]: (e) => ({
           400: {
             code: "INVALID_ARGUMENT" as const,
-            message: e.message,
+            message: e.details || e.message,
+          },
+        }),
+        [status.NOT_FOUND]: (e) => ({
+          404: {
+            code: "NOT_FOUND" as const,
+            message: e.details || e.message,
           },
         }),
       }),

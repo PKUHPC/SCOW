@@ -41,6 +41,7 @@ export default {
     prompt: "Aviso",
     role: "Rol",
     add: "Agregar",
+    remove: "Eliminar",
     modify: "Modificar",
     cancel: "Cancelar",
     cluster: "Cluster",
@@ -682,7 +683,8 @@ export default {
         timeLimit: "Tiempo máximo de ejecución (minutos)",
         timeUsed: "Tiempo de ejecución del trabajo (segundos)",
         timeWait: "Tiempo de espera del trabajo (segundos)",
-        timeWaitTip: "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
+        timeWaitTip:
+          "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
         recordTime: "Hora de registro",
         workFee: "Precio del trabajo (CNY)",
         tenantFee: "Precio del inquilino (CNY)",
@@ -742,7 +744,8 @@ export default {
         timeLimit: "Tiempo máximo de ejecución",
         timeUsed: "Tiempo de ejecución",
         timeWait: "Tiempo de espera",
-        timeWaitTip: "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
+        timeWaitTip:
+          "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
         detail: "Detalles de trabajos sin finalizar",
       },
       runningJobTable: {
@@ -881,12 +884,13 @@ export default {
       defaultApps: {
         defaultAppsTable: {
           appName: "Nombre de la aplicación",
+          isDefault: "Aplicación autorizada por defecto",
+          yes: "Sí",
+          no: "No",
           operation: "Operación",
+          removeAction: "Retirar",
           removeFromDefaultApps: {
             title: "Eliminar aplicación autorizada por defecto",
-            confirmContent:
-              "¿Confirmar eliminar la aplicación {2} de las aplicaciones autorizadas por defecto " +
-              "para el inquilino {0} en el clúster {1}?",
             confirmWarn:
               "Después de eliminar de las aplicaciones autorizadas por defecto, todas las cuentas " +
               "bajo este inquilino cancelarán sincronizadamente la autorización de esta aplicación",
@@ -894,15 +898,8 @@ export default {
             removeFailedMessage: "Error al eliminar la aplicación autorizada por defecto",
           },
           addToDefaultApps: {
+            confirmWarn: "Después de añadirla, se autorizará para todas las cuentas de este inquilino",
             title: "Añadir aplicación autorizada por defecto",
-            tenant: "Inquilino",
-            cluster: "Clúster",
-            modalWarn:
-              "Tras añadir a aplicaciones autorizadas por defecto, todas las cuentas bajo este inquilino " +
-              "añadirán sincronizadamente la autorización de esta aplicación",
-            app: "Aplicación",
-            appDefaultPlaceholder: "Seleccione una aplicación",
-            noAppsPlaceholder: "No hay aplicaciones disponibles",
             addSuccessMessage: "Aplicación autorizada por defecto añadida",
             addFailedMessage: "Error al añadir aplicación autorizada por defecto",
           },
@@ -2025,11 +2022,13 @@ export default {
         " Usar valor por defecto del inquilino: {4}",
       setTenantUserDefaultQuota: "Inquilino: {0}, Clúster: {1}, Ruta: {2}, Cuota de almacenamiento: {3}",
       syncTenantUsersStorageUsage: "Inquilino: {0}, Clúster: {1}, Ruta: {2}",
-      tenantAppAuthorizationLog: "Clúster: {0}, Aplicación: {1}, Inquilino: {2}",
-      accountAppAuthorizationLog: "Clúster: {0}, Aplicación: {1}, Cuenta: {2}",
+      hpcAppScope: "HPC",
+      aiAppScope: "AI",
+      tenantAppAuthorizationLog: "Clúster: {0}, Aplicación: {1} ({3}), Inquilino: {2}",
+      accountAppAuthorizationLog: "Clúster: {0}, Aplicación: {1} ({3}), Cuenta: {2}",
       migrateNode: "Nodo: {}, Clúster origen: {}, Clúster destino: {}",
       activateNode: "Nodo: {}, Clúster: {}",
-      updateDefaultApp: "Clúster: {0}, Aplicación: {1}, Inquilino: {2}",
+      updateDefaultApp: "Clúster: {0}, Aplicación: {1} ({3}), Inquilino: {2}",
       changeJobPrice: "Clúster: {}, ID de trabajo: {}, Precio (CNY): {}",
       changeJobPlatformPrice: "Clúster: {}, ID de trabajo: {}, Cargo de plataforma (CNY): {}",
     },

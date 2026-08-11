@@ -844,6 +844,7 @@ message AuthorizeApp {
     string account_name = 3;
     string tenant_name = 4;
   }
+  string app_scope = 5;
 }
 
 message UnauthorizeApp {
@@ -853,18 +854,21 @@ message UnauthorizeApp {
     string account_name = 3;
     string tenant_name = 4;
   }
+  string app_scope = 5;
 }
 
 message AddToDefaultApps {
   string cluster_id = 1;
   string app_name = 2;
   string tenant_name = 3;
+  string app_scope = 4;
 }
 
 message RemoveFromDefaultApps {
   string cluster_id = 1;
   string app_name = 2;
   string tenant_name = 3;
+  string app_scope = 4;
 }
 
 // Operation Log Message For Resource Management:

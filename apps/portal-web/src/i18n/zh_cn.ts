@@ -591,6 +591,7 @@ export default {
       },
       createApps: {
         notFoundMessage: "没有可以创建的应用",
+        appUnauthorized: "当前应用未授权",
         loading: "正在加载可创建的应用",
         create: "创建",
         cluster: "集群",

@@ -41,6 +41,7 @@ export default {
     prompt: "Prompt",
     role: "Role",
     add: "Add",
+    remove: "Remove",
     modify: "Modify",
     cancel: "Cancel",
     cluster: "Cluster",
@@ -891,12 +892,13 @@ export default {
       defaultApps: {
         defaultAppsTable: {
           appName: "Application Name",
+          isDefault: "Default Authorized Application",
+          yes: "Yes",
+          no: "No",
           operation: "Operation",
+          removeAction: "Remove",
           removeFromDefaultApps: {
             title: "Remove Default Authorized Application",
-            confirmContent:
-              "Confirm removing application {2} from default authorized " +
-              "applications for tenant {0} in cluster {1}?",
             confirmWarn:
               "After removing from default authorized applications, all accounts " +
               "under this tenant will synchronously cancel the authorization of this application",
@@ -904,15 +906,8 @@ export default {
             removeFailedMessage: "Failed to remove default authorized application",
           },
           addToDefaultApps: {
+            confirmWarn: "After adding it, all accounts under this tenant will be authorized to use this application",
             title: "Add Default Authorized Application",
-            tenant: "Tenant",
-            cluster: "Cluster",
-            modalWarn:
-              "After adding to default authorized applications, all accounts under this tenant " +
-              "will synchronously add the authorization of this application",
-            app: "Application",
-            appDefaultPlaceholder: "Please select an application",
-            noAppsPlaceholder: "No available applications",
             addSuccessMessage: "Default authorized application added",
             addFailedMessage: "Failed to add default authorized application",
           },
@@ -2081,11 +2076,13 @@ export default {
       batchSetTenantUsersQuota: "Users: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}, Use Tenant Default: {4}",
       setTenantUserDefaultQuota: "Tenant: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}",
       syncTenantUsersStorageUsage: "Tenant: {0}, Cluster: {1}, Path: {2}",
-      tenantAppAuthorizationLog: "Cluster: {0}, Application: {1}, Tenant: {2}",
-      accountAppAuthorizationLog: "Cluster: {0}, Application: {1}, Account: {2}",
+      hpcAppScope: "HPC",
+      aiAppScope: "AI",
+      tenantAppAuthorizationLog: "Cluster: {0}, Application: {1} ({3}), Tenant: {2}",
+      accountAppAuthorizationLog: "Cluster: {0}, Application: {1} ({3}), Account: {2}",
       migrateNode: "Node: {}, Source Cluster: {}, Target cluster: {}",
       activateNode: "Node: {}, Cluster: {}",
-      updateDefaultApp: "Cluster: {0}, Application: {1}, Tenant: {2}",
+      updateDefaultApp: "Cluster: {0}, Application: {1} ({3}), Tenant: {2}",
       tenantClusterAuthorizationLog: "Cluster: {0}, Tenant: {1}",
       accountClusterAuthorizationLog: "Cluster: {0}, Account: {1}",
       tenantPartitionAuthorizationLog: "Cluster: {0}, Partition: {1}, Tenant: {2}",

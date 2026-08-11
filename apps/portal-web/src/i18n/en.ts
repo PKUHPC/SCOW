@@ -609,6 +609,7 @@ export default {
       },
       createApps: {
         notFoundMessage: "No application available for creation.",
+        appUnauthorized: "The current application is not authorized.",
         loading: "Loading available applications...",
         create: "Create",
         cluster: "cluster",

@@ -10,11 +10,28 @@ import {
 import { Logger } from "pino";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
+import { AppScope } from "src/entities/AppScope";
 import { Cluster } from "src/entities/Cluster";
 import { Tenant } from "src/entities/Tenant";
 import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User } from "src/entities/User";
+
+/**
+ * 批量写入账户黑名单时，唯一业务键冲突表示该记录已经存在，不应让整个授权操作失败。
+ * 已存在记录由调用方使用其查询结果记录；这里使用 upsert 的 ignore 模式处理并发写入。
+ */
+async function upsertAccountBlacklistIgnoringDuplicates(
+  em: SqlEntityManager<MySqlDriver>,
+  items: AccountAppBlacklist[],
+): Promise<void> {
+  if (items.length === 0) return;
+
+  await em.upsertMany(AccountAppBlacklist, items, {
+    onConflictFields: ["cluster", "account", "appScope", "appId"],
+    onConflictAction: "ignore",
+  });
+}
 
 /**
  * 封装租户或账户的应用列表，返回对应集群下的禁用与可用app
@@ -123,6 +140,7 @@ export async function authorizeAccountApp(
   accountName: string,
   clusterId: string,
   appId: string,
+  appScope: AppScope,
   action: AuthorizeAppRequest_AuthorizeAction,
   foundCluster: Loaded<Cluster, never, "*", never>,
   foundOperator: Loaded<User, never, "*", never>,
@@ -131,9 +149,11 @@ export async function authorizeAccountApp(
   const foundAccount = await em.findOne(Account, { accountName: accountName }, { populate: ["tenant"] });
   // 检查当前appId是否不在租户禁用app列表之中
   if (!foundAccount || foundAccount?.state === AccountState.DELETED) {
+    const details = `Account ${accountName} is not found or has been deleted.`;
     throw new ServiceError({
       code: Status.NOT_FOUND,
-      message: `Account ${accountName} is not found or has been deleted.`,
+      message: details,
+      details,
     });
   }
   const tenantName = foundAccount?.tenant.getProperty("name");
@@ -141,17 +161,23 @@ export async function authorizeAccountApp(
     cluster: { clusterId: clusterId },
     tenant: { name: tenantName },
     appId: appId,
+    appScope,
   });
   if (foundDisabledApp) {
+    const details =
+      `App "${appId}" with appScope "${appScope}" is not authorized for tenant "${tenantName}" ` +
+      `in cluster "${clusterId}".`;
     throw new ServiceError({
       code: Status.UNAVAILABLE,
-      message: `Can not authorize the app ${appId} which is not authorized to account's tenant ${tenantName}.`,
+      message: details,
+      details,
     });
   }
 
   const accountDisabledAppItem = await em.findOne(AccountAppBlacklist, {
     account: { accountName: accountName },
     appId: appId,
+    appScope,
     cluster: { clusterId: clusterId },
   });
   // 如果是授权交互式应用，则判断是否在当前账户禁用列表
@@ -172,6 +198,7 @@ export async function authorizeAccountApp(
       const newItem = new AccountAppBlacklist({
         account: foundAccount,
         appId: appId,
+        appScope,
         cluster: foundCluster,
         operator: foundOperator,
       });
@@ -197,6 +224,7 @@ export async function authorizeTenantApp(
   tenantName: string,
   clusterId: string,
   appId: string,
+  appScope: AppScope,
   action: AuthorizeAppRequest_AuthorizeAction,
   foundCluster: Loaded<Cluster, never, "*", never>,
   foundOperator: Loaded<User, never, "*", never>,
@@ -210,15 +238,18 @@ export async function authorizeTenantApp(
         cluster: { clusterId: clusterId },
         tenant: { name: tenantName },
         appId: appId,
+        appScope,
       },
       { populate: ["tenant", "cluster"] },
     ),
   ]);
 
   if (!foundTenant) {
+    const details = `Tenant ${tenantName} is not found.`;
     throw new ServiceError({
       code: Status.NOT_FOUND,
-      message: `Tenant ${tenantName} is not found.`,
+      message: details,
+      details,
     });
   }
 
@@ -248,8 +279,22 @@ export async function authorizeTenantApp(
         account: { tenant: { name: tenantName } },
         cluster: { clusterId: clusterId },
         appId: appId,
+        appScope,
       }),
     ]);
+
+    if (existingBlacklists.length > 0) {
+      logger.warn(
+        {
+          clusterId,
+          appScope,
+          appId,
+          existingAccountIds: existingBlacklists.map((item) => item.account.id),
+          existingCount: existingBlacklists.length,
+        },
+        "Some account app blacklist records already exist; skip existing records",
+      );
+    }
 
     // 创建已存在账户的集合，用于快速查找
     const existingAccountIds = new Set(existingBlacklists.map((item) => item.account.id));
@@ -262,14 +307,15 @@ export async function authorizeTenantApp(
           new AccountAppBlacklist({
             account,
             appId,
+            appScope,
             cluster: foundCluster,
             operator: foundOperator,
           }),
       );
 
     if (newBlacklistItems.length > 0) {
-      // 使用InsertMany减少事务内数据更新时间
-      await em.insertMany(AccountAppBlacklist, newBlacklistItems);
+      // 使用忽略冲突的批量 upsert，避免并发或历史重复数据中断整个租户操作
+      await upsertAccountBlacklistIgnoringDuplicates(em, newBlacklistItems);
     }
 
     // 移出租户的默认授权应用
@@ -279,6 +325,7 @@ export async function authorizeTenantApp(
         cluster: { clusterId: clusterId },
         tenant: { name: tenantName },
         appId: appId,
+        appScope,
       },
       { populate: ["tenant", "cluster"] },
     );
@@ -289,6 +336,7 @@ export async function authorizeTenantApp(
       const newRemovedDefaultItem = new TenantDefaultAppRemovedList({
         tenant: foundTenant,
         appId: appId,
+        appScope,
         cluster: foundCluster,
       });
       em.persist(newRemovedDefaultItem);
@@ -301,6 +349,7 @@ export async function authorizeTenantApp(
       const newItem = new TenantAppBlacklist({
         tenant: foundTenant,
         appId: appId,
+        appScope,
         cluster: foundCluster,
         operator: foundOperator,
       });
@@ -315,6 +364,7 @@ export async function addToTenantDefaultApps(
   clusterId: string,
   tenantName: string,
   appId: string,
+  appScope: AppScope,
   foundCluster: Loaded<Cluster, never, "*", never>,
   logger: Logger,
   foundRemovedApp: Loaded<TenantDefaultAppRemovedList, "tenant" | "cluster", "*", never> | null,
@@ -323,9 +373,13 @@ export async function addToTenantDefaultApps(
   // 表示此应用已经被添加过默认应用
   // 提示错误信息，不更新账户数据
   if (!foundRemovedApp) {
+    const details =
+      `App "${appId}" with appScope "${appScope}" in cluster "${clusterId}" is already a default ` +
+      `application for tenant "${tenantName}".`;
     throw new ServiceError({
       code: Status.ALREADY_EXISTS,
-      message: `The app ${appId} in cluster ${clusterId} has already been default app of tenant ${tenantName}`,
+      message: details,
+      details,
     });
 
     // 从已移除默认应用表单中删除
@@ -335,6 +389,7 @@ export async function addToTenantDefaultApps(
       account: { tenant: { name: tenantName } },
       cluster: foundCluster,
       appId: appId,
+      appScope,
     });
     await em.removeAndFlush(foundRemovedApp);
     logger.info(`Removed ${deletedCount} blacklist entries for app ${appId} in tenant ${tenantName}`);
@@ -346,6 +401,7 @@ export async function removeFromTenantDefaultApps(
   clusterId: string,
   tenantName: string,
   appId: string,
+  appScope: AppScope,
   foundTenant: Loaded<Tenant, never, "*", never>,
   foundCluster: Loaded<Cluster, never, "*", never>,
   foundOperator: Loaded<User, never, "*", never>,
@@ -355,11 +411,13 @@ export async function removeFromTenantDefaultApps(
   // 已经从默认应用中移除时
   // 提示错误信息，不更新账户数据
   if (foundRemovedApp) {
+    const details =
+      `App "${appId}" with appScope "${appScope}" in cluster "${clusterId}" has already been removed ` +
+      `from default applications of tenant "${tenantName}".`;
     throw new ServiceError({
       code: Status.ALREADY_EXISTS,
-      message:
-        `The app ${appId} in cluster ${clusterId} has already been removed from ` +
-        `default apps of tenant ${tenantName}`,
+      message: details,
+      details,
     });
 
     // 移除默认应用
@@ -379,8 +437,22 @@ export async function removeFromTenantDefaultApps(
         account: { tenant: { name: tenantName } },
         cluster: { clusterId: clusterId },
         appId: appId,
+        appScope,
       }),
     ]);
+
+    if (existingBlacklists.length > 0) {
+      logger.warn(
+        {
+          clusterId,
+          appScope,
+          appId,
+          existingAccountIds: existingBlacklists.map((item) => item.account.id),
+          existingCount: existingBlacklists.length,
+        },
+        "Some account app blacklist records already exist; skip existing records",
+      );
+    }
 
     // 创建已存在账户的集合，用于快速查找
     const existingAccountIds = new Set(existingBlacklists.map((item) => item.account.id));
@@ -393,20 +465,22 @@ export async function removeFromTenantDefaultApps(
           new AccountAppBlacklist({
             account,
             appId,
+            appScope,
             cluster: foundCluster,
             operator: foundOperator,
           }),
       );
 
     if (newBlacklistItems.length > 0) {
-      // 使用InsertMany减少事务内数据更新时间
-      await em.insertMany(AccountAppBlacklist, newBlacklistItems);
+      // 使用忽略冲突的批量 upsert，避免并发或历史重复数据中断整个默认应用操作
+      await upsertAccountBlacklistIgnoringDuplicates(em, newBlacklistItems);
     }
 
     // 添加要移除的租户应用到租户默认应用移除表单
     const newItem = new TenantDefaultAppRemovedList({
       tenant: foundTenant,
       appId: appId,
+      appScope,
       cluster: foundCluster,
     });
     await em.persistAndFlush(newItem);

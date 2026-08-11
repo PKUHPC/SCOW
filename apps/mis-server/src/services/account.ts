@@ -430,6 +430,7 @@ export const accountServiceServer = plugin((server) => {
             account: account,
             cluster: t.cluster,
             appId: t.appId,
+            appScope: t.appScope,
           });
         });
         // 将禁用应用列表添加到要持久化的实体列表中

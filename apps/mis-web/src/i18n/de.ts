@@ -41,6 +41,7 @@ export default {
     prompt: "Hinweis",
     role: "Rolle",
     add: "Hinzufügen",
+    remove: "Entfernen",
     modify: "Bearbeiten",
     cancel: "Abbrechen",
     cluster: "Cluster",
@@ -691,7 +692,8 @@ export default {
         timeLimit: "Maximale Laufzeit (Minuten)",
         timeUsed: "Ausführungszeit des Jobs (Sekunden)",
         timeWait: "Wartezeit des Jobs (Sekunden)",
-        timeWaitTip: "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
+        timeWaitTip:
+          "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
         recordTime: "Erfassungszeit",
         workFee: "Job-Abrechnung (CNY)",
         tenantFee: "Mandantenabrechnung (CNY)",
@@ -750,7 +752,8 @@ export default {
         timeLimit: "Maximale Laufzeit",
         timeUsed: "Ausführungszeit",
         timeWait: "Wartezeit",
-        timeWaitTip: "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
+        timeWaitTip:
+          "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
         detail: "Details laufender Jobs",
       },
       runningJobTable: {
@@ -889,12 +892,13 @@ export default {
       defaultApps: {
         defaultAppsTable: {
           appName: "Anwendungsname",
+          isDefault: "Standardmäßig autorisierte Anwendung",
+          yes: "Ja",
+          no: "Nein",
           operation: "Aktion",
+          removeAction: "Entfernen",
           removeFromDefaultApps: {
             title: "Standardmäßig autorisierte Anwendung entfernen",
-            confirmContent:
-              "Entfernen der Anwendung {2} aus den standardmäßig autorisierten " +
-              "Anwendungen für Mandant {0} im Cluster {1} bestätigen?",
             confirmWarn:
               "Nach dem Entfernen aus den standardmäßig autorisierten Anwendungen " +
               "heben alle Konten unter diesem Mandanten die Autorisierung für diese Anwendung synchron auf",
@@ -902,15 +906,8 @@ export default {
             removeFailedMessage: "Entfernen der standardmäßig autorisierten Anwendung fehlgeschlagen",
           },
           addToDefaultApps: {
+            confirmWarn: "Danach wird die Anwendung für alle Konten dieses Mandanten autorisiert",
             title: "Standardmäßig autorisierte Anwendung hinzufügen",
-            tenant: "Mandant",
-            cluster: "Cluster",
-            modalWarn:
-              "Nach dem Hinzufügen zu den standardmäßig autorisierten Anwendungen " +
-              "fügen alle Konten unter diesem Mandanten die Autorisierung für diese Anwendung synchron hinzu",
-            app: "Anwendung",
-            appDefaultPlaceholder: "Bitte eine Anwendung auswählen",
-            noAppsPlaceholder: "Keine verfügbaren Anwendungen",
             addSuccessMessage: "Standardmäßig autorisierte Anwendung hinzugefügt",
             addFailedMessage: "Hinzufügen der standardmäßig autorisierten Anwendung fehlgeschlagen",
           },
@@ -2043,11 +2040,13 @@ export default {
         "Benutzer: {0}, Cluster: {1}, Pfad: {2}, Speicherkontingent: {3}," + " Mandantenstandard verwenden: {4}",
       setTenantUserDefaultQuota: "Mandant: {0}, Cluster: {1}, Pfad: {2}, Speicherkontingent: {3}",
       syncTenantUsersStorageUsage: "Mandant: {0}, Cluster: {1}, Pfad: {2}",
-      tenantAppAuthorizationLog: "Cluster: {0}, Anwendung: {1}, Mandant: {2}",
-      accountAppAuthorizationLog: "Cluster: {0}, Anwendung: {1}, Konto: {2}",
+      hpcAppScope: "HPC",
+      aiAppScope: "AI",
+      tenantAppAuthorizationLog: "Cluster: {0}, Anwendung: {1} ({3}), Mandant: {2}",
+      accountAppAuthorizationLog: "Cluster: {0}, Anwendung: {1} ({3}), Konto: {2}",
       migrateNode: "Knoten: {}, Quell-Cluster: {}, Ziel-Cluster: {}",
       activateNode: "Knoten: {}, Cluster: {}",
-      updateDefaultApp: "Cluster: {0}, Anwendung: {1}, Mandant: {2}",
+      updateDefaultApp: "Cluster: {0}, Anwendung: {1} ({3}), Mandant: {2}",
       changeJobPrice: "Cluster: {}, Job-ID: {}, Preis (CNY): {}",
       changeJobPlatformPrice: "Cluster: {}, Job-ID: {}, Plattformgebühr (CNY): {}",
     },

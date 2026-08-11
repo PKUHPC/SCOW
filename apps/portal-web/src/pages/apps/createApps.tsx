@@ -1,4 +1,5 @@
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
+import { message } from "antd";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
@@ -37,6 +38,7 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
 
   const { currentClusters, defaultCluster, setDefaultCluster } = useStore(ClusterInfoStore);
   const t = useI18nTranslateToString();
+  const appUnauthorizedMessage = t("pageComp.app.createApps.appUnauthorized");
 
   const [selectedAppInfo, setSelectedAppInfo] = useState<App>();
   const [selectedCluster, _setSelectedCluster] = useState<string | undefined>(clusterId || defaultCluster?.id);
@@ -83,10 +85,17 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
 
     if (appId) {
       appInfo = allApps?.find((app) => app.id === appId);
+      const clusterApps = clusterAppsList?.find((clusterApp) => clusterApp.clusterId === clusterId);
+      if (clusterApps && !appInfo) {
+        message.error({
+          content: appUnauthorizedMessage,
+          key: `app-unauthorized-${clusterId}-${appId}`,
+        });
+      }
     }
 
     setSelectedAppInfo(appInfo);
-  }, [clusterAppsList]);
+  }, [appId, appUnauthorizedMessage, clusterAppsList, clusterId]);
 
   useEffect(() => {
     if (selectedCluster) {

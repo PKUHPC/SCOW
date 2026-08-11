@@ -41,6 +41,7 @@ export default {
     prompt: "알림",
     role: "역할",
     add: "추가",
+    remove: "제거",
     modify: "수정",
     cancel: "취소",
     cluster: "클러스터",
@@ -838,24 +839,21 @@ export default {
       defaultApps: {
         defaultAppsTable: {
           appName: "애플리케이션 이름",
+          isDefault: "기본 권한 애플리케이션",
+          yes: "예",
+          no: "아니요",
           operation: "작업",
+          removeAction: "제거",
           removeFromDefaultApps: {
             title: "기본 권한 애플리케이션 제거",
-            confirmContent: "클러스터 {1}의 테넌트 {0}에서 기본 권한 애플리케이션 {2}을(를) 제거하시겠습니까?",
             confirmWarn:
               "기본 권한 애플리케이션에서 제거하면 해당 테넌트의 모든 계정에서 이 애플리케이션 권한이 동기적으로 취소됩니다",
             removeSuccessMessage: "기본 권한 애플리케이션에서 제거됨",
             removeFailedMessage: "기본 권한 애플리케이션 제거 실패",
           },
           addToDefaultApps: {
+            confirmWarn: "추가하면 이 테넌트의 모든 계정에 애플리케이션 권한이 부여됩니다",
             title: "기본 권한 애플리케이션 추가",
-            tenant: "테넌트",
-            cluster: "클러스터",
-            modalWarn:
-              "기본 권한 애플리케이션에 추가하면 해당 테넌트의 모든 계정에 이 애플리케이션 권한이 동기적으로 추가됩니다",
-            app: "애플리케이션",
-            appDefaultPlaceholder: "애플리케이션을 선택하세요",
-            noAppsPlaceholder: "사용 가능한 애플리케이션 없음",
             addSuccessMessage: "기본 권한 애플리케이션 추가됨",
             addFailedMessage: "기본 권한 애플리케이션 추가 실패",
           },
@@ -1342,8 +1340,7 @@ export default {
       },
       importUsers: {
         importUserInfo: "사용자 가져오기",
-        importUserAlertInfo1:
-          "클러스터의 사용자 및 계정 데이터를 계정 단위로 플랫폼 default 테넌트로 가져옵니다.",
+        importUserAlertInfo1: "클러스터의 사용자 및 계정 데이터를 계정 단위로 플랫폼 default 테넌트로 가져옵니다.",
         importUserAlertInfo2:
           "권한 관리 기능이 활성화된 경우 가져오기에 성공하면 계정의 승인된 클러스터, 파티션 및 애플리케이션 정보가 플랫폼의 관련 권한 설정에 따라 재설정됩니다.",
       },
@@ -1901,8 +1898,10 @@ export default {
         "사용자들: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}, 테넌트 기본값 사용: {4}",
       setTenantUserDefaultQuota: "테넌트: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}",
       syncTenantUsersStorageUsage: "테넌트: {0}, 클러스터: {1}, 경로: {2}",
-      tenantAppAuthorizationLog: "클러스터: {0}, 애플리케이션: {1}, 테넌트: {2}",
-      accountAppAuthorizationLog: "클러스터: {0}, 애플리케이션: {1}, 계정: {2}",
+      hpcAppScope: "HPC",
+      aiAppScope: "AI",
+      tenantAppAuthorizationLog: "클러스터: {0}, 애플리케이션: {1} ({3}), 테넌트: {2}",
+      accountAppAuthorizationLog: "클러스터: {0}, 애플리케이션: {1} ({3}), 계정: {2}",
       migrateNode: "노드: {}, 원본 클러스터: {}, 대상 클러스터: {}",
       activateNode: "노드: {}, 클러스터: {}",
       updateDefaultApp: "클러스터: {0}, 애플리케이션: {1}, 테넌트: {2}",

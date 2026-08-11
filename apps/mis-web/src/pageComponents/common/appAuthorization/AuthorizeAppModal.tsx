@@ -9,13 +9,14 @@ import { api } from "src/apis";
 import { FilterFormContainerWithoutBorder } from "src/components/FilterFormContainer";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { AppAuthTargetType, AuthorizeAction } from "src/models/app";
+import { AppAuthTargetType, AppScope, AuthorizeAction } from "src/models/app";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 
 interface Props {
   targetType: AppAuthTargetType;
   targetName: string;
   clusterId: string;
+  appScope: AppScope;
   appsInfo: AppAuthorizationInfo[];
   onClose: () => void;
   reload: () => void;
@@ -34,6 +35,7 @@ const AuthorizeAppModal: React.FC<Props> = ({
   targetType,
   targetName,
   clusterId,
+  appScope,
   appsInfo,
   onClose,
   reload,
@@ -48,6 +50,7 @@ const AuthorizeAppModal: React.FC<Props> = ({
   };
   const [query, setQuery] = useState<FilterForm>(initialFilterQuery);
   const [loading, setLoading] = useState(false);
+  const [displayedAppsInfo, setDisplayedAppsInfo] = useState(appsInfo);
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
@@ -64,13 +67,20 @@ const AuthorizeAppModal: React.FC<Props> = ({
           targetType,
           targetName,
           clusterId,
+          appScope,
           appId,
-          appName: getI18nConfigCurrentText(appsInfo.find((app) => app.appId === appId)?.appName, languageId) ?? "",
+          appName:
+            getI18nConfigCurrentText(displayedAppsInfo.find((app) => app.appId === appId)?.appName, languageId) ?? "",
           action,
         },
       })
       .then((res) => {
         if (res.executed) {
+          setDisplayedAppsInfo((current) =>
+            current.map((app) =>
+              app.appId === appId ? { ...app, isDisabled: action === AuthorizeAction.UNAUTHORIZE } : app,
+            ),
+          );
           message.success(
             action === AuthorizeAction.AUTHORIZE
               ? t(p("messages.authorizeSuccess"))
@@ -91,15 +101,19 @@ const AuthorizeAppModal: React.FC<Props> = ({
 
   // 前端过滤查询结果
   const filteredData = useMemo(() => {
-    if (!appsInfo) return undefined;
+    if (!displayedAppsInfo) return undefined;
     if (!query.appName) {
-      return appsInfo;
+      return displayedAppsInfo;
     }
-    const filteredValues = appsInfo.filter((app) =>
+    const filteredValues = displayedAppsInfo.filter((app) =>
       app.appName.toLowerCase().includes(query.appName?.toLowerCase() || ""),
     );
     return filteredValues;
-  }, [appsInfo, query]);
+  }, [displayedAppsInfo, query]);
+
+  useEffect(() => {
+    setDisplayedAppsInfo(appsInfo);
+  }, [appsInfo]);
 
   useEffect(() => {
     if (open) {
@@ -109,7 +123,13 @@ const AuthorizeAppModal: React.FC<Props> = ({
   }, [open, filterForm]);
 
   return (
-    <Modal title={t(p("title"))} open={open} confirmLoading={loading} onCancel={onClose} footer={null}>
+    <Modal
+      title={<span style={{ fontWeight: 600 }}>{t(p("title"))}</span>}
+      open={open}
+      confirmLoading={loading}
+      onCancel={onClose}
+      footer={null}
+    >
       <>
         <div style={{ marginBottom: "8px" }}>
           {targetType === AppAuthTargetType.TENANT ? t(p("tenant")) : t(p("account"))}：<span>{targetName}</span>

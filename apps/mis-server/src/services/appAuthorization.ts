@@ -1,7 +1,7 @@
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { raw } from "@mikro-orm/core";
+import { raw, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { getI18nSeverTypeFormat, libCheckActivatedClusters, libCheckAppIdInClusterApps } from "@scow/lib-server";
 import {
   AppAuthorizationInfo,
@@ -17,6 +17,7 @@ import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
+import { AppScope as EntityAppScope } from "src/entities/AppScope";
 import { Cluster } from "src/entities/Cluster";
 import { Tenant } from "src/entities/Tenant";
 import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
@@ -34,17 +35,66 @@ import {
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 
+const APP_AUTHORIZATION_NOT_SUPPORTED = "App Authorization is not supported. Please confirm the common config file.";
+
+const formatAppScope = (appScope: AppScope | undefined) => {
+  if (appScope === undefined) return "undefined";
+  return `${AppScope[appScope] ?? "UNKNOWN"} (${appScope})`;
+};
+
+// 显式传入的 appScope 优先；旧调用方未传时，仅在集群只启用一个平台的情况下从配置推断。
+const parseAppScope = (clusterId: string, appScope: AppScope | undefined): EntityAppScope => {
+  if (appScope === AppScope.HPC) return EntityAppScope.HPC;
+  if (appScope === AppScope.AI) return EntityAppScope.AI;
+
+  if (appScope !== undefined && appScope !== AppScope.APP_SCOPE_UNSPECIFIED) {
+    const details =
+      `Invalid appScope "${formatAppScope(appScope)}" for cluster "${clusterId}". ` +
+      `Expected HPC (${AppScope.HPC}) or AI (${AppScope.AI}).`;
+    throw new ServiceError({ code: Status.INVALID_ARGUMENT, message: details, details });
+  }
+
+  const clusterConfig = configClusters[clusterId];
+  if (!clusterConfig) {
+    const details = `Cluster configuration for "${clusterId}" was not found while resolving appScope.`;
+    throw new ServiceError({ code: Status.NOT_FOUND, message: details, details });
+  }
+
+  const hpcEnabled = clusterConfig.hpc.enabled;
+  const aiEnabled = clusterConfig.ai.enabled;
+  if (hpcEnabled && !aiEnabled) return EntityAppScope.HPC;
+  if (aiEnabled && !hpcEnabled) return EntityAppScope.AI;
+
+  if (hpcEnabled && aiEnabled) {
+    const details =
+      `appScope is required for cluster "${clusterId}" because both HPC and AI applications are enabled. ` +
+      "The caller must specify HPC or AI.";
+    throw new ServiceError({ code: Status.INVALID_ARGUMENT, message: details, details });
+  }
+
+  const details =
+    `appScope cannot be inferred for cluster "${clusterId}" because neither HPC nor AI applications are enabled. ` +
+    "The caller must specify an enabled application scope.";
+  throw new ServiceError({ code: Status.INVALID_ARGUMENT, message: details, details });
+};
+
 const resolveClusterApps = (clusterId: string, appScope: AppScope | undefined) => {
-  const useAiApps = appScope === AppScope.AI || (appScope !== AppScope.HPC && configClusters[clusterId].ai?.enabled);
+  const parsedScope = parseAppScope(clusterId, appScope);
+  const clusterConfig = configClusters[clusterId];
+  const scopeConfig = parsedScope === EntityAppScope.AI ? clusterConfig.ai : clusterConfig.hpc;
+  if (!scopeConfig.enabled) {
+    const details = `${parsedScope} applications are not enabled in cluster "${clusterId}".`;
+    throw new ServiceError({ code: Status.INVALID_ARGUMENT, message: details, details });
+  }
 
   logger.trace(
     "Resolving apps in cluster %s with appScope %s, using %s app configs.",
     clusterId,
-    appScope === undefined ? "undefined" : AppScope[appScope],
-    useAiApps ? "AI" : "HPC",
+    parsedScope,
+    parsedScope,
   );
 
-  return useAiApps ? getAiClusterAppConfigs(clusterId) : getClusterAppConfigs(clusterId);
+  return parsedScope === EntityAppScope.AI ? getAiClusterAppConfigs(clusterId) : getClusterAppConfigs(clusterId);
 };
 
 export const appAuthorizationServiceServer = plugin((server) => {
@@ -54,16 +104,22 @@ export const appAuthorizationServiceServer = plugin((server) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
-          message: "App Authorization is not supported. Please confirm the common config file.",
+          message: APP_AUTHORIZATION_NOT_SUPPORTED,
+          details: APP_AUTHORIZATION_NOT_SUPPORTED,
         });
       }
 
       const { pageSize, page, clusterId, targetType, tenantName, filterTargetName, filterAccountOwnerIdOrName } =
         request;
+      const appScope = parseAppScope(clusterId, request.appScope);
       if (targetType === GetTargetAppAuthorizationsRequest_TargetType.UNKNOWN) {
+        const details =
+          `Invalid targetType "${GetTargetAppAuthorizationsRequest_TargetType[targetType]}" (${targetType}). ` +
+          "Expected TENANT or ACCOUNT.";
         throw new ServiceError({
           code: Status.INVALID_ARGUMENT,
-          message: "Request target of tenant or account is not found.",
+          message: details,
+          details,
         });
       }
 
@@ -75,11 +131,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
       // 获得集群下交互式应用列表
       const clusterConfigAppInfos: Record<string, AppAuthorizationInfo[]> = {};
       const clusterAppIds: Record<string, string[]> = {};
-      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-      // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
-      const clusterApps = configClusters[clusterId].ai?.enabled
-        ? getAiClusterAppConfigs(clusterId)
-        : getClusterAppConfigs(clusterId);
+      const clusterApps = resolveClusterApps(clusterId, request.appScope);
       clusterAppIds[clusterId] = Object.keys(clusterApps);
       clusterConfigAppInfos[clusterId] = Object.keys(clusterApps).map((x) => {
         return {
@@ -105,6 +157,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
           {
             ...clusterSearchParam,
             tenant: { name: { $in: tenantNames } },
+            appScope,
           },
           {
             populate: ["cluster", "tenant"],
@@ -148,13 +201,24 @@ export const appAuthorizationServiceServer = plugin((server) => {
             "a.state": { $ne: AccountState.DELETED },
           });
 
+        // filter 条件变更为 二选一不再支持聚合搜索后的 兜底处理
+        // 该判断正常不会触发，只是在代码层面避免同时传参时静默忽略其中一个参数。
+        if (filterTargetName && filterAccountOwnerIdOrName) {
+          const details =
+            "Only one account search filter can be used at a time: filterTargetName or " +
+            "filterAccountOwnerIdOrName.";
+          throw new ServiceError({
+            code: Status.INVALID_ARGUMENT,
+            message: details,
+            details,
+          });
+        }
+
         if (filterTargetName) {
           qb.andWhere({
             "a.account_name": { $like: `%${filterTargetName}%` },
           });
-        }
-
-        if (filterAccountOwnerIdOrName) {
+        } else if (filterAccountOwnerIdOrName) {
           qb.andWhere({
             $or: [
               { "u.user_id": { $like: `%${filterAccountOwnerIdOrName}%` } },
@@ -191,6 +255,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
             {
               ...clusterSearchParam,
               account: { accountName: { $in: accountNames } },
+              appScope,
             },
             { populate: ["cluster", "account"] },
           ),
@@ -199,6 +264,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
             {
               ...clusterSearchParam,
               tenant: { name: associatedTenant },
+              appScope,
             },
             { populate: ["cluster", "tenant"] },
           ),
@@ -224,89 +290,106 @@ export const appAuthorizationServiceServer = plugin((server) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
-          message: "App Authorization is not supported. Please confirm the common config file.",
+          message: APP_AUTHORIZATION_NOT_SUPPORTED,
+          details: APP_AUTHORIZATION_NOT_SUPPORTED,
         });
       }
 
       const { clusterId, appId, operatorId, action, target } = request;
+      const appScope = parseAppScope(clusterId, request.appScope);
 
       if (!target) {
+        const details =
+          `Authorization target is required for app "${appId}" with appScope "${appScope}" ` +
+          `in cluster "${clusterId}". Expected tenantName or accountName.`;
         throw new ServiceError({
           code: Status.INVALID_ARGUMENT,
-          message: "Request target of tenant or account is not found.",
+          message: details,
+          details,
         });
       }
 
-      return await em.transactional(async (em) => {
-        const [foundCluster, foundOperator] = await Promise.all([
-          em.findOne(Cluster, { clusterId: clusterId }),
-          em.findOne(User, { userId: operatorId }),
-        ]);
-        // 验证clusterId是否在当前在线集群中
-        if (!foundCluster) {
-          throw new ServiceError({
-            code: Status.NOT_FOUND,
-            message: `Cluster ${clusterId} is not found.`,
-          });
-        }
-        const currentActivatedClusters = await getActivatedClusters(em, logger);
-        libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
+      return await em
+        .transactional(async (em) => {
+          const [foundCluster, foundOperator] = await Promise.all([
+            em.findOne(Cluster, { clusterId: clusterId }),
+            em.findOne(User, { userId: operatorId }),
+          ]);
+          // 验证clusterId是否在当前在线集群中
+          if (!foundCluster) {
+            const details = `Cluster ${clusterId} is not found.`;
+            throw new ServiceError({
+              code: Status.NOT_FOUND,
+              message: details,
+              details,
+            });
+          }
+          const currentActivatedClusters = await getActivatedClusters(em, logger);
+          libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
-        // 验证user存在
-        if (!foundOperator || foundOperator.state === UserState.DELETED) {
-          throw new ServiceError({
-            code: Status.NOT_FOUND,
-            message: `Operator ${operatorId} is not found or deleted.`,
-          });
-        }
+          // 验证user存在
+          if (!foundOperator || foundOperator.state === UserState.DELETED) {
+            const details = `Operator ${operatorId} is not found or deleted.`;
+            throw new ServiceError({
+              code: Status.NOT_FOUND,
+              message: details,
+              details,
+            });
+          }
 
-        // 验证appId是否在当前交互式应用列表中
-        // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-        // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
-        const clusterApps = configClusters[clusterId].ai?.enabled
-          ? getAiClusterAppConfigs(clusterId)
-          : getClusterAppConfigs(clusterId);
+          const clusterApps = resolveClusterApps(clusterId, request.appScope);
 
-        libCheckAppIdInClusterApps({ appId, appIds: Object.keys(clusterApps), clusterId, logger });
+          libCheckAppIdInClusterApps({ appId, appIds: Object.keys(clusterApps), clusterId, logger });
 
-        if (target.$case === "accountName") {
-          await authorizeAccountApp(
-            em,
-            target.accountName,
-            clusterId,
-            appId,
-            action,
-            foundCluster,
-            foundOperator,
-            logger,
-          );
-          // ************************************对租户执行授权/取消授权APP操作************************************************
-        } else {
-          await authorizeTenantApp(
-            em,
-            target.tenantName,
-            clusterId,
-            appId,
-            action,
-            foundCluster,
-            foundOperator,
-            logger,
-          );
-        }
+          if (target.$case === "accountName") {
+            await authorizeAccountApp(
+              em,
+              target.accountName,
+              clusterId,
+              appId,
+              appScope,
+              action,
+              foundCluster,
+              foundOperator,
+              logger,
+            );
+            // ************************************对租户执行授权/取消授权APP操作************************************************
+          } else {
+            await authorizeTenantApp(
+              em,
+              target.tenantName,
+              clusterId,
+              appId,
+              appScope,
+              action,
+              foundCluster,
+              foundOperator,
+              logger,
+            );
+          }
 
-        return [{ executed: true }];
-      });
+          return [{ executed: true }] as [{ executed: boolean }];
+        })
+        .catch((error) => {
+          if (error instanceof UniqueConstraintViolationException) {
+            logger.info("App authorization was already updated by a concurrent request");
+            return [{ executed: true }] as [{ executed: boolean }];
+          }
+          throw error;
+        });
     },
 
     getUserAvailableClusterApps: async ({ request, em }) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
-          message: "App Authorization is not supported. Please confirm the common config file.",
+          message: APP_AUTHORIZATION_NOT_SUPPORTED,
+          details: APP_AUTHORIZATION_NOT_SUPPORTED,
         });
       }
 
       const { clusterId, userId } = request;
+      const appScope = parseAppScope(clusterId, request.appScope);
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
@@ -314,9 +397,11 @@ export const appAuthorizationServiceServer = plugin((server) => {
       return await em.transactional(async (em) => {
         const foundUser = await em.findOne(User, { userId: userId });
         if (!foundUser || foundUser.state === UserState.DELETED) {
+          const details = `User "${userId}" is not found or has been deleted.`;
           throw new ServiceError({
             code: Status.NOT_FOUND,
-            message: "User is not found or is deleted.",
+            message: details,
+            details,
           });
         }
 
@@ -324,9 +409,13 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
         const currentClusterAppIds = Object.keys(clusterApps);
         if (currentClusterAppIds.length === 0) {
+          const details =
+            `No applications are available for cluster "${clusterId}" with appScope "${appScope}". ` +
+            "Please check the cluster application configuration.";
           throw new ServiceError({
             code: Status.NOT_FOUND,
-            message: "No available apps. Please confirm the app config files.",
+            message: details,
+            details,
           });
         }
 
@@ -351,6 +440,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
           AccountAppBlacklist,
           {
             cluster: { clusterId: clusterId },
+            appScope,
             account: {
               accountName: { $in: accountNames },
             },
@@ -415,11 +505,13 @@ export const appAuthorizationServiceServer = plugin((server) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
-          message: "App Authorization is not supported. Please confirm the common config file.",
+          message: APP_AUTHORIZATION_NOT_SUPPORTED,
+          details: APP_AUTHORIZATION_NOT_SUPPORTED,
         });
       }
 
       const { clusterId, appId } = request;
+      const appScope = parseAppScope(clusterId, request.appScope);
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
@@ -427,9 +519,13 @@ export const appAuthorizationServiceServer = plugin((server) => {
       const clusterApps = resolveClusterApps(clusterId, request.appScope);
       const currentClusterAppIds = Object.keys(clusterApps);
       if (currentClusterAppIds.length === 0) {
+        const details =
+          `No applications are available for cluster "${clusterId}" with appScope "${appScope}". ` +
+          "Please check the cluster application configuration.";
         throw new ServiceError({
           code: Status.NOT_FOUND,
-          message: "No available apps. Please confirm the app config files.",
+          message: details,
+          details,
         });
       }
       libCheckAppIdInClusterApps({ appId, appIds: currentClusterAppIds, clusterId, logger });
@@ -440,6 +536,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
         .join("aab.account", "a")
         .select(raw("a.account_name AS accountName"))
         .where({ "aab.appId": appId })
+        .andWhere({ "aab.appScope": appScope })
         .andWhere({ "c.clusterId": clusterId })
         .andWhere({ "a.state": { $ne: AccountState.DELETED } })
         .execute();
@@ -454,11 +551,13 @@ export const appAuthorizationServiceServer = plugin((server) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
-          message: "App Authorization is not supported. Please confirm the common config file.",
+          message: APP_AUTHORIZATION_NOT_SUPPORTED,
+          details: APP_AUTHORIZATION_NOT_SUPPORTED,
         });
       }
 
       const { clusterId, appId, accountName } = request;
+      const appScope = parseAppScope(clusterId, request.appScope);
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
@@ -466,9 +565,13 @@ export const appAuthorizationServiceServer = plugin((server) => {
       const clusterApps = resolveClusterApps(clusterId, request.appScope);
       const currentClusterAppIds = Object.keys(clusterApps);
       if (currentClusterAppIds.length === 0) {
+        const details =
+          `No applications are available for cluster "${clusterId}" with appScope "${appScope}". ` +
+          "Please check the cluster application configuration.";
         throw new ServiceError({
           code: Status.NOT_FOUND,
-          message: "No available apps. Please confirm the app config files.",
+          message: details,
+          details,
         });
       }
       libCheckAppIdInClusterApps({ appId, appIds: currentClusterAppIds, clusterId, logger });
@@ -477,6 +580,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
         {
           cluster: { clusterId: clusterId },
           appId: appId,
+          appScope,
           account: { accountName: accountName },
         },
         {
@@ -491,19 +595,17 @@ export const appAuthorizationServiceServer = plugin((server) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
-          message: "App Authorization is not supported. Please confirm the common config file.",
+          message: APP_AUTHORIZATION_NOT_SUPPORTED,
+          details: APP_AUTHORIZATION_NOT_SUPPORTED,
         });
       }
 
       const { clusterId, tenantName } = request;
+      const appScope = parseAppScope(clusterId, request.appScope);
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
-      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-      // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
-      const clusterApps = configClusters[clusterId].ai?.enabled
-        ? getAiClusterAppConfigs(clusterId)
-        : getClusterAppConfigs(clusterId);
+      const clusterApps = resolveClusterApps(clusterId, request.appScope);
       const currentClusterAppIds = Object.keys(clusterApps);
       if (currentClusterAppIds.length === 0) {
         // 该集群下没有可以使用的交互式应用
@@ -517,6 +619,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
             {
               cluster: { clusterId },
               tenant: { name: tenantName },
+              appScope,
             },
             { populate: ["tenant", "cluster"] },
           ),
@@ -526,6 +629,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
             {
               cluster: { clusterId },
               tenant: { name: tenantName },
+              appScope,
             },
             { populate: ["tenant", "cluster"] },
           ),
@@ -553,19 +657,17 @@ export const appAuthorizationServiceServer = plugin((server) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
-          message: "App Authorization is not supported. Please confirm the common config file.",
+          message: APP_AUTHORIZATION_NOT_SUPPORTED,
+          details: APP_AUTHORIZATION_NOT_SUPPORTED,
         });
       }
       const { clusterId, tenantName, appId, updateAction, operatorId } = request;
+      const appScope = parseAppScope(clusterId, request.appScope);
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
-      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-      // TODO: 在管理系统完成智算融合集群授权应用功能页面后进行优化
-      const clusterApps = configClusters[clusterId].ai?.enabled
-        ? getAiClusterAppConfigs(clusterId)
-        : getClusterAppConfigs(clusterId);
+      const clusterApps = resolveClusterApps(clusterId, request.appScope);
       const currentClusterAppIds = Object.keys(clusterApps);
       if (currentClusterAppIds.length === 0) {
         // 该集群下没有可以使用的交互式应用
@@ -574,88 +676,125 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
       const appIsNotInConfig = !currentClusterAppIds.includes(appId);
 
-      return await em.transactional(async (em) => {
-        const [
-          foundTenant,
-          foundCluster,
-          foundOperator,
-          // 查询要更新的 租户及APP 是否在 TenantDefaultAppRemovedList 中
-          foundRemovedApp,
-          // 查询租户已经被禁用的 APP 列表
-          tenantBlackApps,
-        ] = await Promise.all([
-          em.findOne(Tenant, { name: tenantName }),
-          em.findOne(Cluster, { clusterId: clusterId }),
-          em.findOne(User, { userId: operatorId }),
-          em.findOne(
-            TenantDefaultAppRemovedList,
-            {
-              cluster: { clusterId: clusterId },
-              tenant: { name: tenantName },
-              appId: appId,
-            },
-            { populate: ["cluster", "tenant"] },
-          ),
-          em.find(
-            TenantAppBlacklist,
-            {
-              cluster: { clusterId: clusterId },
-              tenant: { name: tenantName },
-            },
-            { populate: ["tenant", "cluster"] },
-          ),
-        ]);
-
-        if (!foundTenant) {
-          throw new ServiceError({
-            code: Status.NOT_FOUND,
-            message: `Tenant ${tenantName} is not found.`,
-          });
-        }
-        if (!foundCluster) {
-          throw new ServiceError({
-            code: Status.NOT_FOUND,
-            message: `Cluster ${clusterId} is not found.`,
-          });
-        }
-        if (!foundOperator) {
-          throw new ServiceError({
-            code: Status.NOT_FOUND,
-            message: `Operator ${operatorId} is not found.`,
-          });
-        }
-
-        const appIsInTenantBlacklist = tenantBlackApps.map((app) => app.appId)?.includes(appId);
-        // appId 不在config配置文件中
-        // 或者 在租户禁用app列表中
-        // 添加或移除均认为失败，不去更新租户下账户的授权数据
-        if (appIsNotInConfig || appIsInTenantBlacklist) {
-          throw new ServiceError({
-            code: Status.NOT_FOUND,
-            message: `App ${appId} is not in apps config of cluster ${clusterId} or is blocked to tenant ${tenantName}.`,
-          });
-        }
-
-        // 添加应用到默认授权应用时
-        if (updateAction === UpdateDefaultAppRequest_UpdateAction.ADD_TO_DEFAULT_APPS) {
-          await addToTenantDefaultApps(em, clusterId, tenantName, appId, foundCluster, logger, foundRemovedApp);
-
-          // 从默认授权应用中移除时
-        } else {
-          await removeFromTenantDefaultApps(
-            em,
-            clusterId,
-            tenantName,
-            appId,
+      return await em
+        .transactional(async (em) => {
+          const [
             foundTenant,
             foundCluster,
             foundOperator,
-            logger,
+            // 查询要更新的 租户及APP 是否在 TenantDefaultAppRemovedList 中
             foundRemovedApp,
-          );
-        }
-        return [{ executed: true }];
-      });
+            // 查询租户已经被禁用的 APP 列表
+            tenantBlackApps,
+          ] = await Promise.all([
+            em.findOne(Tenant, { name: tenantName }),
+            em.findOne(Cluster, { clusterId: clusterId }),
+            em.findOne(User, { userId: operatorId }),
+            em.findOne(
+              TenantDefaultAppRemovedList,
+              {
+                cluster: { clusterId: clusterId },
+                tenant: { name: tenantName },
+                appId: appId,
+                appScope,
+              },
+              { populate: ["cluster", "tenant"] },
+            ),
+            em.find(
+              TenantAppBlacklist,
+              {
+                cluster: { clusterId: clusterId },
+                tenant: { name: tenantName },
+                appScope,
+              },
+              { populate: ["tenant", "cluster"] },
+            ),
+          ]);
+
+          if (!foundTenant) {
+            const details = `Tenant ${tenantName} is not found.`;
+            throw new ServiceError({
+              code: Status.NOT_FOUND,
+              message: details,
+              details,
+            });
+          }
+          if (!foundCluster) {
+            const details = `Cluster ${clusterId} is not found.`;
+            throw new ServiceError({
+              code: Status.NOT_FOUND,
+              message: details,
+              details,
+            });
+          }
+          if (!foundOperator) {
+            const details = `Operator ${operatorId} is not found.`;
+            throw new ServiceError({
+              code: Status.NOT_FOUND,
+              message: details,
+              details,
+            });
+          }
+
+          const appIsInTenantBlacklist = tenantBlackApps.map((app) => app.appId)?.includes(appId);
+          // appId 不在config配置文件中
+          // 或者 在租户禁用app列表中
+          // 添加或移除均认为失败，不去更新租户下账户的授权数据
+          if (appIsNotInConfig || appIsInTenantBlacklist) {
+            const details = appIsNotInConfig
+              ? `App "${appId}" is not configured for cluster "${clusterId}" with appScope "${appScope}".`
+              : `App "${appId}" with appScope "${appScope}" is not authorized for tenant "${tenantName}" ` +
+                `in cluster "${clusterId}".`;
+            throw new ServiceError({
+              code: Status.NOT_FOUND,
+              message: details,
+              details,
+            });
+          }
+
+          // 添加应用到默认授权应用时
+          if (updateAction === UpdateDefaultAppRequest_UpdateAction.ADD_TO_DEFAULT_APPS) {
+            await addToTenantDefaultApps(
+              em,
+              clusterId,
+              tenantName,
+              appId,
+              appScope,
+              foundCluster,
+              logger,
+              foundRemovedApp,
+            );
+
+            // 从默认授权应用中移除时
+          } else {
+            await removeFromTenantDefaultApps(
+              em,
+              clusterId,
+              tenantName,
+              appId,
+              appScope,
+              foundTenant,
+              foundCluster,
+              foundOperator,
+              logger,
+              foundRemovedApp,
+            );
+          }
+          return [{ executed: true }] as [{ executed: boolean }];
+        })
+        .catch((error) => {
+          if (error instanceof UniqueConstraintViolationException) {
+            const details =
+              `Default app "${appId}" with appScope "${appScope}" for tenant "${tenantName}" ` +
+              `in cluster "${clusterId}" was already updated by a concurrent request.`;
+            throw new ServiceError({
+              code: Status.ALREADY_EXISTS,
+              message: details,
+              details,
+            });
+          }
+          throw error;
+        });
     },
   });
 });

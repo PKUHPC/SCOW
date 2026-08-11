@@ -2,10 +2,10 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { OperationType } from "@scow/lib-operation-log";
-import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
+import { AppAuthorizationServiceClient, AppScope as AppScopeProto } from "@scow/protos/build/server/app_authorization";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { AppAuthTargetType, AuthorizeAction } from "src/models/app";
+import { AppAuthTargetType, AppScope, AuthorizeAction } from "src/models/app";
 import { OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole } from "src/models/User";
 import { callLog } from "src/server/operationLog";
@@ -19,6 +19,7 @@ export const AuthorizeAppSchema = typeboxRouteSchema({
 
   body: Type.Object({
     clusterId: Type.String(),
+    appScope: Type.Enum(AppScope),
     appId: Type.String(),
     appName: Type.String(),
     action: Type.Enum(AuthorizeAction),
@@ -35,7 +36,7 @@ export const AuthorizeAppSchema = typeboxRouteSchema({
 });
 
 export default route(AuthorizeAppSchema, async (req, res) => {
-  const { clusterId, appId, appName, action, targetType, targetName } = req.body;
+  const { clusterId, appScope, appId, appName, action, targetType, targetName } = req.body;
 
   const logInfo = {
     operatorUserId: DEFAULT_INIT_USER_ID,
@@ -44,6 +45,7 @@ export default route(AuthorizeAppSchema, async (req, res) => {
       action === AuthorizeAction.UNAUTHORIZE ? OperationType.unauthorizeApp : OperationType.authorizeApp,
     operationTypePayload: {
       clusterId,
+      appScope,
       appName,
       target:
         targetType === AppAuthTargetType.TENANT
@@ -68,6 +70,7 @@ export default route(AuthorizeAppSchema, async (req, res) => {
 
   return await asyncClientCall(client, "authorizeApp", {
     clusterId,
+    appScope: AppScopeProto[appScope],
     appId,
     operatorId: logInfo.operatorUserId,
     action,
@@ -83,10 +86,10 @@ export default route(AuthorizeAppSchema, async (req, res) => {
     .catch(
       handlegRPCError(
         {
-          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.message } }),
-          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.message } }),
-          [Status.INVALID_ARGUMENT]: (e) => ({ 200: { executed: false, reason: e.message } }),
-          [Status.UNAVAILABLE]: (e) => ({ 200: { executed: false, reason: e.message } }),
+          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
+          [Status.INVALID_ARGUMENT]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
+          [Status.UNAVAILABLE]: (e) => ({ 200: { executed: false, reason: e.details || e.message } }),
         },
         async () => await callLog(logInfo, OperationResult.FAIL),
       ),

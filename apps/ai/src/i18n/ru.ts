@@ -311,6 +311,7 @@ export default {
         searchPlaceholder: "Введите имя приложения",
         noSearchResult: "Не найдено интерактивных приложений, связанных с '{}'",
         appNotFoundMessage: "Нет интерактивных приложений, доступных для создания.",
+        appUnauthorized: "Текущее приложение не авторизовано.",
         loading: "Загрузка доступных приложений",
       },
       historyJobs: {

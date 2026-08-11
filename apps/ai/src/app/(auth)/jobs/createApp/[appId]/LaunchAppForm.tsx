@@ -354,6 +354,22 @@ export const LaunchAppForm = ({
   });
 
   const accountClusterMap = appAvailableAccountsAndClusters?.accountClusters ?? {};
+  const appUnauthorizedMessage = t("app.jobs.createApps.appUnauthorized");
+
+  useEffect(() => {
+    if (!clusterId || !appAvailableAccountsAndClusters) {
+      return;
+    }
+
+    const isAppAvailable = Object.values(appAvailableAccountsAndClusters.accountClusters)
+      .some((clusters) => clusters.includes(clusterId));
+    if (!isAppAvailable) {
+      message.error({
+        content: appUnauthorizedMessage,
+        key: `app-unauthorized-${clusterId}-${appId}`,
+      });
+    }
+  }, [appAvailableAccountsAndClusters, appId, appUnauthorizedMessage, clusterId, message]);
 
   // 账户下拉选项根据 cluster 关联关系动态生成
   const accountOptions = useMemo(

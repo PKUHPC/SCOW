@@ -12,6 +12,7 @@ import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { Account } from "src/entities/Account";
+import { AppScope } from "src/entities/AppScope";
 import { Cluster } from "src/entities/Cluster";
 import { Tenant } from "src/entities/Tenant";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
@@ -138,11 +139,6 @@ export const tenantServiceServer = plugin((server) => {
         // 在所有集群下不添加应用到租户的默认授权应用
         if (commonConfig.allowAppAuthorization) {
           for (const [clusterId, config] of Object.entries(configClusters)) {
-            // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-            const clusterApps = config.ai?.enabled
-              ? getAiClusterAppConfigs(clusterId)
-              : getClusterAppConfigs(clusterId);
-
             const foundCluster = await em.findOne(Cluster, {
               clusterId: clusterId,
             });
@@ -154,13 +150,17 @@ export const tenantServiceServer = plugin((server) => {
               } as ServiceError;
             }
 
-            for (const appId of Object.keys(clusterApps)) {
-              const newItem = new TenantDefaultAppRemovedList({
-                cluster: foundCluster,
-                tenant: newTenant,
-                appId: appId,
-              });
-              em.persist(newItem);
+            const scopedApps = [
+              ...(config.hpc.enabled ? [{ appScope: AppScope.HPC, apps: getClusterAppConfigs(clusterId) }] : []),
+              ...(config.ai.enabled ? [{ appScope: AppScope.AI, apps: getAiClusterAppConfigs(clusterId) }] : []),
+            ];
+
+            for (const { appScope, apps } of scopedApps) {
+              for (const appId of Object.keys(apps)) {
+                em.persist(
+                  new TenantDefaultAppRemovedList({ cluster: foundCluster, tenant: newTenant, appId, appScope }),
+                );
+              }
             }
           }
 
