@@ -92,6 +92,8 @@ jobs:
           github_action_config.auto_improve: "false"
           github_action_config.pr_actions: '["opened", "synchronize"]'
           github_action_config.handle_push_trigger: "false"
+          # 通过仓库 Variables 中的 PR_AGENT_MODEL 切换模型；未设置时沿用 .pr_agent.toml 默认值。
+          config.model: ${{ vars.PR_AGENT_MODEL || 'gpt-5.6-sol' }}
           config.propagate_tool_errors: "true"
           pr_description.final_update_message: "false"
 

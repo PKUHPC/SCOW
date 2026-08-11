@@ -38,6 +38,7 @@ test("synchronize auto-runs review without auto-regenerating the description", (
     /github_action_config\.auto_describe: \$\{\{ steps\.prepare\.outputs\.auto_describe \}\}/,
   );
   assert.match(workflowDefinition, /github_action_config\.pr_actions: '\["opened", "synchronize"\]'/);
+  assert.match(workflowDefinition, /config\.model: \$\{\{ vars\.PR_AGENT_MODEL \|\| 'gpt-5\.6-sol' \}\}/);
 });
 
 test("PR-Agent image is pulled through the CCRepo proxy", () => {
