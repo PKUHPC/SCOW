@@ -7,6 +7,7 @@ export * from "./logContext";
 export * from "./misCommon/appAuthorization";
 export * from "./misCommon/calculatePrice";
 export * from "./misCommon/clustersActivation";
+export * from "./misCommon/job";
 export * from "./misCommon/userAccount";
 export * from "./scheduleAdapter";
 export * from "./systemLanguage";

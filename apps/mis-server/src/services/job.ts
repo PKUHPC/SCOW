@@ -2,13 +2,21 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { FilterQuery, Loaded, QueryOrder, raw, UniqueConstraintViolationException } from "@mikro-orm/core";
+import { EntityKey, FilterQuery, Loaded, QueryOrder, raw, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { Decimal, decimalToMoney, moneyToNumber } from "@scow/lib-decimal";
 import { jobInfoToRunningjob } from "@scow/lib-scheduler-adapter";
 import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date";
 import { libCheckActivatedClusters } from "@scow/lib-server/build/misCommon/clustersActivation";
+import { DEFAULT_FILTER_JOBS_PAGE_SIZE, MAX_UINT32 } from "@scow/lib-server/build/misCommon/job";
+import { JobInfo as GrpcJobInfo } from "@scow/protos/build/common/ended_job";
 import { ChargeRecord } from "@scow/protos/build/server/charging";
-import { JobBillingItem, JobFilter, JobServiceServer, JobServiceService } from "@scow/protos/build/server/job";
+import {
+  JobBillingItem,
+  JobField,
+  JobFilter,
+  JobServiceServer,
+  JobServiceService,
+} from "@scow/protos/build/server/job";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { createPriceMap, getBillingItems, JobInfo } from "src/bl/PriceMap";
@@ -96,6 +104,83 @@ function filterJobs(
           }),
     ...(tenantName ? { tenant: tenantName } : {}),
   } as FilterQuery<JobInfoEntity>;
+}
+// mis-server下查询历史作业结果的派生字段 （与当前查询历史作业接口保持一致）
+const derivedJobFields = new Set([
+  JobField.JOB_FIELD_USER_NAME,
+  JobField.JOB_FIELD_ACCOUNT_OWNER_ID,
+  JobField.JOB_FIELD_ACCOUNT_OWNER_NAME,
+]);
+
+const jobFieldToEntityField: Partial<Record<JobField, EntityKey<JobInfoEntity>>> = {
+  [JobField.JOB_FIELD_BI_JOB_INDEX]: "biJobIndex",
+  [JobField.JOB_FIELD_ID_JOB]: "idJob",
+  [JobField.JOB_FIELD_ACCOUNT]: "account",
+  [JobField.JOB_FIELD_USER]: "user",
+  [JobField.JOB_FIELD_PARTITION]: "partition",
+  [JobField.JOB_FIELD_NODELIST]: "nodelist",
+  [JobField.JOB_FIELD_JOB_NAME]: "jobName",
+  [JobField.JOB_FIELD_CLUSTER]: "cluster",
+  [JobField.JOB_FIELD_TIME_SUBMIT]: "timeSubmit",
+  [JobField.JOB_FIELD_TIME_START]: "timeStart",
+  [JobField.JOB_FIELD_TIME_END]: "timeEnd",
+  [JobField.JOB_FIELD_GPU]: "gpu",
+  [JobField.JOB_FIELD_CPUS_REQ]: "cpusReq",
+  [JobField.JOB_FIELD_MEM_REQ]: "memReq",
+  [JobField.JOB_FIELD_NODES_REQ]: "nodesReq",
+  [JobField.JOB_FIELD_CPUS_ALLOC]: "cpusAlloc",
+  [JobField.JOB_FIELD_MEM_ALLOC]: "memAlloc",
+  [JobField.JOB_FIELD_NODES_ALLOC]: "nodesAlloc",
+  [JobField.JOB_FIELD_TIMELIMIT]: "timelimit",
+  [JobField.JOB_FIELD_TIME_USED]: "timeUsed",
+  [JobField.JOB_FIELD_TIME_WAIT]: "timeWait",
+  [JobField.JOB_FIELD_QOS]: "qos",
+  [JobField.JOB_FIELD_RECORD_TIME]: "recordTime",
+  [JobField.JOB_FIELD_ACCOUNT_PRICE]: "accountPrice",
+  [JobField.JOB_FIELD_TENANT_PRICE]: "tenantPrice",
+};
+
+function projectJobInfo(
+  job: JobInfoEntity,
+  resultFields: Set<JobField>,
+  detail?: JobUserAndAccountOwnerDetailsMap[number],
+): GrpcJobInfo {
+  const result = GrpcJobInfo.create();
+
+  if (resultFields.has(JobField.JOB_FIELD_BI_JOB_INDEX)) result.biJobIndex = job.biJobIndex;
+  if (resultFields.has(JobField.JOB_FIELD_ID_JOB)) result.idJob = job.idJob;
+  if (resultFields.has(JobField.JOB_FIELD_ACCOUNT)) result.account = job.account;
+  if (resultFields.has(JobField.JOB_FIELD_USER)) result.user = job.user;
+  if (resultFields.has(JobField.JOB_FIELD_PARTITION)) result.partition = job.partition;
+  if (resultFields.has(JobField.JOB_FIELD_NODELIST)) result.nodelist = job.nodelist;
+  if (resultFields.has(JobField.JOB_FIELD_JOB_NAME)) result.jobName = job.jobName;
+  if (resultFields.has(JobField.JOB_FIELD_CLUSTER)) result.cluster = job.cluster;
+  if (resultFields.has(JobField.JOB_FIELD_TIME_SUBMIT)) result.timeSubmit = job.timeSubmit.toISOString();
+  if (resultFields.has(JobField.JOB_FIELD_TIME_START)) result.timeStart = job.timeStart?.toISOString();
+  if (resultFields.has(JobField.JOB_FIELD_TIME_END)) result.timeEnd = job.timeEnd.toISOString();
+  if (resultFields.has(JobField.JOB_FIELD_GPU)) result.gpu = job.gpu;
+  if (resultFields.has(JobField.JOB_FIELD_CPUS_REQ)) result.cpusReq = job.cpusReq;
+  if (resultFields.has(JobField.JOB_FIELD_MEM_REQ)) result.memReq = job.memReq;
+  if (resultFields.has(JobField.JOB_FIELD_NODES_REQ)) result.nodesReq = job.nodesReq;
+  if (resultFields.has(JobField.JOB_FIELD_CPUS_ALLOC)) result.cpusAlloc = job.cpusAlloc;
+  if (resultFields.has(JobField.JOB_FIELD_MEM_ALLOC)) result.memAlloc = job.memAlloc;
+  if (resultFields.has(JobField.JOB_FIELD_NODES_ALLOC)) result.nodesAlloc = job.nodesAlloc;
+  if (resultFields.has(JobField.JOB_FIELD_TIMELIMIT)) result.timelimit = job.timelimit;
+  if (resultFields.has(JobField.JOB_FIELD_TIME_USED)) result.timeUsed = job.timeUsed;
+  if (resultFields.has(JobField.JOB_FIELD_TIME_WAIT)) result.timeWait = job.timeWait;
+  if (resultFields.has(JobField.JOB_FIELD_QOS)) result.qos = job.qos;
+  if (resultFields.has(JobField.JOB_FIELD_RECORD_TIME)) result.recordTime = job.recordTime.toISOString();
+  if (resultFields.has(JobField.JOB_FIELD_ACCOUNT_PRICE)) result.accountPrice = decimalToMoney(job.accountPrice);
+  if (resultFields.has(JobField.JOB_FIELD_TENANT_PRICE)) result.tenantPrice = decimalToMoney(job.tenantPrice);
+  if (resultFields.has(JobField.JOB_FIELD_USER_NAME)) result.userName = detail?.userName ?? undefined;
+  if (resultFields.has(JobField.JOB_FIELD_ACCOUNT_OWNER_ID)) {
+    result.accountOwnerId = detail?.accountOwnerId ?? undefined;
+  }
+  if (resultFields.has(JobField.JOB_FIELD_ACCOUNT_OWNER_NAME)) {
+    result.accountOwnerName = detail?.accountOwnerName ?? undefined;
+  }
+
+  return result;
 }
 
 export const jobServiceServer = plugin((server) => {
@@ -199,6 +284,109 @@ export const jobServiceServer = plugin((server) => {
         totalTenantPrice: decimalToMoney(new Decimal(total_tenant_price ?? 0)),
       };
       return [reply];
+    },
+
+    // 当前 server 端调用时必须指定 tenant_name；暂不支持跨租户查询。
+    // TODO: 后续支持查看所有租户作业等功能上线后可以支持不指定 tenant_name
+    getJobsWithFields: async ({ request, em, logger }) => {
+      const { jobFilter, resultFields, afterBiJobIndex, pageSize } = ensureNotUndefined(request, ["jobFilter"]);
+
+      if (resultFields.length === 0) {
+        throw { code: status.INVALID_ARGUMENT, message: "result_fields must not be empty" } as ServiceError;
+      }
+
+      const invalidField = resultFields.find(
+        (field) =>
+          field === JobField.JOB_FIELD_UNSPECIFIED || (!jobFieldToEntityField[field] && !derivedJobFields.has(field)),
+      );
+      if (invalidField !== undefined) {
+        throw {
+          code: status.INVALID_ARGUMENT,
+          message: `result_fields contains invalid job field ${invalidField}`,
+        } as ServiceError;
+      }
+
+      if (pageSize === 0 || (pageSize !== undefined && pageSize > MAX_UINT32)) {
+        throw {
+          code: status.INVALID_ARGUMENT,
+          message: `page_size must be between 1 and ${MAX_UINT32}`,
+        } as ServiceError;
+      }
+      const normalizedPageSize = pageSize ?? DEFAULT_FILTER_JOBS_PAGE_SIZE;
+
+      const trimmedUserIdOrName = jobFilter.userIdOrName?.trim();
+      const trimmedOwnerIdOrName = jobFilter.ownerIdOrName?.trim();
+
+      let userMatchedUserIds: string[] | undefined;
+      if (trimmedUserIdOrName) {
+        const matchedUsers = await getUserIdsMatchedByUserIdOrName(em, trimmedUserIdOrName);
+        userMatchedUserIds = jobFilter.userId
+          ? matchedUsers.includes(jobFilter.userId)
+            ? [jobFilter.userId]
+            : []
+          : matchedUsers;
+        if (userMatchedUserIds.length === 0) return [{ jobs: [] }];
+      }
+
+      let ownerMatchedAccountNames: string[] | undefined;
+      if (trimmedOwnerIdOrName) {
+        const matchedAccounts = await getAccountNamesMatchedByOwner(em, trimmedOwnerIdOrName);
+        ownerMatchedAccountNames = jobFilter.accountName
+          ? matchedAccounts.includes(jobFilter.accountName)
+            ? [jobFilter.accountName]
+            : []
+          : matchedAccounts;
+        if (ownerMatchedAccountNames.length === 0) return [{ jobs: [] }];
+      }
+
+      const sqlFilter = filterJobs(jobFilter, ownerMatchedAccountNames, userMatchedUserIds);
+      const cursorFilter: FilterQuery<JobInfoEntity> =
+        afterBiJobIndex === undefined ? sqlFilter : { $and: [sqlFilter, { biJobIndex: { $gt: afterBiJobIndex } }] };
+      const selectedFields = new Set(resultFields);
+      const shouldLoadDerivedFields = resultFields.some((field) => derivedJobFields.has(field));
+      const entityFields = [...selectedFields]
+        .map((field) => jobFieldToEntityField[field])
+        .filter((field): field is EntityKey<JobInfoEntity> => field !== undefined);
+
+      // 游标分页和派生字段关联始终需要内部读取 biJobIndex；未显式请求时不放入作业响应。
+      if (!entityFields.includes("biJobIndex")) entityFields.push("biJobIndex");
+
+      // 额外查询一条记录判断是否存在下一批，避免执行 COUNT(*)。
+      const jobs = await em.find(JobInfoEntity, cursorFilter, {
+        fields: entityFields,
+        orderBy: { biJobIndex: QueryOrder.ASC },
+        limit: normalizedPageSize + 1,
+      });
+      const hasMore = jobs.length > normalizedPageSize;
+      const responseJobs = hasMore ? jobs.slice(0, normalizedPageSize) : jobs;
+      const nextBiJobIndex = hasMore ? responseJobs[responseJobs.length - 1].biJobIndex : undefined;
+
+      logger.info(
+        "getJobsWithFields filterFields %s, resultFields %s, " +
+          "hasAfterBiJobIndex %s, afterBiJobIndex %s, pageSize %d, resultCount %d",
+        JSON.stringify(Object.keys(sqlFilter)),
+        JSON.stringify(resultFields.map((field) => JobField[field])),
+        afterBiJobIndex !== undefined,
+        afterBiJobIndex ?? "none",
+        normalizedPageSize,
+        responseJobs.length,
+      );
+
+      let details: JobUserAndAccountOwnerDetailsMap = {};
+      // 只有请求派生字段时才执行 User/Account 关联查询。
+      if (shouldLoadDerivedFields) {
+        details = await getJobUserAndAccountOwnerDetailsMap(
+          em,
+          responseJobs.map((job) => job.biJobIndex),
+        );
+      }
+
+      return [
+        {
+          jobs: responseJobs.map((job) => projectJobInfo(job, selectedFields, details[job.biJobIndex])),
+          nextBiJobIndex,
+        },
+      ];
     },
 
     changeJobPrice: async ({ request, em, logger }) => {

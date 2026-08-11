@@ -7,7 +7,13 @@ import { AppType, AttributeType } from "@scow/config/build/app";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { formatTime } from "@scow/lib-scheduler-adapter";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
-import { errorInfo, getAppConnectionInfoFromAdapter, getEnvVariables, isCurrentClusterSession } from "@scow/lib-server";
+import {
+  errorInfo,
+  getAppConnectionInfoFromAdapter,
+  getEnvVariables,
+  isCurrentClusterSession,
+  libGetMisHistoryJobSubmitTimes,
+} from "@scow/lib-server";
 import { DetailedError, ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
 import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/job";
 import { FileInfo, FileType } from "@scow/scowd-protos/build/storage/file_pb";
@@ -16,6 +22,8 @@ import { join } from "path";
 import { quote } from "shell-quote";
 import { AppOps, AppSession, SubmissionInfo } from "src/clusterops/api/app";
 import { configClusters } from "src/config/clusters";
+import { commonConfig } from "src/config/common";
+import { config } from "src/config/env";
 import { portalConfig } from "src/config/portal";
 import {
   APP_LAST_SUBMISSION_INFO,
@@ -370,7 +378,7 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
         logger,
         async (client) =>
           await asyncClientCall(client.job, "getJobs", {
-            fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason"],
+            fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason", "submit_time"],
             jobTypes: [],
             filter: {
               users: [userId],
@@ -406,6 +414,7 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
           return { sessions: [] };
         }
         const sessions = [] as AppSession[];
+        const endedSessionJobIds = new Set<number>();
 
         const endedSessionsFilePath = join(userAppJobDir, `${cluster}-${ENDED_SESSIONS}`);
         // 定义用于存储已存在的 endedSessions 的 session 信息
@@ -453,6 +462,7 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
                 host: undefined,
                 port: undefined,
               });
+              endedSessionJobIds.add(endedSession.jobId);
 
               // 获取已存在的 endedSessions 的 sessionId，对应session的目录名
               existingSessionIds.add(endedSession.sessionId);
@@ -682,6 +692,9 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
               connectPath,
               appType: apps[sessionMetadata.appId]?.type,
             });
+            if (!runningJobInfo) {
+              endedSessionJobIds.add(sessionMetadata.jobId);
+            }
           }),
         );
 
@@ -698,7 +711,61 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
           logger.warn("Error occurred in writing ended sessions. It will be executed again on the next request.", err);
         }
 
-        return { sessions };
+        const misSubmitTimes =
+          config.MIS_DEPLOYED && endedSessionJobIds.size > 0
+            ? await libGetMisHistoryJobSubmitTimes(
+                logger,
+                { cluster, userId, jobIds: Array.from(endedSessionJobIds) },
+                config.MIS_SERVER_URL,
+                commonConfig.scowApi?.auth?.token,
+              ).catch((err) => {
+                logger.warn("Failed to fetch ended app session submit times from mis. Fallback to session files.", err);
+                return new Map<number, string>();
+              })
+            : new Map<number, string>();
+
+        if (!config.MIS_DEPLOYED && endedSessionJobIds.size > 0) {
+          logger.trace(
+            "Mis is not deployed, fallback to session submit time for %d ended app sessions.",
+            endedSessionJobIds.size,
+          );
+        }
+
+        const sessionsWithSubmitTime = sessions.map((session) => {
+          const runningJobInfo = runningJobInfoMap[session.jobId];
+          const runningSubmitTime = runningJobInfo?.submitTime;
+          const misEndedSubmitTime = session.state === "ENDED" ? misSubmitTimes.get(session.jobId) : undefined;
+          const overrideSubmitTime = runningSubmitTime ?? misEndedSubmitTime;
+
+          if (runningSubmitTime) {
+            logger.trace(
+              "Use adapter submit time %s for running app session job %s.",
+              runningSubmitTime,
+              session.jobId,
+            );
+          } else if (runningJobInfo) {
+            logger.trace(
+              "Adapter submit time is missing for app session job %s. Fallback to session submit time %s.",
+              session.jobId,
+              session.submitTime.toISOString(),
+            );
+          } else if (misEndedSubmitTime) {
+            logger.trace("Use mis submit time %s for ended app session job %s.", misEndedSubmitTime, session.jobId);
+          } else if (session.state === "ENDED") {
+            logger.trace(
+              "Fallback to session submit time %s for ended app session job %s.",
+              session.submitTime.toISOString(),
+              session.jobId,
+            );
+          }
+
+          return {
+            ...session,
+            submitTime: overrideSubmitTime ? new Date(overrideSubmitTime) : session.submitTime,
+          };
+        });
+
+        return { sessions: sessionsWithSubmitTime };
       } catch (err) {
         if (err instanceof ConnectError) {
           throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;

@@ -60,6 +60,65 @@ message GetJobsResponse {
   common.Money total_tenant_price = 4;
 }
 
+enum JobField {
+  JOB_FIELD_UNSPECIFIED = 0;
+  JOB_FIELD_BI_JOB_INDEX = 1;
+  JOB_FIELD_ID_JOB = 2;
+  JOB_FIELD_ACCOUNT = 3;
+  JOB_FIELD_USER = 4;
+  JOB_FIELD_PARTITION = 5;
+  JOB_FIELD_NODELIST = 6;
+  JOB_FIELD_JOB_NAME = 7;
+  JOB_FIELD_CLUSTER = 8;
+  JOB_FIELD_TIME_SUBMIT = 9;
+  JOB_FIELD_TIME_START = 10;
+  JOB_FIELD_TIME_END = 11;
+  JOB_FIELD_GPU = 12;
+  JOB_FIELD_CPUS_REQ = 13;
+  JOB_FIELD_MEM_REQ = 14;
+  JOB_FIELD_NODES_REQ = 15;
+  JOB_FIELD_CPUS_ALLOC = 16;
+  JOB_FIELD_MEM_ALLOC = 17;
+  JOB_FIELD_NODES_ALLOC = 18;
+  JOB_FIELD_TIMELIMIT = 19;
+  JOB_FIELD_TIME_USED = 20;
+  JOB_FIELD_TIME_WAIT = 21;
+  JOB_FIELD_QOS = 22;
+  JOB_FIELD_RECORD_TIME = 23;
+  JOB_FIELD_ACCOUNT_PRICE = 24;
+  JOB_FIELD_TENANT_PRICE = 25;
+  JOB_FIELD_USER_NAME = 26;
+  JOB_FIELD_ACCOUNT_OWNER_ID = 27;
+  JOB_FIELD_ACCOUNT_OWNER_NAME = 28;
+}
+
+message GetJobsWithFieldsRequest {
+  // 作业过滤条件。
+  //
+  // 使用 job_ids 过滤时应同时指定 clusters。调度器作业 ID 只在单个集群内唯一，
+  // 不同集群中可能存在相同的作业 ID。
+  JobFilter job_filter = 1;
+
+  // 每个作业需要返回的 common.JobInfo 字段。
+  repeated JobField result_fields = 2;
+
+  // 游标分页的起点，只返回 bi_job_index 大于此值的作业。
+  // 第一次分页请求不传，后续请求传入上一次响应的 next_bi_job_index。
+  optional uint64 after_bi_job_index = 3;
+
+  // 游标分页时单次响应最多返回的作业数量。不传时使用系统默认值 5000；
+  // 传 0 时返回 INVALID_ARGUMENT。服务端暂不设置 uint32 范围内的额外业务上限，调用方需要
+  // 自行确保响应不超过 gRPC 消息大小和可用内存；请求 nodelist 等变长字段时应进一步调小。
+  optional uint32 page_size = 4;
+}
+
+message GetJobsWithFieldsResponse {
+  repeated common.JobInfo jobs = 1;
+
+  // 下一次请求应将此值作为 after_bi_job_index。全部匹配作业均已返回时不设置此字段。
+  optional uint64 next_bi_job_index = 2;
+}
+
 message ChangeJobPriceRequest {
   JobFilter filter = 1;
   optional common.Money account_price = 2;
@@ -281,6 +340,7 @@ message JobsOfJobIdAndAccountTarget {
 
 service JobService {
   rpc GetJobs(GetJobsRequest) returns (GetJobsResponse);
+  rpc GetJobsWithFields(GetJobsWithFieldsRequest) returns (GetJobsWithFieldsResponse);
   rpc GetJobByBiJobIndex(GetJobByBiJobIndexRequest) returns (GetJobByBiJobIndexResponse);
   rpc ChangeJobPrice(ChangeJobPriceRequest) returns (ChangeJobPriceResponse);
 
