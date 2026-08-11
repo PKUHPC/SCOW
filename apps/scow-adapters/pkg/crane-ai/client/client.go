@@ -2,15 +2,22 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"gopkg.in/yaml.v2"
 
 	craneProtos "scow-adapters/gen/crane-ai"
@@ -24,6 +31,15 @@ var (
 
 	DefaultConfigPath  = "/etc/crane/config.yaml"
 	DefaultMongoDBPath = "/etc/crane/database.yaml"
+
+	clientKeepAliveParams = keepalive.ClientParameters{
+		Time:                20 * time.Second,
+		Timeout:             10 * time.Second,
+		PermitWithoutStream: true,
+	}
+	clientConnectParams = grpc.ConnectParams{
+		Backoff: backoff.Config{BaseDelay: time.Second, MaxDelay: 30 * time.Second},
+	}
 )
 
 type CraneConfig struct {
@@ -31,12 +47,20 @@ type CraneConfig struct {
 	ControlMachine      string `yaml:"ControlMachine"`
 	CraneCtldListenPort string `yaml:"CraneCtldListenPort"`
 
-	UseTls             bool        `yaml:"UseTls"`
-	ServerCertFilePath string      `yaml:"ServerCertFilePath"`
-	ServerKeyFilePath  string      `yaml:"ServerKeyFilePath"`
-	CaCertFilePath     string      `yaml:"CaCertFilePath"`
-	DomainSuffix       string      `yaml:"DomainSuffix"`
-	Partitions         []Partition `yaml:"Partitions"`
+	TLS        TLSConfig   `yaml:"TLS"`
+	Partitions []Partition `yaml:"Partitions"`
+}
+
+type TLSConfig struct {
+	Enabled              bool   `yaml:"Enabled"`
+	InternalKeyFilePath  string `yaml:"InternalKeyFilePath"`
+	InternalCertFilePath string `yaml:"InternalCertFilePath"`
+	ExternalKeyFilePath  string `yaml:"ExternalKeyFilePath"`
+	ExternalCertFilePath string `yaml:"ExternalCertFilePath"`
+	CaFilePath           string `yaml:"CaFilePath"`
+	AllowedNodes         string `yaml:"AllowedNodes"`
+	DomainSuffix         string `yaml:"DomainSuffix"`
+	UserTlsCertPath      string `yaml:"UserTlsCertPath"`
 }
 
 type Partition struct {
@@ -60,7 +84,36 @@ type DatabaseConfig struct {
 func InitClient() {
 	CConfig = parseConfig(DefaultConfigPath)
 	serverAddr := fmt.Sprintf("%s:%s", CConfig.ControlMachine, CConfig.CraneCtldListenPort)
-	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var conn *grpc.ClientConn
+	var err error
+	if CConfig.TLS.Enabled {
+		serverAddr = fmt.Sprintf("%s.%s:%s", CConfig.ControlMachine,
+			CConfig.TLS.DomainSuffix, CConfig.CraneCtldListenPort)
+		if CConfig.TLS.UserTlsCertPath == "" {
+			home, homeErr := os.UserHomeDir()
+			if homeErr != nil {
+				log.Fatal(homeErr)
+			}
+			CConfig.TLS.UserTlsCertPath = filepath.Join(home, ".config/crane")
+		}
+		tlsConfig, tlsErr := readTLSConfig(CConfig)
+		if tlsErr != nil {
+			log.Fatalf("Failed to load user certificate: %v", tlsErr)
+		}
+		conn, err = grpc.NewClient(serverAddr,
+			grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+			grpc.WithKeepaliveParams(clientKeepAliveParams),
+			grpc.WithConnectParams(clientConnectParams),
+			grpc.WithIdleTimeout(time.Duration(math.MaxInt64)),
+		)
+	} else {
+		conn, err = grpc.NewClient(serverAddr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithKeepaliveParams(clientKeepAliveParams),
+			grpc.WithConnectParams(clientConnectParams),
+			grpc.WithIdleTimeout(time.Duration(math.MaxInt64)),
+		)
+	}
 	if err != nil {
 		log.Fatal("Cannot connect to CraneCtld: " + err.Error())
 	}
@@ -79,6 +132,36 @@ func InitClient() {
 	}
 
 	MongoDBClient = client
+}
+
+func readTLSConfig(config *CraneConfig) (*tls.Config, error) {
+	userKeyPath := filepath.Join(config.TLS.UserTlsCertPath, "user.key")
+	userCertPath := filepath.Join(config.TLS.UserTlsCertPath, "user.pem")
+	if !fileExists(userKeyPath) || !fileExists(userCertPath) || !fileExists(config.TLS.ExternalCertFilePath) {
+		return nil, fmt.Errorf("Crane TLS certificate files not found")
+	}
+	cert, err := tls.LoadX509KeyPair(userCertPath, userKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("load Crane TLS client certificate: %w", err)
+	}
+	caPEM, err := os.ReadFile(config.TLS.ExternalCertFilePath)
+	if err != nil {
+		return nil, err
+	}
+	caPool := x509.NewCertPool()
+	if !caPool.AppendCertsFromPEM(caPEM) {
+		return nil, fmt.Errorf("parse Crane TLS external certificate")
+	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caPool,
+		MinVersion:   tls.VersionTLS13,
+	}, nil
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // 创建 MongoDB 客户端

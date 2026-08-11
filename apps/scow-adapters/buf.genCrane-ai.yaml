@@ -2,7 +2,7 @@ version: v2
 inputs:
   - git_repo: https://github.com/PKUHPC/CraneSched.git
     subdir: protos
-    tag: ed8a623e0e1e981a7923dff9f9059e11327ee8fe
+    tag: b94040d94792f3bf8cf332c687b99d49f2ea4017
     exclude_paths:
       - Supervisor.proto
 managed:

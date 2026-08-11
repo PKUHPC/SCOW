@@ -84,7 +84,7 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *protos.CancelJobRequest) 
 	}
 	request := &craneProtos.CancelJobRequest{
 		OperatorUid:    0,
-		FilterIds:      stepIds,
+		FilterJobIds:   stepIds,
 		FilterUsername: in.UserId,
 		FilterState:    craneProtos.JobStatus_Invalid,
 	}
@@ -101,10 +101,8 @@ func (s *ServerJob) QueryJobTimeLimit(ctx context.Context, in *protos.QueryJobTi
 	var timeLimitMinutes uint64
 
 	logrus.Infof("Received request QueryJobTimeLimit: %v", in)
-	filterIds := make(map[uint32]*craneProtos.JobStepIds)
-	filterIds[in.JobId] = &craneProtos.JobStepIds{Steps: []uint32{1}}
 	request := &craneProtos.QueryJobsInfoRequest{
-		FilterIds:                  filterIds,
+		FilterJobIds:               []*craneProtos.JobIdSelector{{JobId: in.JobId, Steps: []uint32{1}}},
 		OptionIncludeCompletedJobs: true, // 包含运行结束的作业
 	}
 	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
@@ -133,10 +131,8 @@ func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *protos.ChangeJob
 
 	logrus.Infof("Received request ChangeJobTimeLimit: %v", in)
 	// 查询请求体
-	filterIds := make(map[uint32]*craneProtos.JobStepIds)
-	filterIds[in.JobId] = &craneProtos.JobStepIds{Steps: []uint32{1}}
 	requestLimitTime := &craneProtos.QueryJobsInfoRequest{
-		FilterIds: filterIds,
+		FilterJobIds: []*craneProtos.JobIdSelector{{JobId: in.JobId, Steps: []uint32{1}}},
 	}
 
 	responseLimitTime, err := client.CraneCtld.QueryJobsInfo(context.Background(), requestLimitTime)
@@ -164,7 +160,7 @@ func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *protos.ChangeJob
 	}
 	// 修改时长限制的请求体
 	request := &craneProtos.ModifyJobRequest{
-		JobIds: []uint32{in.JobId},
+		JobIds: []*craneProtos.JobIdSelector{{JobId: in.JobId}},
 		Value: &craneProtos.ModifyJobRequest_TimeLimitSeconds{
 			TimeLimitSeconds: in.DeltaMinutes*60 + int64(seconds),
 		},
@@ -1221,10 +1217,8 @@ func (s *ServerJob) RunCommandOnJobNodes(ctx context.Context, in *protos.RunComm
 	logrus.Infof("Received request RunCommandOnJobNodes: %v", in)
 
 	// 查询作业信息
-	filterIds := make(map[uint32]*craneProtos.JobStepIds)
-	filterIds[in.JobId] = &craneProtos.JobStepIds{Steps: []uint32{1}}
 	request := &craneProtos.QueryJobsInfoRequest{
-		FilterIds:                  filterIds,
+		FilterJobIds:               []*craneProtos.JobIdSelector{{JobId: in.JobId, Steps: []uint32{1}}},
 		OptionIncludeCompletedJobs: true,
 	}
 

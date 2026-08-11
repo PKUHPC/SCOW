@@ -14,7 +14,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"scow-adapters/pkg/crane-ai/client"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +28,7 @@ import (
 
 	craneProtos "scow-adapters/gen/crane-ai"
 	pb "scow-adapters/gen/go"
+	"scow-adapters/pkg/crane-ai/client"
 )
 
 const (
@@ -112,11 +113,8 @@ func SubmitContainerJob(task *craneProtos.JobToCtld) (*craneProtos.SubmitBatchJo
 
 // GetContainerStep 获取容器步骤信息
 func GetContainerStep(jobID, stepID uint32, includeCompleted bool) (*craneProtos.JobInfo, *craneProtos.StepInfo, error) {
-	idFilter := map[uint32]*craneProtos.JobStepIds{
-		jobID: {Steps: []uint32{stepID}},
-	}
 	req := craneProtos.QueryJobsInfoRequest{
-		FilterIds:                  idFilter,
+		FilterJobIds:               []*craneProtos.JobIdSelector{{JobId: jobID, Steps: []uint32{stepID}}},
 		FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
 		OptionIncludeCompletedJobs: includeCompleted,
 	}
@@ -151,15 +149,13 @@ func GetContainerStep(jobID, stepID uint32, includeCompleted bool) (*craneProtos
 }
 
 func GetJobById(jobId uint32, user string) (*craneProtos.JobInfo, error) {
-	filterIds := make(map[uint32]*craneProtos.JobStepIds)
-	filterIds[jobId] = &craneProtos.JobStepIds{}
 	var users []string
 	if user != "" {
 		users = append(users, user)
 	}
 	request := &craneProtos.QueryJobsInfoRequest{
 		FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
-		FilterIds:                  filterIds,
+		FilterJobIds:               []*craneProtos.JobIdSelector{{JobId: jobId}},
 		FilterUsers:                users,
 		OptionIncludeCompletedJobs: true,
 	}
@@ -179,11 +175,9 @@ func GetJobById(jobId uint32, user string) (*craneProtos.JobInfo, error) {
 }
 
 func CheckJobExit(jobId uint32) (bool, error) {
-	filterIds := make(map[uint32]*craneProtos.JobStepIds)
-	filterIds[jobId] = &craneProtos.JobStepIds{}
 	request := &craneProtos.QueryJobsInfoRequest{
 		FilterJobTypes:             []craneProtos.JobType{craneProtos.JobType_Container},
-		FilterIds:                  filterIds,
+		FilterJobIds:               []*craneProtos.JobIdSelector{{JobId: jobId}},
 		OptionIncludeCompletedJobs: true,
 	}
 	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
@@ -668,7 +662,7 @@ func convertStepInfoToPodInfo(partition string, uid uint32, username string, ste
 	return podInfoList
 }
 
-func ParseStepIdList(jobStepIdListStr string, splitStr string) (map[uint32]*craneProtos.JobStepIds, error) {
+func ParseStepIdList(jobStepIdListStr string, splitStr string) ([]*craneProtos.JobIdSelector, error) {
 	stepIds := make(map[uint32]*craneProtos.JobStepIds)
 
 	for stepIdStr := range strings.SplitSeq(jobStepIdListStr, splitStr) {
@@ -696,7 +690,18 @@ func ParseStepIdList(jobStepIdListStr string, splitStr string) (map[uint32]*cran
 		stepIds[uint32(jobId)].Steps = append(stepIds[uint32(jobId)].Steps, uint32(stepId))
 	}
 
-	return stepIds, nil
+	jobIds := make([]int, 0, len(stepIds))
+	for jobId := range stepIds {
+		jobIds = append(jobIds, int(jobId))
+	}
+	sort.Ints(jobIds)
+	selectors := make([]*craneProtos.JobIdSelector, 0, len(jobIds))
+	for _, jobId := range jobIds {
+		selectors = append(selectors, &craneProtos.JobIdSelector{
+			JobId: uint32(jobId), Steps: stepIds[uint32(jobId)].Steps,
+		})
+	}
+	return selectors, nil
 }
 
 func GetJobPrimaryStep(stepList []*craneProtos.StepInfo) []*craneProtos.StepInfo {
