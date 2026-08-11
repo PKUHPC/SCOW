@@ -843,6 +843,8 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
           return t(p("train"));
         } else if (jobType === JobType.INFER) {
           return t(p("inference"));
+        } else if (jobType === JobType.DEV_HOST) {
+          return t(p("devHost"));
         }
         return "-";
       })(),
@@ -974,16 +976,20 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
         }
       })(),
     },
-    // 24.模型
-    {
-      key: "24",
-      label: t(p("model")),
-      contentStyle: expandedContentStyle,
-      children: renderResourceMounts(
-        jobDetails.extraDisplayInputs?.modelMounts,
-        jobDetails.extraDisplayInputs?.modelNames,
-      ),
-    },
+    // 24.模型，开发机不展示
+    ...(jobType !== JobType.DEV_HOST
+      ? [
+          {
+            key: "24",
+            label: t(p("model")),
+            contentStyle: expandedContentStyle,
+            children: renderResourceMounts(
+              jobDetails.extraDisplayInputs?.modelMounts,
+              jobDetails.extraDisplayInputs?.modelNames,
+            ),
+          },
+        ]
+      : []),
     // 25.算法，只在应用和训练时展示
     ...(jobType === JobType.APP || jobType === JobType.TRAIN
       ? [
@@ -1040,35 +1046,37 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
         return <RuntimeConfigTable rows={rows} firstTitle={t(p("variableName"))} secondTitle={t(p("variableValue"))} />;
       })(),
     },
-    // 29.运行命令
-    {
-      key: "29",
-      label: t(p("command")),
-      contentStyle: expandedContentStyle,
-      children: (() => {
-        return (
-          <RuntimeCommandTextArea
-            value={jobDetails.extraDisplayInputs?.startCommand ?? ""}
-            readOnly
-            style={{
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all",
-              border: "none",
-              width: "min(100%, 560px)",
-              minWidth: 0,
-              height: RUNTIME_BLOCK_HEIGHT,
-              resize: "none",
-              overflowY: "auto",
-              paddingTop: 8,
-              paddingLeft: 12,
-              backgroundColor: theme.token.colorBgTextHover,
-              boxShadow: "0 2px 2px 0 rgba(0, 0, 0, 0.05)",
-              fontFamily: "inherit",
-            }}
-          />
-        );
-      })(),
-    },
+    // 29.运行命令，开发机不展示
+    ...(jobType !== JobType.DEV_HOST
+      ? [
+          {
+            key: "29",
+            label: t(p("command")),
+            contentStyle: expandedContentStyle,
+            children: (
+              <RuntimeCommandTextArea
+                value={jobDetails.extraDisplayInputs?.startCommand ?? ""}
+                readOnly
+                style={{
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all",
+                  border: "none",
+                  width: "min(100%, 560px)",
+                  minWidth: 0,
+                  height: RUNTIME_BLOCK_HEIGHT,
+                  resize: "none",
+                  overflowY: "auto",
+                  paddingTop: 8,
+                  paddingLeft: 12,
+                  backgroundColor: theme.token.colorBgTextHover,
+                  boxShadow: "0 2px 2px 0 rgba(0, 0, 0, 0.05)",
+                  fontFamily: "inherit",
+                }}
+              />
+            ),
+          },
+        ]
+      : []),
     // 30.训练作业时，TensorBoard地址；推理作业：推理服务地址; 其他空值占位
     ...(jobType === JobType.TRAIN
       ? [
@@ -1407,6 +1415,11 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
             aria-label={t(p("return"))}
             title={t(p("return"))}
             onClick={() => {
+              if (from === "devHostList") {
+                router.push("/jobs/devList");
+                return;
+              }
+
               router.push(
                 join(`/jobs/jobList?jobType=${from === AppTableStatus.UNFINISHED ? "unfinishedJobs" : "historyJobs"}`),
               );

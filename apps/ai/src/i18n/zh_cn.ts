@@ -454,6 +454,7 @@ export default {
         runningTime: "运行时长",
         nodesReq: "申请节点数",
         jobType: "作业类型",
+        devHost: "开发机",
         nodesAlloc: "分配节点数",
         defaultImage: "默认镜像",
         model: "模型",

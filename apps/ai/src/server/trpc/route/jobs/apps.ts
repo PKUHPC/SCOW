@@ -1269,6 +1269,17 @@ export const getJobDetails = procedure
       );
 
       extraDisplayResult = formatJobDetailsExtraInputs(devHostParams, extraDisplayResult);
+
+      // 开发机提交参数只保存本地镜像 ID，详情展示时转换为与提交表单一致的名称和标签。
+      if (devHostParams.image) {
+        const image = await em.findOne(ImageEntity, { id: devHostParams.image });
+        if (image) {
+          extraDisplayResult = {
+            ...extraDisplayResult,
+            imageNameOrUrl: `${image.name}: ${image.tag}`,
+          };
+        }
+      }
     } else {
       // 获取训练作业提交参数
       const trainJobParams = await fetchSubmitRecord(

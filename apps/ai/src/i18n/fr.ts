@@ -492,6 +492,7 @@ export default {
         runningTime: "Temps d'exécution",
         nodesReq: "Nœuds demandés",
         jobType: "Type de tâche",
+        devHost: "Hôte de développement",
         nodesAlloc: "Nœuds alloués",
         defaultImage: "Image par défaut",
         model: "Modèle",

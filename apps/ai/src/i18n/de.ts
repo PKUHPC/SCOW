@@ -494,6 +494,7 @@ export default {
         runningTime: "Laufzeit",
         nodesReq: "Angeforderte Knoten",
         jobType: "Auftragsart",
+        devHost: "Entwicklungs-Host",
         nodesAlloc: "Zugewiesene Knoten",
         defaultImage: "Standard-Image",
         model: "Modell",

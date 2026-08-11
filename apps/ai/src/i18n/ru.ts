@@ -490,6 +490,7 @@ export default {
         runningTime: "Время выполнения",
         nodesReq: "Запрошенные узлы",
         jobType: "Тип задачи",
+        devHost: "Хост разработки",
         nodesAlloc: "Выделенные узлы",
         defaultImage: "Образ по умолчанию",
         model: "Модель",

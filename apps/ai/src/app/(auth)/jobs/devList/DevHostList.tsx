@@ -2,13 +2,14 @@
 
 import {
   DesktopOutlined,
+  ExclamationCircleOutlined,
   MoreOutlined,
   RedoOutlined,
   ReloadOutlined,
   SaveOutlined,
   StopOutlined,
 } from "@ant-design/icons";
-import { App, Button, Card, Dropdown, MenuProps, Modal, Select, Space, Table, Tag, Typography } from "antd";
+import { App, Button, Card, Dropdown, MenuProps, Modal, Select, Space, Table, Tag, Tooltip, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { useRouter } from "next/navigation";
 import { join } from "path";
@@ -17,9 +18,11 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { DevHostConnectLink } from "src/components/devHost/DevHostConnectLink";
 import { SaveDevHostModal } from "src/components/devHost/SaveDevHostModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { DetailIcon } from "src/icons/operationIcon";
 import { AppName } from "src/models/App";
 import { JobType } from "src/models/Job";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
+import { JobReasonI18nKeyMap } from "src/utils/common";
 import { formatDateTime } from "src/utils/datetime";
 import { trpc } from "src/utils/trpc";
 
@@ -96,6 +99,18 @@ export const DevHostList = () => {
 
     const basePath = join(publicConfig.BASE_PATH, "jobs/createDev");
     window.location.href = `${basePath}?${searchParams.toString()}`;
+  };
+
+  const handleViewDetails = (record: AppSession) => {
+    const searchParams = new URLSearchParams({
+      jobId: record.jobId.toString(),
+      jobType: record.jobType,
+      appId: record.appId ?? "",
+      sessionId: record.sessionId,
+      from: "devHostList",
+    });
+
+    router.push(join(`/jobs/${selectedCluster}/jobDetails?${searchParams.toString()}`));
   };
 
   // 关闭保存镜像模态框
@@ -201,6 +216,11 @@ export const DevHostList = () => {
     );
   };
 
+  const getReasonText = (reason: string) => {
+    const i18nKey = JobReasonI18nKeyMap[reason.toUpperCase()];
+    return i18nKey !== undefined ? t(i18nKey) : reason;
+  };
+
   const columns: ColumnsType<AppSession> = [
     {
       title: t(p("name")),
@@ -211,7 +231,16 @@ export const DevHostList = () => {
       title: t(p("status")),
       dataIndex: "state",
       key: "state",
-      render: (state: string) => getStatusTag(state),
+      render: (state: string, record) => (
+        <Space>
+          {getStatusTag(state)}
+          {record.reason && (
+            <Tooltip title={getReasonText(record.reason)}>
+              <ExclamationCircleOutlined />
+            </Tooltip>
+          )}
+        </Space>
+      ),
     },
     {
       title: t(p("image")),
@@ -333,6 +362,9 @@ export const DevHostList = () => {
 
         return (
           <Space size={8}>
+            <Tooltip title={t(p("viewDetails"))}>
+              <DetailIcon onClick={() => handleViewDetails(record)} />
+            </Tooltip>
             <DevHostConnectLink
               session={record}
               cluster={selectedCluster}

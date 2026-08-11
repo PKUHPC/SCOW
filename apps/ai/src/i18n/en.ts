@@ -454,6 +454,7 @@ export default {
         runningTime: "Running time",
         nodesReq: "Requested nodes",
         jobType: "Job type",
+        devHost: "Dev host",
         nodesAlloc: "Allocated nodes",
         defaultImage: "Default image",
         model: "Model",

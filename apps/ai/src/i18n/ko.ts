@@ -488,6 +488,7 @@ export default {
         runningTime: "실행 시간",
         nodesReq: "요청된 노드",
         jobType: "작업 유형",
+        devHost: "개발 호스트",
         nodesAlloc: "할당된 노드",
         defaultImage: "기본 이미지",
         model: "모델",

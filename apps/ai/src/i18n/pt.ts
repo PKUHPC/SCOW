@@ -493,6 +493,7 @@ export default {
         runningTime: "Tempo de execução",
         nodesReq: "Nós solicitados",
         jobType: "Tipo de trabalho",
+        devHost: "Host de desenvolvimento",
         nodesAlloc: "Nós alocados",
         defaultImage: "Imagem padrão",
         model: "Model",

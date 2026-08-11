@@ -489,6 +489,7 @@ export default {
         runningTime: "実行時間",
         nodesReq: "要求ノード数",
         jobType: "ジョブタイプ",
+        devHost: "開発ホスト",
         nodesAlloc: "割り当てノード数",
         defaultImage: "デフォルトイメージ",
         model: "モデル",
