@@ -23,7 +23,7 @@ type ClientConstructor<TClient> = new (
   options?: Partial<ClientOptions>,
 ) => TClient;
 
-export const DEFAULT_SCHEDULER_ADAPTER_TIMEOUT_MS = 30 * 1000;
+export const DEFAULT_SCHEDULER_ADAPTER_TIMEOUT_MS = 60 * 1000;
 
 export interface SchedulerAdapterClientOptions {
   timeoutMs?: number;
