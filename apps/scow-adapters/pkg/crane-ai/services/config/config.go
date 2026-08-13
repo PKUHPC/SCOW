@@ -53,10 +53,6 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *protos.Ge
 	logrus.Tracef("GetAvailablePartitions account info: %v", account)
 	logrus.Tracef("GetAvailablePartitions account users: %v", account.GetUsers())
 
-	if account.GetBlocked() {
-		return &protos.GetAvailablePartitionsResponse{}, nil
-	}
-
 	// 判断账户是否包含用户
 	if !utils.Contains(account.GetUsers(), in.UserId) {
 		err = fmt.Errorf("user: %v is not in Account: %v", in.UserId, in.AccountName)

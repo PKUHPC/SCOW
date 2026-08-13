@@ -125,8 +125,8 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *pb.GetAva
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
 
-	if account.Blocked == 1 || len(account.Partitions) == 0 {
-		logrus.Infof("account %s is blocked or no available partitions", in.AccountName)
+	if len(account.Partitions) == 0 {
+		logrus.Infof("account %s has no authorized partitions", in.AccountName)
 		return &pb.GetAvailablePartitionsResponse{}, nil
 	}
 

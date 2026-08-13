@@ -1489,10 +1489,6 @@ func GetAccountsAuthorizedPartitions(accounts []string) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("get accounts: %v failed: %v", a, err)
 		}
-		if account.Blocked != 0 {
-			continue
-		}
-
 		for _, p := range strings.Split(account.Partitions, ",") {
 			p = strings.TrimSpace(p) // 去掉前后空格
 			if p == "" {             // 跳过空串
