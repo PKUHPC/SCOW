@@ -244,3 +244,25 @@ func TestConvertJobStartTime(t *testing.T) {
 func fixedZone(offset int) *time.Location {
 	return time.FixedZone("CST", offset*3600)
 }
+
+func TestChangeState(t *testing.T) {
+	tests := []struct {
+		name  string
+		state int
+		want  string
+	}{
+		{name: "completed", state: 3, want: "COMPLETED"},
+		{name: "preempted", state: 8, want: "PREEMPTED"},
+		{name: "boot fail", state: 9, want: "BOOT_FAIL"},
+		{name: "deadline", state: 10, want: "DEADLINE"},
+		{name: "out of memory", state: 11, want: "OUT_OF_MEMORY"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ChangeState(tt.state); got != tt.want {
+				t.Fatalf("ChangeState(%d) = %q, want %q", tt.state, got, tt.want)
+			}
+		})
+	}
+}

@@ -43,6 +43,28 @@ type jobRowData struct {
 	tresReq          string
 }
 
+var finishedJobStates = []int{3, 4, 5, 6, 7, 8, 9, 10, 11}
+
+func jobStateIDsString(states []int) string {
+	stateIDs := make([]string, 0, len(states))
+	for _, state := range states {
+		stateIDs = append(stateIDs, strconv.Itoa(state))
+	}
+
+	return strings.Join(stateIDs, ",")
+}
+
+// isFinishedJobState 根据 Slurm 明确的终态白名单判断作业是否已经结束。
+func isFinishedJobState(state int) bool {
+	for _, finishedState := range finishedJobStates {
+		if state == finishedState {
+			return true
+		}
+	}
+
+	return false
+}
+
 // 预编译正则表达式，避免在循环中重复编译
 var (
 	accountPermissionRegex = regexp.MustCompile(`Job's account not permitted to use this partition`)
@@ -462,6 +484,11 @@ func GetJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 		logrus.Tracef("GetJobs account: %v, idUser: %v, cpusReq: %v, jobName: %v, jobId: %v, idQos: %v, memReq: %v, nodeList: %v, nodesAlloc: %v, partition: %v, state: %v, "+
 			"timeLimitMinutes: %v, submitTime: %v, startTime: %v, endTime: %v, timeSuspended: %v, gresUsed: %v, workingDirectory: %v, tresAlloc: %v, tresReq: %v", account, idUser,
 			cpusReq, jobName, jobId, idQos, memReq, nodeList, nodesAlloc, partition, state, timeLimitMinutes, submitTime, startTime, endTime, timeSuspended, gresUsed, workingDirectory, tresAlloc, tresReq)
+		// 即使底层数据库按 time_end 返回了预期结束时间命中的作业，也不允许
+		// PENDING、RUNNING、SUSPENDED 作业进入后续批量查询和响应组装流程。
+		if in.Filter != nil && in.Filter.EndTime != nil && !isFinishedJobState(state) {
+			continue
+		}
 		if ShouldFilterDir(workingDirectory) {
 			logrus.Warnf("WorkDir %s invalid, jobName: %s", workingDirectory, jobName)
 			continue
@@ -983,6 +1010,11 @@ func getSelectJobSql(in *pb.GetJobsRequest) (string, string, []interface{}, []in
 		}
 		if accountsString != "" {
 			conditions = append(conditions, fmt.Sprintf("account IN (%s)", accountsString))
+		}
+		// Slurm 会为未结束作业保存预期 time_end。EndTime 查询必须同时限制为终态，
+		// 并让列表 SQL 与 count SQL 复用该条件，避免分页缺项和 TotalCount 偏大。
+		if in.Filter.EndTime != nil {
+			conditions = append(conditions, fmt.Sprintf("state IN (%s)", jobStateIDsString(finishedJobStates)))
 		}
 		if startTimeFilter != 0 {
 			conditions = append(conditions, "(time_end >= ? OR ? = 0)")

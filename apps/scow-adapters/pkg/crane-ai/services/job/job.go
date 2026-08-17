@@ -29,6 +29,23 @@ import (
 
 const maxUint = 4294967295
 
+// isFinishedJobStatus 判断 Crane AI 作业是否已经进入确定的终态。
+// Pending、Running、Configuring、Starting、Completing 和 Suspended 等状态即使带有
+// 预期 EndTime，也仍然属于未结束作业；只有明确的成功或失败终态才能参与 end_time 查询。
+func isFinishedJobStatus(status craneProtos.JobStatus) bool {
+	switch status {
+	case craneProtos.JobStatus_Completed,
+		craneProtos.JobStatus_Failed,
+		craneProtos.JobStatus_Cancelled,
+		craneProtos.JobStatus_ExceedTimeLimit,
+		craneProtos.JobStatus_OutOfMemory,
+		craneProtos.JobStatus_Deadline:
+		return true
+	default:
+		return false
+	}
+}
+
 func getScowTimeLimitMinutes(timeLimit *durationpb.Duration) int64 {
 	if timeLimit == nil || (timeLimit.GetSeconds() == 0 && timeLimit.GetNanos() == 0) {
 		return maxUint
@@ -450,6 +467,11 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 	}
 	for _, job := range response.GetJobInfoList() {
+		// Crane AI 可能使用预期结束时间筛中尚未结束的作业，因此 end_time 查询
+		// 在转换结果前必须再次确认作业已经进入终态。
+		if in.Filter != nil && in.Filter.EndTime != nil && !isFinishedJobStatus(job.GetStatus()) {
+			continue
+		}
 		if len(in.JobTypes) > 0 {
 			savedInfo, err := s.JM.QueryJobInfo(job.GetJobId())
 			if errors.Is(err, utils.ErrJobInfoNotFound) {

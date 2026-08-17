@@ -37,14 +37,18 @@ var (
 	numRe        = regexp.MustCompile(`^\d+$`)
 	scopeRe      = regexp.MustCompile(`^(\d+)-(\d+)$`)
 	stateMap     = map[string]int{
-		"PENDING":   0,
-		"RUNNING":   1,
-		"SUSPENDED": 2,
-		"COMPLETED": 3,
-		"CANCELED":  4,
-		"FAILED":    5,
-		"TIMEOUT":   6,
-		"NODE_FAIL": 7,
+		"PENDING":       0,
+		"RUNNING":       1,
+		"SUSPENDED":     2,
+		"COMPLETED":     3,
+		"CANCELED":      4,
+		"FAILED":        5,
+		"TIMEOUT":       6,
+		"NODE_FAIL":     7,
+		"PREEMPTED":     8,
+		"BOOT_FAIL":     9,
+		"DEADLINE":      10,
+		"OUT_OF_MEMORY": 11,
 	}
 )
 
@@ -156,6 +160,14 @@ func ChangeState(stateInit int) string {
 		stateString = "TIMEOUT"
 	case 7:
 		stateString = "NODE_FAIL"
+	case 8:
+		stateString = "PREEMPTED"
+	case 9:
+		stateString = "BOOT_FAIL"
+	case 10:
+		stateString = "DEADLINE"
+	case 11:
+		stateString = "OUT_OF_MEMORY"
 	default:
 		stateString = "COMPLETED"
 	}
