@@ -355,10 +355,22 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const selectedGpuCount = Form.useWatch("gpuCores", resourceForm) ?? 0;
   const selectedCpuCount = Form.useWatch("cpuCores", resourceForm) ?? 0;
 
-  const { data: accountListData } = trpc.account.listAccounts.useQuery(
-    { clusterId: selectedCluster },
-    { enabled: Boolean(selectedCluster) },
-  );
+  const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
+
+  const accountClusterMap = useMemo(() => {
+    const devHostClusterIds = new Set(availableClusters.map(({ id }) => id));
+
+    return Object.entries(appAvailableAccountsAndClusters?.accountClusters ?? {}).reduce<Record<string, string[]>>(
+      (result, [account, clusterIds]) => {
+        const availableClusterIds = clusterIds.filter((clusterId) => devHostClusterIds.has(clusterId));
+        if (availableClusterIds.length > 0) {
+          result[account] = availableClusterIds;
+        }
+        return result;
+      },
+      {},
+    );
+  }, [appAvailableAccountsAndClusters, availableClusters]);
 
   const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
     { clusterId: selectedCluster! },
@@ -367,11 +379,11 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
   const accountOptions = useMemo(
     () =>
-      (accountListData?.accounts ?? []).map((account) => ({
+      Object.keys(accountClusterMap).map((account) => ({
         label: account,
         value: account,
       })),
-    [accountListData],
+    [accountClusterMap],
   );
 
   // ----------- 服务请求与变更提示 -----------
@@ -735,15 +747,15 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
   const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)} ${t(p("yuan"))}`;
 
-  const clusterOptions = useMemo(
-    () =>
-      availableClusters.map((cluster) => ({
-        id: cluster.id,
-        name: cluster.name,
-        disabled: false,
-      })),
-    [availableClusters],
-  );
+  const clusterOptions = useMemo(() => {
+    const allowedClusters = new Set(selectedAccount ? (accountClusterMap[selectedAccount] ?? []) : []);
+
+    return availableClusters.map((cluster) => ({
+      id: cluster.id,
+      name: cluster.name,
+      disabled: !selectedAccount || !allowedClusters.has(cluster.id),
+    }));
+  }, [accountClusterMap, availableClusters, selectedAccount]);
 
   useEffect(() => {
     // 再次提交时回填账户与集群，避免默认值覆盖历史配置
@@ -978,9 +990,11 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       return;
     }
     const currentCluster = selectedCluster ?? resourceForm.getFieldValue("cluster");
-    const exists = currentCluster ? clusterOptions.some((option) => option.id === currentCluster) : false;
+    const exists = currentCluster
+      ? clusterOptions.some((option) => option.id === currentCluster && !option.disabled)
+      : false;
     if (!exists) {
-      resourceForm.setFieldValue("cluster", clusterOptions[0].id);
+      resourceForm.setFieldValue("cluster", clusterOptions.find((option) => !option.disabled)?.id);
     }
   }, [clusterOptions, createDevParams, resourceForm, selectedCluster]);
 
@@ -1487,7 +1501,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       templateCluster,
       isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
       getAvailableAccounts: () => accountOptions.map((o) => o.value),
-      getClustersForAccount: () => clusterOptions.filter((o) => !o.disabled).map((o) => o.id),
+      getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
       selectedAccount,
       selectedCluster,
       selectedQueueKey,

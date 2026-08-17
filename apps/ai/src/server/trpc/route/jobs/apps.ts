@@ -337,7 +337,9 @@ export const listAppAvailableAccountsAndClusters = procedure
     const commonConfig = getCommonConfig();
     const { appId } = input;
     const currentClusterIds = await getCurrentClusters(user.identityId);
-    const currentAiClusterIds = currentClusterIds.filter((clusterId) => Boolean(clusters[clusterId]));
+    const currentAiClusterIds = currentClusterIds.filter(
+      (clusterId) => Boolean(clusters[clusterId]) && (!appId || Boolean(getClusterAppConfigs(clusterId)[appId])),
+    );
 
     if (currentAiClusterIds.length === 0) {
       return { accountClusters: {} };
