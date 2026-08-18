@@ -244,11 +244,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         </Button>,
       ]}
     >
-      <p>
-        {t(p("uploadRemark1"))}
-        <span>{path}</span>
-        {t(p("uploadRemark2"))}
-      </p>
       {!scowdEnabled && (
         <p>
           {t(p("uploadRemark3"))}
@@ -327,30 +322,32 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             }
 
             return new Promise((resolve, reject) => {
-              api.fileExist({ query: { cluster: cluster, path: join(path, file.name) } }).then(({ result }) => {
-                if (result) {
-                  modal.confirm({
-                    title: t(p("existedModalTitle")),
-                    content: t(p("existedModalContent"), [file.name]),
-                    okText: t(p("existedModalOk")),
-                    onOk: async () => {
-                      const fileType = await api.getFileType({
-                        query: { cluster: cluster, path: join(path, file.name) },
-                      });
-                      const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
-                      await deleteOperation({ query: { cluster: cluster, path: join(path, file.name) } }).then(() =>
-                        resolve(file),
-                      );
-                    },
-                    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-                    onCancel: () => {
-                      reject(file);
-                    },
-                  });
-                } else {
-                  resolve(file);
-                }
-              });
+              const targetPath = join(path, file.name);
+              void api
+                .fileExist({ query: { cluster, path: targetPath } })
+                .then(async ({ result }) => {
+                  if (result) {
+                    const { type } = await api.getFileType({ query: { cluster, path: targetPath } });
+                    const isDir = type === "dir" || type === "DIR";
+                    modal.confirm({
+                      title: t(p(isDir ? "existedDirModalTitle" : "existedFileModalTitle")),
+                      content: t(p(isDir ? "existedDirModalContent" : "existedFileModalContent"), [file.name]),
+                      okText: t(p("existedModalOk")),
+                      cancelText: t(p("existedModalCancel")),
+                      onOk: async () => {
+                        const deleteOperation = isDir ? api.deleteDir : api.deleteFile;
+                        await deleteOperation({ query: { cluster, path: targetPath } }).then(() => resolve(file));
+                      },
+                      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+                      onCancel: () => {
+                        reject(file);
+                      },
+                    });
+                  } else {
+                    resolve(file);
+                  }
+                })
+                .catch(reject);
             });
           }}
           fileList={uploadFileList}

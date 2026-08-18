@@ -248,10 +248,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         </Button>,
       ]}
     >
-      <p>
-        {t(p("uploadTo"))}：<span>{path}</span>。{t(p("covered"))}。
-      </p>
-
       {!scowdEnabled && (
         <p>
           {t(p("maxSize"))}：<span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>。
@@ -335,33 +331,36 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             }
 
             return new Promise((resolve, reject) => {
-              checkFileExist.mutateAsync({ path: join(path, file.name), clusterId }).then(({ exists }) => {
-                if (exists) {
-                  modal.confirm({
-                    title: t(p("alreadyExisted")),
-                    content: t(p("confirmText"), [file.name]),
-                    okText: t("button.confirmButton"),
-                    onOk: async () => {
-                      const fileType = await getFileType.mutateAsync({ path: join(path, file.name), clusterId });
-
-                      if (fileType.type) {
+              const targetPath = join(path, file.name);
+              void checkFileExist
+                .mutateAsync({ path: targetPath, clusterId })
+                .then(async ({ exists }) => {
+                  if (exists) {
+                    const { type } = await getFileType.mutateAsync({ path: targetPath, clusterId });
+                    const isDir = type === "DIR";
+                    modal.confirm({
+                      title: t(p(isDir ? "existedDirModalTitle" : "existedFileModalTitle")),
+                      content: t(p(isDir ? "existedDirModalContent" : "existedFileModalContent"), [file.name]),
+                      okText: t(p("existedModalOk")),
+                      cancelText: t(p("existedModalCancel")),
+                      onOk: async () => {
                         await deleteFileMutation
                           .mutateAsync({
-                            target: fileType.type === "DIR" ? "DIR" : "FILE",
-                            clusterId: clusterId,
-                            path: join(path, file.name),
+                            target: isDir ? "DIR" : "FILE",
+                            clusterId,
+                            path: targetPath,
                           })
                           .then(() => resolve(file));
-                      }
-                    },
-                    onCancel: () => {
-                      reject(file);
-                    },
-                  });
-                } else {
-                  resolve(file);
-                }
-              });
+                      },
+                      onCancel: () => {
+                        reject(file);
+                      },
+                    });
+                  } else {
+                    resolve(file);
+                  }
+                })
+                .catch(reject);
             });
           }}
           fileList={uploadFileList}

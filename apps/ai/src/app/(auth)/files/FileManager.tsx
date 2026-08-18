@@ -278,20 +278,33 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
           });
 
           if (exists) {
+            const { type } = await getFileTypeMutation.mutateAsync({
+              clusterId: cluster.id,
+              path: join(path, x.name),
+            });
+            const isDir = type === "DIR";
             const shouldOverwrite = await new Promise<boolean>((resolve, reject) => {
               modal.confirm({
-                title: t(p("existModalTitle")),
-                content: t(p("existModalContent"), [x.name]),
-                okText: t(p("existModalOk")),
+                title: t(p(isDir ? "existedDirModalTitle" : "existedFileModalTitle")),
+                content: t(
+                  p(
+                    operation.op === "copy"
+                      ? isDir
+                        ? "copyDirModalContent"
+                        : "copyFileModalContent"
+                      : isDir
+                        ? "moveDirModalContent"
+                        : "moveFileModalContent",
+                  ),
+                  [x.name],
+                ),
+                okText: t(p("existedModalOk")),
+                cancelText: t("button.cancelButton"),
                 onOk: async () => {
                   try {
-                    const fileType = await getFileTypeMutation.mutateAsync({
-                      clusterId: cluster.id,
-                      path: join(path, x.name),
-                    });
                     await deleteMutation.mutateAsync({
                       clusterId: cluster.id,
-                      target: fileType.type === "DIR" ? "DIR" : "FILE",
+                      target: isDir ? "DIR" : "FILE",
                       path: join(path, x.name),
                     });
                     resolve(true);
@@ -332,7 +345,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
             allCount - successfulCount - abandonCount,
           ]),
         );
-      } else {
+      } else if (successfulCount > 0) {
         message.success(t(p("successMessage"), [operationText, allCount, successfulCount, abandonCount]));
       }
     } finally {
@@ -811,7 +824,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
                 </a>
               </Tooltip>
             )}
-            <RenameLink cluster={cluster} path={join(path, i.name)} reload={reload}>
+            <RenameLink cluster={cluster} path={join(path, i.name)} reload={reload} isFile={i.type !== "DIR"}>
               <Tooltip title={t(p("rename"))}>
                 <RenameIcon />
               </Tooltip>

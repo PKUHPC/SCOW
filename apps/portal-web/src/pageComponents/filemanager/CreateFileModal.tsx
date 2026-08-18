@@ -30,11 +30,14 @@ export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, 
 
   const onSubmit = async () => {
     const { newFileName } = await form.validateFields();
+    const targetPath = join(path, newFileName);
     setLoading(true);
     await api
-      .createFile({ body: { cluster, path: join(path, newFileName) } })
-      .httpError(409, () => {
-        message.error(t(p("createErrorMessage")));
+      .createFile({ body: { cluster, path: targetPath } })
+      .httpError(409, async () => {
+        const { type } = await api.getFileType({ query: { cluster, path: targetPath } });
+        const errorMessage = type === "dir" || type === "DIR" ? "existedDirErrorMessage" : "existedFileErrorMessage";
+        form.setFields([{ name: "newFileName", errors: [t(p(errorMessage))] }]);
       })
       .httpError(429, () => {
         message.error(t(pCommon("noSpaceError")));
@@ -44,6 +47,9 @@ export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, 
         reload();
         onClose();
         form.resetFields();
+      })
+      .catch(() => {
+        // API 请求错误由全局 failEvent 或上面的 httpError 处理器统一提示
       })
       .finally(() => setLoading(false));
   };
@@ -60,9 +66,6 @@ export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, 
       onOk={form.submit}
     >
       <Form form={form} onFinish={onSubmit}>
-        <Form.Item label={t(p("fileDirectory"))}>
-          <strong>{path}</strong>
-        </Form.Item>
         <Form.Item label={t(p("fileName"))} name="newFileName" rules={[{ required: true }]}>
           <Input />
         </Form.Item>

@@ -25,6 +25,7 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
 
   const { message } = App.useApp();
   const [form] = Form.useForm<FormProps>();
+  const getFileType = trpc.file.getFileType.useMutation();
 
   const mutation = trpc.file.mkdir.useMutation({
     onSuccess: () => {
@@ -33,9 +34,16 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
       onClose();
       form.resetFields();
     },
-    onError: (e) => {
+    onError: async (e, variables) => {
       if (e.data?.code === "CONFLICT") {
-        message.error(t(p("alreadyExisted")));
+        try {
+          const { type } = await getFileType.mutateAsync({ clusterId, path: variables.path });
+          const errorMessage = type === "DIR" ? "existedDirErrorMessage" : "existedFileErrorMessage";
+          form.setFields([{ name: "newDirName", errors: [t(p(errorMessage))] }]);
+        } catch {
+          // getFileType 的请求错误由全局 MutationCache 统一提示
+          return;
+        }
       } else if (e.data?.code === "TOO_MANY_REQUESTS") {
         message.error(t(pCommon("noSpaceError")));
       } else {
@@ -65,9 +73,6 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
       onOk={form.submit}
     >
       <Form form={form} onFinish={onSubmit}>
-        <Form.Item label={t(p("dirPath"))}>
-          <strong>{path}</strong>
-        </Form.Item>
         <Form.Item label={t(p("newDirName"))} name="newDirName" rules={[{ required: true }]}>
           <Input />
         </Form.Item>

@@ -2,7 +2,8 @@
 
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { App, Form, Modal } from "antd";
-import { dirname, join } from "path";
+import { basename, dirname, join } from "path";
+import { useEffect } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/server/trpc/route/config";
 import { trpc } from "src/utils/trpc";
@@ -13,24 +14,29 @@ interface Props {
   reload: () => void;
   cluster: Cluster;
   path: string;
+  isFile: boolean;
 }
 
 interface FormProps {
   newFileName: string;
 }
 
-export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, cluster }) => {
+export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, isFile }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.files.renameModal.");
-  const pFileManager = prefix("app.files.fileManager.");
 
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const [form] = Form.useForm<FormProps>();
 
   const renameMutation = trpc.file.copyOrMove.useMutation();
   const checkFileExistMutation = trpc.file.checkFileExist.useMutation();
   const getFileTypeMutation = trpc.file.getFileType.useMutation();
-  const deleteMutation = trpc.file.deleteItem.useMutation();
+
+  useEffect(() => {
+    if (open) {
+      form.setFieldValue("newFileName", basename(path));
+    }
+  }, [form, open, path]);
 
   const handleRenameSuccess = () => {
     message.success(t(p("success")));
@@ -48,35 +54,14 @@ export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     message.error(e.message || t(p("failed")));
   };
 
-  const confirmOverwrite = (fileName: string, toPath: string) =>
-    new Promise<boolean>((resolve, reject) => {
-      modal.confirm({
-        title: t(pFileManager("existModalTitle")),
-        content: t(pFileManager("existModalContent"), [fileName]),
-        okText: t(pFileManager("existModalOk")),
-        onOk: async () => {
-          try {
-            const fileType = await getFileTypeMutation.mutateAsync({
-              clusterId: cluster.id,
-              path: toPath,
-            });
-            await deleteMutation.mutateAsync({
-              clusterId: cluster.id,
-              target: fileType.type === "DIR" ? "DIR" : "FILE",
-              path: toPath,
-            });
-            resolve(true);
-          } catch (e) {
-            reject(e);
-          }
-        },
-        onCancel: () => resolve(false),
-      });
-    });
-
   const onSubmit = async () => {
     const { newFileName } = await form.validateFields();
     const toPath = join(dirname(path), newFileName);
+
+    if (newFileName === basename(path)) {
+      handleRenameSuccess();
+      return;
+    }
 
     try {
       const { exists } = await checkFileExistMutation.mutateAsync({
@@ -85,10 +70,13 @@ export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       });
 
       if (exists) {
-        const shouldOverwrite = await confirmOverwrite(newFileName, toPath);
-        if (!shouldOverwrite) {
-          return;
-        }
+        const { type } = await getFileTypeMutation.mutateAsync({
+          clusterId: cluster.id,
+          path: toPath,
+        });
+        const errorMessage = type === "DIR" ? t(p("existedDirErrorMessage")) : t(p("existedErrorMessage"));
+        form.setFields([{ name: "newFileName", errors: [errorMessage] }]);
+        return;
       }
 
       await renameMutation.mutateAsync({
@@ -106,24 +94,20 @@ export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, clus
   return (
     <Modal
       open={open}
-      title={t(p("rename"))}
+      title={isFile ? t(p("rename")) : t(p("dirTitle"))}
       okText={t("button.confirmButton")}
       cancelText={t("button.cancelButton")}
       onCancel={onClose}
-      confirmLoading={
-        renameMutation.isPending ||
-        checkFileExistMutation.isPending ||
-        getFileTypeMutation.isPending ||
-        deleteMutation.isPending
-      }
+      confirmLoading={renameMutation.isPending || checkFileExistMutation.isPending || getFileTypeMutation.isPending}
       destroyOnClose
       onOk={form.submit}
     >
       <Form form={form} onFinish={onSubmit}>
-        <Form.Item label={t(p("wannaRename"))}>
-          <strong>{path}</strong>
-        </Form.Item>
-        <Form.Item label={t(p("newFileName"))} name="newFileName" rules={[{ required: true }]}>
+        <Form.Item
+          label={isFile ? t(p("newFileName")) : t(p("newDirName"))}
+          name="newFileName"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
       </Form>

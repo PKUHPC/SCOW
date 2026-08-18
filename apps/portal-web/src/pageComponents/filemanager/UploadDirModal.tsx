@@ -40,7 +40,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   const limit = useRef(pLimit(2));
   const uploadSessionRef = useRef(0);
 
-  // 使用 ref 来追踪每个文件夹的覆盖确认状态
+  // 使用 ref 来追踪每个文件夹的冲突确认状态
   const folderOverwriteSetRef = useRef<Set<string>>(new Set());
   // 用于缓存文件夹存在性检查的 Promise
   const folderCheckPromisesRef = useRef<Map<string, Promise<boolean>>>(new Map());
@@ -103,19 +103,19 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   }, [uploadFileList]);
 
   /**
-   * 显示文件夹覆盖确认对话框
+   * 显示文件夹上传冲突确认对话框
    * @param folderName 文件夹名称
+   * @param isDir 冲突目标是否为文件夹
    * @returns 用户的选择
    */
-  const showConfirmForFolderOverwrite = (folderName: string): Promise<"overwrite" | "skip"> => {
+  const showConfirmForFolderOverwrite = (folderName: string, isDir: boolean): Promise<"overwrite" | "skip"> => {
     return new Promise((resolve) => {
       modal.confirm({
-        title: t(p("existedModalTitle")),
-        content: t(p("existedModalContent"), [folderName]),
-        okText: t(p("existedModalOk")),
+        title: t(p(isDir ? "existedDirModalTitle" : "existedFileModalTitle")),
+        content: t(p(isDir ? "existedDirModalContent" : "existedFileModalContent"), [folderName]),
+        okText: t(p(isDir ? "existedDirModalOk" : "existedFileModalOk")),
         cancelText: t(p("existedModalCancel")),
         maskClosable: false,
-        centered: true,
         onOk: () => resolve("overwrite"),
         onCancel: () => resolve("skip"),
       });
@@ -216,11 +216,13 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       const exists = await checkFolderExists(folderPath);
 
       if (exists) {
+        const { type } = await api.getFileType({ query: { cluster, path: folderPath } });
+        const isDir = type === "dir" || type === "DIR";
         // 检查是否已经有一个确认正在进行
         let confirmPromise = folderConfirmPromisesRef.current.get(folderPath);
         if (!confirmPromise) {
           // 如果没有，创建一个新的确认 Promise 并缓存
-          confirmPromise = showConfirmForFolderOverwrite(folderPath);
+          confirmPromise = showConfirmForFolderOverwrite(folderName, isDir);
           folderConfirmPromisesRef.current.set(folderPath, confirmPromise);
         }
         const userChoice = await confirmPromise;
@@ -232,15 +234,17 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           if (!folderDeletedSetRef.current.has(folderPath)) {
             let deletePromise = folderDeletePromisesRef.current.get(folderPath);
             if (!deletePromise) {
-              deletePromise = api
-                .deleteDir({ query: { cluster, path: folderPath } })
-                .then(() => {})
-                .catch(() => {
+              const deleteOperation = isDir ? api.deleteDir : api.deleteFile;
+              deletePromise = deleteOperation({ query: { cluster, path: folderPath } })
+                .then(() => {
+                  folderDeletedSetRef.current.add(folderPath);
+                })
+                .catch((error) => {
                   message.error(t(p("deleteFolderFailed"), [folderName]));
+                  throw error;
                 })
                 .finally(() => {
                   folderDeletePromisesRef.current.delete(folderPath);
-                  folderDeletedSetRef.current.add(folderPath);
                 });
               folderDeletePromisesRef.current.set(folderPath, deletePromise);
             }
@@ -494,11 +498,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         </Button>,
       ]}
     >
-      <p>
-        {t(p("pathMention"))}
-        <strong>{path}</strong>
-        {t(p("uploadRemark2"))}
-      </p>
       {!scowdEnabled && (
         <p>
           {t(p("uploadRemark3"))}

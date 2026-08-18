@@ -116,6 +116,8 @@ interface Operation {
 
 interface OverwriteConfirmInfo {
   file: FileInfo;
+  isDir: boolean;
+  operation: "copy" | "move";
   onConfirm: () => Promise<void>;
   resolve: (confirmed: boolean) => void;
 }
@@ -338,9 +340,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     };
   }, []);
 
-  const confirmOverwrite = (file: FileInfo, onConfirm: () => Promise<void>) =>
+  const confirmOverwrite = (file: FileInfo, isDir: boolean, onConfirm: () => Promise<void>) =>
     new Promise<boolean>((resolve) => {
-      setOverwriteConfirmInfo({ file, onConfirm, resolve });
+      setOverwriteConfirmInfo({ file, isDir, operation: operation!.op, onConfirm, resolve });
     });
 
   const handleOverwriteConfirmOk = async () => {
@@ -417,11 +419,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
         });
         if (exists.result) {
-          const overwritten = await confirmOverwrite(x, async () => {
-            const fileType = await api.getFileType({
-              query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
-            });
-            const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
+          const fileType = await api.getFileType({
+            query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
+          });
+          const isDir = fileType.type === "dir" || fileType.type === "DIR";
+          const overwritten = await confirmOverwrite(x, isDir, async () => {
+            const deleteOperation = isDir ? api.deleteDir : api.deleteFile;
             await deleteOperation({
               query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
             });
@@ -451,7 +454,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           allCount - successfulCount - abandonCount,
         ]),
       );
-    } else {
+    } else if (successfulCount > 0) {
       message.success(t(p("moveCopy.successMessage"), [operationText, allCount, successfulCount, abandonCount]));
     }
 
@@ -1104,7 +1107,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               </a>
             )}
             {
-              <RenameLink cluster={currentClusterRef.current.id} path={join(path, i.name)} reload={reload}>
+              <RenameLink
+                cluster={currentClusterRef.current.id}
+                path={join(path, i.name)}
+                reload={reload}
+                isFile={i.type !== "DIR"}
+              >
                 <Tooltip title={t(p("tableInfo.rename"))}>
                   <RenameIcon />
                 </Tooltip>
@@ -1162,10 +1170,10 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         title={
           <span>
             <ExclamationCircleFilled style={{ color: theme.token.colorWarning, marginRight: 8 }} />
-            {t(p("moveCopy.existModalTitle"))}
+            {t(p(overwriteConfirmInfo?.isDir ? "moveCopy.existedDirModalTitle" : "moveCopy.existedFileModalTitle"))}
           </span>
         }
-        okText={t(p("moveCopy.existModalOk"))}
+        okText={t(p("moveCopy.existedModalOk"))}
         onOk={handleOverwriteConfirmOk}
         confirmLoading={overwriteLoading}
         onCancel={handleOverwriteConfirmCancel}
@@ -1173,7 +1181,20 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         maskClosable={false}
         destroyOnClose
       >
-        <p>{t(p("moveCopy.existModalContent"), [overwriteConfirmInfo?.file.name])}</p>
+        <p>
+          {t(
+            p(
+              overwriteConfirmInfo?.operation === "copy"
+                ? overwriteConfirmInfo.isDir
+                  ? "moveCopy.copyDirModalContent"
+                  : "moveCopy.copyFileModalContent"
+                : overwriteConfirmInfo?.isDir
+                  ? "moveCopy.moveDirModalContent"
+                  : "moveCopy.moveFileModalContent",
+            ),
+            [overwriteConfirmInfo?.file.name],
+          )}
+        </p>
       </StyledModal>
       <StyledModal
         open={deleteConfirmInfo !== null}

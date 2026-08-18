@@ -96,17 +96,17 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   /**
    * 显示文件夹覆盖确认对话框
    * @param folderName 文件夹名称
+   * @param isDir 冲突目标是否为文件夹
    * @returns 用户的选择
    */
-  const showConfirmForFolderOverwrite = (folderName: string): Promise<"overwrite" | "skip"> => {
+  const showConfirmForFolderOverwrite = (folderName: string, isDir: boolean): Promise<"overwrite" | "skip"> => {
     return new Promise((resolve) => {
       modal.confirm({
-        title: t(p("existedModalTitle")),
-        content: t(p("existedModalContent"), [folderName]),
+        title: t(p(isDir ? "existedDirModalTitle" : "existedFileModalTitle")),
+        content: t(p(isDir ? "existedDirModalContent" : "existedFileModalContent"), [folderName]),
         okText: t(p("existedModalOk")),
         cancelText: t(p("existedModalCancel")),
         maskClosable: false,
-        centered: true,
         onOk: () => resolve("overwrite"),
         onCancel: () => resolve("skip"),
       });
@@ -114,6 +114,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   };
 
   const checkFileExist = trpc.file.checkFileExist.useMutation();
+  const getFileType = trpc.file.getFileType.useMutation();
   const mkdir = trpc.file.mkdir.useMutation();
   const initMultipartUpload = trpc.file.initMultipartUpload.useMutation();
   const completeMultipartUpload = trpc.file.completeMultipartUpload.useMutation();
@@ -210,11 +211,13 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       const exists = await checkFolderExists(folderPath);
 
       if (exists) {
+        const { type } = await getFileType.mutateAsync({ clusterId, path: folderPath });
+        const isDir = type === "DIR";
         // 检查是否已经有一个确认正在进行
         let confirmPromise = folderConfirmPromisesRef.current.get(folderPath);
         if (!confirmPromise) {
           // 如果没有，创建一个新的确认 Promise 并缓存
-          confirmPromise = showConfirmForFolderOverwrite(folderPath);
+          confirmPromise = showConfirmForFolderOverwrite(folderName, isDir);
           folderConfirmPromisesRef.current.set(folderPath, confirmPromise);
         }
         const userChoice = await confirmPromise;
@@ -228,17 +231,19 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
             if (!deletePromise) {
               deletePromise = deleteFileMutation
                 .mutateAsync({
-                  target: "DIR",
+                  target: isDir ? "DIR" : "FILE",
                   clusterId,
                   path: folderPath,
                 })
-                .then(() => {})
-                .catch(() => {
+                .then(() => {
+                  folderDeletedSetRef.current.add(folderPath);
+                })
+                .catch((error) => {
                   message.error(t(p("deleteFolderFailed"), [folderName]));
+                  throw error;
                 })
                 .finally(() => {
                   folderDeletePromisesRef.current.delete(folderPath);
-                  folderDeletedSetRef.current.add(folderPath);
                 });
               folderDeletePromisesRef.current.set(folderPath, deletePromise);
             }
@@ -477,11 +482,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         </Button>,
       ]}
     >
-      <p>
-        {t(p("pathMention"))}
-        <strong>{path}</strong>
-        {t(p("uploadRemark2"))}
-      </p>
       {!scowdEnabled && (
         <p>
           {t(p("uploadRemark3"))}

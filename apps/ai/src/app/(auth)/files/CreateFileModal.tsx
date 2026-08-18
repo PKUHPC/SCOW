@@ -26,6 +26,7 @@ export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, 
   const { message } = App.useApp();
 
   const [form] = Form.useForm<FormProps>();
+  const getFileType = trpc.file.getFileType.useMutation();
 
   const mutation = trpc.file.createFile.useMutation({
     onSuccess: () => {
@@ -34,9 +35,16 @@ export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, 
       onClose();
       form.resetFields();
     },
-    onError: (e) => {
+    onError: async (e, variables) => {
       if (e.data?.code === "CONFLICT") {
-        message.error(t(p("alreadyExist")));
+        try {
+          const { type } = await getFileType.mutateAsync({ clusterId: cluster.id, path: variables.path });
+          const errorMessage = type === "DIR" ? "existedDirErrorMessage" : "existedFileErrorMessage";
+          form.setFields([{ name: "newFileName", errors: [t(p(errorMessage))] }]);
+        } catch {
+          // getFileType 的请求错误由全局 MutationCache 统一提示
+          return;
+        }
       } else {
         throw e;
       }
@@ -61,9 +69,6 @@ export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, 
       onOk={form.submit}
     >
       <Form form={form} onFinish={onSubmit}>
-        <Form.Item label={t(p("dir"))}>
-          <strong>{path}</strong>
-        </Form.Item>
         <Form.Item label={t(p("name"))} name="newFileName" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
