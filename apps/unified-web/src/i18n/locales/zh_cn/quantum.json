@@ -1,0 +1,10 @@
+{
+  "route": {
+    "dashboard": "仪表盘",
+    "devices": "运行设备",
+    "linkTextQuantum": "量子云",
+    "quantum": {
+      "root": "量子作业"
+    }
+  }
+}

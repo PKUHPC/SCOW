@@ -150,6 +150,7 @@ const UiConfigSchema = z.object({
     titleTag: z.string().optional(),
   }),
   defaultPrimaryColor: z.string().default(DEFAULT_PRIMARY_COLOR),
+  systemLanguageConfig: SystemLanguageConfigSchema,
 });
 
 // 类型别名
@@ -461,6 +462,7 @@ export const config = router({
       return {
         config: uiConfig,
         defaultPrimaryColor: DEFAULT_PRIMARY_COLOR,
+        systemLanguageConfig: getSystemLanguageConfig(getCommonConfig().systemLanguage),
       };
     }),
 });

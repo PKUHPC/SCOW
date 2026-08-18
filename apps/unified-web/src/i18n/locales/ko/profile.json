@@ -1,0 +1,45 @@
+{
+  "accountSecurity": "계정 보안",
+  "createTime": "생성 시간",
+  "email": {
+    "change": "이메일 변경",
+    "changeFailed": "이메일 변경 실패.",
+    "changeSuccess": "이메일이 성공적으로 변경되었습니다!",
+    "invalid": "이메일 형식이 올바르지 않습니다. 다시 입력하세요.",
+    "label": "이메일",
+    "new": "새 이메일",
+    "old": "이전 이메일",
+    "placeholder": "새 이메일을 입력하세요",
+    "required": "새 이메일을 입력하세요"
+  },
+  "errors": {
+    "unavailable": "현재 구성에서는 이 기능을 사용할 수 없습니다",
+    "userNotFound": "사용자가 존재하지 않습니다"
+  },
+  "organization": "조직",
+  "password": {
+    "change": "비밀번호 변경",
+    "changeFailed": "비밀번호 변경 실패",
+    "changeSuccess": "비밀번호가 성공적으로 변경되었습니다",
+    "confirm": "비밀번호 확인",
+    "confirmRequired": "비밀번호를 확인해 주세요",
+    "login": "로그인 비밀번호",
+    "mismatch": "비밀번호가 일치하지 않습니다. 다시 입력하세요.",
+    "new": "새 비밀번호",
+    "old": "이전 비밀번호",
+    "oldIncorrect": "기존 비밀번호가 올바르지 않습니다"
+  },
+  "phone": "전화",
+  "platformRole": "플랫폼 역할",
+  "roles": {
+    "platformAdmin": "플랫폼 관리자",
+    "platformFinance": "플랫폼 재무 담당",
+    "tenantAdmin": "테넌트 관리자",
+    "tenantFinance": "재무 담당"
+  },
+  "tenantRole": "테넌트 역할",
+  "title": "계정 정보",
+  "userFullName": "사용자 이름",
+  "userId": "사용자 ID",
+  "userInfo": "사용자 정보"
+}

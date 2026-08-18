@@ -1,6 +1,7 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { ClusterConfigSchema, getSortedClusterIds } from "@scow/config/build/cluster";
 import { createI18nStringSchema } from "@scow/config/build/i18n";
+import { UiExtensionConfigSchema } from "@scow/config/build/uiExtensions";
 import { getDarkModeCookieValue } from "@scow/lib-web/build/layouts/darkMode";
 import { libGetClustersRuntimeInfo } from "@scow/lib-web/build/server/clustersActivation";
 import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
@@ -60,6 +61,12 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
       ),
 
       initialLanguageId: Type.String(),
+      systemLanguageConfig: Type.Object({
+        defaultLanguage: Type.String(),
+        isUsingI18n: Type.Boolean(),
+        autoDetectWhenUserNotSet: Type.Boolean(),
+        enabledLanguages: Type.Array(Type.String()),
+      }),
       clusterConfigs: Type.Record(Type.String(), ClusterConfigSchema),
 
       initialCurrentClusters: Type.Optional(
@@ -75,7 +82,13 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
 
       userAssociatedClusterIds: Type.Optional(Type.Array(Type.String())),
 
+      dashboardUserDisplayMode: Type.Union([Type.Literal("full"), Type.Literal("simplified")]),
+
+      publicPath: Type.String(),
+
       titleTag: Type.Optional(Type.String()),
+
+      uiExtension: Type.Optional(UiExtensionConfigSchema),
     }),
   },
 });
@@ -90,13 +103,17 @@ export default route(GetAppInitialConfigSchema, async (req) => {
     darkModeCookieValue: getDarkModeCookieValue(req),
     loginNodes: {},
     initialLanguageId: "",
+    systemLanguageConfig: publicConfig.SYSTEM_LANGUAGE_CONFIG,
     clusterConfigs: {},
     initialCurrentClusters: [],
     // 通过SSR获取门户系统配置文件中是否可用桌面功能
     // enabled: Type.Boolean({ description: "是否启动登录节点上的桌面功能", default: true }),
     initialPortalRuntimeDesktopEnabled: runtimeConfig.PORTAL_CONFIG.loginDesktop.enabled,
     userAssociatedClusterIds: undefined,
+    dashboardUserDisplayMode: publicConfig.DASHBOARD_USER_DISPLAY_MODE,
+    publicPath: publicConfig.PUBLIC_PATH,
     titleTag: "",
+    uiExtension: publicConfig.UI_EXTENSION,
   };
 
   const token = USE_MOCK ? "123" : getTokenFromCookie({ req });
@@ -197,6 +214,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
   extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
   // 从Cookies或header中获取语言id
   extra.initialLanguageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
+  extra.systemLanguageConfig = publicConfig.SYSTEM_LANGUAGE_CONFIG;
 
   return { 200: extra };
 });

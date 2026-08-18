@@ -45,6 +45,7 @@ if (appDirs.length === 0) {
     "notification",
     "resource",
     "quantum",
+    "unified-web",
   ].map((x) => join(APPS_BASE_PATH, x));
 }
 

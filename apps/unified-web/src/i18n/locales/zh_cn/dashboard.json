@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "infoPanes": {
+      "gpu": "加速卡",
+      "idle": "空闲",
+      "node": "节点",
+      "notAvailable": "不可用",
+      "platformOverview": "平台概览",
+      "running": "运行中",
+      "totalCards": "总卡数",
+      "totalCores": "总核心数",
+      "totalNodes": "总数"
+    },
+    "noAvailableClusters": "当前没有可用集群。请稍后再试或联系管理员。",
+    "nodeRange": {
+      "jobs": "作业",
+      "pending": "排队中",
+      "running": "运行中"
+    },
+    "notificationCard": {
+      "check": "查看全部 >",
+      "fetchError": "获取未读消息失败",
+      "message": "消息",
+      "noMessage": "当前没有未读消息"
+    },
+    "overviewTable": {
+      "available": "可用",
+      "clusterName": "集群",
+      "cpuUsage": "CPU使用率",
+      "gpuUsage": "加速卡使用率",
+      "fetchFailed": "获取失败",
+      "nodeCount": "节点总数",
+      "notAvailable": "不可用",
+      "partitionName": "分区",
+      "partitionStatus": "分区状态",
+      "pendingJobCount": "作业排队数",
+      "title": "平台概览",
+      "usageRatePercentage": "节点使用率"
+    },
+    "partialLoadFailed": "部分集群数据加载失败，已展示其余可用集群。",
+    "quickEntry": {
+      "saveFailed": "保存失败",
+      "saveSuccessfully": "保存成功"
+    },
+    "title": "平台仪表盘"
+  }
+}

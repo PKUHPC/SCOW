@@ -10,6 +10,17 @@ export const config = envConfig({
 
   BASE_PATH: str({ desc: "base path", default: "" }),
 
+  UNIFIED_WEB_ENABLED: bool({ desc: "是否启用统一前端预览入口", default: false }),
+  UNIFIED_WEB_PATH: str({ desc: "统一前端预览路径", default: "/unified" }),
+  UNIFIED_WEB_SOURCE_DIR: str({
+    desc: "统一前端构建产物目录",
+    default: "/app/apps/unified-web/dist",
+  }),
+  UNIFIED_WEB_RUNTIME_ROOT: str({
+    desc: "替换运行时路径后的统一前端静态文件根目录",
+    default: "/tmp/scow-unified-web",
+  }),
+
   PORTAL_ENABLED: bool({ desc: "是否启用门户系统", default: true }),
   PORTAL_PATH: str({ desc: "门户系统路径", default: "/" }),
   PORTAL_PATH_INTERNAL_URL: str({ desc: "门户系统内部路径", default: "http://portal-web:3000" }),

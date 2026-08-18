@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "infoPanes": {
+      "gpu": "Accelerator Card",
+      "idle": "Idle",
+      "node": "Nodes",
+      "notAvailable": "Error",
+      "platformOverview": "Platform Overview",
+      "running": "Running",
+      "totalCards": "Total Cards",
+      "totalCores": "Total Cores",
+      "totalNodes": "Total Nodes"
+    },
+    "noAvailableClusters": "There are currently no available clusters. Please try again later or contact the administrator.",
+    "nodeRange": {
+      "jobs": "Jobs",
+      "pending": "Pending",
+      "running": "Running"
+    },
+    "notificationCard": {
+      "check": "Check All >",
+      "fetchError": "Failed to get unread messages",
+      "message": "Message",
+      "noMessage": "There are currently no unread messages"
+    },
+    "overviewTable": {
+      "available": "Available",
+      "clusterName": "Cluster",
+      "cpuUsage": "CPU",
+      "gpuUsage": "Accelerator Card Usage",
+      "fetchFailed": "Failed to load",
+      "nodeCount": "All Nodes",
+      "notAvailable": "Error",
+      "partitionName": "Partition",
+      "partitionStatus": "Status",
+      "pendingJobCount": "Pending Jobs",
+      "title": "Platform Overview",
+      "usageRatePercentage": "Nodes"
+    },
+    "partialLoadFailed": "Some cluster data failed to load. The remaining available clusters are shown.",
+    "quickEntry": {
+      "saveFailed": "Save failed",
+      "saveSuccessfully": "Save succeeded"
+    },
+    "title": "Platform Dashboard"
+  }
+}

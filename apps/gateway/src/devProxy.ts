@@ -1,11 +1,9 @@
+import { readVersionFile } from "@scow/utils/build/version";
 import { createServer, IncomingMessage, request as httpRequest, ServerResponse } from "http";
 import { request as httpsRequest } from "https";
 import { Socket } from "net";
-import { URL } from "url";
-
-import { readVersionFile } from "@scow/utils/build/version";
-
 import { config } from "src/env";
+import { URL } from "url";
 
 interface ProxyRoute {
   prefix: string;
@@ -54,6 +52,52 @@ function getRoutes(): ProxyRoute[] {
     route(joinPath(basePath, config.RESOURCE_PATH), config.RESOURCE_PATH_INTERNAL_URL, { stripPrefix: true }),
   ];
 
+  if (config.UNIFIED_WEB_ENABLED) {
+    if (config.PORTAL_ENABLED) {
+      routes.push(
+        route(
+          joinPath(basePath, "/api/unified/portal"),
+          `${trimTrailingSlash(config.PORTAL_PATH_INTERNAL_URL)}${joinPath(basePath, config.PORTAL_PATH, "/api")}`,
+          { stripPrefix: true },
+        ),
+      );
+    }
+    if (config.MIS_ENABLED) {
+      routes.push(
+        route(
+          joinPath(basePath, "/api/unified/mis"),
+          `${trimTrailingSlash(config.MIS_PATH_INTERNAL_URL)}${joinPath(basePath, config.MIS_PATH, "/api")}`,
+          { stripPrefix: true },
+        ),
+      );
+    }
+    if (config.AI_ENABLED) {
+      routes.push(
+        route(
+          joinPath(basePath, "/api/unified/ai"),
+          `${trimTrailingSlash(config.AI_PATH_INTERNAL_URL)}${joinPath(basePath, config.AI_PATH, "/api")}`,
+          { stripPrefix: true },
+        ),
+      );
+    }
+    routes.push(
+      route(
+        joinPath(basePath, "/api/unified/notification"),
+        `${trimTrailingSlash(config.NOTIFICATION_PATH_INTERNAL_URL)}${joinPath(basePath, config.NOTIFICATION_PATH, "/api")}`,
+        { stripPrefix: true },
+      ),
+    );
+    if (config.QUANTUM_ENABLED) {
+      routes.push(
+        route(
+          joinPath(basePath, "/api/unified/quantum"),
+          `${trimTrailingSlash(config.QUANTUM_PATH_INTERNAL_URL)}${joinPath(basePath, config.QUANTUM_PATH, "/api")}`,
+          { stripPrefix: true },
+        ),
+      );
+    }
+  }
+
   if (config.PORTAL_ENABLED) {
     routes.push(route(joinPath(basePath, config.PORTAL_PATH), config.PORTAL_PATH_INTERNAL_URL, { stripPrefix: true }));
   }
@@ -62,7 +106,9 @@ function getRoutes(): ProxyRoute[] {
     routes.push(route(joinPath(basePath, config.AI_PATH), config.AI_PATH_INTERNAL_URL, { stripPrefix: true }));
   }
   if (config.QUANTUM_ENABLED) {
-    routes.push(route(joinPath(basePath, config.QUANTUM_PATH), config.QUANTUM_PATH_INTERNAL_URL, { stripPrefix: true }));
+    routes.push(
+      route(joinPath(basePath, config.QUANTUM_PATH), config.QUANTUM_PATH_INTERNAL_URL, { stripPrefix: true }),
+    );
   }
   if (config.VNC_ENABLED) {
     routes.push(route(joinPath(basePath, config.VNC_PATH), config.NOVNC_INTERNAL_URL, { stripPrefix: true }));

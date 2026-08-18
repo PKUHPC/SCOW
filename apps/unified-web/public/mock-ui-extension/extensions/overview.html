@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UI Extension</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; color: #262626; font: 14px/1.5 Arial, sans-serif; background: #fff; }
+      main { padding: 24px; }
+      h1 { margin: 0 0 20px; font-size: 24px; }
+      dl { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px 24px; margin: 0 0 24px; }
+      dt { color: #595959; }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      button { margin-right: 8px; padding: 5px 14px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>UI Extension Mock</h1>
+      <dl id="params"></dl>
+      <button id="title">更新标题</button>
+      <button id="links">刷新顶部链接</button>
+      <button id="navs">刷新导航</button>
+    </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const paramsElement = document.getElementById("params");
+      ["scowLangId", "scowDark", "scowUserToken"].forEach((key) => {
+        const term = document.createElement("dt");
+        const description = document.createElement("dd");
+        term.textContent = key;
+        description.textContent = params.get(key) || "";
+        paramsElement.append(term, description);
+      });
+      const send = (type, payload = {}) => window.parent.postMessage({ type, payload }, window.location.origin);
+      document.getElementById("title").onclick = () => send("scow.extensionPageTitleChanged", { title: "扩展功能" });
+      document.getElementById("links").onclick = () => send("scow.reloadNavbarLink");
+      document.getElementById("navs").onclick = () => send("scow.reloadNavigations");
+      send("scow.extensionPageHeightChanged", { height: document.documentElement.scrollHeight });
+    </script>
+  </body>
+</html>

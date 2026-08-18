@@ -1,0 +1,68 @@
+{
+  "api": {
+    "msgConfig": "Message Delivery Settings",
+    "msgSub": "Message Receiving Settings",
+    "myMsgs": "My Messages",
+    "notification": "Notification"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "noticeType": {
+    "dingTalk": "DingTalk",
+    "email": "Email",
+    "lark": "Lark",
+    "officialAccount": "Official Account",
+    "siteMessage": "Site Message",
+    "sms": "SMS",
+    "weCom": "WeCom"
+  },
+  "notification": {
+    "adminMessagesTable": {
+      "noData": "No Data"
+    },
+    "deleteReadMsg": "Delete Read Messages",
+    "deleteReadMsgConfirmContent": "Are you sure you want to delete all read messages?",
+    "deleteReadMsgConfirmTitle": "Confirm Delete Read",
+    "deleteReadMsgErrorInfo": "Failed to delete read messages",
+    "deleteReadMsgSuccessInfo": "Deleted read messages successfully",
+    "list": {
+      "delete": "Delete Message",
+      "deleteConfirmContent": "Are you sure you want to delete this message?",
+      "deleteConfirmTitle": "Confirm Delete",
+      "markReadError": "Failed to mark message as read",
+      "read": "Read",
+      "unread": "Unread"
+    },
+    "listTable": {
+      "accountNotif": "Account Notifications",
+      "all": "All",
+      "deleteError": "Deletion Failed",
+      "deleteSuccess": "Deleted Successfully",
+      "jobNotif": "Job Notifications",
+      "systemNotif": "System Announcements"
+    },
+    "loadFailed": "Failed to Load Messages",
+    "markAllRead": "Mark All Read",
+    "markAllReadConfirmContent": "Are you sure you want to mark all messages as read?",
+    "markAllReadConfirmTitle": "Confirm Mark All Read",
+    "markAllReadErrorInfo": "Failed to Mark All Read",
+    "markAllReadSuccessInfo": "Marked All Read Successfully",
+    "popup": {
+      "read": "Read"
+    }
+  },
+  "subscription": {
+    "subscriptionTable": {
+      "saveError": "Error Saving Data",
+      "saveSuccess": "Saved Successfully"
+    },
+    "useSubscriptionColumns": {
+      "category": "Category",
+      "messageType": "Message Type",
+      "unableToCancelPrompt": "System Setting, Cannot Be Disabled",
+      "unableToOpenPrompt": "The Corresponding Notification Is Not Enabled"
+    }
+  }
+}

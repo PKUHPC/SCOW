@@ -198,6 +198,8 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     environment: {
       SCOW_LAUNCH_APP: "gateway",
       BASE_PATH: BASE_PATH == "/" ? "" : BASE_PATH,
+      UNIFIED_WEB_ENABLED: String(config.gateway.unifiedWebEnabled ?? false),
+      UNIFIED_WEB_PATH: "/unified",
       PORTAL_ENABLED: String(config.portal?.enabled ?? false),
       PORTAL_PATH: PORTAL_PATH,
       MIS_PATH: MIS_PATH,

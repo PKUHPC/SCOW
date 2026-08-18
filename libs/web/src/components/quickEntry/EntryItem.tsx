@@ -1,7 +1,7 @@
 import { PictureOutlined } from "@ant-design/icons";
 import { Typography } from "antd";
-import { join } from "path";
 import React, { ComponentType, CSSProperties, ReactElement, useState } from "react";
+import { joinUrlPath } from "src/utils/joinUrlPath";
 import { styled, useTheme } from "styled-components";
 
 const ItemContainer = styled.div`
@@ -93,7 +93,7 @@ export const EntryItem: React.FC<Props> = ({
       <AvatarContainer>
         {logoPath && imageErrorMap[entryBaseName] !== true ? (
           <img
-            src={join(publicPath, logoPath)}
+            src={joinUrlPath(publicPath, logoPath)}
             onError={() => handleImageError(entryBaseName)}
             style={{
               maxWidth: "70px",

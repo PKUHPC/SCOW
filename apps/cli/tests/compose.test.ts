@@ -140,6 +140,17 @@ it("sets proxy_read_timeout", async () => {
   const composeSpec = createComposeSpec(config);
 
   expect(composeSpec.services.gateway.environment).toInclude(`PROXY_READ_TIMEOUT=${config.gateway.proxyReadTimeout}`);
+  expect(composeSpec.services.gateway.environment).toContain("UNIFIED_WEB_ENABLED=false");
+  expect(composeSpec.services.gateway.environment).toContain("UNIFIED_WEB_PATH=/unified");
+});
+
+it("uses the unified frontend setting from gateway config", async () => {
+  const config = getInstallConfig(configPath);
+  config.gateway.unifiedWebEnabled = true;
+
+  const composeSpec = createComposeSpec(config);
+
+  expect(composeSpec.services.gateway.environment).toContain("UNIFIED_WEB_ENABLED=true");
 });
 
 it("deploys meta-server with install config mounted", async () => {

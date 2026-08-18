@@ -1,0 +1,13 @@
+{
+  "baseLayout": {
+    "linkTextHpc": "HPC"
+  },
+  "routes": {
+    "apps": {
+      "title": "Apps"
+    },
+    "job": {
+      "title": "Jobs"
+    }
+  }
+}

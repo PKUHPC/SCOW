@@ -1,0 +1,45 @@
+{
+  "accountSecurity": "Segurança da conta",
+  "createTime": "Hora de criação",
+  "email": {
+    "change": "Alterar e-mail",
+    "changeFailed": "Falha ao alterar o e-mail.",
+    "changeSuccess": "E-mail alterado com sucesso!",
+    "invalid": "Formato de e-mail inválido. Introduza novamente.",
+    "label": "E-mail",
+    "new": "Novo e-mail",
+    "old": "E-mail antigo",
+    "placeholder": "Introduza um novo e-mail",
+    "required": "Introduza um novo e-mail"
+  },
+  "errors": {
+    "unavailable": "Esta funcionalidade não está disponível na configuração atual",
+    "userNotFound": "Utilizador inexistente"
+  },
+  "organization": "Organização",
+  "password": {
+    "change": "Alterar palavra-passe",
+    "changeFailed": "Falha ao alterar a palavra-passe",
+    "changeSuccess": "Palavra-passe alterada com sucesso",
+    "confirm": "Confirmar palavra-passe",
+    "confirmRequired": "Confirme a sua palavra-passe",
+    "login": "Palavra-passe de início de sessão",
+    "mismatch": "As palavras-passe não coincidem. Introduza novamente.",
+    "new": "Nova palavra-passe",
+    "old": "Palavra-passe antiga",
+    "oldIncorrect": "Palavra-passe original incorreta"
+  },
+  "phone": "Telefone",
+  "platformRole": "Função da plataforma",
+  "roles": {
+    "platformAdmin": "Administrador da plataforma",
+    "platformFinance": "Responsável financeiro da plataforma",
+    "tenantAdmin": "Administrador do inquilino",
+    "tenantFinance": "Responsável financeiro"
+  },
+  "tenantRole": "Função do inquilino",
+  "title": "Informações da conta",
+  "userFullName": "Nome de utilizador",
+  "userId": "ID de utilizador",
+  "userInfo": "Informações do utilizador"
+}

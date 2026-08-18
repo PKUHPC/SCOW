@@ -1,0 +1,10 @@
+{
+  "route": {
+    "dashboard": "Dashboard",
+    "devices": "Devices",
+    "linkTextQuantum": "Quantum",
+    "quantum": {
+      "root": "Quantum Jobs"
+    }
+  }
+}

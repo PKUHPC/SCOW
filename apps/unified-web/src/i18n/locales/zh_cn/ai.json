@@ -1,0 +1,11 @@
+{
+  "baseLayout": {
+    "linkTextAi": "智算平台"
+  },
+  "routes": {
+    "asset": "数据资产",
+    "job": {
+      "title": "作业"
+    }
+  }
+}

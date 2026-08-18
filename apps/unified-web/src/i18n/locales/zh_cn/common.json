@@ -1,0 +1,41 @@
+{
+  "files": {
+    "description": "此页面将以 Portal 文件管理为基础，统一管理用户可访问的 HPC 与 AI 集群文件。",
+    "title": "文件管理"
+  },
+  "header": {
+    "home": "返回首页",
+    "language": "语言",
+    "logout": "退出登录",
+    "notification": "通知",
+    "openNavigation": "打开导航",
+    "profile": "个人信息",
+    "theme": "主题",
+    "userMenu": "用户菜单"
+  },
+  "language": {
+    "de": "DE 德",
+    "en": "EN 英",
+    "es": "ES 西",
+    "fr": "FR 法",
+    "ja": "JA 日",
+    "ko": "KO 韩",
+    "pt": "PT 葡",
+    "ru": "RU 俄",
+    "zhCn": "CN 中"
+  },
+  "module": {
+    "placeholder": "{{module}} 已接入统一路由，领域页面将在后续迁移步骤中替换此占位内容。"
+  },
+  "navigation": {
+    "collapse": "收起导航",
+    "expand": "展开导航"
+  },
+  "bootstrap": {
+    "sessionFailed": "登录状态检查失败"
+  },
+  "notFound": {
+    "backHome": "返回首页",
+    "title": "页面不存在"
+  }
+}

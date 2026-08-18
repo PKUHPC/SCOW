@@ -1,0 +1,45 @@
+{
+  "accountSecurity": "Kontosicherheit",
+  "createTime": "Erstellungszeit",
+  "email": {
+    "change": "E-Mail ändern",
+    "changeFailed": "E-Mail-Änderung fehlgeschlagen.",
+    "changeSuccess": "E-Mail erfolgreich geändert!",
+    "invalid": "Ungültiges E-Mail-Format. Bitte erneut eingeben.",
+    "label": "E-Mail",
+    "new": "Neue E-Mail",
+    "old": "Alte E-Mail",
+    "placeholder": "Bitte neue E-Mail eingeben",
+    "required": "Bitte neue E-Mail eingeben"
+  },
+  "errors": {
+    "unavailable": "Diese Funktion ist in der aktuellen Konfiguration nicht verfügbar",
+    "userNotFound": "Benutzer existiert nicht"
+  },
+  "organization": "Organisation",
+  "password": {
+    "change": "Passwort ändern",
+    "changeFailed": "Passwortänderung fehlgeschlagen",
+    "changeSuccess": "Passwort erfolgreich geändert",
+    "confirm": "Passwort bestätigen",
+    "confirmRequired": "Bitte Passwort bestätigen",
+    "login": "Anmeldepasswort",
+    "mismatch": "Passwörter stimmen nicht überein. Bitte erneut eingeben.",
+    "new": "Neues Passwort",
+    "old": "Altes Passwort",
+    "oldIncorrect": "Falsches ursprüngliches Passwort"
+  },
+  "phone": "Telefon",
+  "platformRole": "Plattformrolle",
+  "roles": {
+    "platformAdmin": "Plattformadministrator",
+    "platformFinance": "Plattform-Finanzverantwortlicher",
+    "tenantAdmin": "Mandantenadministrator",
+    "tenantFinance": "Finanzverantwortlicher"
+  },
+  "tenantRole": "Mandantenrolle",
+  "title": "Kontoinformationen",
+  "userFullName": "Benutzername",
+  "userId": "Benutzer-ID",
+  "userInfo": "Benutzerinformationen"
+}

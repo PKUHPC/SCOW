@@ -101,6 +101,11 @@ export const InstallConfigSchema = Type.Object({
         default: "60s",
       }),
 
+      unifiedWebEnabled: Type.Boolean({
+        description: "是否启用统一前端，页面迁移完成前默认为关闭",
+        default: false,
+      }),
+
       extra: Type.String({
         description:
           "更多nginx配置，可接受的格式为nginx的server可接受的属性配置，可增加在当前系统nginx端口（默认80）的服务等",

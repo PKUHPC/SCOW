@@ -1,0 +1,45 @@
+{
+  "accountSecurity": "Безопасность аккаунта",
+  "createTime": "Время создания",
+  "email": {
+    "change": "Изменить email",
+    "changeFailed": "Не удалось изменить email.",
+    "changeSuccess": "Email успешно изменён!",
+    "invalid": "Неверный формат email. Повторите ввод.",
+    "label": "Email",
+    "new": "Новый email",
+    "old": "Старый email",
+    "placeholder": "Введите новый email",
+    "required": "Введите новый email"
+  },
+  "errors": {
+    "unavailable": "Эта функция недоступна в текущей конфигурации",
+    "userNotFound": "Пользователь не существует"
+  },
+  "organization": "Организация",
+  "password": {
+    "change": "Сменить пароль",
+    "changeFailed": "Не удалось изменить пароль",
+    "changeSuccess": "Пароль успешно изменён",
+    "confirm": "Подтвердить пароль",
+    "confirmRequired": "Пожалуйста, подтвердите пароль",
+    "login": "Пароль для входа",
+    "mismatch": "Пароли не совпадают. Повторите ввод.",
+    "new": "Новый пароль",
+    "old": "Старый пароль",
+    "oldIncorrect": "Неверный исходный пароль"
+  },
+  "phone": "Телефон",
+  "platformRole": "Роль платформы",
+  "roles": {
+    "platformAdmin": "Администратор платформы",
+    "platformFinance": "Финансовый ответственный платформы",
+    "tenantAdmin": "Администратор арендатора",
+    "tenantFinance": "Финансовый ответственный"
+  },
+  "tenantRole": "Роль арендатора",
+  "title": "Информация об аккаунте",
+  "userFullName": "Имя пользователя",
+  "userId": "ID пользователя",
+  "userInfo": "Информация о пользователе"
+}

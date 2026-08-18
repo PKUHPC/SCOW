@@ -1,0 +1,55 @@
+{
+  "name": "@scow/unified-web",
+  "version": "1.11.3",
+  "private": true,
+  "files": [
+    "dist",
+    "!**/*.map"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "serve": "vite preview",
+    "test": "jest --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "i18n:scan": "i18next-cli lint",
+    "i18n:defaults": "node scripts/checkI18nDefaults.mjs",
+    "i18n:fix:preview": "i18next-cli instrument --dry-run --namespace common",
+    "i18n:fix": "i18next-cli instrument --interactive --namespace common",
+    "i18n:extract": "i18next-cli extract",
+    "i18n:check": "pnpm i18n:scan && pnpm i18n:defaults && i18next-cli status"
+  },
+  "dependencies": {
+    "@ant-design/icons": "5.5.2",
+    "@bufbuild/protobuf": "2.10.0",
+    "@connectrpc/connect": "2.1.1",
+    "@connectrpc/connect-web": "2.1.1",
+    "@scow/config": "workspace:*",
+    "@scow/lib-web": "workspace:*",
+    "@scow/notification-protos": "workspace:*",
+    "@tanstack/react-query": "5.90.12",
+    "antd": "5.18.3",
+    "axios": "1.18.1",
+    "i18next": "26.3.6",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-i18next": "17.0.9",
+    "react-router-dom": "7.18.1",
+    "recharts": "2.15.0",
+    "styled-components": "6.1.14",
+    "zod": "3.24.1",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "@types/jest": "29.5.14",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "6.0.3",
+    "i18next-cli": "1.65.0",
+    "typescript": "5.9.3",
+    "vite": "8.1.4"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "baseLayout": {
+    "linkTextHpc": "超算平台"
+  },
+  "routes": {
+    "apps": {
+      "title": "应用"
+    },
+    "job": {
+      "title": "作业"
+    }
+  }
+}

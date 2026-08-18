@@ -1,0 +1,11 @@
+{
+  "baseLayout": {
+    "linkTextAi": "AI"
+  },
+  "routes": {
+    "asset": "Data Assets",
+    "job": {
+      "title": "Jobs"
+    }
+  }
+}

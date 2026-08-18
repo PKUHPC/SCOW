@@ -1,0 +1,45 @@
+{
+  "accountSecurity": "Seguridad de la cuenta",
+  "createTime": "Hora de creación",
+  "email": {
+    "change": "Cambiar correo",
+    "changeFailed": "Error al cambiar el correo.",
+    "changeSuccess": "¡Correo cambiado con éxito!",
+    "invalid": "Formato de correo no válido. Vuelva a introducirlo.",
+    "label": "Correo electrónico",
+    "new": "Nuevo correo",
+    "old": "Correo anterior",
+    "placeholder": "Introduzca un nuevo correo",
+    "required": "Introduzca un nuevo correo"
+  },
+  "errors": {
+    "unavailable": "Esta función no está disponible en la configuración actual",
+    "userNotFound": "Usuario no existe"
+  },
+  "organization": "Organización",
+  "password": {
+    "change": "Cambiar contraseña",
+    "changeFailed": "Error al cambiar la contraseña",
+    "changeSuccess": "Contraseña cambiada con éxito",
+    "confirm": "Confirmar contraseña",
+    "confirmRequired": "Por favor confirme su contraseña",
+    "login": "Contraseña de inicio de sesión",
+    "mismatch": "Las contraseñas no coinciden. Vuelva a introducirla.",
+    "new": "Nueva contraseña",
+    "old": "Contraseña anterior",
+    "oldIncorrect": "Contraseña original incorrecta"
+  },
+  "phone": "Teléfono",
+  "platformRole": "Rol de la plataforma",
+  "roles": {
+    "platformAdmin": "Administrador de la plataforma",
+    "platformFinance": "Responsable financiero de la plataforma",
+    "tenantAdmin": "Administrador del arrendatario",
+    "tenantFinance": "Responsable financiero"
+  },
+  "tenantRole": "Rol del arrendatario",
+  "title": "Información de la cuenta",
+  "userFullName": "Nombre de usuario",
+  "userId": "ID de usuario",
+  "userInfo": "Información del usuario"
+}

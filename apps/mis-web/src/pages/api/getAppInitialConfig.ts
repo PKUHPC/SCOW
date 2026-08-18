@@ -20,6 +20,9 @@ import { route } from "src/utils/route";
 const ClusterNameI18nSchema = createI18nStringSchema({
   description: "集群名称，支持国际化",
 });
+const PasswordPatternMessageSchema = createI18nStringSchema({
+  description: "密码格式错误提示，支持国际化",
+});
 
 export const GetAppInitialConfigSchema = typeboxRouteSchema({
   method: "GET",
@@ -36,6 +39,13 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
       footerText: Type.Optional(Type.String()),
 
       initialLanguageId: Type.String(),
+
+      systemLanguageConfig: Type.Object({
+        defaultLanguage: Type.String(),
+        isUsingI18n: Type.Boolean(),
+        autoDetectWhenUserNotSet: Type.Boolean(),
+        enabledLanguages: Type.Array(Type.String()),
+      }),
 
       darkModeCookieValue: Type.Optional(
         Type.Object({
@@ -56,6 +66,10 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
 
       initialSimpleClustersInfo: Type.Record(Type.String(), SimpleClusterSchema),
       titleTag: Type.Optional(Type.String()),
+
+      enableChangePassword: Type.Boolean(),
+      passwordPattern: Type.Optional(Type.String()),
+      passwordPatternMessage: Type.Optional(PasswordPatternMessageSchema),
     }),
   },
 });
@@ -69,10 +83,14 @@ export default route(GetAppInitialConfigSchema, async (req) => {
     primaryColor: { defaultColor: "#94070A" },
     darkModeCookieValue: getDarkModeCookieValue(req),
     initialLanguageId: "",
+    systemLanguageConfig: publicConfig.SYSTEM_LANGUAGE_CONFIG,
     clusterConfigs: {},
     initialActivatedClusters: {},
     initialSimpleClustersInfo: {},
     titleTag: "",
+    enableChangePassword: Boolean(publicConfig.ENABLE_CHANGE_PASSWORD),
+    passwordPattern: publicConfig.PASSWORD_PATTERN,
+    passwordPatternMessage: publicConfig.RUNTIME_I18N_CONFIG_TEXTS.passwordPatternMessage,
   };
 
   const token = USE_MOCK ? "123" : getTokenFromCookie({ req });

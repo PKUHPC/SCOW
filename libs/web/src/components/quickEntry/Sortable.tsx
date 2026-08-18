@@ -12,8 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { I18nStringType } from "@scow/config/build/i18n";
-import { message } from "antd";
-import { join } from "path";
+import { App } from "antd";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Cluster } from "src/utils/cluster";
 import {
@@ -24,6 +23,7 @@ import {
   getEntryLogoPath,
 } from "src/utils/dashboard";
 import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
+import { joinUrlPath } from "src/utils/joinUrlPath";
 import { styled } from "styled-components";
 
 import { AppWithCluster, Entry } from ".";
@@ -95,6 +95,7 @@ export const Sortable: FC<Props> = ({
   entryItems,
   onSaveQuickEntries,
 }) => {
+  const { message } = App.useApp();
   // 实际的快捷入口项
   const [items, setItems] = useState<itemEntry[]>(quickEntryArray);
   // 编辑时临时的快捷入口项
@@ -158,13 +159,13 @@ export const Sortable: FC<Props> = ({
       if (!isEditable) {
         switch (item.entry?.$case) {
           case "pageLink": {
-            window.open(join(basePath, item.entry.pageLink.path), "_blank");
+            window.open(joinUrlPath(basePath, item.entry.pageLink.path), "_blank");
             break;
           }
 
           case "shell": {
             const savedShellClusterId = item.entry.shell.clusterId;
-            window.open(join(basePath, "/shell", savedShellClusterId, item.entry.shell.loginNode), "_blank");
+            window.open(joinUrlPath(basePath, "/shell", savedShellClusterId, item.entry.shell.loginNode), "_blank");
             if (!currentClusters.some((x) => x.id === savedShellClusterId)) {
               return <ClusterNotAvailablePage />;
             }
@@ -175,13 +176,17 @@ export const Sortable: FC<Props> = ({
             const savedAppClusterId = item.entry.app.clusterId;
             if (quickEntryType === "ai") {
               window.open(
-                `${join(basePath, "/jobs/createApp", item.entry.app.appId)}` +
+                `${joinUrlPath(basePath, "/jobs/createApp", item.entry.app.appId)}` +
                   `?clusterId=${encodeURIComponent(savedAppClusterId)}`,
                 "_blank",
               );
             } else {
               window.open(
-                join(basePath, "/apps", `/createApps?appId=${item.entry.app.appId}&clusterId=${savedAppClusterId}`),
+                joinUrlPath(
+                  basePath,
+                  "/apps",
+                  `/createApps?appId=${item.entry.app.appId}&clusterId=${savedAppClusterId}`,
+                ),
                 "_blank",
               );
             }
@@ -194,7 +199,7 @@ export const Sortable: FC<Props> = ({
           case "clusterPageLink": {
             const savedAppClusterId = item.entry.clusterPageLink.clusterId;
             const path = item.entry.clusterPageLink.path;
-            window.open(join(basePath, path.replace(/\/clusterId\//, `/${savedAppClusterId}/`)), "_blank");
+            window.open(joinUrlPath(basePath, path.replace(/\/clusterId\//, `/${savedAppClusterId}/`)), "_blank");
             if (!currentClusters.some((x) => x.id === savedAppClusterId)) {
               return <ClusterNotAvailablePage />;
             }

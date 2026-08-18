@@ -32,6 +32,70 @@ server {
     include includes/headers;
   }
 
+  {{#if UNIFIED_WEB_ENABLED}}
+  {{#if PORTAL_ENABLED}}
+  location {{ UNIFIED_API_BASE_PATH }}/portal/ {
+    set $portal_path_url {{ PORTAL_PATH_INTERNAL_URL }};
+    rewrite ^{{ UNIFIED_API_BASE_PATH }}/portal/(.*)$ {{ PORTAL_API_UPSTREAM_PATH }}/$1 break;
+    proxy_pass $portal_path_url;
+
+    proxy_buffering off;
+    proxy_set_header Accept-Encoding $proxy_accept_encoding;
+    include includes/headers;
+    include includes/websocket;
+  }
+  {{/if}}
+
+  {{#if MIS_ENABLED}}
+  location {{ UNIFIED_API_BASE_PATH }}/mis/ {
+    set $mis_path_url {{ MIS_PATH_INTERNAL_URL }};
+    rewrite ^{{ UNIFIED_API_BASE_PATH }}/mis/(.*)$ {{ MIS_API_UPSTREAM_PATH }}/$1 break;
+    proxy_pass $mis_path_url;
+
+    proxy_buffering off;
+    proxy_set_header Accept-Encoding $proxy_accept_encoding;
+    include includes/headers;
+    include includes/websocket;
+  }
+  {{/if}}
+
+  {{#if AI_ENABLED}}
+  location {{ UNIFIED_API_BASE_PATH }}/ai/ {
+    set $ai_path_url {{ AI_PATH_INTERNAL_URL }};
+    rewrite ^{{ UNIFIED_API_BASE_PATH }}/ai/(.*)$ {{ AI_API_UPSTREAM_PATH }}/$1 break;
+    proxy_pass $ai_path_url;
+
+    proxy_buffering off;
+    proxy_set_header Accept-Encoding $proxy_accept_encoding;
+    include includes/headers;
+    include includes/websocket;
+  }
+  {{/if}}
+
+  location {{ UNIFIED_API_BASE_PATH }}/notification/ {
+    set $notification_path_url {{ NOTIFICATION_PATH_INTERNAL_URL }};
+    rewrite ^{{ UNIFIED_API_BASE_PATH }}/notification/(.*)$ {{ NOTIFICATION_API_UPSTREAM_PATH }}/$1 break;
+    proxy_pass $notification_path_url;
+
+    proxy_buffering off;
+    include includes/headers;
+    include includes/websocket;
+  }
+
+  {{#if QUANTUM_ENABLED}}
+  location {{ UNIFIED_API_BASE_PATH }}/quantum/ {
+    set $quantum_path_url {{ QUANTUM_PATH_INTERNAL_URL }};
+    rewrite ^{{ UNIFIED_API_BASE_PATH }}/quantum/(.*)$ {{ QUANTUM_API_UPSTREAM_PATH }}/$1 break;
+    proxy_pass $quantum_path_url;
+
+    proxy_buffering off;
+    proxy_set_header Accept-Encoding $proxy_accept_encoding;
+    include includes/headers;
+    include includes/websocket;
+  }
+  {{/if}}
+  {{/if}}
+
   {{#if PORTAL_ENABLED}}
   location {{ BASE_PATH }}{{ PORTAL_PATH }} {
     set $portal_path_url {{ PORTAL_PATH_INTERNAL_URL }};
@@ -128,6 +192,17 @@ server {
     include includes/headers;
     include includes/websocket;
   }
+
+  {{#if UNIFIED_WEB_ENABLED}}
+  location = {{ UNIFIED_WEB_BASE_PATH }} {
+    return 302 {{ UNIFIED_WEB_BASE_PATH }}/;
+  }
+
+  location {{ UNIFIED_WEB_BASE_PATH }}/ {
+    root {{ UNIFIED_WEB_RUNTIME_ROOT }};
+    try_files $uri $uri/ {{ UNIFIED_WEB_BASE_PATH }}/index.html;
+  }
+  {{/if}}
 
   error_page   500 502 503 504  /50x.html;
 

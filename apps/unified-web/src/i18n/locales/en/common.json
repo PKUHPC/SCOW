@@ -1,0 +1,41 @@
+{
+  "files": {
+    "description": "This page will reuse the Portal file manager to manage files across accessible HPC and AI clusters.",
+    "title": "Files"
+  },
+  "header": {
+    "home": "Back to Home",
+    "language": "Language",
+    "logout": "Sign Out",
+    "notification": "Notifications",
+    "openNavigation": "Open Navigation",
+    "profile": "Profile",
+    "theme": "Theme",
+    "userMenu": "User Menu"
+  },
+  "language": {
+    "de": "DE German",
+    "en": "EN English",
+    "es": "ES Spanish",
+    "fr": "FR French",
+    "ja": "JA Japanese",
+    "ko": "KO Korean",
+    "pt": "PT Portuguese",
+    "ru": "RU Russian",
+    "zhCn": "CN Chinese"
+  },
+  "module": {
+    "placeholder": "{{module}} is connected to the unified router. This placeholder will be replaced in a later migration step."
+  },
+  "navigation": {
+    "collapse": "Collapse Navigation",
+    "expand": "Expand Navigation"
+  },
+  "bootstrap": {
+    "sessionFailed": "Failed to check login status"
+  },
+  "notFound": {
+    "backHome": "Back to Home",
+    "title": "Page Not Found"
+  }
+}

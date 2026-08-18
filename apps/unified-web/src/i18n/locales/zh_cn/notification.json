@@ -1,0 +1,68 @@
+{
+  "api": {
+    "msgConfig": "消息发送设置",
+    "msgSub": "消息接收设置",
+    "myMsgs": "我的消息",
+    "notification": "通知"
+  },
+  "common": {
+    "cancel": "取消",
+    "save": "保存"
+  },
+  "noticeType": {
+    "dingTalk": "钉钉",
+    "email": "邮箱",
+    "lark": "飞书",
+    "officialAccount": "公众号",
+    "siteMessage": "站内消息",
+    "sms": "短信",
+    "weCom": "企业微信"
+  },
+  "notification": {
+    "adminMessagesTable": {
+      "noData": "暂无数据"
+    },
+    "deleteReadMsg": "删除已读",
+    "deleteReadMsgConfirmContent": "确认删除所有已读消息？",
+    "deleteReadMsgConfirmTitle": "确认删除已读",
+    "deleteReadMsgErrorInfo": "删除已读消息失败",
+    "deleteReadMsgSuccessInfo": "删除已读消息成功",
+    "list": {
+      "delete": "删除消息",
+      "deleteConfirmContent": "确认删除该消息？",
+      "deleteConfirmTitle": "确认删除",
+      "markReadError": "标记消息已读失败",
+      "read": "已读",
+      "unread": "未读"
+    },
+    "listTable": {
+      "accountNotif": "账户通知",
+      "all": "全部",
+      "deleteError": "删除失败",
+      "deleteSuccess": "删除成功",
+      "jobNotif": "作业通知",
+      "systemNotif": "系统公告"
+    },
+    "loadFailed": "加载消息列表失败",
+    "markAllRead": "全部已读",
+    "markAllReadConfirmContent": "确认将所有消息标记为已读？",
+    "markAllReadConfirmTitle": "确认全部已读",
+    "markAllReadErrorInfo": "标记全部已读失败",
+    "markAllReadSuccessInfo": "标记全部已读成功",
+    "popup": {
+      "read": "已读"
+    }
+  },
+  "subscription": {
+    "subscriptionTable": {
+      "saveError": "保存数据出错",
+      "saveSuccess": "保存成功"
+    },
+    "useSubscriptionColumns": {
+      "category": "分类",
+      "messageType": "消息类型",
+      "unableToCancelPrompt": "系统设置，不支持关闭",
+      "unableToOpenPrompt": "系统未开启对应通知"
+    }
+  }
+}

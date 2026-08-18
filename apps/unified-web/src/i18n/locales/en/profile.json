@@ -1,0 +1,50 @@
+{
+  "accountSecurity": "Account Security",
+  "createTime": "Creation Time",
+  "email": {
+    "change": "Change Email",
+    "changeFailed": "Failed to change email.",
+    "changeSuccess": "Email changed successfully!",
+    "invalid": "Invalid email format. Please re-enter.",
+    "label": "Email",
+    "new": "New Email",
+    "old": "Old Email",
+    "placeholder": "Please enter a new email",
+    "required": "Please enter a new email"
+  },
+  "errors": {
+    "unavailable": "This feature is not available in the current configuration",
+    "userNotFound": "User Not Exist"
+  },
+  "loadFailed": "Failed to load personal information",
+  "misUnavailable": "The management system is not enabled, so personal information is unavailable",
+  "organization": "Organization",
+  "password": {
+    "change": "Change Password",
+    "changeFailed": "Password changed failed",
+    "changeSuccess": "Password changed successfully",
+    "confirm": "Confirm Password",
+    "confirmRequired": "Please confirm your password",
+    "invalid": "The new password does not meet the password policy",
+    "login": "Login Password",
+    "mismatch": "Passwords do not match. Please re-enter.",
+    "new": "New Password",
+    "newRequired": "Please enter a new password",
+    "old": "Old Password",
+    "oldIncorrect": "Incorrect original password",
+    "oldRequired": "Please enter the old password"
+  },
+  "phone": "Phone",
+  "platformRole": "Platform Role",
+  "roles": {
+    "platformAdmin": "Platform Admin",
+    "platformFinance": "Platform Financial Officer",
+    "tenantAdmin": "Tenant Admin",
+    "tenantFinance": "Financial Officer"
+  },
+  "tenantRole": "Tenant Role",
+  "title": "Account Information",
+  "userFullName": "User Name",
+  "userId": "User ID",
+  "userInfo": "User Information"
+}

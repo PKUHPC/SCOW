@@ -1,0 +1,45 @@
+{
+  "accountSecurity": "アカウントのセキュリティ",
+  "createTime": "作成時間",
+  "email": {
+    "change": "メール変更",
+    "changeFailed": "メール変更に失敗しました。",
+    "changeSuccess": "メールを変更しました！",
+    "invalid": "メール形式が無効です。再入力してください。",
+    "label": "メール",
+    "new": "新しいメール",
+    "old": "旧メール",
+    "placeholder": "新しいメールを入力してください",
+    "required": "新しいメールを入力してください"
+  },
+  "errors": {
+    "unavailable": "現在の構成ではこの機能を利用できません",
+    "userNotFound": "ユーザーが存在しません"
+  },
+  "organization": "組織",
+  "password": {
+    "change": "パスワード変更",
+    "changeFailed": "パスワード変更に失敗しました",
+    "changeSuccess": "パスワードを変更しました",
+    "confirm": "パスワード確認",
+    "confirmRequired": "パスワードを確認してください",
+    "login": "ログインパスワード",
+    "mismatch": "パスワードが一致しません。再入力してください。",
+    "new": "新しいパスワード",
+    "old": "旧パスワード",
+    "oldIncorrect": "元のパスワードが正しくありません"
+  },
+  "phone": "電話",
+  "platformRole": "プラットフォーム役割",
+  "roles": {
+    "platformAdmin": "プラットフォーム管理者",
+    "platformFinance": "プラットフォーム財務担当",
+    "tenantAdmin": "テナント管理者",
+    "tenantFinance": "財務担当"
+  },
+  "tenantRole": "テナント役割",
+  "title": "アカウント情報",
+  "userFullName": "ユーザー名",
+  "userId": "ユーザーID",
+  "userInfo": "ユーザー情報"
+}
