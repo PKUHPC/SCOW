@@ -42,28 +42,29 @@ export default /* #__PURE__*/ route(GetAllClustersAvailableAppsSchema, async (re
   // 并行获取所有集群的应用信息，只返回成功的结果
   const results = await Promise.allSettled(
     clusterIds.map(async (clusterId) => {
-      try {
-        const reply = await asyncUnaryCall(client, "listAvailableApps", {
-          cluster: clusterId,
-          userId: info.identityId,
-        });
-        return {
-          clusterId: clusterId,
-          apps: reply.apps,
-        };
-      } catch (error) {
-        console.error(
-          `failed to get cluster ${clusterId}'s available apps: `,
-          error instanceof Error ? error.message : "Unknown error",
-        );
-      }
+      const reply = await asyncUnaryCall(client, "listAvailableApps", {
+        cluster: clusterId,
+        userId: info.identityId,
+      });
+      return {
+        clusterId: clusterId,
+        apps: reply.apps,
+      };
     }),
   );
 
   // 只返回成功获取到的集群应用信息
-  const successfulResults = results
-    .filter((result): result is PromiseFulfilledResult<ClusterAppsResult> => result.status === "fulfilled")
-    .map((result) => result.value);
+  const successfulResults: ClusterAppsResult[] = [];
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      successfulResults.push(result.value);
+    } else {
+      console.error(
+        `failed to get cluster ${clusterIds[index]}'s available apps: `,
+        result.reason instanceof Error ? result.reason.message : "Unknown error",
+      );
+    }
+  });
 
   return { 200: { results: successfulResults } };
 });
