@@ -18,17 +18,16 @@ import (
 )
 
 const (
-	ImagePullError  = "Image Pull Error"
-	MountError      = "Mount Error"
-	RestartError    = "Restart Error"
-	SchedulingError = "Scheduling Error"
-	ImagePulling    = "Image Pulling"
-	ResourceError   = "Insufficient Resources"
-	Evict           = "Evict"
-	preempt         = "preempt"
-	BackOff         = "BackOff"
-	Failed          = "Failed"
-	FailedMount     = "FailedMount"
+	ImagePullError = "Image Pull Error"
+	MountError     = "Mount Error"
+	RestartError   = "Restart Error"
+	ImagePulling   = "Image Pulling"
+	ResourceError  = "Insufficient Resources"
+	Evict          = "Evict"
+	preempt        = "preempt"
+	BackOff        = "BackOff"
+	Failed         = "Failed"
+	FailedMount    = "FailedMount"
 )
 
 var UpdateReasonMux = &sync.Mutex{}
@@ -84,22 +83,29 @@ func (i *K8sInformer) handleEventChanged(obj interface{}) {
 			if event.Count < 3 || !eventReasonError(event.Reason) {
 				return
 			}
-			message := strings.ToLower(event.Message)
-			if containsImagePullError(message) || containsRestartError(message) || containsMountError(message) {
+			if containsImagePullError(event.Message) || containsRestartError(event.Message) || containsMountError(event.Message) {
 				i.DeleteResource(name, event.Namespace)
 				return
 			}
-			logrus.Infof("[handleEventChanged] message: %s, reason: %s, count: %d", message, event.Reason, event.Count)
+			logrus.Infof("[handleEventChanged] message: %s, reason: %s, count: %d", event.Message, event.Reason, event.Count)
 		}()
 
 		// 写入pod reason
 		go func(PodTable models.PodTable) {
-			reason := classifyEventError(event)
-			updates := map[string]interface{}{"reason": reason}
+			reason := ClassifyEventError(event)
+			if reason == "" {
+				return
+			}
 			UpdateReasonMux.Lock()
 			defer UpdateReasonMux.Unlock()
-			if err := client.DB.Model(PodTable).Updates(updates).Error; err != nil {
-				logrus.Errorf("pod name %s DB update reason failed due to: %s", name, err)
+			result := client.DB.Model(&models.PodTable{}).
+				Where("uid = ? AND status IN ?", PodTable.Uid, []string{
+					string(corev1.PodPending),
+					string(corev1.PodFailed),
+					utils.ContainerCreatingStatus,
+					utils.FailedStatus}).Update("reason", reason)
+			if result.Error != nil {
+				logrus.Errorf("pod name %s DB update reason failed due to: %s", name, result.Error)
 			}
 		}(PodTable)
 
@@ -220,18 +226,26 @@ func (i *K8sInformer) DeleteResource(podName, namespace string) {
 	logrus.Infof("[DeleteResource] delete job %s successful", job.NewJobName)
 }
 
-func containsImagePullError(msg string) bool {
+func containsImagePullError(message string) bool {
+	msg := strings.ToLower(message)
 	return strings.Contains(msg, "imagepullbackoff") ||
 		strings.Contains(msg, "back-off pulling image") ||
-		strings.Contains(msg, "errimagepull")
+		strings.Contains(msg, "errimagepull") ||
+		strings.Contains(msg, "failed to pull image") ||
+		strings.Contains(msg, "failed to pull and unpack image") ||
+		strings.Contains(msg, "failed to resolve image")
 }
 
-func containsRestartError(msg string) bool {
+func containsRestartError(message string) bool {
+	msg := strings.ToLower(message)
 	return strings.Contains(msg, "restarting failed")
 }
 
-func containsMountError(msg string) bool {
-	return strings.Contains(msg, "mountvolume.setUp failed")
+func containsMountError(message string) bool {
+	msg := strings.ToLower(message)
+	return strings.Contains(msg, "mountvolume.setup failed") ||
+		strings.Contains(msg, "unable to mount volumes") ||
+		strings.Contains(msg, "attachvolume.mount failed")
 }
 
 func eventReasonError(reason string) bool {
@@ -243,23 +257,35 @@ func containsPreemptError(reason, msg string) bool {
 	return reason == Evict && strings.Contains(msg, preempt)
 }
 
-// 错误分类函数
-func classifyEventError(e *corev1.Event) string {
+// ClassifyEventError classifies a Kubernetes event into a user-facing error.
+func ClassifyEventError(e *corev1.Event) string {
 	reason := strings.ToLower(e.Reason)
 	msg := strings.ToLower(e.Message)
 
-	// 镜像正在拉取
-	if reason == "pulling" || strings.Contains(msg, "pulling image") {
+	// Kubernetes 的 Reason 精确描述镜像状态时，优先以它为准。
+	switch reason {
+	case "errimagepull", "imagepullbackoff":
+		return ImagePullError
+	case "pulling":
 		return ImagePulling
+	case "failedmount":
+		return MountError
+	case "failedscheduling", "unschedulable":
+		if strings.Contains(msg, "insufficient") ||
+			strings.Contains(msg, "too many pods") ||
+			strings.Contains(msg, "nodes are unavailable") ||
+			strings.Contains(msg, "pod group is not ready") {
+			return ResourceError
+		}
 	}
 
-	// 镜像拉取失败
-	if reason == "errimagepull" || reason == "imagepullbackoff" ||
-		strings.Contains(msg, "imagepullbackoff") ||
-		strings.Contains(msg, "back-off pulling image") ||
-		strings.Contains(msg, "errimagepull") ||
-		strings.Contains(msg, "failed to pull image") {
+	// 部分事件的 Reason 不够具体，使用消息兜底。拉取中只匹配消息前缀，
+	// 避免将 "Back-off pulling image" 这类失败消息误判为拉取中。
+	if containsImagePullError(msg) {
 		return ImagePullError
+	}
+	if strings.HasPrefix(msg, "pulling image") {
+		return ImagePulling
 	}
 
 	// 重启相关错误
@@ -269,19 +295,10 @@ func classifyEventError(e *corev1.Event) string {
 	}
 
 	// 挂载相关错误
-	if reason == "failedmount" ||
-		strings.Contains(msg, "mountvolume.setup failed") ||
+	if strings.Contains(msg, "mountvolume.setup failed") ||
 		strings.Contains(msg, "unable to mount volumes") ||
 		strings.Contains(msg, "attachvolume.mount failed") {
 		return MountError
-	}
-
-	// 调度相关错误
-	if reason == "failedscheduling" || reason == "unschedulable" {
-		if strings.Contains(msg, "insufficient") || strings.Contains(msg, "nodes are available") {
-			return ResourceError // 专门标记为资源不足
-		}
-		return SchedulingError
 	}
 	return ""
 }

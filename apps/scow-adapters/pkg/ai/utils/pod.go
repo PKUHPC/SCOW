@@ -123,7 +123,7 @@ func GetPodStatus(pod *v1.Pod) string {
 		if cs.State.Waiting != nil {
 			reason := cs.State.Waiting.Reason
 			if reason == "ContainerCreating" {
-				return "CONTAINER_CREATING"
+				return ContainerCreatingStatus
 			}
 			if reason == "CrashLoopBackOff" ||
 				reason == "ImagePullBackOff" ||
@@ -143,6 +143,13 @@ func GetPodStatus(pod *v1.Pod) string {
 
 	// 最后默认返回 phase
 	return string(pod.Status.Phase)
+}
+
+func ShouldRetainPodReason(status string) bool {
+	return status == string(v1.PodPending) ||
+		status == string(v1.PodFailed) ||
+		status == ContainerCreatingStatus ||
+		status == FailedStatus
 }
 
 func GetJobInfoByPodName(podName string) (job *models.JobTable, err error) {
@@ -166,6 +173,9 @@ func UpdatePodStatusByPodName(PodName, status string) (err error) {
 	updates := map[string]interface{}{
 		"status": status,
 	}
+	if !ShouldRetainPodReason(status) {
+		updates["reason"] = ""
+	}
 	err = client.DB.Model(&modelPod).Updates(updates).Error
 	if err != nil {
 		logrus.Tracef("[UpdatePodStatusByPodName] update pod %s status %s error: %v", PodName, status, err)
@@ -178,6 +188,9 @@ func UpdatePodStatusByPodName(PodName, status string) (err error) {
 func UpdatePodStatusByJobName(jobName, status string) error {
 	logrus.Tracef("[UpdatePodStatusByJobName] job: %s, status: %s", jobName, status)
 	updates := map[string]interface{}{"status": status}
+	if !ShouldRetainPodReason(status) {
+		updates["reason"] = ""
+	}
 	err := client.DB.Model(&models.PodTable{}).Where("job_name = ?", jobName).Updates(updates).Error
 	if err != nil {
 		logrus.Errorf("[UpdatePodStatusByJobName] update pods for job %s status %s error: %v", jobName, status, err)
@@ -202,7 +215,7 @@ func GetNodeRunningPods(nodeName string, allPods []v1.Pod) []v1.Pod {
 		}
 		if pod.Spec.NodeName == nodeName {
 			podStatus := GetPodStatus(&pod)
-			if podStatus == string(v1.PodRunning) || podStatus == string(v1.PodPending) || podStatus == "CONTAINER_CREATING" {
+			if podStatus == string(v1.PodRunning) || podStatus == string(v1.PodPending) || podStatus == ContainerCreatingStatus {
 				runningPods = append(runningPods, pod)
 			}
 		}

@@ -90,6 +90,9 @@ func (i *K8sInformer) handlePodUpdate(obj interface{}) {
 		"ip":        pod.Status.PodIP,
 		"job_name":  jobName,
 	}
+	if !utils.ShouldRetainPodReason(status) {
+		updates["reason"] = ""
+	}
 	if len(pod.Status.ContainerStatuses) > 0 {
 		updates["container_id"] = pod.Status.ContainerStatuses[0].ContainerID
 	}

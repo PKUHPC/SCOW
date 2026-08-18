@@ -127,3 +127,26 @@ func TestGetMemoryInMib(t *testing.T) {
 		})
 	}
 }
+
+func TestShouldRetainPodReason(t *testing.T) {
+	tests := []struct {
+		status string
+		want   bool
+	}{
+		{status: string(corev1.PodPending), want: true},
+		{status: string(corev1.PodFailed), want: true},
+		{status: ContainerCreatingStatus, want: true},
+		{status: FailedStatus, want: true},
+		{status: string(corev1.PodRunning), want: false},
+		{status: string(corev1.PodSucceeded), want: false},
+		{status: RunningStatus, want: false},
+		{status: CanceledStatus, want: false},
+		{status: TimeOutStatus, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.status, func(t *testing.T) {
+			assert.Equal(t, tt.want, ShouldRetainPodReason(tt.status))
+		})
+	}
+}
