@@ -1,5 +1,26 @@
 # @scow/portal-web
 
+## 1.11.6
+
+### Patch Changes
+
+- 237cd6c: 在门户系统、AI 和量子系统的用户下拉菜单中增加操作日志入口，并在新标签页打开管理系统的操作日志页面。
+- afdf408: 移除 SSH 分支并统一收敛为 scowd;cli 的 asset 中增加 scowd 的配置；
+- c2f0c1c: 为 hpc 的工作目录和 ai 的工作目录、挂载点、镜像地址增加后端校验
+- Updated dependencies [afdf408]
+- Updated dependencies [237cd6c]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [315b116]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/lib-web@1.6.5
+  - @scow/utils@1.1.5
+  - @scow/lib-notification@1.0.28
+  - @scow/lib-operation-log@2.2.19
+  - @scow/lib-scow-resource@0.2.27
+  - @scow/protos@1.1.4
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.5
 
 ### Patch Changes

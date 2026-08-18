@@ -1,5 +1,12 @@
 # @scow/lib-notification
 
+## 1.0.28
+
+### Patch Changes
+
+- Updated dependencies [afdf408]
+  - @scow/config@1.16.2
+
 ## 1.0.27
 
 ### Patch Changes

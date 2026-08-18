@@ -1,5 +1,15 @@
 # @scow/scow-adapters
 
+## 1.11.6
+
+### Patch Changes
+
+- 2d8e17c: 修复 AI、Crane 和 Crane AI 适配器中账户或用户封锁后无法查询已授权分区的问题。封锁状态继续限制作业提交和运行，但不再影响可用分区及资源信息展示。
+- a68925e: "修复 depoy 中间状态异常 bug"
+- 78afee8: 适配鹤思最新 V2.0 版本的 proto
+- ead3257: 修复 crane 适配器 GetClusterInfo 接口未包含集群节点数据的问题
+- fcbd40a: 查询已结束作业过滤 pending、running 状态的作业
+
 ## 1.11.5
 
 ### Patch Changes

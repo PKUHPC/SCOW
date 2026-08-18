@@ -1,5 +1,11 @@
 # @scow/config
 
+## 1.16.2
+
+### Patch Changes
+
+- afdf408: 集群配置中 scowd 的默认值修改为 true（docs/deploy/config/cluster-config）
+
 ## 1.16.1
 
 ### Patch Changes

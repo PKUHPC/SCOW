@@ -1,5 +1,27 @@
 # @scow/portal-server
 
+## 1.11.6
+
+### Patch Changes
+
+- 545abd4: 以 root 权限进入集群 shell 时，不做用户集群权限校验
+- afdf408: 移除 SSH 分支并统一收敛为 scowd;cli 的 asset 中增加 scowd 的配置；
+- c2f0c1c: 为 hpc 的工作目录和 ai 的工作目录、挂载点、镜像地址增加后端校验
+- 85284dd: HPC 应用列表中得提交时间优先展示集群下可以获取到的提交时间
+- Updated dependencies [afdf408]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [85284dd]
+- Updated dependencies [f58e4a4]
+- Updated dependencies [85284dd]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/utils@1.1.5
+  - @scow/lib-server@1.5.5
+  - @scow/lib-scheduler-adapter@1.1.42
+  - @scow/lib-scow-resource@0.2.27
+  - @scow/protos@1.1.4
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.5
 
 ### Patch Changes

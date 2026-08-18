@@ -1,5 +1,29 @@
 # @scow/resource
 
+## 0.3.19
+
+### Patch Changes
+
+- 63407df: 修复账户用户同步时，资源管理系统获取集群分区失败可能被误判为空授权分区并继续同步的问题
+  增加多集群账户用户同步的异常兜底处理，避免未捕获异常导致集群分片失败记录遗漏
+  修复账户分区授权模态框可能显示集群中已不存在分区的问题
+- Updated dependencies [afdf408]
+- Updated dependencies [237cd6c]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [85284dd]
+- Updated dependencies [315b116]
+- Updated dependencies [f58e4a4]
+- Updated dependencies [85284dd]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/lib-web@1.6.5
+  - @scow/utils@1.1.5
+  - @scow/lib-server@1.5.5
+  - @scow/lib-scheduler-adapter@1.1.42
+  - @scow/lib-hook@1.0.44
+  - @scow/lib-operation-log@2.2.19
+  - @scow/protos@1.1.4
+
 ## 0.3.18
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @scow/grpc-api
 
+## 1.36.0
+
+### Minor Changes
+
+- a43b5e4: 授权应用相关接口均增加 app_scope 的请求参数，增加 HPC / AI 应用的范围隔离。
+  授权应用的操作日志相关行为增加 app_scope 参数，表示本次操作对象应用范围 为 HPC / AI 。
+- 85284dd: 新增支持按字段投影查询历史作业的 `GetJobsWithFields` RPC，并在获取历史作业提交时间时使用轻量查询。
+- afdf408: 删除 portal 中的过时的 api —— CheckTransferKey
+
+### Patch Changes
+
+- d91cd50: 为作业相关 gRPC 响应补充租户名称字段。
+
+  - `common.JobInfo` 增加 `tenant_name`，用于已结束作业列表返回所属租户。
+  - `common.RunningJob` 增加 `tenant_name`，用于运行中作业列表返回所属租户。
+  - `server.QuantumJobInfo` 增加 `tenant_name`，用于量子作业列表返回所属租户。
+
 ## 1.35.1
 
 ### Patch Changes

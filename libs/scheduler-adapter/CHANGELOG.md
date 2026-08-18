@@ -1,5 +1,12 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.42
+
+### Patch Changes
+
+- f58e4a4: 将调度器适配器 unary gRPC 调用的默认超时时间从 30 秒延长至 1 分钟。
+  - @scow/protos@1.1.4
+
 ## 1.1.41
 
 ### Patch Changes

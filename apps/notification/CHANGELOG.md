@@ -1,5 +1,25 @@
 # @scow/notification
 
+## 0.2.31
+
+### Patch Changes
+
+- Updated dependencies [afdf408]
+- Updated dependencies [237cd6c]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [85284dd]
+- Updated dependencies [315b116]
+- Updated dependencies [f58e4a4]
+- Updated dependencies [85284dd]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/lib-web@1.6.5
+  - @scow/utils@1.1.5
+  - @scow/lib-server@1.5.5
+  - @scow/lib-scheduler-adapter@1.1.42
+  - @scow/lib-notification@1.0.28
+  - @scow/protos@1.1.4
+
 ## 0.2.30
 
 ### Patch Changes

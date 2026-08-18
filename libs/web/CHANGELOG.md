@@ -1,5 +1,18 @@
 # @scow/lib-web
 
+## 1.6.5
+
+### Patch Changes
+
+- 237cd6c: 在门户系统、AI 和量子系统的用户下拉菜单中增加操作日志入口，并在新标签页打开管理系统的操作日志页面。
+- 315b116: 完善镜像地址校验并优化镜像创建编辑弹窗
+- a43b5e4: 授权应用增加 HPC / AI 范围隔离，支持融合集群在两个平台使用相同 appId，并更新管理页面、操作日志对象和历史数据迁移。
+- Updated dependencies [afdf408]
+- Updated dependencies [c2f0c1c]
+  - @scow/config@1.16.2
+  - @scow/utils@1.1.5
+  - @scow/protos@1.1.4
+
 ## 1.6.4
 
 ### Patch Changes

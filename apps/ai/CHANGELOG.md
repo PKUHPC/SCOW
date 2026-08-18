@@ -1,5 +1,34 @@
 # @scow/ai
 
+## 0.5.9
+
+### Patch Changes
+
+- 237cd6c: 在门户系统、AI 和量子系统的用户下拉菜单中增加操作日志入口，并在新标签页打开管理系统的操作日志页面。
+- b566466: 开发机增加作业详情页面，失败等异常状态后增加感叹号提示异常原因
+- afdf408: 移除 SSH 分支并统一收敛为 scowd;cli 的 asset 中增加 scowd 的配置；
+- 8eee9eb: 修复可用账户列表未按集群授权过滤且过滤后分页不准确的问题
+- c2f0c1c: 为 hpc 的工作目录和 ai 的工作目录、挂载点、镜像地址增加后端校验
+- 315b116: 完善镜像地址校验并优化镜像创建编辑弹窗
+- Updated dependencies [afdf408]
+- Updated dependencies [237cd6c]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [85284dd]
+- Updated dependencies [315b116]
+- Updated dependencies [f58e4a4]
+- Updated dependencies [85284dd]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/lib-web@1.6.5
+  - @scow/utils@1.1.5
+  - @scow/lib-server@1.5.5
+  - @scow/lib-scheduler-adapter@1.1.42
+  - @scow/lib-notification@1.0.28
+  - @scow/lib-operation-log@2.2.19
+  - @scow/lib-scow-resource@0.2.27
+  - @scow/protos@1.1.4
+  - @scow/rich-error-model@2.0.4
+
 ## 0.5.8
 
 ### Patch Changes

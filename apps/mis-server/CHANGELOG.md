@@ -1,5 +1,31 @@
 # @scow/mis-server
 
+## 1.11.6
+
+### Patch Changes
+
+- afdf408: 移除 SSH 分支并统一收敛为 scowd;cli 的 asset 中增加 scowd 的配置；
+- 85284dd: 新增支持按字段投影查询历史作业的 `GetJobsWithFields` RPC，并在获取历史作业提交时间时使用轻量查询。
+- d91cd50: 平台管理中增加未结束作业和所有作业菜单
+- a43b5e4: 授权应用增加 HPC / AI 范围隔离，支持融合集群在两个平台使用相同 appId，并更新管理页面、操作日志对象和历史数据迁移。
+- 63407df: 修复账户用户同步时，资源管理系统获取集群分区失败可能被误判为空授权分区并继续同步的问题
+  增加多集群账户用户同步的异常兜底处理，避免未捕获异常导致集群分片失败记录遗漏
+  修复账户分区授权模态框可能显示集群中已不存在分区的问题
+- Updated dependencies [afdf408]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [85284dd]
+- Updated dependencies [f58e4a4]
+- Updated dependencies [85284dd]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/utils@1.1.5
+  - @scow/lib-server@1.5.5
+  - @scow/lib-scheduler-adapter@1.1.42
+  - @scow/lib-hook@1.0.44
+  - @scow/lib-notification@1.0.28
+  - @scow/lib-scow-resource@0.2.27
+  - @scow/protos@1.1.4
+
 ## 1.11.5
 
 ### Patch Changes

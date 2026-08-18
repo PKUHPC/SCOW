@@ -1,5 +1,11 @@
 # @scow/lib-ssh
 
+## 1.1.0
+
+### Minor Changes
+
+- afdf408: 移除 SSH 分支并统一收敛为 scowd;cli 的 asset 中增加 scowd 的配置；
+
 ## 1.0.6
 
 ### Patch Changes

@@ -1,5 +1,30 @@
 # @scow/quantum
 
+## 0.1.20
+
+### Patch Changes
+
+- 237cd6c: 在门户系统、AI 和量子系统的用户下拉菜单中增加操作日志入口，并在新标签页打开管理系统的操作日志页面。
+- afdf408: 移除 SSH 分支并统一收敛为 scowd;cli 的 asset 中增加 scowd 的配置；
+- d91cd50: 平台管理中增加未结束作业和所有作业菜单
+- Updated dependencies [afdf408]
+- Updated dependencies [237cd6c]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [85284dd]
+- Updated dependencies [315b116]
+- Updated dependencies [f58e4a4]
+- Updated dependencies [85284dd]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/lib-web@1.6.5
+  - @scow/utils@1.1.5
+  - @scow/lib-server@1.5.5
+  - @scow/lib-scheduler-adapter@1.1.42
+  - @scow/lib-operation-log@2.2.19
+  - @scow/lib-scow-resource@0.2.27
+  - @scow/protos@1.1.4
+  - @scow/rich-error-model@2.0.4
+
 ## 0.1.19
 
 ### Patch Changes

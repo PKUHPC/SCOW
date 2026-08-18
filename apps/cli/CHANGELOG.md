@@ -1,5 +1,18 @@
 # @scow/cli
 
+## 1.11.6
+
+### Patch Changes
+
+- 237cd6c: 在门户系统、AI 和量子系统的用户下拉菜单中增加操作日志入口，并在新标签页打开管理系统的操作日志页面。
+- afdf408: 移除 SSH 分支并统一收敛为 scowd;cli 的 asset 中增加 scowd 的配置；
+- Updated dependencies [afdf408]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [f58e4a4]
+  - @scow/config@1.16.2
+  - @scow/utils@1.1.5
+  - @scow/lib-scheduler-adapter@1.1.42
+
 ## 1.11.5
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @scow/utils
 
+## 1.1.5
+
+### Patch Changes
+
+- c2f0c1c: 为 hpc 的工作目录和 ai 的工作目录、挂载点、镜像地址增加后端校验
+
 ## 1.1.4
 
 ### Patch Changes

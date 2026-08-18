@@ -1,5 +1,27 @@
 # @scow/mis-web
 
+## 1.11.6
+
+### Patch Changes
+
+- d2ed7d4: 修复批量用户操作日志结果匹配与异步写入问题
+- d91cd50: 平台管理中增加未结束作业和所有作业菜单
+- a43b5e4: 授权应用增加 HPC / AI 范围隔离，支持融合集群在两个平台使用相同 appId，并更新管理页面、操作日志对象和历史数据迁移。
+- f2b0332: 创建账户操作失败提示优化
+- Updated dependencies [afdf408]
+- Updated dependencies [237cd6c]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [315b116]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/lib-web@1.6.5
+  - @scow/utils@1.1.5
+  - @scow/lib-notification@1.0.28
+  - @scow/lib-operation-log@2.2.19
+  - @scow/lib-scow-resource@0.2.27
+  - @scow/protos@1.1.4
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.5
 
 ## 1.11.4

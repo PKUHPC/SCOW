@@ -1,5 +1,20 @@
 # @scow/auth
 
+## 1.11.6
+
+### Patch Changes
+
+- Updated dependencies [afdf408]
+- Updated dependencies [afdf408]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [85284dd]
+- Updated dependencies [85284dd]
+- Updated dependencies [a43b5e4]
+  - @scow/config@1.16.2
+  - @scow/lib-ssh@1.1.0
+  - @scow/utils@1.1.5
+  - @scow/lib-server@1.5.5
+
 ## 1.11.5
 
 ## 1.11.4

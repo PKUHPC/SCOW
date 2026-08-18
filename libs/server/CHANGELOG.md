@@ -1,5 +1,21 @@
 # @scow/lib-server
 
+## 1.5.5
+
+### Patch Changes
+
+- 85284dd: HPC 应用列表中得提交时间优先展示集群下可以获取到的提交时间
+- 85284dd: 新增支持按字段投影查询历史作业的 `GetJobsWithFields` RPC，并在获取历史作业提交时间时使用轻量查询。
+- a43b5e4: 授权应用增加 HPC / AI 范围隔离，支持融合集群在两个平台使用相同 appId，并更新管理页面、操作日志对象和历史数据迁移。
+- Updated dependencies [afdf408]
+- Updated dependencies [c2f0c1c]
+- Updated dependencies [f58e4a4]
+  - @scow/config@1.16.2
+  - @scow/utils@1.1.5
+  - @scow/lib-scheduler-adapter@1.1.42
+  - @scow/protos@1.1.4
+  - @scow/rich-error-model@2.0.4
+
 ## 1.5.4
 
 ### Patch Changes
