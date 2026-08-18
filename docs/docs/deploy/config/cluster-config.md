@@ -19,10 +19,6 @@ priority: 0
 # 调度器适配器地址(ip地址:端口号)
 adapterUrl: localhost:8972
 
-# socwd是否启动，默认开启，目前不开启scowd系统不可用
-# scowd:
-#   enabled: true
-
 loginNodes:
     # 登录节点展示名称
   - name: login01
@@ -31,11 +27,11 @@ loginNodes:
     # 如果部署了多集群，需保证多集群下登录节点的IP或者域名也不能重复
     address: 192.168.88.102
     scowd:
-      port: 8999
+      port: 9999
   - name: login02
     address: 192.168.88.103
     scowd:
-      port: 8999
+      port: 9999
 
 # 登录节点桌面功能
 loginDesktop:
@@ -115,6 +111,9 @@ ai:
 # 集群描述信息，可选
 description: 集群描述
 ```
+
+每个集群必须至少配置一个登录节点。每个登录节点都必须部署 scowd，并在 `loginNodes[].scowd.port` 中配置
+`1` 到 `65535` 之间的整数监听端口。集群级 `scowd.enabled` 配置已不再生效。
 
 其中，`hpc.enabled` 用于控制该集群是否参与 HPC 相关业务，未配置时默认为 `true`。对于仅承载 AI 业务的 K8S 集群，建议显式配置 `hpc.enabled: false`，否则管理系统可能会按 HPC 集群处理并调用调度器等 HPC 相关逻辑；对于同时承载 HPC 和 AI 业务的超智算集群，可同时配置 `hpc.enabled: true` 和 `ai.enabled: true`。`hpc.job.maxRunningTimeHours` 用于限制 HPC 普通作业的最长运行时间，`hpc.app.maxRunningTimeHours` 用于限制 HPC 交互式应用的最长运行时间；两者都以小时为单位，不配置时表示不限制。
 

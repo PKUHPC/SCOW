@@ -41,7 +41,6 @@ export interface JobSideInfoProps {
   hourlyPrice: string;
   showHourlyPriceUnit: boolean;
   pricingStandardUrl: string;
-  showAccountInfo: boolean;
   accountInfo?: JobSideInfoAccountInfo | null;
 }
 
@@ -87,7 +86,6 @@ export const JobSideInfo: React.FC<JobSideInfoProps> = ({
   hourlyPrice,
   showHourlyPriceUnit,
   pricingStandardUrl,
-  showAccountInfo,
   accountInfo,
 }) => {
   const memParts = totalMemory !== "-" ? totalMemory.split(" ") : null;
@@ -136,58 +134,52 @@ export const JobSideInfo: React.FC<JobSideInfoProps> = ({
           </a>
         </SidePanelValue>
       </SidePanelRow>
-      {showAccountInfo && (
-        <>
-          <Divider />
-          <SidePanelRow>
-            <SidePanelLabel>{labels.accountNameLabel}</SidePanelLabel>
-            <PlainValue>
-              <span style={{ marginRight: 20 }}>{accountInfo?.accountName ?? "-"}</span>
-              {accountInfo?.isInWhitelist && <WhitelistTag>{labels.whitelistTag}</WhitelistTag>}
-            </PlainValue>
-          </SidePanelRow>
-          <SidePanelRow>
-            <SidePanelLabel>{labels.accountOwner}</SidePanelLabel>
-            <PlainValue>
-              {accountInfo?.ownerName ?? "-"}
-              {accountInfo?.ownerId ? ` (ID: ${accountInfo.ownerId})` : ""}
-            </PlainValue>
-          </SidePanelRow>
-          <SidePanelRow>
-            <SidePanelLabel>{labels.accountBalance}</SidePanelLabel>
-            <SidePanelValue>
-              {accountInfo ? <Amount value={accountInfo.balance} unit={labels.yuan} /> : "-"}
-            </SidePanelValue>
-          </SidePanelRow>
-          <SidePanelRow>
-            <SidePanelLabel>{labels.accountBlockThreshold}</SidePanelLabel>
-            <SidePanelValue>
-              {accountInfo ? <Amount value={accountInfo.blockThresholdAmount} unit={labels.yuan} /> : "-"}
-            </SidePanelValue>
-          </SidePanelRow>
-          <SidePanelRow>
-            <SidePanelLabel>{labels.userUsedLimit}</SidePanelLabel>
-            <SidePanelValue>
-              {accountInfo ? (
+      <Divider />
+      <SidePanelRow>
+        <SidePanelLabel>{labels.accountNameLabel}</SidePanelLabel>
+        <PlainValue>
+          <span style={{ marginRight: 20 }}>{accountInfo?.accountName ?? "-"}</span>
+          {accountInfo?.isInWhitelist && <WhitelistTag>{labels.whitelistTag}</WhitelistTag>}
+        </PlainValue>
+      </SidePanelRow>
+      <SidePanelRow>
+        <SidePanelLabel>{labels.accountOwner}</SidePanelLabel>
+        <PlainValue>
+          {accountInfo?.ownerName ?? "-"}
+          {accountInfo?.ownerId ? ` (ID: ${accountInfo.ownerId})` : ""}
+        </PlainValue>
+      </SidePanelRow>
+      <SidePanelRow>
+        <SidePanelLabel>{labels.accountBalance}</SidePanelLabel>
+        <SidePanelValue>{accountInfo ? <Amount value={accountInfo.balance} unit={labels.yuan} /> : "-"}</SidePanelValue>
+      </SidePanelRow>
+      <SidePanelRow>
+        <SidePanelLabel>{labels.accountBlockThreshold}</SidePanelLabel>
+        <SidePanelValue>
+          {accountInfo ? <Amount value={accountInfo.blockThresholdAmount} unit={labels.yuan} /> : "-"}
+        </SidePanelValue>
+      </SidePanelRow>
+      <SidePanelRow>
+        <SidePanelLabel>{labels.userUsedLimit}</SidePanelLabel>
+        <SidePanelValue>
+          {accountInfo ? (
+            <>
+              {accountInfo.usedJobCharge !== undefined ? accountInfo.usedJobCharge.toFixed(2) : "-"}/
+              {accountInfo.jobChargeLimit !== undefined
+                ? accountInfo.jobChargeLimit.toFixed(2)
+                : labels.userChargeNoLimit}
+              {accountInfo.jobChargeLimit !== undefined && (
                 <>
-                  {accountInfo.usedJobCharge !== undefined ? accountInfo.usedJobCharge.toFixed(2) : "-"}/
-                  {accountInfo.jobChargeLimit !== undefined
-                    ? accountInfo.jobChargeLimit.toFixed(2)
-                    : labels.userChargeNoLimit}
-                  {accountInfo.jobChargeLimit !== undefined && (
-                    <>
-                      {" "}
-                      <UnitText>{labels.yuan}</UnitText>
-                    </>
-                  )}
+                  {" "}
+                  <UnitText>{labels.yuan}</UnitText>
                 </>
-              ) : (
-                "-"
               )}
-            </SidePanelValue>
-          </SidePanelRow>
-        </>
-      )}
+            </>
+          ) : (
+            "-"
+          )}
+        </SidePanelValue>
+      </SidePanelRow>
     </JobSidePanelInfoBox>
   );
 };

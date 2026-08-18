@@ -19,7 +19,6 @@ import { getClientFn } from "../api";
  * @param statusFilter AccountStatusFilter | undefined
  * @param scowApiAuthToken
  *
- * @returns when the mis-server url does not exist, return []
  * @returns when the statusFilter does not exist or equals to AccountStatusFilter.ALL, returns all accountNames
  * @returns when the statusFilter equals to AccountStatusFilter.BLOCKED_ONLY, returns accountNames that either
  *          the account or the user is blocked in clusters
@@ -29,15 +28,10 @@ import { getClientFn } from "../api";
 export const libGetAccounts = async (
   logger: Logger,
   userId: string,
-  statusFilter?: AccountStatusFilter,
-  misServerUrl?: string,
+  statusFilter: AccountStatusFilter | undefined,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<ListAccountsResponse> => {
-  if (!misServerUrl) {
-    logger.info("Mis is not deployed, can not get accounts from mis.");
-    return { accounts: [] };
-  }
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const accountClient = getMisClient(AccountServiceClient);
 
@@ -79,14 +73,9 @@ export const libGetAccounts = async (
 export const libGetUserInfo = async (
   logger: Logger,
   userId: string,
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<GetUserInfoResponse> => {
-  if (!misServerUrl) {
-    logger.info("Mis is not deployed, can not get accounts from mis.");
-    return {} as GetUserInfoResponse;
-  }
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(UserServiceClient);
   return await asyncClientCall(client, "getUserInfo", { userId });
@@ -101,7 +90,6 @@ export const libGetUserInfo = async (
  * @param misServerUrl mis-server url
  * @param scowApiAuthToken
  *
- * @returns 当mis-server url不存在, 直接返回false
  * @returns 当statusFilter不存在或为UNBLOCKED_ONLY时, 判断账户为该用户的未封锁账户，且用户也未被封锁
  * @returns 当statusFilter为ALL时, 判断账户为该用户的关联账户
  * @returns 当statusFilter为BLOCKED_ONLY时, 判断账户为该用户的关联账户，且账户或者用户被封锁
@@ -110,15 +98,10 @@ export const libCheckUserAccountPermission = async (
   logger: Logger,
   userId: string,
   accountName: string,
-  statusFilter?: AccountStatusFilter,
-  misServerUrl?: string,
+  statusFilter: AccountStatusFilter | undefined,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<boolean> => {
-  if (!misServerUrl) {
-    logger.info("Mis is not deployed, can not get accounts from mis.");
-    return false;
-  }
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
 
   const userClient = getMisClient(UserServiceClient);
@@ -161,13 +144,9 @@ export const libCheckUserAccountPermission = async (
  */
 export const libGetUsersByIds = async (
   userIds: string[],
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<GetUsersByIdsResponse> => {
-  if (!misServerUrl) {
-    throw new Error("Mis is not deployed, can not get accounts from mis.");
-  }
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(UserServiceClient);
   return await asyncClientCall(client, "getUsersByIds", { userIds });

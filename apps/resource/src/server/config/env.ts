@@ -9,7 +9,7 @@ const specs = {
 
   NEXT_PUBLIC_RUNTIME_BASE_PATH: str({ desc: "本服务路径", default: "/" }),
 
-  MIS_SERVER_URL: str({ desc: "如果部署了管理系统，管理系统后端的路径", default: "" }),
+  MIS_SERVER_URL: str({ desc: "管理系统后端的路径", default: "mis-server:5000" }),
 
   AUTH_EXTERNAL_URL: str({ desc: "认证系统的URL。如果和本系统域名相同，可以只写完整路径", default: "/auth" }),
 

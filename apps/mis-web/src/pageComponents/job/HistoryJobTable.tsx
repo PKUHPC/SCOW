@@ -41,7 +41,6 @@ import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
-import { publicConfig } from "src/utils/config";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
 import { useAuthorizedClusters } from "src/utils/useAuthorizedClusters";
 
@@ -105,7 +104,6 @@ export const JobTable: React.FC<Props> = ({
 }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
-  const resourceEnabled = publicConfig.SCOW_RESOURCE_ENABLED;
 
   const { message } = App.useApp();
 
@@ -150,7 +148,7 @@ export const JobTable: React.FC<Props> = ({
     return clusterIds;
   }, [accountNames, filterAccountName]);
 
-  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, resourceEnabled, fetchAuthorizedClusterIds);
+  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, fetchAuthorizedClusterIds);
 
   // 定义排序状态
   const [sorter, setSorter] = useState<Sorter>({ field: undefined, order: undefined });
@@ -280,16 +278,14 @@ export const JobTable: React.FC<Props> = ({
                       label={
                         <Space>
                           {t(pCommon("cluster"))}
-                          {resourceEnabled ? (
-                            <Popover title={t("component.others.allClustersTooltip")}>
-                              <QuestionCircleOutlined />
-                            </Popover>
-                          ) : null}
+                          <Popover title={t("component.others.allClustersTooltip")}>
+                            <QuestionCircleOutlined />
+                          </Popover>
                         </Space>
                       }
                       name="clusters"
                     >
-                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
+                      <ClusterSelector authorizedClusterIds={authorizedClusterIds} />
                     </Form.Item>
                     {filterUser ? (
                       <Form.Item label={t(pCommon("user"))} name="userIdOrName">
@@ -340,16 +336,14 @@ export const JobTable: React.FC<Props> = ({
                       label={
                         <Space>
                           {t(pCommon("cluster"))}
-                          {resourceEnabled ? (
-                            <Popover title={t("component.others.allClustersTooltip")}>
-                              <QuestionCircleOutlined />
-                            </Popover>
-                          ) : null}
+                          <Popover title={t("component.others.allClustersTooltip")}>
+                            <QuestionCircleOutlined />
+                          </Popover>
                         </Space>
                       }
                       name="clusters"
                     >
-                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
+                      <ClusterSelector authorizedClusterIds={authorizedClusterIds} />
                     </Form.Item>
                     <Form.Item label={t(pCommon("workId"))} name="jobId">
                       <InputNumber style={{ minWidth: "160px" }} min={1} />

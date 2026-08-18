@@ -13,9 +13,9 @@ title: 介绍及配置通知系统
 
 # 配置
 
-## 配置开启消息系统
+## 配置消息系统
 
-SCOW 配置开启消息系统首先需要在 `install.yaml` 文件中，添加如下配置
+消息系统始终部署。需要自定义部署路径时，在 `install.yaml` 中配置：
 
 ```YAML
 notification:
@@ -35,18 +35,15 @@ uiExtension:
     url: http://your-server-name1/notif
 ```
 
-配置消息系统本身启动，需要在 `config/common.yaml` 文件中添加如下配置：
+在 `config/common.yaml` 中配置消息系统连接地址：
 
 ```YAML
 # 开启 SCOW API TOKEN 保证后端间交互安全
 scowApi:
   auth:
-    token: <秘密字符串，越长越好>
+    token: <至少 32 个字符的秘密字符串>
 
 notification:
-  # 是否开启消息系统
-  # 非必填，默认为 false
-  enabled: true
   # 消息系统名称，需与 ui 扩展名称保持一致
   # 非必填，默认为 notification
   name: notif

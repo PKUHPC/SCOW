@@ -42,22 +42,15 @@ export default route(GetMisUsageCountSchema, async (req, res) => {
 
   const { startTime, endTime } = req.query;
 
-  const client = getAuditClient?.(StatisticServiceClient);
+  const client = getAuditClient(StatisticServiceClient);
+  const { results } = await asyncClientCall(client, "getMisUsageCount", {
+    startTime,
+    endTime,
+  });
 
-  if (client) {
-    const { results } = await asyncClientCall(client, "getMisUsageCount", {
-      startTime,
-      endTime,
-    });
-    return {
-      200: {
-        results,
-      },
-    };
-  }
   return {
     200: {
-      results: [],
+      results,
     },
   };
 });

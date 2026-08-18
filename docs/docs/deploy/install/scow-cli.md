@@ -79,6 +79,8 @@ scow-cli使用运行目录下的`install.yaml`作为配置来管理集群，但�
 
 将示例配置文件提取到指定目录。
 
+生成配置时，CLI 会自动为 `config/common.yaml`（完整配置为 `common.yml`）中的 `scowApi.auth.token` 写入安全随机值。重复执行并确认覆盖时会保留已有的非空 token，不会自动轮换。
+
 | 选项 | 别名 | 说明 | 默认值 |
 | --- | --- | --- | --- |
 | `--outputPath` | `-o` | 输出路径 | `.` |

@@ -17,7 +17,6 @@ import {
 import { TenantAppInfo } from "src/pages/api/tenant/authorization/getTenantApps";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
-import { publicConfig } from "src/utils/config";
 
 interface Props {
   tenantAvailableClusterIds?: string[];
@@ -41,7 +40,6 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
   const t = useI18nTranslateToString();
 
   const availableClusters: Record<string, Cluster> = useMemo(() => {
-    if (!publicConfig.SCOW_RESOURCE_ENABLED) return activatedClusters;
     return Object.fromEntries(
       Object.entries(activatedClusters).filter(([clusterId]) => tenantAvailableClusterIds?.includes(clusterId)),
     );

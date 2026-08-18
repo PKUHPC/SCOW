@@ -1,5 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { getClusterConfigs, getLoginNode, getSortedClusterIds, getSortedClusters } from "@scow/config/build/cluster";
+import { getClusterConfigs, getSortedClusterIds, getSortedClusters } from "@scow/config/build/cluster";
 import { getCommonConfig, getSystemLanguageConfig } from "@scow/config/build/common";
 import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";
 import { getCapabilities } from "@scow/lib-auth";
@@ -19,10 +19,8 @@ import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
 
 const configPath = USE_MOCK ? join(__dirname, "config") : undefined;
-const clustersInit = getClusterConfigs(configPath, console, ["ai"]);
-Object.keys(clustersInit).map((id) => (clustersInit[id].loginNodes = clustersInit[id].loginNodes.map(getLoginNode)));
 // 配置文件中的已配置集群
-export const clusters = clustersInit;
+export const clusters = getClusterConfigs(configPath, console, ["ai"]);
 
 const I18nStringTypeSchema = z.union([
   z.string(),
@@ -73,7 +71,6 @@ const UserLinkSchema = z.object({
 });
 
 const ScowResourceConfigSchema = z.object({
-  enabled: z.boolean(),
   address: z.string(),
 });
 
@@ -105,8 +102,6 @@ const grafanaConfigSchema = z.object({
 
 const PublicConfigSchema = z.object({
   ENABLE_CHANGE_PASSWORD: z.boolean().optional(),
-  AUDIT_DEPLOYED: z.boolean(),
-  MIS_DEPLOYED: z.boolean(),
   MIS_URL: z.string().optional(),
   PORTAL_URL: z.string().optional(),
   QUANTUM_URL: z.string().optional(),
@@ -114,7 +109,6 @@ const PublicConfigSchema = z.object({
   CLUSTER_SORTED_ID_LIST: z.array(z.string()),
   PASSWORD_PATTERN: z.string().optional(),
   BASE_PATH: z.string(),
-  CLIENT_MAX_BODY_SIZE: z.string(),
   FILE_EDIT_SIZE: z.string().optional(),
   NON_EDITABLE_FILENAME_POSTFIXES: z.array(z.string()).optional(),
   FILE_PREVIEW_SIZE: z.string().optional(),
@@ -128,11 +122,10 @@ const PublicConfigSchema = z.object({
   SYSTEM_LANGUAGE_CONFIG: SystemLanguageConfigSchema,
   LOGIN_NODES: z.record(z.string(), z.string()),
   NOVNC_CLIENT_URL: z.string(),
-  SCOW_RESOURCE: ScowResourceConfigSchema.optional(),
+  SCOW_RESOURCE: ScowResourceConfigSchema,
   DASHBOARD_USER_DISPLAY_MODE: z.union([z.literal("full"), z.literal("simplified")]).default("full"),
-  NOTIF_ENABLED: z.boolean().optional(),
-  NOTIF_NAME: z.string().optional(),
-  NOTIF_ADDRESS: z.string().optional(),
+  NOTIF_NAME: z.string(),
+  NOTIF_ADDRESS: z.string(),
   UI_EXTENSION: UiExtensionConfigSchema.optional(),
   AI_USER_SHARE_ENABLED: z.boolean(),
   INFER_ENABLED: z.boolean(),
@@ -188,15 +181,12 @@ export const PartitionSchema = z.object({
   cpuModel: z.string().optional(),
 });
 
-const LoginNodeConfigSchema = z.union([
-  z.array(z.string()),
-  z.array(
-    z.object({
-      name: I18nStringTypeSchema,
-      address: z.string(),
-    }),
-  ),
-]);
+const LoginNodeConfigSchema = z.array(
+  z.object({
+    name: I18nStringTypeSchema,
+    address: z.string(),
+  }),
+);
 
 const StorageConfigSchema = z.object({
   enabled: z.boolean(),
@@ -282,8 +272,6 @@ export const config = router({
 
       return {
         ENABLE_CHANGE_PASSWORD: capabilities.changePassword,
-        AUDIT_DEPLOYED: envConfig.AUDIT_DEPLOYED,
-        MIS_DEPLOYED: envConfig.MIS_DEPLOYED,
 
         MIS_URL: envConfig.MIS_URL,
 
@@ -300,8 +288,6 @@ export const config = router({
         PASSWORD_PATTERN: commonConfig.passwordPattern?.regex,
 
         BASE_PATH: envConfig.NEXT_PUBLIC_RUNTIME_BASE_PATH,
-        // 上传（请求）文件的大小限制
-        CLIENT_MAX_BODY_SIZE: envConfig.CLIENT_MAX_BODY_SIZE,
 
         PUBLIC_PATH: envConfig.PUBLIC_PATH,
 
@@ -331,11 +317,9 @@ export const config = router({
 
         DASHBOARD_USER_DISPLAY_MODE: commonConfig.dashboard?.userDisplayMode ?? "full",
 
-        NOTIF_ENABLED: commonConfig.notification?.enabled,
+        NOTIF_NAME: commonConfig.notification.name,
 
-        NOTIF_NAME: commonConfig.notification?.name,
-
-        NOTIF_ADDRESS: commonConfig.notification?.address,
+        NOTIF_ADDRESS: commonConfig.notification.address,
 
         AI_USER_SHARE_ENABLED: aiConfig.asset?.userShare?.enabled ?? false,
         INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
@@ -357,7 +341,6 @@ export const config = router({
       z.record(
         z.string(),
         z.object({
-          scowdEnabled: z.boolean(),
           storage: StorageConfigSchema,
           loginNodes: LoginNodeConfigSchema,
           ai: ClusterAiConfigSchema,
@@ -369,7 +352,6 @@ export const config = router({
         (acc, clusterId) => {
           const cluster = clusters[clusterId];
           acc[clusterId] = {
-            scowdEnabled: cluster.scowd?.enabled ?? false,
             storage: {
               enabled: cluster.storage?.enabled ?? false,
               paths: cluster.storage?.paths ?? [],
@@ -399,7 +381,6 @@ export const config = router({
         {} as Record<
           string,
           {
-            scowdEnabled: boolean;
             storage: { enabled: boolean; paths: string[]; replicaExist: boolean };
             loginNodes: LoginNodeConfig;
             ai: {

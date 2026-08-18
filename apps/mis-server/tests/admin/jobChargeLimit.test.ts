@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded } from "@mikro-orm/core";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
@@ -13,6 +12,7 @@ import { UserAccount, UserStateInAccount, UserStatus } from "src/entities/UserAc
 import { reloadEntity } from "src/utils/orm";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let em: SqlEntityManager<MySqlDriver>;
@@ -24,7 +24,7 @@ beforeEach(async () => {
   server = await createServer();
   await server.start();
 
-  client = new JobChargeLimitServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, JobChargeLimitServiceClient);
 
   em = server.ext.orm.em.fork();
 

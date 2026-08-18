@@ -1,9 +1,21 @@
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { credentials, status } from "@grpc/grpc-js";
+import { status } from "@grpc/grpc-js";
+import { getClientFn } from "@scow/lib-server";
 import { AppServiceClient } from "@scow/protos/build/portal/app";
 import { getClusterConfigs } from "@scow/config/build/cluster";
 import { createServer } from "src/app";
+import { commonConfig } from "src/config/common";
+
+jest.mock("src/utils/clusters", () => ({
+  ...jest.requireActual("src/utils/clusters"),
+  checkActivatedClusters: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock("src/utils/validation", () => ({
+  ...jest.requireActual("src/utils/validation"),
+  validateSubmitJobInfoUnderMis: jest.fn().mockResolvedValue(undefined),
+}));
 
 let server: Server;
 let client: AppServiceClient;
@@ -13,7 +25,7 @@ beforeEach(async () => {
 
   await server.start();
 
-  client = new AppServiceClient(server.serverAddress, credentials.createInsecure());
+  client = getClientFn(server.serverAddress, commonConfig.scowApi.auth.token)(AppServiceClient);
 });
 
 afterEach(async () => {

@@ -24,9 +24,19 @@ export async function createInstallYaml(content: object) {
   return configPath;
 }
 
-export async function ensureDirectoriesTheSame(dir1: string, dir2: string) {
-  const files1 = await fsp.readdir(dir1);
-  const files2 = await fsp.readdir(dir2);
+export async function ensureDirectoriesTheSame(
+  dir1: string,
+  dir2: string,
+  ignoredRelativePaths: string[] = [],
+  currentRelativePath = "",
+) {
+  const ignoredPaths = new Set(ignoredRelativePaths);
+  const files1 = (await fsp.readdir(dir1)).filter(
+    (file) => !ignoredPaths.has(join(currentRelativePath, file)),
+  );
+  const files2 = (await fsp.readdir(dir2)).filter(
+    (file) => !ignoredPaths.has(join(currentRelativePath, file)),
+  );
 
   if (files1.length !== files2.length) {
     throw new Error(
@@ -46,7 +56,12 @@ export async function ensureDirectoriesTheSame(dir1: string, dir2: string) {
     const stat2 = await fsp.stat(filePath2);
 
     if (stat1.isDirectory() && stat2.isDirectory()) {
-      await ensureDirectoriesTheSame(filePath1, filePath2);
+      await ensureDirectoriesTheSame(
+        filePath1,
+        filePath2,
+        ignoredRelativePaths,
+        join(currentRelativePath, file),
+      );
     } else if (stat1.isFile() && stat2.isFile()) {
       const content1 = await fsp.readFile(filePath1);
       const content2 = await fsp.readFile(filePath2);

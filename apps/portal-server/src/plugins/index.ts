@@ -9,10 +9,5 @@ declare module "@ddadaal/tsgrpc-server" {
 
 export const plugins = [requestLogContextPlugin] as Plugin[];
 
-if (commonConfig.scowApi) {
-  plugins.push(apiAuthPlugin(commonConfig.scowApi));
-}
-
-if (commonConfig.scowResource?.enabled) {
-  plugins.push(scowResourcePlugin(commonConfig.scowResource));
-}
+plugins.push(apiAuthPlugin(commonConfig.scowApi));
+plugins.push(scowResourcePlugin(commonConfig.scowResource));

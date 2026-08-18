@@ -1,6 +1,6 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials, status } from "@grpc/grpc-js";
+import { status } from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal } from "@scow/lib-decimal";
 import { JobField, JobServiceClient } from "@scow/protos/build/server/job";
@@ -10,6 +10,7 @@ import { UserAccount } from "src/entities/UserAccount";
 import * as jobUtils from "src/utils/job";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server | undefined;
 let em: SqlEntityManager;
@@ -41,7 +42,7 @@ afterEach(async () => {
 
 function createClient() {
   if (!server) throw new Error("Test server is not initialized");
-  const client = new JobServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, JobServiceClient);
   clients.push(client);
   return client;
 }

@@ -45,15 +45,8 @@ export default route(GetAccountsSchema, async (req, res) => {
   const client = getClient(JobServiceClient);
 
   let appForbiddenAccounts: string[] = [];
-  // 如果部署了管理系统且开启了授权应用功能
   // 当在创建应用时查询可用账户时，需要过滤掉此应用未授权的账户
-  if (
-    publicConfig.MIS_DEPLOYED &&
-    publicConfig.MIS_SERVER_URL &&
-    publicConfig.ALLOW_APP_AUTHORIZATION &&
-    useForCreateApp &&
-    appId
-  ) {
+  if (useForCreateApp && appId) {
     appForbiddenAccounts = await libWebGetAppForbiddenAccounts(
       cluster,
       appId,

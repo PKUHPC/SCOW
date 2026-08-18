@@ -28,7 +28,6 @@ import {
 import { PartitionNames } from "@scow/scow-resource-protos/build/partition_pb";
 import { Logger } from "pino";
 import { configClusters } from "src/config/clusters";
-import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
@@ -47,7 +46,7 @@ export async function processSynchronization(
   em: SqlEntityManager<MySqlDriver>,
   logger: Logger,
   clusterPlugin: ClusterPlugin["clusters"],
-  scowResourcePlugin?: ScowResourcePlugin["resource"],
+  scowResourcePlugin: ScowResourcePlugin["resource"],
   maxSyncDurationMinutes?: number,
 ) {
   const subLogger = logger.child({ name: "processSynchronization" });
@@ -129,7 +128,6 @@ export async function processSynchronization(
     let startIndex: number = 0;
     const chunkSize: number = FIXED_CHUNK_SIZE;
     let chunkIndex: number = 1;
-    const isResourceDeployed = !!commonConfig.scowResource?.enabled;
 
     subLogger.info("Start an account user synchronization with maxSyncDurationMinutes : %s", maxSyncDurationMinutes);
 
@@ -207,9 +205,7 @@ export async function processSynchronization(
 
           const syncAccountsResult = await getSyncAccountsWithPartitions(
             clusterId,
-            currentActivatedClusters,
             chunkAccounts,
-            isResourceDeployed,
             subLogger,
             scowResourcePlugin,
           );
@@ -657,22 +653,18 @@ interface GetSyncExecAccountsResponse {
 }
 
 /**
- * 在部署了资源管理系统的前提下，获取账户用户数据中的账户已授权分区
+ * 获取账户用户数据中的账户已授权分区
  * @param clusterId 分区对应的集群id
- * @param currentActivatedClusters 当前在线可用集群
  * @param accounts 当前需要查找已授权分区的账户数据
- * @param isResourceDeployed 是否部署了资源管理系统
  * @param logger
  * @param scowResourcePlugin
  * @returns 返回需要执行同步操作的账户数据以及获取已授权分区失败的账户名数组
  */
 export async function getSyncAccountsWithPartitions(
   clusterId: string,
-  currentActivatedClusters: Record<string, ClusterConfigSchema>,
   accounts: Loaded<Account, "tenant" | "users" | "users.user">[],
-  isResourceDeployed: boolean,
   logger: Logger,
-  scowResourcePlugin?: ScowResourcePlugin["resource"],
+  scowResourcePlugin: ScowResourcePlugin["resource"],
 ): Promise<GetSyncExecAccountsResponse> {
   let partitionsFetchFailedAccounts: string[] = [];
   const abnormalAccountsWithoutOwner: string[] = [];
@@ -689,25 +681,23 @@ export async function getSyncAccountsWithPartitions(
 
   let syncAccounts: SyncAccountInfo[] = [];
 
-  const reply: Record<string, PartitionNames> | undefined = isResourceDeployed
-    ? await scowResourcePlugin
-        ?.getAccountsAssignedPartitionsForCluster({
-          accountsWithTenants: queryAccounts,
-          clusterId,
-        })
-        .catch((e) => {
-          // 因为一个chunk内的账户不一定都是在集群下解封状态
-          // 所以获取授权分区失败的账户+仍然只做记录，不取消本次chunk
-          partitionsFetchFailedAccounts = queryAccounts.map((a) => a.accountName);
-          logger.error(
-            "[Cluster: %s] Fetch assigned partitions of [%s] failed, %o",
-            clusterId,
-            partitionsFetchFailedAccounts.join(","),
-            e,
-          );
-          return undefined;
-        })
-    : undefined;
+  const reply: Record<string, PartitionNames> | undefined = await scowResourcePlugin
+    .getAccountsAssignedPartitionsForCluster({
+      accountsWithTenants: queryAccounts,
+      clusterId,
+    })
+    .catch((e) => {
+      // 因为一个chunk内的账户不一定都是在集群下解封状态
+      // 所以获取授权分区失败的账户+仍然只做记录，不取消本次chunk
+      partitionsFetchFailedAccounts = queryAccounts.map((a) => a.accountName);
+      logger.error(
+        "[Cluster: %s] Fetch assigned partitions of [%s] failed, %o",
+        clusterId,
+        partitionsFetchFailedAccounts.join(","),
+        e,
+      );
+      return undefined;
+    });
 
   logger.trace("[Cluster: %s] Partitions fetched of [%o]", clusterId, reply);
 
@@ -753,14 +743,10 @@ export async function getSyncAccountsWithPartitions(
         ownerId: account.users.find((x) => x.role === UserRole.OWNER)?.user.getProperty("userId"),
         whitelistId: account.whitelist?.id,
         blockedInCluster: account.blockedInCluster,
-        // 未部署资源管理时默认使用全部分区数据
-        // 部署了资源管理时，使用已授权分区
-        unblockedPartitions: !isResourceDeployed
-          ? { $case: "useAllPartitions", useAllPartitions: true }
-          : {
-              $case: "assignedPartitions",
-              assignedPartitions: { partitions: reply?.[account.accountName]?.partitionNames ?? [] },
-            },
+        unblockedPartitions: {
+          $case: "assignedPartitions",
+          assignedPartitions: { partitions: reply?.[account.accountName]?.partitionNames ?? [] },
+        },
         deleted: account.state === AccountState.DELETED,
       };
       return mappedAccount;

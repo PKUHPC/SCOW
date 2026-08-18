@@ -9,11 +9,11 @@ export interface Metadata {
   version: string;
   components: {
     portal?: string;
-    mis?: string;
+    mis: string;
     ai?: string;
     quantum?: string;
-    notification?: string;
-    resource?: string;
+    notification: string;
+    resource: string;
   };
 }
 
@@ -36,11 +36,11 @@ export function getMetadata(config: InstallConfigSchema): Metadata {
     version,
     components: {
       portal: config.portal?.enabled ? joinPath(basePath, config.portal.basePath) : undefined,
-      mis: config.mis?.enabled ? joinPath(basePath, config.mis.basePath) : undefined,
+      mis: joinPath(basePath, config.mis.basePath),
       ai: config.ai?.enabled ? joinPath(basePath, config.ai.basePath) : undefined,
       quantum: config.quantum?.enabled ? joinPath(basePath, config.quantum.basePath) : undefined,
-      notification: config.notification ? joinPath(basePath, config.notification.basePath) : undefined,
-      resource: config.resource ? joinPath(basePath, config.resource.basePath) : undefined,
+      notification: joinPath(basePath, config.notification.basePath),
+      resource: joinPath(basePath, config.resource.basePath),
     },
   };
 }

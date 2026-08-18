@@ -2,7 +2,6 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { ScowResourcePlugin } from "@scow/lib-scow-resource";
-import { ensureResourceManagementFeatureAvailable } from "@scow/lib-server";
 import { Logger } from "pino";
 import { ClusterPlugin } from "src/plugins/clusters";
 
@@ -12,10 +11,10 @@ export async function unblockAccountAssignedPartitionsInCluster(
   clusterId: string,
   clusterPlugin: ClusterPlugin["clusters"],
   logger: Logger,
-  scowResourcePlugin?: ScowResourcePlugin["resource"],
+  scowResourcePlugin: ScowResourcePlugin["resource"],
 ) {
   // 获取当前集群下已授权的分区
-  const unblockedPartitions = await scowResourcePlugin?.getAccountAssignedPartitionsForCluster({
+  const unblockedPartitions = await scowResourcePlugin.getAccountAssignedPartitionsForCluster({
     accountName,
     tenantName,
     clusterId,
@@ -29,9 +28,6 @@ export async function unblockAccountAssignedPartitionsInCluster(
   }
 
   await clusterPlugin.callOnOne(clusterId, logger, async (client) => {
-    // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
-    await ensureResourceManagementFeatureAvailable(client, logger);
-
     // 获取当前集群信息
     const clusterConfig = await asyncClientCall(client.config, "getClusterConfig", {
       cluster: clusterId,

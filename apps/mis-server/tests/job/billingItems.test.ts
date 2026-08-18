@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { MikroORM } from "@mikro-orm/core";
 import { MySqlDriver } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney, numberToMoney } from "@scow/lib-decimal";
@@ -13,6 +12,7 @@ import { Tenant } from "src/entities/Tenant";
 import { createPriceItems } from "src/tasks/createBillingItems";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let orm: MikroORM<MySqlDriver>;
@@ -56,7 +56,7 @@ beforeEach(async () => {
   await em.persistAndFlush(oldPriceItem);
 
   await server.start();
-  client = new JobServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, JobServiceClient);
 });
 
 afterEach(async () => {

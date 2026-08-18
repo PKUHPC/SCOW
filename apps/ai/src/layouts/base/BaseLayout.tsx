@@ -210,9 +210,8 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         }}
         userLinks={[]}
         languageId={languageId}
-        right={headerRightContent}
-        showOperationLog={!!(publicConfig?.AUDIT_DEPLOYED && publicConfig.MIS_DEPLOYED && publicConfig.MIS_URL)}
         operationLogUrl={publicConfig?.MIS_URL ? joinWithUrl(publicConfig.MIS_URL, "/operationLog") : undefined}
+        right={headerRightContent}
       />
       <StyledLayout>
         {hasSidebar ? (

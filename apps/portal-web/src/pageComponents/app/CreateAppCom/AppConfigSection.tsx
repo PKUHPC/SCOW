@@ -12,11 +12,9 @@ import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLangua
 import { Form, type FormInstance } from "antd";
 import { Rule } from "antd/es/form";
 import { useMemo } from "react";
-import { useStore } from "simstate";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { AppCustomAttribute } from "src/pages/api/app/getAppMetadata";
 import { Partition } from "src/pages/api/cluster";
-import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 
 import { AdvancedFileSelectModal } from "../../filemanager/AdvancedFileSelectModal";
 import { CommandSelect } from "../CommandSelect";
@@ -42,8 +40,6 @@ export const AppConfigSection = ({
   currentPartitionInfo,
 }: AppConfigSectionProps) => {
   const t = useI18nTranslateToString();
-
-  const { fullClusterConfigs } = useStore(ClusterInfoStore);
 
   const customFormItems = useMemo(
     () =>
@@ -127,7 +123,6 @@ export const AppConfigSection = ({
                         form.validateFields([item.name]);
                       }}
                       clusterId={clusterId}
-                      scowdEnabled={fullClusterConfigs[clusterId]?.scowd?.enabled}
                     />
                   </div>
                 }

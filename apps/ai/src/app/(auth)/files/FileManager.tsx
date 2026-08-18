@@ -590,26 +590,14 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
       </TopBar>
       <OperationBar>
         <Space wrap>
-          {scowClusterConfigs[cluster.id]?.scowdEnabled ? (
-            <Dropdown menu={uploadMenuProps}>
-              <Button icon={<UploadOutlined />}>
-                <Space>
-                  上传
-                  <DownOutlined />
-                </Space>
-              </Button>
-            </Dropdown>
-          ) : (
-            <UploadButton
-              externalOpen={isUploadModalOpen}
-              clusterId={cluster.id}
-              path={path}
-              reload={reload}
-              scowdEnabled={scowClusterConfigs[cluster.id]?.scowdEnabled}
-            >
-              {t(p("upload"))}
-            </UploadButton>
-          )}
+          <Dropdown menu={uploadMenuProps}>
+            <Button icon={<UploadOutlined />}>
+              <Space>
+                上传
+                <DownOutlined />
+              </Space>
+            </Button>
+          </Dropdown>
           <Divider type="vertical" />
           <Button
             icon={<DeleteOutlined />}
@@ -656,32 +644,28 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
           >
             {t(p("pasteSelected"))}
           </Button>
-          {scowClusterConfigs[cluster.id]?.scowdEnabled && (
-            <>
-              <CompressFilesButton
+          <CompressFilesButton
+            clusterId={cluster.id}
+            reload={reload}
+            path={path}
+            files={keysToFiles(selectedKeys)}
+            setCompression={setCompression}
+          >
+            {t(p("compress"))}
+          </CompressFilesButton>
+          <Tooltip title={getDecompressButtonDisabledReason()}>
+            <span>
+              <DecompressFilesButton
                 clusterId={cluster.id}
                 reload={reload}
-                path={path}
+                sourcePath={path}
                 files={keysToFiles(selectedKeys)}
-                setCompression={setCompression}
+                setDecompression={setDecompression}
               >
-                {t(p("compress"))}
-              </CompressFilesButton>
-              <Tooltip title={getDecompressButtonDisabledReason()}>
-                <span>
-                  <DecompressFilesButton
-                    clusterId={cluster.id}
-                    reload={reload}
-                    sourcePath={path}
-                    files={keysToFiles(selectedKeys)}
-                    setDecompression={setDecompression}
-                  >
-                    {t(p("decompress"))}
-                  </DecompressFilesButton>
-                </span>
-              </Tooltip>
-            </>
-          )}
+                {t(p("decompress"))}
+              </DecompressFilesButton>
+            </span>
+          </Tooltip>
           {operation ? (
             operation.started ? (
               <span>
@@ -869,7 +853,6 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
         clusterId={cluster.id}
         path={path}
         reload={reload}
-        scowdEnabled={scowClusterConfigs[cluster.id]?.scowdEnabled}
       />
       <UploadDirModal
         open={isUploadDirModalOpen}
@@ -877,7 +860,6 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
         clusterId={cluster.id}
         path={path}
         reload={reload}
-        scowdEnabled={scowClusterConfigs[cluster.id]?.scowdEnabled}
       />
     </div>
   );
@@ -886,4 +868,3 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
 const RenameLink = ModalLink(RenameModal);
 const CreateFileButton = ModalButton(CreateFileModal, { icon: <FileAddOutlined /> });
 const MkdirButton = ModalButton(MkdirModal, { icon: <FolderAddOutlined /> });
-const UploadButton = ModalButton(UploadModal, { icon: <UploadOutlined /> });

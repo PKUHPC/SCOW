@@ -508,7 +508,7 @@ export const mockApi: MockApi<typeof api> = {
         priority: 1,
         adapterUrl: "0.0.0.0:0000",
         proxyGateway: undefined,
-        loginNodes: [{ address: "localhost:22222", name: "login" }],
+        loginNodes: [{ address: "localhost:22222", name: "login", scowd: { port: 9999 } }],
         loginDesktop: undefined,
         turboVncPath: undefined,
         crossClusterFileTransfer: undefined,

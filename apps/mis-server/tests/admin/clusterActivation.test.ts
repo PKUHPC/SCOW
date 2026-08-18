@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { moneyToNumber, numberToMoney } from "@scow/lib-decimal";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
@@ -16,6 +15,7 @@ import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
 import { reloadEntity } from "src/utils/orm";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient, mockAccountResourceOperations } from "tests/utils";
 
 jest.mock("src/utils/scowd", () => {
   const actual = jest.requireActual("src/utils/scowd");
@@ -37,6 +37,7 @@ let data: InitialData;
 
 beforeEach(async () => {
   server = await createServer();
+  mockAccountResourceOperations(server.ext.resource);
   data = await insertInitialData(server.ext.orm.em.fork());
   await server.start();
 
@@ -56,7 +57,7 @@ beforeEach(async () => {
 
   await server.ext.orm.em.fork().persistAndFlush([clusterItem, hpc00]);
 
-  client = new ConfigServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, ConfigServiceClient);
 });
 
 afterEach(async () => {
@@ -194,7 +195,7 @@ it("creates an account and executes pay operation successfully during cluster ac
   });
   expect(reply.executed).toBeTrue();
 
-  const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const accountClient = createTestClient(server.serverAddress, AccountServiceClient);
 
   await asyncClientCall(accountClient, "createAccount", {
     accountName: "a1234",
@@ -211,7 +212,7 @@ it("creates an account and executes pay operation successfully during cluster ac
 
   const amount = numberToMoney(10);
 
-  const chargeClient = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const chargeClient = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const payReply = await asyncClientCall(chargeClient, "pay", {
     tenantName: data.tenant.name,
@@ -234,7 +235,7 @@ it("creates an account and executes pay operation successfully during cluster ac
 
 it("cannot execute pay operation during all clusters were deactivated", async () => {
   // create account
-  const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const accountClient = createTestClient(server.serverAddress, AccountServiceClient);
 
   await asyncClientCall(accountClient, "createAccount", {
     accountName: "a1234",
@@ -267,7 +268,7 @@ it("cannot execute pay operation during all clusters were deactivated", async ()
   // pay operation
   const amount = numberToMoney(10);
 
-  const chargeClient = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const chargeClient = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const payReply = await asyncClientCall(chargeClient, "pay", {
     tenantName: data.tenant.name,
@@ -285,7 +286,7 @@ it("cannot execute pay operation during all clusters were deactivated", async ()
 
 it("creates an account and executes charge operation successfully during cluster activation operation", async () => {
   // create an account
-  const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const accountClient = createTestClient(server.serverAddress, AccountServiceClient);
 
   await asyncClientCall(accountClient, "createAccount", {
     accountName: "a1234",
@@ -311,7 +312,7 @@ it("creates an account and executes charge operation successfully during cluster
   // charge
   const amount = numberToMoney(10);
 
-  const chargeClient = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const chargeClient = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const chargeReply = await asyncClientCall(chargeClient, "charge", {
     tenantName: data.tenant.name,
@@ -334,7 +335,7 @@ it("creates an account and executes charge operation successfully during cluster
 
 it("cannot execute charge operation during all clusters were deactivated", async () => {
   // create account
-  const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const accountClient = createTestClient(server.serverAddress, AccountServiceClient);
 
   await asyncClientCall(accountClient, "createAccount", {
     accountName: "a1234",
@@ -367,7 +368,7 @@ it("cannot execute charge operation during all clusters were deactivated", async
   // pay operation
   const amount = numberToMoney(10);
 
-  const chargeClient = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const chargeClient = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const chargeReply = await asyncClientCall(chargeClient, "charge", {
     tenantName: data.tenant.name,
@@ -420,7 +421,7 @@ it("cannot import users and accounts during all clusters were deactivated", asyn
   });
   expect(deactivationReply2.executed).toBeTrue();
 
-  const adminClient = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const adminClient = createTestClient(server.serverAddress, AdminServiceClient);
   const importReply = await asyncClientCall(adminClient, "importUsers", { data: data, whitelist: true }).catch(
     (e) => e,
   );

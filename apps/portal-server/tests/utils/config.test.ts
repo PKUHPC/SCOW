@@ -1,10 +1,11 @@
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { credentials } from "@grpc/grpc-js";
+import { getClientFn } from "@scow/lib-server";
 import { ConfigServiceClient } from "@scow/protos/build/common/config";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { createServer } from "src/app";
+import { commonConfig } from "src/config/common";
 
 let server: Server;
 let client: ConfigServiceClient;
@@ -14,7 +15,7 @@ beforeEach(async () => {
 
   await server.start();
 
-  client = new ConfigServiceClient(server.serverAddress, credentials.createInsecure());
+  client = getClientFn(server.serverAddress, commonConfig.scowApi.auth.token)(ConfigServiceClient);
 });
 
 afterEach(async () => {

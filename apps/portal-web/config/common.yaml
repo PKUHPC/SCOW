@@ -30,3 +30,7 @@ passwordPattern:
   # 普通用户的显示模式。
   # 可选值：full: 完整模式，显示所有资源数据（已用、空闲、不可用）；simplified: 简化模式，只显示节点总数、运行中的作业数等基本信息
   # userDisplayMode: "simplified"
+
+scowApi:
+  auth:
+    token: test-scow-api-token-at-least-32-chars

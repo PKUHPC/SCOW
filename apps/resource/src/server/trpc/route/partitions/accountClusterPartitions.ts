@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { ensureResourceManagementFeatureAvailable } from "@scow/lib-server";
 import { Account } from "@scow/protos/build/server/account";
 import { TRPCError } from "@trpc/server";
 import { AssignedInfoSortBy, AssignmentState, SortOrder } from "src/models/partition";
@@ -453,7 +452,6 @@ export const unAssignAccountCluster = adminAuthProcedure
       if (!account.blocked) {
         await clustersUtil
           .callOnOne(clusterId, logger, async (adapterClient) => {
-            await ensureResourceManagementFeatureAvailable(adapterClient, logger);
             const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
             // 1.获取当前集群下所有分区
             const partitionNames = clusterConfig.partitions.map((p) => p.name);
@@ -598,8 +596,6 @@ export const assignAccountPartition = adminAuthProcedure
 
             logger,
             async (adapterClient) => {
-              await ensureResourceManagementFeatureAvailable(adapterClient, logger);
-
               await asyncClientCall(adapterClient.account, "unblockAccountWithPartitions", {
                 accountName,
                 unblockedPartitions: [partition],
@@ -729,7 +725,6 @@ export const unAssignAccountPartition = adminAuthProcedure
       if (!account.blocked) {
         await clustersUtil
           .callOnOne(clusterId, logger, async (adapterClient) => {
-            await ensureResourceManagementFeatureAvailable(adapterClient, logger);
             await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
               accountName,
               blockedPartitions: [partition],

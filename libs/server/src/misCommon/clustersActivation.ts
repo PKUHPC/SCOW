@@ -13,21 +13,16 @@ import { scowErrorMetadata } from "../error";
  *
  * @param logger
  * @param configClusters clusters from all config files
- * @param misServerUrl undefined => return configClusters, not undefined => return current activated clusters
+ * @param misServerUrl mis-server url
  * @param scowApiAuthToken
  * @returns
  */
 export const libGetCurrentActivatedClusters = async (
   logger: Logger,
   configClusters: Record<string, ClusterConfigSchema>,
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<Record<string, ClusterConfigSchema>> => {
-  if (!misServerUrl) {
-    logger.info("Mis is not deployed, using clusters from config files.");
-    return configClusters;
-  }
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(ConfigServiceClient);
 

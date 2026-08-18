@@ -11,7 +11,7 @@ export interface ScowResourceClient {
 
 const setAuthorization: Interceptor = (next) => async (req) => {
   const commonConfig = getCommonConfig();
-  const token = commonConfig.scowApi?.auth?.token;
+  const token = commonConfig.scowApi.auth.token;
 
   if (token) {
     req.header.set("authorization", `Bearer ${token}`);

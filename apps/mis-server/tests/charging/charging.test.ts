@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import * as grpc from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, moneyToNumber, numberToMoney } from "@scow/lib-decimal";
@@ -15,6 +14,16 @@ import { User } from "src/entities/User";
 import { extractTypesFromObjects, range } from "src/utils/array";
 import { reloadEntity } from "src/utils/orm";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
+
+jest.mock("src/bl/block", () => ({
+  ...jest.requireActual("src/bl/block"),
+  blockAccount: jest.fn(async (account: { blockedInCluster: boolean }) => {
+    account.blockedInCluster = true;
+    return "OK";
+  }),
+  unblockAccount: jest.fn().mockResolvedValue("ALREADY_UNBLOCKED"),
+}));
 
 let server: Server;
 let em: SqlEntityManager;
@@ -54,7 +63,7 @@ afterEach(async () => {
 it("pays account", async () => {
   const amount = numberToMoney(10);
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const reply = await asyncClientCall(client, "pay", {
     tenantName: account.tenant.getProperty("name"),
@@ -76,7 +85,7 @@ it("pays account", async () => {
 
 it("pays account with negative amount", async () => {
   const amount = numberToMoney(-10);
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const reply = await asyncClientCall(client, "pay", {
     tenantName: account.tenant.getProperty("name"),
@@ -98,7 +107,7 @@ it("pays account with negative amount", async () => {
 
 it("pays account with negative amount to block account", async () => {
   const amount = numberToMoney(5);
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
   await asyncClientCall(client, "pay", {
     tenantName: account.tenant.getProperty("name"),
     accountName: account.accountName,
@@ -146,7 +155,7 @@ it("concurrently pays", async () => {
 
   const responses = await Promise.allSettled(
     requests.map(async (x) => {
-      const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+      const client = createTestClient(server.serverAddress, ChargingServiceClient);
       return await asyncClientCall(client, "pay", x);
     }),
   );
@@ -170,7 +179,7 @@ it("returns NOT_FOUND if account is not found", async () => {
     operatorId: "tester",
   });
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const ret = await asyncClientCall(client, "pay", request).catch((e) => e as { code: number });
 
@@ -181,7 +190,7 @@ it("gets account balance", async () => {
   account.balance = new Decimal(50);
   await em.flush();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const reply = await asyncClientCall(client, "getBalance", {
     tenantName: account.tenant.getEntity().name,
@@ -194,7 +203,7 @@ it("gets account balance", async () => {
 it("charges account", async () => {
   const amount = numberToMoney(10);
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const reply = await asyncClientCall(client, "charge", {
     tenantName: account.tenant.getProperty("name"),
@@ -229,7 +238,7 @@ it("concurrently charges", async () => {
 
   const responses = await Promise.allSettled(
     requests.map(async (x) => {
-      const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+      const client = createTestClient(server.serverAddress, ChargingServiceClient);
       return await asyncClientCall(client, "charge", x);
     }),
   );
@@ -301,7 +310,7 @@ it("returns payment records", async () => {
 
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "pay", request1);
   await asyncClientCall(client, "pay", request2);
@@ -477,7 +486,7 @@ it("returns charge records with query of accountOfTenant", async () => {
 
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "charge", request1);
 
@@ -539,7 +548,7 @@ it("returns charge records with query of tenant", async () => {
 
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "charge", request1);
   await delay(1000);
@@ -636,7 +645,7 @@ it("returns charge records with query of allTenants", async () => {
 
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "charge", request1);
   await delay(1000);
@@ -711,7 +720,7 @@ it("returns charge records with query of accountsOfTenant", async () => {
   };
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "charge", request1);
   await delay(1000);
@@ -826,7 +835,7 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
 
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "charge", request1);
   await delay(1000);
@@ -1011,7 +1020,7 @@ it("returns charge records' total results", async () => {
 
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "charge", request1);
   await asyncClientCall(client, "charge", request2);
@@ -1119,7 +1128,7 @@ it("returns charge records with query of accounts", async () => {
   };
   const startTime = new Date();
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   await asyncClientCall(client, "charge", request1);
   await asyncClientCall(client, "charge", request2);
@@ -1281,7 +1290,7 @@ it("returns paginated charge records with userIdsOrNames filter", async () => {
     },
   ];
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   for (const request of chargeRequests) {
     await asyncClientCall(client, "charge", request);
@@ -1380,7 +1389,7 @@ it("returns paginated charge records without userIdsOrNames filter", async () =>
     },
   ];
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   for (const request of chargeRequests) {
     await asyncClientCall(client, "charge", request);
@@ -1476,7 +1485,7 @@ it("returns paginated charge records filtered by userId", async () => {
     },
   ];
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   for (const request of chargeRequests) {
     await asyncClientCall(client, "charge", request);
@@ -1566,7 +1575,7 @@ it("returns paginated charge records filtered by userName", async () => {
     },
   ];
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   for (const request of chargeRequests) {
     await asyncClientCall(client, "charge", request);
@@ -1635,7 +1644,7 @@ it("keeps account scope when filtering by userIdsOrNames", async () => {
   });
   await em.persistAndFlush([tenant, account, user]);
 
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
   await asyncClientCall(client, "charge", {
     tenantName: tenant.name,
     accountName: account.accountName,

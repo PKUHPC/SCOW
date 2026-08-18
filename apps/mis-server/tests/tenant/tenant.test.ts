@@ -1,11 +1,11 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { GetTenantInfoResponse, TenantServiceClient } from "@scow/protos/build/server/tenant";
 import { createServer } from "src/app";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let data: InitialData;
@@ -26,7 +26,7 @@ afterEach(async () => {
 });
 
 it("gets tenant info", async () => {
-  const client = new TenantServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, TenantServiceClient);
 
   const info = await asyncClientCall(client, "getTenantInfo", { tenantName: data.tenant.name });
 
@@ -41,7 +41,7 @@ it("gets tenant info", async () => {
 });
 
 it("gets all tenants", async () => {
-  const client = new TenantServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, TenantServiceClient);
 
   const info = await asyncClientCall(client, "getTenants", {});
 

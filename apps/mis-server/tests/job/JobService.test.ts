@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, moneyToNumber, numberToMoney } from "@scow/lib-decimal";
 import { dayjsToDateMessage } from "@scow/lib-server/build/date";
@@ -15,6 +14,7 @@ import { range } from "src/utils/array";
 import { reloadEntities } from "src/utils/orm";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient, mockAccountResourceOperations } from "tests/utils";
 
 dayjs.extend(utc);
 
@@ -24,6 +24,7 @@ let data: InitialData;
 
 beforeEach(async () => {
   server = await createServer();
+  mockAccountResourceOperations(server.ext.resource);
 
   em = server.ext.orm.em.fork();
 
@@ -80,7 +81,7 @@ const mockOriginalJobData = (ua: UserAccount, tenantPrice: Decimal, accountPrice
   );
 
 function createClient() {
-  return new JobServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  return createTestClient(server.serverAddress, JobServiceClient);
 }
 
 it("changes job prices", async () => {

@@ -4,20 +4,32 @@ import { Static, Type } from "@sinclair/typebox";
 import { DEFAULT_CONFIG_BASE_PATH } from "./constants";
 import { createI18nStringSchema, SYSTEM_VALID_LANGUAGE_ENUM, SystemLanguage, SystemLanguageConfig } from "./i18n";
 
-export const NotificationConfigSchema = Type.Object({
-  enabled: Type.Boolean({ description: "是否开启消息系统", default: false }),
-  name: Type.String({ description: "消息系统名称，和 ui 扩展名称保持一致", default: "notification" }),
-  address: Type.String({ description: "消息系统地址", default: "http://notification:3000" }),
-});
+export const NotificationConfigSchema = Type.Object(
+  {
+    name: Type.String({
+      description: "消息系统名称，和 ui 扩展名称保持一致",
+      default: "notification",
+      minLength: 1,
+    }),
+    address: Type.String({
+      description: "消息系统地址",
+      default: "http://notification:3000/notification",
+      minLength: 1,
+    }),
+  },
+  { default: {} },
+);
 
 export const ScowApiConfigSchema = Type.Object({
-  auth: Type.Optional(
-    Type.Object(
-      {
-        token: Type.Optional(Type.String({ description: "允许使用Token认证，token的值" })),
-      },
-      { description: "SCOW API认证配置" },
-    ),
+  auth: Type.Object(
+    {
+      token: Type.String({
+        description: "允许使用Token认证，token的值",
+        minLength: 32,
+        not: { const: "must-change-this-scow-api-token" },
+      }),
+    },
+    { description: "SCOW API认证配置" },
   ),
 });
 
@@ -38,10 +50,16 @@ export const ScowHookConfigSchema = Type.Object(
   { description: "SCOW Hook配置" },
 );
 
-export const ScowResourceConfigSchema = Type.Object({
-  enabled: Type.Boolean({ description: "是否启用资源管理", default: false }),
-  address: Type.String({ description: "资源管理", default: "scow-resource:3000" }),
-});
+export const ScowResourceConfigSchema = Type.Object(
+  {
+    address: Type.String({
+      description: "资源管理系统地址",
+      default: "http://resource:3000/resource",
+      minLength: 1,
+    }),
+  },
+  { default: {} },
+);
 
 export const CommonConfigSchema = Type.Object({
   passwordPattern: Type.Object(
@@ -59,7 +77,7 @@ export const CommonConfigSchema = Type.Object({
   ),
 
   scowHook: Type.Optional(ScowHookConfigSchema),
-  scowApi: Type.Optional(ScowApiConfigSchema),
+  scowApi: ScowApiConfigSchema,
   userLinks: Type.Optional(
     Type.Array(
       Type.Object({
@@ -99,11 +117,9 @@ export const CommonConfigSchema = Type.Object({
     ),
   ),
 
-  scowResource: Type.Optional(ScowResourceConfigSchema),
+  scowResource: ScowResourceConfigSchema,
 
-  notification: Type.Optional(NotificationConfigSchema),
-
-  allowAppAuthorization: Type.Boolean({ description: "开启授权交互式应用功能", default: true }),
+  notification: NotificationConfigSchema,
 
   // 仪表盘配置
   dashboard: Type.Optional(

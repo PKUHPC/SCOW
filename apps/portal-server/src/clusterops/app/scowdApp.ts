@@ -712,7 +712,7 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
         }
 
         const misSubmitTimes =
-          config.MIS_DEPLOYED && endedSessionJobIds.size > 0
+          endedSessionJobIds.size > 0
             ? await libGetMisHistoryJobSubmitTimes(
                 logger,
                 { cluster, userId, jobIds: Array.from(endedSessionJobIds) },
@@ -723,13 +723,6 @@ export const scowdAppServices = (cluster: string, getClient: (userId: string) =>
                 return new Map<number, string>();
               })
             : new Map<number, string>();
-
-        if (!config.MIS_DEPLOYED && endedSessionJobIds.size > 0) {
-          logger.trace(
-            "Mis is not deployed, fallback to session submit time for %d ended app sessions.",
-            endedSessionJobIds.size,
-          );
-        }
 
         const sessionsWithSubmitTime = sessions.map((session) => {
           const runningJobInfo = runningJobInfoMap[session.jobId];

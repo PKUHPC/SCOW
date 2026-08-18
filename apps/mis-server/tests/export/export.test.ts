@@ -1,6 +1,5 @@
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
 import { JobInfo as JobInfoProto } from "@scow/protos/build/common/ended_job";
@@ -22,6 +21,7 @@ import { JobInfo } from "src/entities/JobInfo";
 import { PayRecord } from "src/entities/PayRecord";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let em: SqlEntityManager;
@@ -96,7 +96,7 @@ const mockOriginalJobData = (account: string, user: string, jobId?: number, clus
   );
 
 it("export users", async () => {
-  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ExportServiceClient);
 
   const stream = asyncReplyStreamCall(client, "exportUser", {
     count: 1,
@@ -125,7 +125,7 @@ it("export users", async () => {
 });
 
 it("export accounts", async () => {
-  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ExportServiceClient);
 
   const stream = asyncReplyStreamCall(client, "exportAccount", {
     count: 3,
@@ -165,7 +165,7 @@ it("export accounts", async () => {
 });
 
 it("export dept accounts", async () => {
-  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ExportServiceClient);
 
   const stream = asyncReplyStreamCall(client, "exportAccount", {
     count: 3,
@@ -258,7 +258,7 @@ it("export charge Records", async () => {
 
   await em.persistAndFlush([chargeRecord1, chargeRecord2, chargeRecord3, chargeRecord4, chargeRecord5, chargeRecord6]);
 
-  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ExportServiceClient);
 
   const startTime = new Date("2023-12-07T07:21:02.029Z");
   const queryStartTime = new Date(startTime);
@@ -335,7 +335,7 @@ it("export charge records keeps account scope for idsOrNames filter", async () =
 
   await em.persistAndFlush([accountCharge, tenantCharge]);
 
-  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ExportServiceClient);
 
   const startTime = new Date("2023-12-07T07:21:02.029Z");
   const queryStartTime = new Date(startTime);
@@ -418,7 +418,7 @@ it("export pay Records", async () => {
 
   await em.persistAndFlush([payRecord1, payRecord2, payRecord3, payRecord4]);
 
-  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ExportServiceClient);
 
   const startTime = new Date("2023-12-07T07:21:02.000Z");
   const queryStartTime = new Date(startTime);
@@ -491,7 +491,7 @@ it("export job Records", async () => {
 
   await em.persistAndFlush(jobs);
 
-  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ExportServiceClient);
 
   const baseQueryTime = new Date("2020-04-23T23:21:02.000Z");
   const jobEndTimeStart = new Date(baseQueryTime);

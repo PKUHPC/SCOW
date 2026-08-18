@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { AdminServiceClient, GetAdminInfoResponse } from "@scow/protos/build/server/admin";
 import dayjs from "dayjs";
@@ -12,6 +11,7 @@ import { range } from "src/utils/array";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let em: SqlEntityManager;
@@ -21,7 +21,7 @@ beforeEach(async () => {
   server = await createServer();
   await server.start();
 
-  client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, AdminServiceClient);
   em = server.ext.orm.em.fork();
   await insertInitialData(em);
 });

@@ -36,7 +36,7 @@ export async function validateSubmitAiJobInfoUnderMis({
     accountName,
     AccountStatusFilter.UNBLOCKED_ONLY,
     config.MIS_SERVER_URL,
-    commonConfig.scowApi?.auth?.token,
+    commonConfig.scowApi.auth.token,
   );
   if (!isUserAvailableInAccount) {
     throw new DetailedTRPCError({
@@ -50,32 +50,28 @@ export async function validateSubmitAiJobInfoUnderMis({
     });
   }
 
-  // 2.如果配置资源管理，检查集群分区是否已授权
-  if (commonConfig.scowResource?.enabled) {
-    const isClusterPartitionAuthorized = await isAccountAuthorizedInClusterPartition(
-      commonConfig.scowResource,
-      accountName,
-      clusterId,
-      partitionName,
-    );
-    if (!isClusterPartitionAuthorized) {
-      throw new DetailedTRPCError({
-        code: "FORBIDDEN",
-        message:
-          `Account ${accountName} is not authorized in cluster ${clusterId}` +
-          (partitionName ? ` and partition ${partitionName}` : ""),
-        detail: {
-          type: "cluster_partition_not_available",
-          accountName,
-          clusterId,
-          partitionName,
-        },
-      });
-    }
+  const isClusterPartitionAuthorized = await isAccountAuthorizedInClusterPartition(
+    commonConfig.scowResource,
+    accountName,
+    clusterId,
+    partitionName,
+  );
+  if (!isClusterPartitionAuthorized) {
+    throw new DetailedTRPCError({
+      code: "FORBIDDEN",
+      message:
+        `Account ${accountName} is not authorized in cluster ${clusterId}` +
+        (partitionName ? ` and partition ${partitionName}` : ""),
+      detail: {
+        type: "cluster_partition_not_available",
+        accountName,
+        clusterId,
+        partitionName,
+      },
+    });
   }
 
-  // 3.如果需要检查授权应用时
-  // 则增加判断开启授权应用，检查应用是否已对账户禁用
+  // 3.如果需要检查授权应用，则检查应用是否已对账户禁用
   if (checkAccountApp && !appId) {
     throw new DetailedTRPCError({
       code: "FORBIDDEN",
@@ -87,14 +83,14 @@ export async function validateSubmitAiJobInfoUnderMis({
       },
     });
   }
-  if (checkAccountApp && appId && commonConfig.allowAppAuthorization) {
+  if (checkAccountApp && appId) {
     const isAppDisabledToAccount = await libCheckAppIsDisabled(
       logger,
       clusterId,
       appId,
       accountName,
       config.MIS_SERVER_URL,
-      commonConfig.scowApi?.auth?.token,
+      commonConfig.scowApi.auth.token,
       AppScope.AI,
     );
 

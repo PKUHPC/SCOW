@@ -1,0 +1,12 @@
+db:
+  host: db
+  port: 3306
+  user: root
+  dbName: scow_resource
+
+scow:
+  misServerUrl: mis-server:5000
+
+log:
+  level: info
+  pretty: false

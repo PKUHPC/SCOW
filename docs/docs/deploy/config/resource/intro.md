@@ -13,13 +13,13 @@ title: 介绍及配置资源管理系统
 
 # 配置
 
-## 配置开启资源管理系统
+## 配置资源管理系统
 
-SCOW 配置开启资源管理系统首先需要在 `install.yaml` 文件中，添加如下配置
+资源管理系统始终部署。需要自定义部署路径时，在 `install.yaml` 中配置：
 
 ```YAML
 resource:
-  bashPath: /resource
+  basePath: /resource
 ```
 
 在 SCOW v1 版本中的资源管理使用 UI 扩展的方式接入的 SCOW。所以需要在 `config/mis.yaml` 文件中添加 UI 扩展相关配置，具体如下：
@@ -34,24 +34,21 @@ uiExtension:
     url: http://your-domain/resource
 ```
 
-配置资源管理系统是否启动，需要在 `config/common.yaml` 文件中添加如下配置：
+在 `config/common.yaml` 中配置资源管理系统连接地址：
 
 ```YAML
 
-# 是否开启资源管理系统
 scowResource:
-  # 非必填，默认为 false
-  enabled: true
   # 资源管理系统部署的url，在内网能访问即可
   # 非必填，默认为 http://resource:3000/resource
   # 若在install.yaml中配置了最外层的basePath不为"/"，需要在此处的your-server-name后也加上basePath
   address: http://your-server-name/resource
 
 # 开启 SCOW API TOKEN 保证后端间交互安全
-# 若开启资源管理系统服务则必须配置
+# 基础系统间调用必须配置
 scowApi:
   auth:
-    token: <秘密字符串，越长越好>
+    token: <至少 32 个字符的秘密字符串>
 
 ```
 

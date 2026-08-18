@@ -25,7 +25,7 @@ import { join } from "path";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
-import { callOnOne, checkActivatedClusters, getAdapterClient } from "src/utils/clusters";
+import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 
 export const getAccountUnavailableReasons = (accountStatus: AccountStatus | undefined) => {
   if (!accountStatus) {
@@ -202,14 +202,12 @@ export const runtimeConfigServiceServer = plugin((server) => {
     getAccountClustersWithUnavailableReasons: async ({ request, logger }) => {
       const { userId } = request;
 
-      const activatedClusters = config.MIS_DEPLOYED
-        ? await libGetCurrentActivatedClusters(
-            logger,
-            configClusters,
-            config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token,
-          )
-        : configClusters;
+      const activatedClusters = await libGetCurrentActivatedClusters(
+        logger,
+        configClusters,
+        config.MIS_SERVER_URL,
+        commonConfig.scowApi.auth.token,
+      );
       const currentClusterIds = Object.keys(activatedClusters).filter((clusterId) =>
         Boolean(configClusters[clusterId]),
       );
@@ -218,9 +216,7 @@ export const runtimeConfigServiceServer = plugin((server) => {
         return [{ accountClusters: [] }];
       }
 
-      const userInfo = config.MIS_DEPLOYED
-        ? await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)
-        : undefined;
+      const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
       const tenantName = userInfo?.tenantName;
       const accounts = userInfo
         ? (userInfo.affiliations ?? [])
@@ -228,15 +224,15 @@ export const runtimeConfigServiceServer = plugin((server) => {
             .map((affiliation) => affiliation.accountName)
         : undefined;
 
-      if (config.MIS_DEPLOYED && accounts?.length === 0) {
+      if (accounts?.length === 0) {
         return [{ accountClusters: [] }];
       }
 
       const accountStatuses =
-        config.MIS_DEPLOYED && tenantName && accounts
+        tenantName && accounts
           ? (
               await asyncClientCall(
-                getClientFn(config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)(UserServiceClient),
+                getClientFn(config.MIS_SERVER_URL, commonConfig.scowApi.auth.token)(UserServiceClient),
                 "getUserStatus",
                 {
                   userId,
@@ -246,48 +242,6 @@ export const runtimeConfigServiceServer = plugin((server) => {
               )
             ).accountStatuses
           : {};
-
-      const buildAccountClusters = async (
-        clusterIds: string[],
-        getClusterAccounts: (clusterId: string) => Promise<string[] | undefined>,
-      ): Promise<Record<string, string[]>> => {
-        const accountClusterMap = new Map<string, Set<string>>();
-        const settledResults = await Promise.allSettled(
-          clusterIds.map(async (clusterId) => {
-            const clusterAccounts = await getClusterAccounts(clusterId);
-            return { clusterId, clusterAccounts };
-          }),
-        );
-
-        const failedClusterIds: string[] = [];
-
-        settledResults.forEach((result, index) => {
-          if (result.status !== "fulfilled") {
-            failedClusterIds.push(clusterIds[index]);
-            return;
-          }
-
-          const { clusterId, clusterAccounts } = result.value;
-          if (!clusterAccounts?.length) {
-            return;
-          }
-
-          clusterAccounts.forEach((account) => {
-            if (!accountClusterMap.has(account)) {
-              accountClusterMap.set(account, new Set());
-            }
-            accountClusterMap.get(account)!.add(clusterId);
-          });
-        });
-
-        if (failedClusterIds.length > 0) {
-          logger.warn(`Failed to get available accounts from clusters: ${failedClusterIds.join(",")}`);
-        }
-
-        return Object.fromEntries(
-          Array.from(accountClusterMap.entries()).map(([account, clusters]) => [account, Array.from(clusters)]),
-        ) as Record<string, string[]>;
-      };
 
       const convertAccountClustersToGrpc = (accountClusters: Record<string, string[]>) => {
         const accountNames = accounts ?? Object.keys(accountClusters);
@@ -302,30 +256,11 @@ export const runtimeConfigServiceServer = plugin((server) => {
         });
       };
 
-      if (!commonConfig.scowResource?.enabled) {
-        const accountClusters = await buildAccountClusters(currentClusterIds, async (clusterId) => {
-          if (config.MIS_DEPLOYED) {
-            return accounts;
-          }
-
-          const client = getAdapterClient(clusterId);
-          if (!client) {
-            logger.warn(`Cluster ${clusterId} not found when listing app available accounts.`);
-            return undefined;
-          }
-
-          const response = await asyncClientCall(client.account, "listAccounts", { userId });
-          return response.accounts ?? [];
-        });
-
-        return [{ accountClusters: convertAccountClustersToGrpc(accountClusters) }];
-      }
-
       const currentClusterSet = new Set(currentClusterIds);
       const accountClusters = Object.fromEntries(
         await Promise.all(
           (accounts ?? []).map(async (accountName) => {
-            const clusterIds = await getUserAccountsClusterIds(commonConfig.scowResource!, [accountName], tenantName);
+            const clusterIds = await getUserAccountsClusterIds(commonConfig.scowResource, [accountName], tenantName);
             return [
               accountName,
               Array.from(new Set(clusterIds)).filter((clusterId) => currentClusterSet.has(clusterId)),

@@ -1,5 +1,5 @@
 import { ServiceError } from "@grpc/grpc-js";
-import { LoginNode } from "@scow/config/build/cluster";
+import { LoginNodeConfigSchema } from "@scow/config/build/cluster";
 import { I18nObject_I18n, I18nStringType } from "@scow/config/build/i18n";
 import { ClusterConfigSchemaProto_LoginNodesProtoType } from "@scow/protos/build/common/config";
 import { I18nStringProtoType } from "@scow/protos/build/common/i18n";
@@ -93,22 +93,21 @@ export const testDesktopsFilePath = path.join(testDesktopDirPath, "desktops.json
 // protobuf中定义的grpc返回值的loginNodes类型映射到前端loginNode
 export const getLoginNodesTypeFormat = (
   protoType: ClusterConfigSchemaProto_LoginNodesProtoType | undefined,
-): LoginNode[] => {
+): LoginNodeConfigSchema[] => {
   if (!protoType?.value) return [];
-  if (protoType.value.$case === "loginNodeAddresses") {
-    return protoType.value.loginNodeAddresses.loginNodeAddressesValue.map((x) => ({
-      name: x,
-      address: x,
-      scowdPort: undefined,
-    }));
-  } else {
-    const loginNodeConfigs = protoType.value.loginNodeConfigs;
-    return loginNodeConfigs.loginNodeConfigsValue.map((x) => ({
+  const loginNodeConfigs = protoType.value.loginNodeConfigs;
+
+  return loginNodeConfigs.loginNodeConfigsValue.map((x) => {
+    if (!x.scowd) {
+      throw new Error(`Missing scowd config for login node ${x.address}`);
+    }
+
+    return {
       name: getI18nTypeFormat(x.name),
       address: x.address,
-      scowdPort: x.scowd?.port,
-    }));
-  }
+      scowd: x.scowd,
+    };
+  });
 };
 
 // protobuf中定义的grpc返回值的类型映射到前端I18nStringType

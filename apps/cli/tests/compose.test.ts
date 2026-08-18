@@ -1,8 +1,80 @@
+import { getCommonConfig } from "@scow/config/build/common";
 import { rmSync, statSync } from "fs";
+import { writeFile } from "fs/promises";
 import { join } from "path";
 import { createComposeSpec } from "src/compose";
 import { AuthCustomType, getInstallConfig } from "src/config/install";
 import { configPath, createInstallYaml, testBaseFolder } from "tests/utils";
+
+it("applies required subsystem defaults to minimal install config", async () => {
+  const minimalConfigPath = await createInstallYaml({});
+  const config = getInstallConfig(minimalConfigPath);
+
+  expect(config.mis.basePath).toBe("/mis");
+  expect(config.audit.mysqlImage).toBe("mysql:8");
+  expect(config.resource.basePath).toBe("/resource");
+  expect(config.notification.basePath).toBe("/notification");
+});
+
+it("accepts but ignores removed install switches", async () => {
+  const legacyConfigPath = await createInstallYaml({ mis: { enabled: false } });
+  const config = getInstallConfig(legacyConfigPath);
+  const composeConfig = createComposeSpec(config);
+
+  expect(composeConfig.services["mis-server"]).toBeDefined();
+  expect(composeConfig.services["mis-web"]).toBeDefined();
+  expect(composeConfig.services.db).toBeDefined();
+});
+
+it("accepts but ignores removed common switches", async () => {
+  await writeFile(
+    join(testBaseFolder, "common.yaml"),
+    [
+      "passwordPattern:",
+      "  regex: test",
+      "  errorMessage: test",
+      "scowApi:",
+      "  auth:",
+      "    token: test-scow-api-token-at-least-32-chars",
+      "notification:",
+      "  enabled: false",
+      "scowResource:",
+      "  enabled: false",
+    ].join("\n"),
+  );
+  const commonConfig = getCommonConfig(testBaseFolder);
+  expect(commonConfig.scowResource.address).toBe("http://resource:3000/resource");
+  expect(commonConfig.notification).toMatchObject({
+    name: "notification",
+    address: "http://notification:3000/notification",
+  });
+});
+
+it("requires the API token and applies required connection defaults", async () => {
+  await writeFile(
+    join(testBaseFolder, "common.yaml"),
+    ["passwordPattern:", "  regex: test", "  errorMessage: test", "scowApi:", "  auth: {}"].join("\n"),
+  );
+  expect(() => getCommonConfig(testBaseFolder)).toThrow("/scowApi/auth must have required property 'token'");
+
+  await writeFile(
+    join(testBaseFolder, "common.yaml"),
+    [
+      "passwordPattern:",
+      "  regex: test",
+      "  errorMessage: test",
+      "scowApi:",
+      "  auth:",
+      "    token: test-scow-api-token-at-least-32-chars",
+    ].join("\n"),
+  );
+  const commonConfig = getCommonConfig(testBaseFolder);
+  expect(commonConfig.scowResource.address).toBe("http://resource:3000/resource");
+  expect(commonConfig.notification).toMatchObject({
+    name: "notification",
+    address: "http://notification:3000/notification",
+  });
+});
 
 it("creates log dir for fluentd", async () => {
   const config = getInstallConfig(configPath);
@@ -22,7 +94,7 @@ it("generate correct paths", async () => {
   const config = getInstallConfig(configPath);
 
   config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
-  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
   config.ai = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
 
   const composeConfig = createComposeSpec(config);
@@ -40,13 +112,12 @@ it("sets quantum portal internal url with portal base path", async () => {
 
   config.basePath = "/scow";
   config.portal = { enabled: true, basePath: "/portal", novncClientImage: "" };
-  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
   config.quantum = {
     enabled: true,
     basePath: "/quantum",
     qobody: { image: "qobody:test", token: "test-token" },
   };
-  config.audit = { dbPassword: "must!chang3this", mysqlImage: "" };
 
   rmSync(generatedUchipConfigPath, { recursive: true, force: true });
 
@@ -57,7 +128,6 @@ it("sets quantum portal internal url with portal base path", async () => {
     expect(composeConfig.services.quantum.environment).toContain(
       "PORTAL_INTERNAL_URL=http://portal-web:3000/scow/portal",
     );
-    expect(composeConfig.services.quantum.environment).toContain("AUDIT_DEPLOYED=true");
   } finally {
     rmSync(generatedUchipConfigPath, { recursive: true, force: true });
   }
@@ -122,23 +192,27 @@ describe("sets custom auth environment", () => {
   });
 });
 
-it("deploy audit", async () => {
+it("always deploys required subsystems", async () => {
   const config = getInstallConfig(configPath);
-  config.audit = { dbPassword: "must!chang3this", mysqlImage: "" };
   config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
-  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
 
   const composeConfig = createComposeSpec(config);
 
-  expect(composeConfig.services["mis-web"].environment).toContain("AUDIT_DEPLOYED=true");
-  expect(composeConfig.services["portal-web"].environment).toContain("AUDIT_DEPLOYED=true");
+  expect(composeConfig.services["mis-server"]).toBeDefined();
+  expect(composeConfig.services["mis-web"]).toBeDefined();
+  expect(composeConfig.services.db).toBeDefined();
+  expect(composeConfig.services["audit-server"]).toBeDefined();
+  expect(composeConfig.services["audit-db"]).toBeDefined();
+  expect(composeConfig.services.notification).toBeDefined();
+  expect(composeConfig.services.resource).toBeDefined();
+  expect(composeConfig.services.gateway.environment).not.toContain("MIS_ENABLED");
 });
 
 it("deploy ai", async () => {
   const config = getInstallConfig(configPath);
   config.ai = { enabled: true, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
   config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
-  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
 
   const composeConfig = createComposeSpec(config);
 
@@ -171,7 +245,7 @@ describe("VNC (novnc) service", () => {
     const config = getInstallConfig(configPath);
     config.portal = { enabled: false, basePath: "/", novncClientImage: "" };
     config.ai = { enabled: false, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
-    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
 
     const spec = createComposeSpec(config);
 
@@ -204,7 +278,7 @@ describe("module enabled=false", () => {
   it("portal disabled: services absent and env vars correct", async () => {
     const config = getInstallConfig(configPath);
     config.portal = { enabled: false, basePath: "/", novncClientImage: "" };
-    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
     config.ai = { enabled: true, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
 
     const spec = createComposeSpec(config);
@@ -225,37 +299,10 @@ describe("module enabled=false", () => {
     expect(spec.services.ai.environment).toContain("PORTAL_DEPLOYED=false");
   });
 
-  it("mis disabled: services absent and env vars correct", async () => {
-    const config = getInstallConfig(configPath);
-    config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
-    config.mis = { enabled: false, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
-    config.ai = { enabled: true, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
-
-    const spec = createComposeSpec(config);
-
-    // mis services should not be present
-    expect(spec.services["mis-server"]).toBeUndefined();
-    expect(spec.services["mis-web"]).toBeUndefined();
-    expect(spec.services["db"]).toBeUndefined();
-
-    // gateway should report mis as disabled
-    expect(spec.services.gateway.environment).toContain("MIS_ENABLED=false");
-
-    // portal-server and portal-web should report mis as not deployed
-    expect(spec.services["portal-server"].environment).toContain("MIS_DEPLOYED=false");
-    expect(spec.services["portal-server"].environment).toContain("MIS_SERVER_URL=");
-    expect(spec.services["portal-web"].environment).toContain("MIS_DEPLOYED=false");
-    expect(spec.services["portal-web"].environment).toContain("MIS_SERVER_URL=");
-
-    // ai should report mis as not deployed
-    expect(spec.services.ai.environment).toContain("MIS_DEPLOYED=false");
-    expect(spec.services.ai.environment).toContain("MIS_SERVER_URL=");
-  });
-
   it("ai disabled: services absent and env vars correct", async () => {
     const config = getInstallConfig(configPath);
     config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
-    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
     config.ai = { enabled: false, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
 
     const spec = createComposeSpec(config);
@@ -277,7 +324,7 @@ describe("module enabled=false", () => {
   it("quantum disabled: services absent and env vars correct", async () => {
     const config = getInstallConfig(configPath);
     config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
-    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
     config.quantum = {
       enabled: false,
       basePath: "/quantum",

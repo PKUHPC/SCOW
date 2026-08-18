@@ -1,21 +1,15 @@
 import { NextPage } from "next";
 import { requireAuth } from "src/auth/requireAuth";
-import { NotFoundPage } from "src/components/errorPages/NotFoundPage";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
 import { AppAuthTargetType } from "src/models/app";
 import { PlatformRole } from "src/models/User";
 import { AppAuthorizationTable } from "src/pageComponents/common/appAuthorization/AppAuthorizationTable";
-import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
 export const AppAuthorizationPage: NextPage = requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(
   () => {
     const t = useI18nTranslateToString();
-
-    if (!publicConfig.ALLOW_APP_AUTHORIZATION) {
-      return <NotFoundPage />;
-    }
 
     return (
       <div>

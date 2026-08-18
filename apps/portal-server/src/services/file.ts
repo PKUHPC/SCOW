@@ -6,7 +6,6 @@ import { FileServiceServer, FileServiceService } from "@scow/protos/build/portal
 import path from "path";
 import { getClusterOps } from "src/clusterops";
 import { FileType } from "src/clusterops/api/file";
-import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
 import { checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
@@ -52,15 +51,6 @@ export const fileServiceServer = plugin((server) => {
 
       if (!host) {
         throw clusterNotFound(cluster);
-      }
-
-      const clusterInfo = configClusters[cluster];
-
-      if (!clusterInfo.scowd?.enabled) {
-        throw {
-          code: Status.UNIMPLEMENTED,
-          message: "To use this interface, you need to enable scowd.",
-        } as ServiceError;
       }
 
       const client = getScowdClient(cluster, userId);
@@ -243,15 +233,6 @@ export const fileServiceServer = plugin((server) => {
         throw clusterNotFound(cluster);
       }
 
-      const clusterInfo = configClusters[cluster];
-
-      if (!clusterInfo.scowd?.enabled) {
-        throw {
-          code: Status.UNIMPLEMENTED,
-          message: "To use this interface, you need to enable scowd.",
-        } as ServiceError;
-      }
-
       const subLogger = logger.child({ userId, paths, cluster });
       subLogger.info("Download and compress file started");
       const client = getScowdClient(cluster, userId);
@@ -420,15 +401,6 @@ export const fileServiceServer = plugin((server) => {
         throw clusterNotFound(cluster);
       }
 
-      const clusterInfo = configClusters[cluster];
-
-      if (!clusterInfo.scowd?.enabled) {
-        throw {
-          code: Status.UNIMPLEMENTED,
-          message: "To use this interface, you need to enable scowd.",
-        } as ServiceError;
-      }
-
       const client = getScowdClient(cluster, userId);
 
       try {
@@ -465,15 +437,6 @@ export const fileServiceServer = plugin((server) => {
 
       if (!host) {
         throw clusterNotFound(cluster);
-      }
-
-      const clusterInfo = configClusters[cluster];
-
-      if (!clusterInfo.scowd?.enabled) {
-        throw {
-          code: Status.UNIMPLEMENTED,
-          message: "To use this interface, you need to enable scowd.",
-        } as ServiceError;
       }
 
       const client = getScowdClient(cluster, userId);

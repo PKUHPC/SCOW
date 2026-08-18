@@ -8,8 +8,6 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { urlToUpload } from "src/pageComponents/filemanager/api";
-import { publicConfig } from "src/utils/config";
-import { convertToBytes } from "src/utils/format";
 
 interface Props {
   open: boolean;
@@ -17,7 +15,6 @@ interface Props {
   reload: () => void;
   cluster: string;
   path: string;
-  scowdEnabled: boolean;
 }
 
 interface UploadProgressEvent {
@@ -29,7 +26,7 @@ const pCommon = prefix("common.");
 
 type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
-export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, scowdEnabled }) => {
+export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster }) => {
   const { message, modal } = App.useApp();
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
   const uploadFileListRef = useRef<UploadFile[]>([]);
@@ -244,13 +241,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         </Button>,
       ]}
     >
-      {!scowdEnabled && (
-        <p>
-          {t(p("uploadRemark3"))}
-          <span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>
-          {t(p("uploadRemark4"))}
-        </p>
-      )}
       <div
         onDropCapture={(event) => {
           const droppedItems = Array.from(event.dataTransfer?.items ?? []);
@@ -272,27 +262,18 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         <Upload.Dragger
           name="file"
           multiple
-          {...(scowdEnabled
-            ? {
-                customRequest: ({ file, onSuccess, onError, onProgress }) => {
-                  limit.current(() =>
-                    startMultipartUpload(file as File, onProgress)
-                      .then(onSuccess)
-                      .catch(onError),
-                  );
-                },
-              }
-            : {
-                action: async (file) => urlToUpload(cluster, join(path, file.name)),
-              })}
+          customRequest={({ file, onSuccess, onError, onProgress }) => {
+            limit.current(() =>
+              startMultipartUpload(file as File, onProgress)
+                .then(onSuccess)
+                .catch(onError),
+            );
+          }}
           withCredentials
           showUploadList={{
             removeIcon: (file) => {
               return file.status === "uploading" ? (
-                <DeleteOutlined
-                  onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                  title={t(p("cancelUpload"))}
-                />
+                <DeleteOutlined onClick={() => handleRemove(file)} title={t(p("cancelUpload"))} />
               ) : (
                 <DeleteOutlined title={t(p("deleteUploadRecords"))} />
               );
@@ -314,13 +295,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             if (hasFolderInDropRef.current) {
               return Upload.LIST_IGNORE;
             }
-            const fileMaxSize = convertToBytes(publicConfig.CLIENT_MAX_BODY_SIZE);
-
-            if (!scowdEnabled && file.size > fileMaxSize) {
-              message.error(t(p("maxSizeErrorMessage"), [file.name, publicConfig.CLIENT_MAX_BODY_SIZE]));
-              return Upload.LIST_IGNORE;
-            }
-
             return new Promise((resolve, reject) => {
               const targetPath = join(path, file.name);
               void api
@@ -358,16 +332,13 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
               <div>
                 {/* 原始的文件节点（包含进度条等） */}
                 {originNode}
-                {/* 只在scowd下展示下载进度及下载速度 */}
-                {scowdEnabled && (
-                  <PercentAndSpeedContainer>
-                    {file.status === "uploading" && (
-                      <span>
-                        {file.percent} % &nbsp;&nbsp; {extraInfo}
-                      </span>
-                    )}
-                  </PercentAndSpeedContainer>
-                )}
+                <PercentAndSpeedContainer>
+                  {file.status === "uploading" && (
+                    <span>
+                      {file.percent} % &nbsp;&nbsp; {extraInfo}
+                    </span>
+                  )}
+                </PercentAndSpeedContainer>
               </div>
             );
           }}

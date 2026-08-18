@@ -277,7 +277,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
 
   const accountInfoQuery = useAsync({
     promiseFn: useCallback(async () => {
-      if (!selectedAccount || !publicConfig.MIS_DEPLOYED) {
+      if (!selectedAccount) {
         return undefined;
       }
       return api.getAccountInfo({ query: { accountName: selectedAccount } }).catch(() => undefined);
@@ -1048,8 +1048,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
                   totalMemory={totalMemory}
                   hourlyPrice={formattedHourlyPrice}
                   showHourlyPriceUnit={jobOneHourPrice != null}
-                  pricingStandardUrl={join(publicConfig.MIS_URL ?? "/mis", "/user/partitions")}
-                  showAccountInfo={publicConfig.MIS_DEPLOYED}
+                  pricingStandardUrl={join(publicConfig.MIS_URL, "/user/partitions")}
                   accountInfo={accountInfoQuery.data}
                 />
               </JobSidePanelInner>

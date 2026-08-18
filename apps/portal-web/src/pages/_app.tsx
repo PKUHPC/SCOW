@@ -189,8 +189,6 @@ function MyApp({ appProps: { pageProps, Component }, extra }: { appProps: AppPro
   });
 
   const fetchUnreadMessages = async (): Promise<UnreadMessage | undefined> => {
-    if (!publicConfig.NOTIF_ENABLED) return undefined;
-
     const result = await api
       .getUnreadMessages({
         query: { messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert] },
@@ -253,20 +251,16 @@ function MyApp({ appProps: { pageProps, Component }, extra }: { appProps: AppPro
               versionTag={publicConfig.VERSION_TAG}
               initialLanguage={extra.initialLanguageId}
             >
-              {publicConfig.NOTIF_ENABLED ? (
-                <NotificationLayout
-                  interval={300000}
-                  languageId={extra.initialLanguageId}
-                  onMarkMessageRead={async (messageId: number) => {
-                    await api.markMessageRead({ body: { messageId } });
-                  }}
-                  fetchUnreadMessages={fetchUnreadMessages}
-                >
-                  <Component {...pageProps} />
-                </NotificationLayout>
-              ) : (
+              <NotificationLayout
+                interval={300000}
+                languageId={extra.initialLanguageId}
+                onMarkMessageRead={async (messageId: number) => {
+                  await api.markMessageRead({ body: { messageId } });
+                }}
+                fetchUnreadMessages={fetchUnreadMessages}
+              >
                 <Component {...pageProps} />
-              )}
+              </NotificationLayout>
             </BaseLayout>
           </AntdConfigProvider>
         </DarkModeProvider>

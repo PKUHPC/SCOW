@@ -34,13 +34,12 @@ interface ClusterCheckResult {
     error?: string;
   };
   scowdCheck?: {
-    enabled: boolean;
     loginNodes: LoginNodeCheckResult[];
   };
   hasError: boolean;
 }
 
-function generateScowdUrl(address: string, scowdPort: number | undefined, sslEnabled: boolean) {
+function generateScowdUrl(address: string, scowdPort: number, sslEnabled: boolean) {
   return sslEnabled ? `https://${removePort(address)}:${scowdPort}` : `http://${removePort(address)}:${scowdPort}`;
 }
 
@@ -188,62 +187,38 @@ export const checkClusters = async ({ configPath, scowConfigPath, continueOnErro
         result.hasError = true;
       }
 
-      // 检查 scowd 连接（如果启用）
-      if (clusterConfig.scowd?.enabled) {
-        const loginNodes = clusterConfig.loginNodes.map(getLoginNode);
-        const loginNodeResults: LoginNodeCheckResult[] = [];
+      const loginNodes = clusterConfig.loginNodes.map(getLoginNode);
+      const loginNodeResults: LoginNodeCheckResult[] = [];
 
-        for (const loginNode of loginNodes) {
-          const { name, address, scowdPort } = loginNode;
+      for (const loginNode of loginNodes) {
+        const { name, address, scowdPort } = loginNode;
+        const scowdUrl = generateScowdUrl(address, scowdPort, scowdSslEnabled);
 
-          if (!scowdPort) {
-            loginNodeResults.push({
-              name: typeof name === "string" ? name : name.i18n.default,
-              address,
-              url: "",
-              success: false,
-              error: "scowd port not configured",
-            });
-            result.hasError = true;
-            continue;
-          }
+        try {
+          const scowdClient = getScowdClient(scowdUrl, scowdCertificates);
 
-          const scowdUrl = generateScowdUrl(address, scowdPort, scowdSslEnabled);
-
-          try {
-            const scowdClient = getScowdClient(scowdUrl, scowdCertificates);
-
-            // 使用 checkHealth 接口检查 scowd 健康状态
-            await scowdClient.system.checkHealth({}, { timeoutMs: 10000 });
-            loginNodeResults.push({
-              name: typeof name === "string" ? name : name.i18n.default,
-              address,
-              url: scowdUrl,
-              success: true,
-            });
-          } catch (e) {
-            const error = e instanceof Error ? e.message : String(e);
-            loginNodeResults.push({
-              name: typeof name === "string" ? name : name.i18n.default,
-              address,
-              url: scowdUrl,
-              success: false,
-              error,
-            });
-            result.hasError = true;
-          }
+          // 使用 checkHealth 接口检查 scowd 健康状态
+          await scowdClient.system.checkHealth({}, { timeoutMs: 10000 });
+          loginNodeResults.push({
+            name: typeof name === "string" ? name : name.i18n.default,
+            address,
+            url: scowdUrl,
+            success: true,
+          });
+        } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
+          loginNodeResults.push({
+            name: typeof name === "string" ? name : name.i18n.default,
+            address,
+            url: scowdUrl,
+            success: false,
+            error,
+          });
+          result.hasError = true;
         }
-
-        result.scowdCheck = {
-          enabled: true,
-          loginNodes: loginNodeResults,
-        };
-      } else {
-        result.scowdCheck = {
-          enabled: false,
-          loginNodes: [],
-        };
       }
+
+      result.scowdCheck = { loginNodes: loginNodeResults };
 
       return result;
     },
@@ -281,7 +256,7 @@ export const checkClusters = async ({ configPath, scowConfigPath, continueOnErro
     }
 
     // 输出 scowd 检查结果
-    if (result.scowdCheck?.enabled) {
+    if (result.scowdCheck) {
       logger.info("\nSCOWD (SSL: %s):", scowdSslEnabled ? "Enabled" : "Disabled");
       for (const node of result.scowdCheck.loginNodes) {
         logger.info("  Login node: %s (%s)", node.name, node.address);
@@ -293,8 +268,6 @@ export const checkClusters = async ({ configPath, scowConfigPath, continueOnErro
           logger.error("    Error: %s", node.error);
         }
       }
-    } else {
-      logger.info("\nSCOWD: Not enabled");
     }
   }
 

@@ -14,7 +14,7 @@ export const certificates = createScowdCertificates(config);
 
 export const getScowdClientByUrl = createScowdClientByUrlGetter({ certificates, logger });
 
-export function generateScowdUrl(address: string, scowdPort: number | undefined) {
+export function generateScowdUrl(address: string, scowdPort: number) {
   return config.SCOWD_SSL_ENABLED
     ? `https://${removePort(address)}:${scowdPort}`
     : `http://${removePort(address)}:${scowdPort}`;
@@ -37,7 +37,6 @@ const getClientByCluster = createBalancedScowdClientGetter({
   getLoginNode,
   getLoginNodeAddress: (loginNode) => loginNode.address,
   getLoginNodeScowdUrl,
-  isScowdEnabled: (clusterInfo) => !!clusterInfo?.scowd?.enabled,
   certificates,
   logger,
 });

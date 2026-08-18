@@ -8,10 +8,6 @@ interface Options {
 export const enterDb = async (options: Options) => {
   const config = getInstallConfig(options.configPath);
 
-  if (!config.mis) {
-    throw new Error("MIS is not deployed. db is not deployed");
-  }
-
   await runComposeCommand(config, [
     "exec",
     "-e",

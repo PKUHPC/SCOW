@@ -411,7 +411,6 @@ export const FileSelectModal: React.FC<Props> = ({
               <UploadFileButton
                 path={path}
                 clusterId={clusterId}
-                scowdEnabled={scowClusterConfigs[clusterId]?.scowdEnabled}
                 reload={async () => {
                   await refetch();
                   setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent ?? []));
@@ -430,20 +429,18 @@ export const FileSelectModal: React.FC<Props> = ({
               >
                 {t(p("mkdir"))}
               </MkdirButton>
-              {scowClusterConfigs[clusterId]?.scowdEnabled && (
-                <DecompressionModalButton
-                  clusterId={clusterId}
-                  reload={async () => {
-                    await refetch();
-                    setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent ?? []));
-                  }}
-                  sourcePath={path}
-                  files={keysToFiles(selectedKeys)}
-                  usePublicPath={usePublicPath}
-                >
-                  {t(p("depression"))}
-                </DecompressionModalButton>
-              )}
+              <DecompressionModalButton
+                clusterId={clusterId}
+                reload={async () => {
+                  await refetch();
+                  setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent ?? []));
+                }}
+                sourcePath={path}
+                files={keysToFiles(selectedKeys)}
+                usePublicPath={usePublicPath}
+              >
+                {t(p("depression"))}
+              </DecompressionModalButton>
             </div>
             <div key="right">
               <Button

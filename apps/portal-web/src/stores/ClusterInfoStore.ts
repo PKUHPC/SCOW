@@ -10,7 +10,6 @@ import {
   getStorageEnabled,
   isEqual,
 } from "src/utils/cluster";
-import { publicConfig } from "src/utils/config";
 
 const SCOW_DEFAULT_CLUSTER_ID = "SCOW_DEFAULT_CLUSTER_ID";
 
@@ -29,14 +28,10 @@ export function ClusterInfoStore(
   const clusterSortedIdList = getSortedClusterIds(clusterConfigs);
 
   // 当前可用集群
-  const [currentClusters, setCurrentClusters] = useState<Cluster[]>(
-    !publicConfig.MIS_DEPLOYED ? publicConfigClusters : initialCurrentClusters,
-  );
+  const [currentClusters, setCurrentClusters] = useState<Cluster[]>(initialCurrentClusters);
 
   // 当前启用中集群
-  const [activatedClusters, setActivatedClusters] = useState<Cluster[]>(
-    !publicConfig.MIS_DEPLOYED ? publicConfigClusters : initialCurrentClusters,
-  );
+  const [activatedClusters, setActivatedClusters] = useState<Cluster[]>(initialCurrentClusters);
   const [fullClusterConfigs, _] = useState<Record<string, ClusterConfigSchema>>(clusterConfigs);
 
   useEffect(() => {
@@ -83,13 +78,12 @@ export function ClusterInfoStore(
   const [storageEnabled, setStorageEnabled] = useState<boolean>(false);
 
   useEffect(() => {
-    if (publicConfig.MIS_DEPLOYED) {
-      // 可用集群不存在时
-      if (currentClusters.length === 0) {
+    // 可用集群不存在时
+    if (currentClusters.length === 0) {
         setDefaultCluster(undefined);
         setEnableLoginDesktop(false);
         setCrossClusterFileTransferEnabled(false);
-      } else {
+    } else {
         const currentClusterIds = currentClusters.map((x) => x.id);
         const specifiedClusterConfigs = Object.fromEntries(
           Object.entries(clusterConfigs).filter(([clusterId]) => currentClusterIds.includes(clusterId)),
@@ -122,7 +116,6 @@ export function ClusterInfoStore(
             Object.values(activatedClusters).map((cluster) => cluster.id),
           ),
         );
-      }
     }
   }, [currentClusters, clusterConfigs, portalRuntimeDesktopEnabled]);
 

@@ -3,14 +3,9 @@ import { ClusterRuntimeInfo, ConfigServiceClient } from "@scow/protos/build/serv
 import { getClientFn } from "src/utils/api";
 
 export const libGetClustersRuntimeInfo = async (
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<ClusterRuntimeInfo[]> => {
-  // if mis is Deployed
-  if (!misServerUrl) {
-    return [];
-  }
-
   const config = {
     SERVER_URL: misServerUrl,
     SCOW_API_AUTH_TOKEN: scowApiAuthToken,

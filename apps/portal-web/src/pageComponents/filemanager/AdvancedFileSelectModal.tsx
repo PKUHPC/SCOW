@@ -44,7 +44,6 @@ interface Props {
   allowedExtensions?: string[];
   allowedFileType: FileType[];
   onSubmit: (path: string) => void;
-  scowdEnabled?: boolean;
 }
 
 interface DirContent {
@@ -115,7 +114,6 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   allowedFileType,
   allowedExtensions,
   onSubmit,
-  scowdEnabled,
 }) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.app.advancedFileSelectModal.");
@@ -280,7 +278,6 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
               <UploadFileButton
                 cluster={clusterId}
                 path={path}
-                scowdEnabled={!!scowdEnabled}
                 reload={async () => {
                   curDirContentReload();
                   setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent?.items ?? []));

@@ -1,5 +1,6 @@
 import { getAiConfig } from "@scow/config/build/ai";
 import { getAppConfigs } from "@scow/config/build/app";
+import { getAuditConfig } from "@scow/config/build/audit";
 import { getClusterConfigs } from "@scow/config/build/cluster";
 import { getClusterTextsConfig } from "@scow/config/build/clusterTexts";
 import { getCommonConfig } from "@scow/config/build/common";
@@ -35,7 +36,7 @@ export const checkConfig = ({ configPath, continueOnError, scowConfigPath }: Opt
   };
 
   logger.debug("Checking common config");
-  const commonConfig = tryRead(getCommonConfig);
+  tryRead(getCommonConfig);
 
   logger.debug("Checking cluster config files");
   const clusterConfigs = tryRead(getClusterConfigs);
@@ -56,12 +57,11 @@ export const checkConfig = ({ configPath, continueOnError, scowConfigPath }: Opt
     logger.debug("Portal is not deployed. Skip portal config check.");
   }
 
-  if (config.mis) {
-    logger.debug("Checking MIS configuration");
-    tryRead(getMisConfig);
-  } else {
-    logger.debug("MIS is not deployed. Skip MIS config check.");
-  }
+  logger.debug("Checking MIS configuration");
+  tryRead(getMisConfig);
+
+  logger.debug("Checking audit configuration");
+  tryRead(getAuditConfig);
 
   if (config.ai?.enabled) {
     logger.debug("Checking AI configuration");
@@ -81,33 +81,9 @@ export const checkConfig = ({ configPath, continueOnError, scowConfigPath }: Opt
     logger.debug("AI is not deployed. Skip AI config check.");
   }
 
-  if (config.resource) {
-    logger.debug("Checking resource configuration");
-    tryRead(getResourceConfig);
+  logger.debug("Checking resource configuration");
+  tryRead(getResourceConfig);
 
-    // 检查 scowApi.token 配置 - resource 模块需要此配置
-    if (!commonConfig?.scowApi?.auth?.token) {
-      logger.error("scowApi.auth.token is required for resource module but not configured in common config");
-      if (!continueOnError) {
-        process.exit(1);
-      }
-    }
-  } else {
-    logger.debug("Resource is not deployed. Skip resource config check.");
-  }
-
-  if (config.notification) {
-    logger.debug("Checking notification configuration");
-    tryRead(getNotificationConfig);
-
-    // 检查 scowApi.token 配置 - notification 模块需要此配置
-    if (!commonConfig?.scowApi?.auth?.token) {
-      logger.error("scowApi.auth.token is required for notification module but not configured in common config");
-      if (!continueOnError) {
-        process.exit(1);
-      }
-    }
-  } else {
-    logger.debug("Notification is not deployed. Skip notification config check.");
-  } // 这里要加quantum吗?
+  logger.debug("Checking notification configuration");
+  tryRead(getNotificationConfig);
 };

@@ -16,11 +16,9 @@ title: 配置管理系统
 修改安装配置文件
 
 ```yaml title="install.yaml"
-# 确保管理系统会部署
+# 管理系统始终部署；此处仅覆盖默认部署参数
 mis:
-  # 是否启用管理系统。默认为true，设置为false时nginx不渲染管理系统相关路由
-  # enabled: true
-  # 如果管理系统部署在`/mis`路径下，设置"MIS.BASE_PATH"为 "/mis"。默认为"/"
+  # 如果管理系统部署在`/mis`路径下，设置 basePath 为 "/mis"。默认为 "/mis"
   basePath: "/mis"
   # 如果将会部署在域名的根目录下，设置"MIS.BASE_PATH"为 "/"
   basePath: "/"

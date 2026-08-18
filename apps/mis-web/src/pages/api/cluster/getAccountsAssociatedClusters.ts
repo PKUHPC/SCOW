@@ -22,7 +22,7 @@ export const GetAccountsAssociatedClustersSchema = typeboxRouteSchema({
     }),
     403: Type.Null(),
     409: Type.Object({
-      code: Type.Union([Type.Literal("RESOURCE_NOT_ENABLED"), Type.Literal("RESOURCE_CONNECT_FAILED")]),
+      code: Type.Literal("RESOURCE_CONNECT_FAILED"),
       message: Type.String(),
     }),
   },
@@ -59,10 +59,6 @@ export default route(GetAccountsAssociatedClustersSchema, async (req, res) => {
   const info = await auth(req, res);
   if (!info) {
     return;
-  }
-
-  if (!runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {
-    return { 409: { code: "RESOURCE_NOT_ENABLED" as const, message: "SCOW resource is not enabled" } };
   }
 
   try {

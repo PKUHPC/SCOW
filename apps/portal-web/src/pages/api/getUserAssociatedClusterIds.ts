@@ -40,7 +40,7 @@ export default route(GetUserAssociatedClusterIdsSchema, async (req, res) => {
   const accountNames = reply?.affiliations.map((a) => a.accountName);
   const tenantName = reply?.tenantName;
 
-  if (!accountNames || !tenantName || !runtimeConfig.SCOW_RESOURCE_CONFIG) {
+  if (!accountNames || !tenantName) {
     return { 403: null };
   }
   const clusterIds = await getUserAssociatedClusterIds(accountNames, tenantName, runtimeConfig.SCOW_RESOURCE_CONFIG);

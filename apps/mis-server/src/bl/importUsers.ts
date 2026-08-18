@@ -6,7 +6,6 @@ import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { ScowResourcePlugin } from "@scow/lib-scow-resource";
 import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { blockAccount, unblockAccount } from "src/bl/block";
-import { commonConfig } from "src/config/common";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
@@ -35,7 +34,7 @@ export async function importUsers(
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
   clusterPlugin: ClusterPlugin["clusters"],
   logger: Logger,
-  scowResourcePlugin?: ScowResourcePlugin["resource"],
+  scowResourcePlugin: ScowResourcePlugin["resource"],
 ) {
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
 
@@ -68,9 +67,7 @@ export async function importUsers(
   data.accounts.forEach((account) => {
     // 导入账户时，如果在集群中的账户状态为封锁，则scow同步封锁状态，默认为被上级手动封锁
 
-    // 导入账户时，如果在集群中的账户状态为正常，则scow同步正常状态:
-    // 条件1，如果未配置资源管理服务，则默认账户封锁状态正常，默认所有分区为可用分区
-    // 条件2： 如果已配置资源管理服务，则默认账户封锁状态正常，只有已授权的分区为可用分区
+    // 导入账户时，如果在集群中的账户状态正常，则 SCOW 同步为正常状态，只有已授权分区可用
     accountMap[account.accountName] = new Account({
       accountName: account.accountName,
       comment: "",
@@ -138,14 +135,13 @@ export async function importUsers(
   }
   const finalUserAccounts = userAccounts.filter((_, i) => !indexes.includes(i));
 
-  // 如果已配置资源管理服务，则向数据库写入新创建的账户数据
-  if (commonConfig.scowResource?.enabled && newAccountsToCreate.length > 0) {
+  if (newAccountsToCreate.length > 0) {
     logger.info("Add assignment of clusters and partitions to %s new accounts", newAccountsToCreate.length);
     await Promise.all(
       newAccountsToCreate.map(async (acc) => {
         // 失败时已写入的数据不回滚, 再次创同名租户账户时会重新写入默认授权分区
         await scowResourcePlugin
-          ?.assignAccountOnCreate({
+          .assignAccountOnCreate({
             accountName: acc.accountName,
             tenantName: tenant.name,
           })
@@ -163,9 +159,8 @@ export async function importUsers(
   }
 
   const accountAppBlacklistsToPersist: AccountAppBlacklist[] = [];
-  // 如果开启授权应用功能
   // 新建账户时按照所属租户禁用的默认应用列表来写入账户禁用app
-  if (commonConfig.allowAppAuthorization && newAccountsToCreate.length > 0) {
+  if (newAccountsToCreate.length > 0) {
     const affiliatedTenantBlackAppList = await em.find(
       TenantDefaultAppRemovedList,
       {
@@ -211,10 +206,10 @@ export async function importUsers(
   const failedBlockAccounts = [] as string[];
   // 加入白名单的账户不受租户默认封锁阈值影响；未加入白名单时，阈值大于等于0则需要封锁账户
   const shouldBlockInCluster = !whitelistAll && tenant.defaultAccountBlockThreshold.gte(0);
-  // 加入白名单时解封所有导入账户；否则仅在启用资源管理且无需封锁时，收敛当前未封锁账户的授权分区
+  // 加入白名单时解封所有导入账户；否则在无需封锁时，收敛当前未封锁账户的授权分区
   const accountsToUnblock = whitelistAll
     ? accounts
-    : commonConfig.scowResource?.enabled && !shouldBlockInCluster
+    : !shouldBlockInCluster
       ? accounts.filter((a) => !a.blockedInCluster)
       : [];
   // 仅对根据租户默认阈值需要封锁、且当前尚未封锁的账户执行封锁

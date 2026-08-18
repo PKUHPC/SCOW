@@ -172,9 +172,8 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
             : []),
         ],
       },
-      // 开启资源管理或授权应用时展示 权限管理 导航
-      ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) &&
-      (publicConfig.SCOW_RESOURCE_ENABLED || publicConfig.ALLOW_APP_AUTHORIZATION)
+      // 资源管理始终可用，平台管理员始终展示权限管理导航
+      ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
         ? [
             {
               Icon: PermissionManagementIcon,
@@ -182,15 +181,11 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
               path: "/admin/permissionManagement",
               clickable: false,
               children: [
-                ...(publicConfig.ALLOW_APP_AUTHORIZATION
-                  ? [
-                      {
-                        Icon: AuthorizeAppIcon,
-                        text: t(pPlatform("appAuthorization")),
-                        path: "/admin/permissionManagement/appAuthorization",
-                      },
-                    ]
-                  : []),
+                {
+                  Icon: AuthorizeAppIcon,
+                  text: t(pPlatform("appAuthorization")),
+                  path: "/admin/permissionManagement/appAuthorization",
+                },
                 // 如果UI EXtension 添加了资源管理，展示在此处
               ],
             },
@@ -285,7 +280,7 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
             },
           ]
         : []),
-      ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && publicConfig.NOTIF_ENABLED
+      ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
         ? [
             {
               Icon: MessageConfigIcon,
@@ -399,9 +394,8 @@ export const tenantRoutes: (
                 },
               ],
             },
-            // 开启资源管理或授权应用时展示 权限管理 导航
-            ...(tenantRoles.includes(TenantRole.TENANT_ADMIN) &&
-            (publicConfig.SCOW_RESOURCE_ENABLED || publicConfig.ALLOW_APP_AUTHORIZATION)
+            // 资源管理始终可用，租户管理员始终展示权限管理导航
+            ...(tenantRoles.includes(TenantRole.TENANT_ADMIN)
               ? [
                   {
                     Icon: PermissionManagementIcon,
@@ -409,20 +403,16 @@ export const tenantRoutes: (
                     path: "/tenant/permissionManagement",
                     clickable: false,
                     children: [
-                      ...(publicConfig.ALLOW_APP_AUTHORIZATION
-                        ? [
-                            {
-                              Icon: DefaultAuthorizedAppIcon,
-                              text: t(pTenant("defaultAuthorizedApp")),
-                              path: "/tenant/permissionManagement/defaultApps",
-                            },
-                            {
-                              Icon: AuthorizeAppIcon,
-                              text: t(pTenant("appAuthorization")),
-                              path: "/tenant/permissionManagement/appAuthorization",
-                            },
-                          ]
-                        : []),
+                      {
+                        Icon: DefaultAuthorizedAppIcon,
+                        text: t(pTenant("defaultAuthorizedApp")),
+                        path: "/tenant/permissionManagement/defaultApps",
+                      },
+                      {
+                        Icon: AuthorizeAppIcon,
+                        text: t(pTenant("appAuthorization")),
+                        path: "/tenant/permissionManagement/appAuthorization",
+                      },
                       // 如果UI EXtension 添加了资源管理，展示在此处
                     ],
                   },

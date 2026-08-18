@@ -19,7 +19,6 @@ import { UserQuotaChangeModal } from "src/pageComponents/storage/UserQuotaChange
 import { type GetTenantQuotaSchema, UserQuotaInfo } from "src/pages/api/storage/getTenantQuota";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster, getSortedClusterValues } from "src/utils/cluster";
-import { publicConfig } from "src/utils/config";
 
 interface PageInfo {
   page: number;
@@ -56,16 +55,12 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
   const [selectedUsers, setSelectedUsers] = useState<UserQuotaInfo[]>([]);
 
   const getTenantAssignedClusterIds = useCallback(async () => {
-    if (publicConfig.SCOW_RESOURCE_ENABLED) {
-      const tenantAssignedClusterPartitions = await api.getTenantAssignedClustersAndPartitions({});
-      return Object.keys(tenantAssignedClusterPartitions.assignedClusterPartitions);
-    }
-    return undefined;
+    const tenantAssignedClusterPartitions = await api.getTenantAssignedClustersAndPartitions({});
+    return Object.keys(tenantAssignedClusterPartitions.assignedClusterPartitions);
   }, []);
 
   const { data: availableClusterIds, isLoading: availableClusterIdsLoading } = useAsync({
     promiseFn: getTenantAssignedClusterIds,
-    skip: !publicConfig.SCOW_RESOURCE_ENABLED,
   });
 
   const { publicConfigClusters, clusterSortedIdList, activatedClusters, fullClusterConfigs } =
@@ -74,7 +69,7 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
     () =>
       getSortedClusterValues(publicConfigClusters, clusterSortedIdList).filter((x) => {
         return (
-          (publicConfig.SCOW_RESOURCE_ENABLED ? availableClusterIds?.includes(x.id) : true) &&
+          availableClusterIds?.includes(x.id) &&
           Object.keys(activatedClusters).includes(x.id) &&
           fullClusterConfigs[x.id].storage?.enabled
         );

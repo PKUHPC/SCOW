@@ -210,17 +210,15 @@ export const trainJob = procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    // 管理系统存在时，增加用户账户封锁状态，授权集群分区等鉴权
-    if (config.MIS_DEPLOYED) {
-      await validateSubmitAiJobInfoUnderMis({
+    // 校验用户账户封锁状态和集群分区授权
+    await validateSubmitAiJobInfoUnderMis({
         userId,
         accountName: account,
         clusterId,
         logger,
         partitionName: partition,
         checkAccountApp: false,
-      });
-    }
+    });
 
     const em = await forkEntityManager();
     const {
@@ -676,7 +674,7 @@ export const calculateJobPrice = procedure
   .output(z.number())
   .query(async ({ input }) => {
     try {
-      const price = await libCalculateJobPrice(logger, input, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      const price = await libCalculateJobPrice(logger, input, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
 
       return price.accountPrice ? moneyToNumber(price.accountPrice) : 0;
     } catch (error) {

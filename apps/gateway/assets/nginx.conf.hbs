@@ -43,7 +43,6 @@ server {
   }
   {{/if}}
 
-  {{#if MIS_ENABLED}}
   location {{ BASE_PATH }}{{ MIS_PATH }} {
     set $mis_path_url {{ MIS_PATH_INTERNAL_URL }};
     proxy_pass $mis_path_url;
@@ -51,7 +50,6 @@ server {
     include includes/headers;
     include includes/websocket;
   }
-  {{/if}}
 
   {{#if AI_ENABLED}}
   location {{ BASE_PATH }}{{ AI_PATH }} {

@@ -37,6 +37,8 @@ displayName: hpc01
 loginNodes:
   - name: hpc01_login01
     address: hpc01_login01
+    scowd:
+      port: 9999
 
 #适配器url配置
 adapterUrl: "192.168.188.102:8999"

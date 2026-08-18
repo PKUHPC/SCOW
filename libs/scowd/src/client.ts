@@ -113,7 +113,6 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
   getLoginNode: (loginNodeConfig: TLoginNodeConfig) => TLoginNode;
   getLoginNodeAddress: (loginNode: TLoginNode) => string;
   getLoginNodeScowdUrl: (clusterId: string, host: string) => string | undefined;
-  isScowdEnabled: (clusterInfo: TClusterInfo | undefined) => boolean;
   certificates?: SslConfig;
   healthCheckIntervalMs?: number;
   healthCheckTimeoutMs?: number;
@@ -152,9 +151,6 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
 
   const getClusterNodes = (clusterId: string): ScowdNode[] => {
     const clusterInfo = options.getClusterInfo(clusterId);
-    if (!options.isScowdEnabled(clusterInfo)) {
-      return [];
-    }
     const loginNodes = options.getLoginNodes(clusterInfo) ?? [];
     return loginNodes
       .map((loginNodeConfig) => {

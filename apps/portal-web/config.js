@@ -37,12 +37,11 @@ const specs = {
 
   MOCK_USER_ID: str({ desc: "开发和测试的时候所使用的user id", default: undefined }),
 
-  MIS_DEPLOYED: bool({ desc: "是否部署了管理系统", default: false }),
   MIS_URL: str({
-    desc: "如果部署了管理系统，管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件。空字符串等价于未部署管理系统",
-    default: "",
+    desc: "管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件",
+    default: "/mis",
   }),
-  MIS_SERVER_URL: str({ desc: "如果部署了管理系统，管理系统后端的路径", default: "" }),
+  MIS_SERVER_URL: str({ desc: "管理系统后端的路径", default: "mis-server:5000" }),
 
   AI_DEPLOYED: bool({ desc: "是否部署了AI系统", default: false }),
   AI_URL: str({
@@ -58,14 +57,7 @@ const specs = {
 
   NOVNC_CLIENT_URL: str({ desc: "novnc客户端的URL。如果和本系统域名相同，可以只写完整路径", default: "/vnc" }),
 
-  CLIENT_MAX_BODY_SIZE: str({
-    desc: "限制整个系统上传（请求）文件的大小，可接受的格式为nginx的client_max_body_size可接受的值",
-    default: "1G",
-  }),
-
   PUBLIC_PATH: str({ desc: "SCOW公共文件的路径，需已包含SCOW的base path", default: "/public/" }),
-
-  AUDIT_DEPLOYED: bool({ desc: "是否部署了审计系统", default: false }),
 
   PROTOCOL: str({ desc: "scow 的访问协议，将影响 callbackUrl 的 protocol", default: "http" }),
 };
@@ -123,8 +115,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     // LOGIN_NODES: parseKeyValue(config.LOGIN_NODES),
     SERVER_URL: config.SERVER_URL,
     SUBMIT_JOB_WORKING_DIR: portalConfig.submitJobDefaultPwd,
-    SCOW_API_AUTH_TOKEN: commonConfig.scowApi?.auth?.token,
-    AUDIT_CONFIG: config.AUDIT_DEPLOYED ? auditConfig : undefined,
+    SCOW_API_AUTH_TOKEN: commonConfig.scowApi.auth.token,
+    AUDIT_CONFIG: auditConfig,
 
     SERVER_I18N_CONFIG_TEXTS: {
       submitJopPromptText: portalConfig.submitJobPromptText,
@@ -152,12 +144,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     ENABLE_APPS: portalConfig.apps,
 
-    MIS_URL: config.MIS_DEPLOYED ? config.MIS_URL || portalConfig.misUrl : undefined,
-
-    MIS_DEPLOYED: config.MIS_DEPLOYED,
-    MIS_SERVER_URL: config.MIS_DEPLOYED ? config.MIS_SERVER_URL : undefined,
-
-    AUDIT_DEPLOYED: config.AUDIT_DEPLOYED,
+    MIS_URL: config.MIS_URL || portalConfig.misUrl,
+    MIS_SERVER_URL: config.MIS_SERVER_URL,
 
     AI_URL: config.AI_DEPLOYED ? config.AI_URL || portalConfig.aiUrl : undefined,
 
@@ -168,8 +156,6 @@ const buildRuntimeConfig = async (phase, basePath) => {
     PASSWORD_PATTERN: commonConfig.passwordPattern?.regex,
 
     BASE_PATH: basePath,
-
-    CLIENT_MAX_BODY_SIZE: config.CLIENT_MAX_BODY_SIZE,
 
     FILE_EDIT_SIZE: portalConfig.file?.edit.limitSize,
     NON_EDITABLE_FILENAME_POSTFIXES: portalConfig.file?.edit.nonEditableFilenamePostfixes,
@@ -193,13 +179,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     UI_EXTENSION: portalConfig.uiExtension,
     UI_CONFIG: uiConfig,
 
-    NOTIF_ENABLED: commonConfig.notification?.enabled,
-    NOTIF_ADDRESS: commonConfig.notification?.address,
-    NOTIF_NAME: commonConfig.notification?.name,
-
-    SCOW_RESOURCE_ENABLED: commonConfig.scowResource?.enabled,
-
-    ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
+    NOTIF_ADDRESS: commonConfig.notification.address,
+    NOTIF_NAME: commonConfig.notification.name,
 
     SHADOW_DESK_ENABLED: portalConfig.loginDesktop?.shadowDesk?.enabled,
 

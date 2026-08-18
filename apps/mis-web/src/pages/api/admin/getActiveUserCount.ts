@@ -45,29 +45,21 @@ export default route(GetActiveUserCountSchema, async (req, res) => {
 
   const { startTime, endTime, timeZone } = req.query;
 
-  const client = getAuditClient?.(StatisticServiceClient);
+  const client = getAuditClient(StatisticServiceClient);
+  const { results } = await asyncClientCall(client, "getActiveUserCount", {
+    startTime,
+    endTime,
+    timeZone,
+  });
 
-  if (client) {
-    const { results } = await asyncClientCall(client, "getActiveUserCount", {
-      startTime,
-      endTime,
-      timeZone,
-    });
-
-    return {
-      200: {
-        results: results
-          .filter((x) => x.date !== undefined)
-          .map((x) => ({
-            date: x.date!,
-            count: x.count,
-          })),
-      },
-    };
-  }
   return {
     200: {
-      results: [],
+      results: results
+        .filter((x) => x.date !== undefined)
+        .map((x) => ({
+          date: x.date!,
+          count: x.count,
+        })),
     },
   };
 });

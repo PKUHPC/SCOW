@@ -1,5 +1,4 @@
 import { getClusterConfigs } from "@scow/config/build/cluster";
-import { getCommonConfig } from "@scow/config/build/common";
 import { chmodSync, mkdirSync } from "fs";
 import path from "path";
 import { LoggingOption, ServiceSpec } from "src/compose/spec";
@@ -27,22 +26,6 @@ function join(...segments: string[]) {
 export const createComposeSpec = (config: InstallConfigSchema) => {
   // 如果install.yaml没有配置image则使用默认image
   const scowImage = `${config.image || IMAGE}:${config.imageTag}`;
-
-  // 检查 scowApi.token 配置 - 如果启用了 notification 或 resource 模块，则必须配置 token
-  if (config.notification || config.resource) {
-    try {
-      const commonConfig = getCommonConfig();
-      if (!commonConfig.scowApi?.auth?.token) {
-        throw new Error(
-          "scowApi.auth.token is required when notification or resource is enabled, " +
-            "but not configured in common config",
-        );
-      }
-    } catch (error) {
-      logger.error("Failed to check scowApi.token configuration:", error);
-      throw error;
-    }
-  }
 
   // 检查 集群ai 配置 - 如果启用了 ai 模块，则相关集群中必须配置公共数据资产目录
   if (config.ai?.enabled) {
@@ -81,7 +64,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   checkPathFormat("portal.basePath", PORTAL_PATH);
   const portalBasePath = join(BASE_PATH, PORTAL_PATH);
 
-  const MIS_PATH = config.mis?.basePath || "/mis";
+  const MIS_PATH = config.mis.basePath;
   checkPathFormat("mis.basePath", MIS_PATH);
 
   const AI_PATH = config.ai?.basePath || "/ai";
@@ -90,10 +73,10 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   const QUANTUM_PATH = config.quantum?.basePath || "/quantum";
   checkPathFormat("quantum.basePath", QUANTUM_PATH);
 
-  const RESOURCE_PATH = config.resource?.basePath || "/resource";
+  const RESOURCE_PATH = config.resource.basePath;
   checkPathFormat("resource.basePath", RESOURCE_PATH);
 
-  const NOTIFICATION_PATH = config.notification?.basePath || "/notification";
+  const NOTIFICATION_PATH = config.notification.basePath;
   checkPathFormat("notification.basePath", NOTIFICATION_PATH);
 
   const serviceLogEnv = {
@@ -217,7 +200,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       BASE_PATH: BASE_PATH == "/" ? "" : BASE_PATH,
       PORTAL_ENABLED: String(config.portal?.enabled ?? false),
       PORTAL_PATH: PORTAL_PATH,
-      MIS_ENABLED: String(config.mis?.enabled ?? false),
       MIS_PATH: MIS_PATH,
       AI_ENABLED: String(config.ai?.enabled ?? false),
       AI_PATH: AI_PATH,
@@ -343,9 +325,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       ? portalBasePath
       : config.ai?.enabled
         ? join(BASE_PATH, AI_PATH)
-        : config.mis?.enabled
-          ? join(BASE_PATH, MIS_PATH)
-          : portalBasePath;
+        : join(BASE_PATH, MIS_PATH);
 
     addService("auth", {
       image: scowImage,
@@ -383,8 +363,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
         ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
 
-        MIS_DEPLOYED: config.mis?.enabled ? "true" : "false",
-        MIS_SERVER_URL: config.mis?.enabled ? "mis-server:5000" : "",
+        MIS_SERVER_URL: "mis-server:5000",
         ...serviceLogEnv,
         ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
       },
@@ -403,8 +382,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         SCOW_LAUNCH_APP: "portal-web",
         BASE_PATH: portalBasePath,
         MIS_URL: join(BASE_PATH, MIS_PATH),
-        MIS_DEPLOYED: config.mis?.enabled ? "true" : "false",
-        MIS_SERVER_URL: config.mis?.enabled ? "mis-server:5000" : "",
+        MIS_SERVER_URL: "mis-server:5000",
         AI_URL: join(BASE_PATH, AI_PATH),
         AI_DEPLOYED: config.ai?.enabled ? "true" : "false",
         QUANTUM_URL: join(BASE_PATH, QUANTUM_PATH),
@@ -412,9 +390,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
         AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
         NOVNC_CLIENT_URL: join(BASE_PATH, "/vnc"),
-        CLIENT_MAX_BODY_SIZE: config.gateway.uploadFileSizeLimit,
         PUBLIC_PATH: join(BASE_PATH, publicPath),
-        AUDIT_DEPLOYED: config.audit ? "true" : "false",
         PROTOCOL: config.gateway.protocol,
         ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
       },
@@ -427,106 +403,101 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   }
 
   // MIS
-  if (config.mis?.enabled) {
-    addService("mis-server", {
-      image: scowImage,
-      ports: config.mis.portMappings?.misServer ? { [config.mis.portMappings.misServer]: 5000 } : {},
-      environment: {
-        SCOW_LAUNCH_APP: "mis-server",
-        DB_PASSWORD: config.mis.dbPassword,
-        QUANTUM_PATH: QUANTUM_PATH,
-        QUANTUM_DEPLOYED: config.quantum?.enabled ? "true" : "false",
-        AUTH_URL: config.auth.custom?.external?.url ?? "",
+  addService("mis-server", {
+    image: scowImage,
+    ports: config.mis.portMappings?.misServer ? { [config.mis.portMappings.misServer]: 5000 } : {},
+    environment: {
+      SCOW_LAUNCH_APP: "mis-server",
+      DB_PASSWORD: config.mis.dbPassword,
+      QUANTUM_PATH: QUANTUM_PATH,
+      QUANTUM_DEPLOYED: config.quantum?.enabled ? "true" : "false",
+      AUTH_URL: config.auth.custom?.external?.url ?? "",
 
-        SCOWD_SSL_ENABLED: String(config.scowd?.ssl?.enabled ?? false),
-        SCOWD_SSL_CA_CERT_PATH: scowdSslCaCertPath,
-        SCOWD_SSL_SCOW_CERT_PATH: scowdSslScowCertPath,
-        SCOWD_SSL_SCOW_PRIVATE_KEY_PATH: scowdSslScowPrivateKeyPath,
+      SCOWD_SSL_ENABLED: String(config.scowd?.ssl?.enabled ?? false),
+      SCOWD_SSL_CA_CERT_PATH: scowdSslCaCertPath,
+      SCOWD_SSL_SCOW_CERT_PATH: scowdSslScowCertPath,
+      SCOWD_SSL_SCOW_PRIVATE_KEY_PATH: scowdSslScowPrivateKeyPath,
 
-        ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
-        ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
-        ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
-        ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
+      ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+      ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
+      ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
+      ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
 
-        ...serviceLogEnv,
-        ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
-      },
-      volumes: {
-        "/etc/hosts": "/etc/hosts",
-        "./config": "/etc/scow",
-        "~/.ssh": "/root/.ssh",
-      },
-    });
+      ...serviceLogEnv,
+      ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
+    },
+    volumes: {
+      "/etc/hosts": "/etc/hosts",
+      "./config": "/etc/scow",
+      "~/.ssh": "/root/.ssh",
+    },
+  });
 
-    addService("mis-web", {
-      image: scowImage,
-      environment: {
-        SCOW_LAUNCH_APP: "mis-web",
-        BASE_PATH: join(BASE_PATH, MIS_PATH),
-        PORTAL_URL: join(BASE_PATH, PORTAL_PATH),
-        PORTAL_DEPLOYED: config.portal?.enabled ? "true" : "false",
-        AI_URL: join(BASE_PATH, AI_PATH),
-        AI_DEPLOYED: config.ai?.enabled ? "true" : "false",
-        QUANTUM_URL: join(BASE_PATH, QUANTUM_PATH),
-        QUANTUM_DEPLOYED: config.quantum?.enabled ? "true" : "false",
-        AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
-        AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
-        PUBLIC_PATH: join(BASE_PATH, publicPath),
-        AUDIT_DEPLOYED: config.audit ? "true" : "false",
-        PROTOCOL: config.gateway.protocol,
-        ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
-      },
-      ports: {},
-      volumes: {
-        "/etc/hosts": "/etc/hosts",
-        "./config": "/etc/scow",
-      },
-    });
+  addService("mis-web", {
+    image: scowImage,
+    environment: {
+      SCOW_LAUNCH_APP: "mis-web",
+      BASE_PATH: join(BASE_PATH, MIS_PATH),
+      PORTAL_URL: join(BASE_PATH, PORTAL_PATH),
+      PORTAL_DEPLOYED: config.portal?.enabled ? "true" : "false",
+      AI_URL: join(BASE_PATH, AI_PATH),
+      AI_DEPLOYED: config.ai?.enabled ? "true" : "false",
+      QUANTUM_URL: join(BASE_PATH, QUANTUM_PATH),
+      QUANTUM_DEPLOYED: config.quantum?.enabled ? "true" : "false",
+      AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
+      AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
+      PUBLIC_PATH: join(BASE_PATH, publicPath),
+      PROTOCOL: config.gateway.protocol,
+      ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
+    },
+    ports: {},
+    volumes: {
+      "/etc/hosts": "/etc/hosts",
+      "./config": "/etc/scow",
+    },
+  });
 
-    composeSpec.volumes.db_data = {};
+  composeSpec.volumes.db_data = {};
 
-    addService("db", {
-      image: config.mis.mysqlImage,
-      volumes: {
-        db_data: "/var/lib/mysql",
-      },
-      environment: {
-        MYSQL_ROOT_PASSWORD: config.mis.dbPassword,
-      },
-      ports: config.mis.portMappings?.db ? { [config.mis.portMappings?.db]: 3306 } : {},
-    });
-  }
+  addService("db", {
+    image: config.mis.mysqlImage,
+    volumes: {
+      db_data: "/var/lib/mysql",
+    },
+    environment: {
+      MYSQL_ROOT_PASSWORD: config.mis.dbPassword,
+    },
+    ports: config.mis.portMappings?.db ? { [config.mis.portMappings?.db]: 3306 } : {},
+  });
 
   // AUDIT
-  if (config.audit) {
-    addService("audit-server", {
-      image: scowImage,
-      ports: config.audit.portMappings?.auditServer ? { [config.audit.portMappings.auditServer]: 5000 } : {},
-      environment: {
-        SCOW_LAUNCH_APP: "audit-server",
-        DB_PASSWORD: config.audit.dbPassword,
-        ...serviceLogEnv,
-        ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
-      },
-      volumes: {
-        "/etc/hosts": "/etc/hosts",
-        "./config": "/etc/scow",
-      },
-    });
+  addService("audit-server", {
+    image: scowImage,
+    ports: config.audit.portMappings?.auditServer ? { [config.audit.portMappings.auditServer]: 5000 } : {},
+    environment: {
+      SCOW_LAUNCH_APP: "audit-server",
+      DB_PASSWORD: config.audit.dbPassword,
+      ...serviceLogEnv,
+      ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
+    },
+    volumes: {
+      "/etc/hosts": "/etc/hosts",
+      "./config": "/etc/scow",
+    },
+  });
 
-    composeSpec.volumes.audit_db_data = {};
+  composeSpec.volumes.audit_db_data = {};
 
-    addService("audit-db", {
-      image: config.audit.mysqlImage,
-      volumes: {
-        audit_db_data: "/var/lib/mysql",
-      },
-      environment: {
-        MYSQL_ROOT_PASSWORD: config.audit.dbPassword,
-      },
-      ports: config.audit.portMappings?.db ? { [config.audit.portMappings?.db]: 3306 } : {},
-    });
-  }
+  addService("audit-db", {
+    image: config.audit.mysqlImage,
+    volumes: {
+      audit_db_data: "/var/lib/mysql",
+    },
+    environment: {
+      MYSQL_ROOT_PASSWORD: config.audit.dbPassword,
+    },
+    ports: config.audit.portMappings?.db ? { [config.audit.portMappings?.db]: 3306 } : {},
+  });
 
   if (config.ai?.enabled) {
     addService("ai", {
@@ -536,8 +507,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         SCOW_LAUNCH_APP: "ai",
         NEXT_PUBLIC_BASE_PATH: join(BASE_PATH, AI_PATH),
         MIS_URL: join(BASE_PATH, MIS_PATH),
-        MIS_DEPLOYED: config.mis?.enabled ? "true" : "false",
-        MIS_SERVER_URL: config.mis?.enabled ? "mis-server:5000" : "",
+        MIS_SERVER_URL: "mis-server:5000",
         DB_PASSWORD: config.ai.dbPassword,
         PORTAL_URL: join(BASE_PATH, PORTAL_PATH),
         PORTAL_DEPLOYED: config.portal?.enabled ? "true" : "false",
@@ -546,8 +516,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
         AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
         PUBLIC_PATH: join(BASE_PATH, publicPath),
-        AUDIT_DEPLOYED: config.audit ? "true" : "false",
-        CLIENT_MAX_BODY_SIZE: config.gateway.uploadFileSizeLimit,
         PROTOCOL: config.gateway.protocol,
         NOVNC_CLIENT_URL: join(BASE_PATH, "/vnc"),
 
@@ -586,10 +554,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   }
 
   if (config.quantum?.enabled) {
-    if (!config.mis?.enabled) {
-      throw new Error("Invalid config: quantum requires mis to be enabled");
-    }
-
     if (!config.portal?.enabled) {
       throw new Error("Invalid config: quantum requires portal to be enabled");
     }
@@ -602,13 +566,12 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         NEXT_PUBLIC_BASE_PATH: join(BASE_PATH, QUANTUM_PATH),
         DB_PASSWORD: config.mis.dbPassword,
         MIS_URL: join(BASE_PATH, MIS_PATH),
-        MIS_SERVER_URL: config.mis?.enabled ? "mis-server:5000" : "",
+        MIS_SERVER_URL: "mis-server:5000",
         PORTAL_URL: join(BASE_PATH, PORTAL_PATH),
         PORTAL_INTERNAL_URL: `http://portal-web:3000${portalBasePath === "/" ? "" : portalBasePath}`,
         PORTAL_SERVER_URL: config.portal?.enabled ? "portal-server:5000" : "",
         AI_URL: join(BASE_PATH, AI_PATH),
         AI_DEPLOYED: config.ai?.enabled ? "true" : "false",
-        AUDIT_DEPLOYED: config.audit ? "true" : "false",
         PUBLIC_PATH: join(BASE_PATH, publicPath),
         PROTOCOL: config.gateway.protocol,
         AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
@@ -661,59 +624,55 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     });
   }
 
-  if (config.notification) {
-    addService("notification", {
-      image: scowImage,
-      ports: {},
-      environment: {
-        SCOW_LAUNCH_APP: "notification",
-        NEXT_PUBLIC_BASE_PATH: join(BASE_PATH, NOTIFICATION_PATH),
-        MIS_SERVER_URL: config.mis?.enabled ? "mis-server:5000" : "",
-        DB_PASSWORD: config.mis?.dbPassword ?? "",
-        AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
-        AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
-        PUBLIC_PATH: join(BASE_PATH, publicPath),
-        PROTOCOL: config.gateway.protocol,
-        ...serviceLogEnv,
-        ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
-      },
-      volumes: {
-        "/etc/hosts": "/etc/hosts",
-        "./config": "/etc/scow",
-        "~/.ssh": "/root/.ssh",
-      },
-    });
-  }
+  addService("notification", {
+    image: scowImage,
+    ports: {},
+    environment: {
+      SCOW_LAUNCH_APP: "notification",
+      NEXT_PUBLIC_BASE_PATH: join(BASE_PATH, NOTIFICATION_PATH),
+      MIS_SERVER_URL: "mis-server:5000",
+      DB_PASSWORD: config.mis.dbPassword,
+      AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
+      AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
+      PUBLIC_PATH: join(BASE_PATH, publicPath),
+      PROTOCOL: config.gateway.protocol,
+      ...serviceLogEnv,
+      ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
+    },
+    volumes: {
+      "/etc/hosts": "/etc/hosts",
+      "./config": "/etc/scow",
+      "~/.ssh": "/root/.ssh",
+    },
+  });
 
-  if (config.resource) {
-    addService("resource", {
-      image: scowImage,
-      ports: {},
-      environment: {
-        SCOW_LAUNCH_APP: "resource",
-        NEXT_PUBLIC_BASE_PATH: join(BASE_PATH, RESOURCE_PATH),
-        MIS_SERVER_URL: config.mis?.enabled ? "mis-server:5000" : "",
-        DB_PASSWORD: config.mis?.dbPassword ?? "",
-        AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
-        AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
-        PUBLIC_PATH: join(BASE_PATH, publicPath),
-        PROTOCOL: config.gateway.protocol,
+  addService("resource", {
+    image: scowImage,
+    ports: {},
+    environment: {
+      SCOW_LAUNCH_APP: "resource",
+      NEXT_PUBLIC_BASE_PATH: join(BASE_PATH, RESOURCE_PATH),
+      MIS_SERVER_URL: "mis-server:5000",
+      DB_PASSWORD: config.mis.dbPassword,
+      AUTH_EXTERNAL_URL: config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
+      AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
+      PUBLIC_PATH: join(BASE_PATH, publicPath),
+      PROTOCOL: config.gateway.protocol,
 
-        ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
-        ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
-        ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
-        ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
+      ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+      ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
+      ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
+      ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
 
-        ...serviceLogEnv,
-        ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
-      },
-      volumes: {
-        "/etc/hosts": "/etc/hosts",
-        "./config": "/etc/scow",
-        "~/.ssh": "/root/.ssh",
-      },
-    });
-  }
+      ...serviceLogEnv,
+      ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
+    },
+    volumes: {
+      "/etc/hosts": "/etc/hosts",
+      "./config": "/etc/scow",
+      "~/.ssh": "/root/.ssh",
+    },
+  });
 
   return composeSpec;
 };

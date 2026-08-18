@@ -3,6 +3,8 @@ adapterUrl: 0.0.0.0:6000
 loginNodes:
   - name: login
     address: localhost:22
+    scowd:
+      port: 9999
 crossClusterFileTransfer:
   enabled: true
   transferNode: login01:8999
@@ -25,4 +27,3 @@ crossClusterFileTransfer:
 #         cores: 29
 #         gpus: 8
 #         comment: 说明
-

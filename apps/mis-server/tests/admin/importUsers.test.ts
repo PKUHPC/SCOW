@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { MikroORM } from "@mikro-orm/core";
 import { MySqlDriver } from "@mikro-orm/mysql";
@@ -14,6 +13,7 @@ import { Tenant } from "src/entities/Tenant";
 import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient, mockAccountResourceOperations } from "tests/utils";
 
 let server: Server;
 let orm: MikroORM<MySqlDriver>;
@@ -21,9 +21,10 @@ let client: AdminServiceClient;
 
 beforeEach(async () => {
   server = await createServer();
+  mockAccountResourceOperations(server.ext.resource);
   await server.start();
 
-  client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, AdminServiceClient);
 
   orm = server.ext.orm;
 });
@@ -165,7 +166,7 @@ describe("resource management", () => {
 
   beforeEach(() => {
     originalScowResource = commonConfig.scowResource;
-    commonConfig.scowResource = { enabled: true, address: "http://localhost:1" };
+    commonConfig.scowResource = { address: "http://localhost:1" };
     // 只验证导入流程会派发分区收敛，不在该测试中连接真实的 resource 服务和调度器适配器。
     unblockAccount = jest.spyOn(blockOperations, "unblockAccount").mockResolvedValue("ALREADY_UNBLOCKED");
   });

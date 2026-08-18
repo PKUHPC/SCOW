@@ -24,3 +24,7 @@ passwordPattern:
 # 若systemLanguage配置为字符串，类型必须指定为当前系统合法语言["zh_cn"，"en"]的字符串枚举值
 # SCOW直接使用此语言，不允许用户再进行语言切换
 # systemLanguage: "zh_cn"
+
+scowApi:
+  auth:
+    token: test-scow-api-token-at-least-32-chars

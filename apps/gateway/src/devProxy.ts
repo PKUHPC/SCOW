@@ -57,9 +57,7 @@ function getRoutes(): ProxyRoute[] {
   if (config.PORTAL_ENABLED) {
     routes.push(route(joinPath(basePath, config.PORTAL_PATH), config.PORTAL_PATH_INTERNAL_URL, { stripPrefix: true }));
   }
-  if (config.MIS_ENABLED) {
-    routes.push(route(joinPath(basePath, config.MIS_PATH), config.MIS_PATH_INTERNAL_URL, { stripPrefix: true }));
-  }
+  routes.push(route(joinPath(basePath, config.MIS_PATH), config.MIS_PATH_INTERNAL_URL, { stripPrefix: true }));
   if (config.AI_ENABLED) {
     routes.push(route(joinPath(basePath, config.AI_PATH), config.AI_PATH_INTERNAL_URL, { stripPrefix: true }));
   }

@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { createUser } from "@scow/lib-auth";
 import { decimalToMoney } from "@scow/lib-decimal";
@@ -11,6 +10,7 @@ import { Tenant } from "src/entities/Tenant";
 import { TenantRole, User } from "src/entities/User";
 import { insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let client: TenantServiceClient;
@@ -18,7 +18,7 @@ let client: TenantServiceClient;
 beforeEach(async () => {
   server = await createServer();
   await server.start();
-  client = new TenantServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, TenantServiceClient);
 });
 
 afterEach(async () => {

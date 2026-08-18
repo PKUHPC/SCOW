@@ -9,7 +9,6 @@ import { useEffect, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { urlToUpload } from "src/app/(auth)/files/api";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { convertToBytes } from "src/utils/format";
 import { trpc } from "src/utils/trpc";
 
 interface Props {
@@ -18,7 +17,6 @@ interface Props {
   reload: () => void;
   clusterId: string;
   path: string;
-  scowdEnabled: boolean;
 }
 
 interface UploadProgressEvent {
@@ -30,7 +28,7 @@ const pCommon = prefix("common.");
 
 type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
-export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId, scowdEnabled }) => {
+export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
   const { message, modal } = App.useApp();
   const { publicConfig } = usePublicConfig();
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
@@ -197,14 +195,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     const relativePath = file.webkitRelativePath || file.name;
     const folderName = relativePath.split("/")[0];
     const folderPath = join(path, folderName);
-    // 检查文件大小
-    const fileMaxSize = convertToBytes(publicConfig.CLIENT_MAX_BODY_SIZE);
-
-    if (!scowdEnabled && file.size > fileMaxSize) {
-      message.error(t(p("maxSizeErrorMessage"), [file.webkitRelativePath, publicConfig.CLIENT_MAX_BODY_SIZE]));
-      return Upload.LIST_IGNORE;
-    }
-
     // 检查该文件夹的覆盖状态
     if (!folderOverwriteSetRef.current.has(folderPath)) {
       // 未检查过该文件夹，进行存在性检查
@@ -482,14 +472,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         </Button>,
       ]}
     >
-      {!scowdEnabled && (
-        <p>
-          {t(p("uploadRemark3"))}
-          <strong>{publicConfig.CLIENT_MAX_BODY_SIZE}</strong>
-          {t(p("uploadRemark4"))}
-        </p>
-      )}
-
       <div
         onDropCapture={(event) => {
           const droppedItems = Array.from(event.dataTransfer?.items ?? []);
@@ -513,27 +495,17 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           name="file"
           multiple
           withCredentials
-          {...(scowdEnabled
-            ? {
-                customRequest: ({ file, onSuccess, onError, onProgress }) => {
-                  limit.current(() =>
-                    startMultipartUpload(file as RcFile, onProgress)
-                      .then(onSuccess)
-                      .catch(onError),
-                  );
-                },
-              }
-            : {
-                action: async (file) =>
-                  urlToUpload(clusterId, join(path, file.webkitRelativePath), publicConfig.BASE_PATH),
-              })}
+          customRequest={({ file, onSuccess, onError, onProgress }) => {
+            limit.current(() =>
+              startMultipartUpload(file as RcFile, onProgress)
+                .then(onSuccess)
+                .catch(onError),
+            );
+          }}
           showUploadList={{
             removeIcon: (file) => {
               return file.status === "uploading" ? (
-                <DeleteOutlined
-                  onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                  title={t(p("cancelUpload"))}
-                />
+                <DeleteOutlined onClick={() => handleRemove(file)} title={t(p("cancelUpload"))} />
               ) : (
                 <DeleteOutlined title={t(p("deleteUploadRecords"))} />
               );

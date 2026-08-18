@@ -3,7 +3,6 @@ import { NextApiResponse } from "next";
 import { NextResponse } from "next/server";
 import { clusters } from "src/server/config/clusters";
 import { FileMeta, ListDirectoryOutput } from "src/server/trpc/model/file";
-import { clusterBackendNotSupported } from "src/server/utils/errors";
 import { Logger } from "ts-log";
 
 import { ScowdFileDriver } from "./scowdFileDriver";
@@ -81,18 +80,6 @@ export interface FileDriver {
   checkSharePermission(sourcePath: string, noCheckPermission?: boolean): Promise<void>;
 }
 
-interface FileDriverProvider {
-  supports(clusterId: string): boolean;
-  create(opts: { clusterId: string; userId: string; logger: Logger }): FileDriver;
-}
-
-const fileDriverProviders: FileDriverProvider[] = [
-  {
-    supports: (clusterId) => clusters[clusterId]?.scowd?.enabled === true,
-    create: ({ clusterId, userId, logger }) => new ScowdFileDriver(clusterId, userId, logger),
-  },
-];
-
 function createFileDriver(opts: { clusterId: string; userId: string; logger: Logger }): FileDriver {
   const { clusterId, userId, logger } = opts;
   const cluster = clusters[clusterId];
@@ -101,13 +88,7 @@ function createFileDriver(opts: { clusterId: string; userId: string; logger: Log
     throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
   }
 
-  const provider = fileDriverProviders.find((provider) => provider.supports(clusterId));
-
-  if (!provider) {
-    throw clusterBackendNotSupported(clusterId);
-  }
-
-  return provider.create({ clusterId, userId, logger });
+  return new ScowdFileDriver(clusterId, userId, logger);
 }
 
 export async function withFileDriver<T>(

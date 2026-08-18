@@ -56,17 +56,11 @@ export const plugins = [
   CleanExpiredWhitelistsPlugin,
 ];
 
-if (commonConfig.scowResource?.enabled) {
-  // 如果已部署资源管理服务，确保启动时注入顺序的先后，保证启动时如果开启账户同步获取到资源管理服务的数据
-  plugins.push(scowResourcePlugin(commonConfig.scowResource));
-  plugins.push(syncBlockStatusPlugin);
-} else {
-  plugins.push(syncBlockStatusPlugin);
-}
+// 确保资源管理插件先于依赖它的同步任务注入。
+plugins.push(scowResourcePlugin(commonConfig.scowResource));
+plugins.push(syncBlockStatusPlugin);
 
-if (commonConfig.scowApi) {
-  plugins.push(apiAuthPlugin(commonConfig.scowApi));
-}
+plugins.push(apiAuthPlugin(commonConfig.scowApi));
 
 if (misConfig.bill?.enabled) {
   plugins.push(billPlugin);

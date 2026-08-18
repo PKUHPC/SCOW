@@ -7,14 +7,6 @@ import {
 import { I18nObject_I18n, I18nStringProtoType } from "@scow/protos/build/common/i18n";
 import { underscoreNamingToCamelCase } from "@scow/utils/build/i18n";
 
-export function isStringArray(arr: any[]): arr is string[] {
-  return arr.every((item) => typeof item === "string");
-}
-
-export function isObjectArray(arr: any[]): arr is object[] {
-  return arr.every((item) => typeof item === "object" && item !== null);
-}
-
 export const getI18nSeverTypeFormat = (i18nConfig: I18nStringType): I18nStringProtoType | undefined => {
   if (!i18nConfig) return undefined;
 
@@ -36,26 +28,22 @@ export const getI18nSeverTypeFormat = (i18nConfig: I18nStringType): I18nStringPr
 };
 
 export const getLoginNodesSeverTypeFormat = (
-  loginNodes: string[] | LoginNodeConfigSchema[],
+  loginNodes: LoginNodeConfigSchema[],
 ): ClusterConfigSchemaProto_LoginNodesProtoType | undefined => {
   if (!loginNodes) return undefined;
 
-  if (loginNodes instanceof Array && loginNodes.every((node) => typeof node === "string")) {
-    return { value: { $case: "loginNodeAddresses", loginNodeAddresses: { loginNodeAddressesValue: loginNodes } } };
-  } else {
-    return {
-      value: {
-        $case: "loginNodeConfigs",
-        loginNodeConfigs: {
-          loginNodeConfigsValue: loginNodes.map((node) => ({
-            name: getI18nSeverTypeFormat(node.name)!,
-            address: node.address,
-            scowd: node.scowd,
-          })),
-        },
+  return {
+    value: {
+      $case: "loginNodeConfigs",
+      loginNodeConfigs: {
+        loginNodeConfigsValue: loginNodes.map((node) => ({
+          name: getI18nSeverTypeFormat(node.name)!,
+          address: node.address,
+          scowd: node.scowd,
+        })),
       },
-    };
-  }
+    },
+  };
 };
 
 export const convertClusterConfigsToServerProtoType = (
@@ -71,11 +59,6 @@ export const convertClusterConfigsToServerProtoType = (
       displayName: getI18nSeverTypeFormat(item.displayName)!,
       adapterUrl: item.adapterUrl,
       priority: item.priority,
-      scowd: item.scowd
-        ? {
-            enabled: item.scowd?.enabled ?? false,
-          }
-        : undefined,
       proxyGateway: item.proxyGateway
         ? {
             url: item.proxyGateway.url || "",

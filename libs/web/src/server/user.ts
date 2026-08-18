@@ -10,15 +10,9 @@ import { getClientFn } from "src/utils/api";
 export const libWebChangeEmail = async (
   userId: string,
   newEmail: string,
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<ChangeEmailResponse | undefined> => {
-  // if mis is Deployed
-  if (!misServerUrl) {
-    console.log("Mis is not deployed, can not get userInfo from mis.");
-    return undefined;
-  }
-
   const config = {
     SERVER_URL: misServerUrl,
     SCOW_API_AUTH_TOKEN: scowApiAuthToken,
@@ -36,15 +30,9 @@ export const libWebChangeEmail = async (
 
 export const libQueryIsUserEnabledRootShell = async (
   userId: string,
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<QueryIsUserEnabledRootShellResponse> => {
-  // if mis is Deployed
-  if (!misServerUrl) {
-    console.log("Mis is not deployed, can not get userInfo from mis.");
-    return { result: false };
-  }
-
   const config = {
     SERVER_URL: misServerUrl,
     SCOW_API_AUTH_TOKEN: scowApiAuthToken,
@@ -62,15 +50,9 @@ export const libQueryIsUserEnabledRootShell = async (
 
 export const libWebGetUsersByIds = async (
   userIds: string[],
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<GetUsersByIdsResponse | undefined> => {
-  // if mis is Deployed
-  if (!misServerUrl) {
-    console.log("Mis is not deployed, can not get userInfo from mis.");
-    return undefined;
-  }
-
   const config = {
     SERVER_URL: misServerUrl,
     SCOW_API_AUTH_TOKEN: scowApiAuthToken,

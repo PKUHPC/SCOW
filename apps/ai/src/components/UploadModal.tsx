@@ -19,7 +19,6 @@ interface Props {
   reload: () => void;
   clusterId: string;
   path: string;
-  scowdEnabled: boolean;
 }
 
 interface UploadProgressEvent {
@@ -27,7 +26,7 @@ interface UploadProgressEvent {
 }
 type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
-export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId, scowdEnabled }) => {
+export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.uploadModal.");
   const pCommon = prefix("common.");
@@ -248,12 +247,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         </Button>,
       ]}
     >
-      {!scowdEnabled && (
-        <p>
-          {t(p("maxSize"))}：<span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>。
-        </p>
-      )}
-
       <div
         onDropCapture={(event) => {
           const droppedItems = Array.from(event.dataTransfer?.items ?? []);
@@ -275,27 +268,18 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         <Upload.Dragger
           name="file"
           multiple
-          {...(scowdEnabled
-            ? {
-                customRequest: ({ file, onSuccess, onError, onProgress }) => {
-                  limit.current(() =>
-                    startMultipartUpload(file as File, onProgress)
-                      .then(onSuccess)
-                      .catch(onError),
-                  );
-                },
-              }
-            : {
-                action: async (file) => urlToUpload(clusterId, join(path, file.name), publicConfig.BASE_PATH),
-              })}
+          customRequest={({ file, onSuccess, onError, onProgress }) => {
+            limit.current(() =>
+              startMultipartUpload(file as File, onProgress)
+                .then(onSuccess)
+                .catch(onError),
+            );
+          }}
           withCredentials
           showUploadList={{
             removeIcon: (file) => {
               return file.status === "uploading" ? (
-                <DeleteOutlined
-                  onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                  title={t(p("cancelUpload"))}
-                />
+                <DeleteOutlined onClick={() => handleRemove(file)} title={t(p("cancelUpload"))} />
               ) : (
                 <DeleteOutlined title={t(p("delRecord"))} />
               );
@@ -323,13 +307,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             if (hasFolderInDropRef.current) {
               return Upload.LIST_IGNORE;
             }
-            const fileMaxSize = parseInt(publicConfig.CLIENT_MAX_BODY_SIZE.slice(0, -1)) * 1024 ** 3;
-
-            if (!scowdEnabled && file.size > fileMaxSize) {
-              message.error(`${file.name}${t(p("failed"))},${t(p("exceed"))}${publicConfig.CLIENT_MAX_BODY_SIZE}`);
-              return Upload.LIST_IGNORE;
-            }
-
             return new Promise((resolve, reject) => {
               const targetPath = join(path, file.name);
               void checkFileExist
@@ -371,16 +348,13 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
               <div>
                 {/* 原始的文件节点（包含进度条等） */}
                 {originNode}
-                {/* 只在scowd下展示下载进度及下载速度 */}
-                {scowdEnabled && (
-                  <PercentAndSpeedContainer>
-                    {file.status === "uploading" && (
-                      <span>
-                        {file.percent} % &nbsp;&nbsp; {extraInfo}
-                      </span>
-                    )}
-                  </PercentAndSpeedContainer>
-                )}
+                <PercentAndSpeedContainer>
+                  {file.status === "uploading" && (
+                    <span>
+                      {file.percent} % &nbsp;&nbsp; {extraInfo}
+                    </span>
+                  )}
+                </PercentAndSpeedContainer>
               </div>
             );
           }}

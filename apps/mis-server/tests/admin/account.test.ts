@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Decimal } from "@scow/lib-decimal";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
@@ -11,6 +10,7 @@ import { Tenant } from "src/entities/Tenant";
 import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient, mockAccountResourceOperations } from "tests/utils";
 
 let server: Server;
 let client: AccountServiceClient;
@@ -19,6 +19,7 @@ let user: User;
 
 beforeEach(async () => {
   server = await createServer();
+  mockAccountResourceOperations(server.ext.resource);
   await server.start();
   // await server.ext.orm.em.fork().persistAndFlush(account);
 
@@ -28,7 +29,7 @@ beforeEach(async () => {
   user = new User({ name: "test", userId: "test", tenant: tenant, email: "test@test.com" });
   await server.ext.orm.em.fork().persistAndFlush(user);
 
-  client = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, AccountServiceClient);
 });
 
 afterEach(async () => {

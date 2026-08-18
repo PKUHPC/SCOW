@@ -27,36 +27,21 @@ passwordPattern:
 # systemLanguage: "zh_cn"
 
 
-# 在 管理系统/超算平台/AI系统 中是否支持授权交互式应用功能
-# 布尔值，默认为true，不配置时表示开启
-# allowAppAuthorization: true
-
 # 仪表盘配置
 # dashboard:
   # 普通用户的显示模式。
   # 可选值：full: 完整模式，显示所有资源数据（已用、空闲、不可用）；simplified: 简化模式，只显示节点总数、运行中的作业数等基本信息
   # userDisplayMode: "simplified"
 
-# scow资源管理系统
-# scowResource:
-#   # 是否开启资源管理系统
-#   # 非必填，默认为 false
-#   enabled: true
-#   # 资源管理系统部署的url，在内网能访问即可
-#   # 非必填，默认为 http://resource:3000/resource
-#   address: http://localhost:6003
+scowResource:
+  # 需要与 install.yaml 中的资源管理系统部署地址保持一致
+  address: http://resource:3000/resource
 
-# scow消息系统
-# notification:
-#   # 消息系统名称，需与 ui 扩展名称保持一致
-#   # 非必填，默认为 notification
-#   enabled: true
-#   # 消息系统部署的url，在内网能访问即可
-#   # 必填，需根据 install.yaml 中配置的 scow base path 和 notification 的 base path 进行修改
-#   address: http://localhost:6004
-# SCOW API配置
-# scowApi:
-  # 认证配置
-  # auth:
-    # 静态秘密字符串
-    # token: test
+notification:
+  name: notification
+  # 需要与 install.yaml 中的消息系统部署地址保持一致
+  address: http://notification:3000/notification
+
+scowApi:
+  auth:
+    token: must-change-this-scow-api-token

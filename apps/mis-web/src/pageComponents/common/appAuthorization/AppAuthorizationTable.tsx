@@ -14,14 +14,9 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { AppAuthTargetType, AppScope } from "src/models/app";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
-import { publicConfig } from "src/utils/config";
 
 import { AppAuthInfoDrawer, TargetAppsDrawerItem } from "./AppAuthInfoDrawer";
-import {
-  AppScopeClusterToolbar,
-  AuthorizationContent,
-  useAppScopeClusterSelection,
-} from "./AppScopeClusterToolbar";
+import { AppScopeClusterToolbar, AuthorizationContent, useAppScopeClusterSelection } from "./AppScopeClusterToolbar";
 import { AuthorizeAppModalLink } from "./AuthorizeAppModal";
 
 enum AccountSearchType {
@@ -60,7 +55,7 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
   const t = useI18nTranslateToString();
 
   const availableClusters: Record<string, Cluster> = useMemo(() => {
-    if (targetType === AppAuthTargetType.ACCOUNT && publicConfig.SCOW_RESOURCE_ENABLED) {
+    if (targetType === AppAuthTargetType.ACCOUNT) {
       return Object.fromEntries(
         Object.entries(activatedClusters).filter(([clusterId]) => tenantAvailableClusterIds?.includes(clusterId)),
       );

@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { decimalToMoney } from "@scow/lib-decimal";
 import {
   Account_AccountState as AccountState,
@@ -14,6 +13,7 @@ import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let data: InitialData;
@@ -34,7 +34,7 @@ afterEach(async () => {
 });
 
 it("gets all accounts", async () => {
-  const client = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, AccountServiceClient);
 
   const resp = await asyncClientCall(client, "getAccounts", {
     tenantName: data.tenant.name,
@@ -79,7 +79,7 @@ it("gets all accounts", async () => {
 });
 
 it("account does not have an owner", async () => {
-  const client = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, AccountServiceClient);
 
   const reply = await asyncClientCall(client, "getAccounts", {});
 
@@ -140,7 +140,7 @@ it("account does not have an owner", async () => {
 });
 
 it("gets all accounts", async () => {
-  const client = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, AccountServiceClient);
 
   const em = server.ext.orm.em.fork();
   const anotherTenant = (await em.findOne(Tenant, { name: "another" })) as Tenant;

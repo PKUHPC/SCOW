@@ -52,7 +52,7 @@ export async function createServer() {
       server.logger,
       configClusters,
       config.MIS_SERVER_URL,
-      commonConfig.scowApi?.auth?.token,
+      commonConfig.scowApi.auth.token,
     );
 
     await checkClusters(server.logger, activatedClusters);

@@ -25,13 +25,11 @@ export enum k8sRuntime {
 const LoginNodeConfigSchema = Type.Object({
   name: createI18nStringSchema({ description: "登录节点展示名" }),
   address: Type.String({ description: "集群的登录节点地址" }),
-  scowd: Type.Optional(
-    Type.Object(
-      {
-        port: Type.Number({ description: "scowd 端口号" }),
-      },
-      { description: "scowd 相关配置" },
-    ),
+  scowd: Type.Object(
+    {
+      port: Type.Integer({ description: "scowd 端口号", minimum: 1, maximum: 65535 }),
+    },
+    { description: "scowd 相关配置" },
   ),
 });
 
@@ -40,15 +38,18 @@ export type LoginNodeConfigSchema = Static<typeof LoginNodeConfigSchema>;
 export interface LoginNode {
   name: I18nStringType;
   address: string;
-  scowdPort?: number;
+  scowdPort: number;
 }
 
-export const getLoginNode = (loginNode: string | LoginNodeConfigSchema): LoginNode => {
-  if (typeof loginNode === "string") {
-    return { name: loginNode, address: loginNode, scowdPort: undefined };
+export const getLoginNode = (loginNode: LoginNodeConfigSchema): LoginNode => {
+  const scowdPort = loginNode?.scowd?.port;
+
+  if (typeof scowdPort !== "number") {
+    const loginNodeName = loginNode?.address ?? "unknown";
+    throw new Error(`Login node "${loginNodeName}" is missing required configuration "loginNodes[].scowd.port".`);
   }
 
-  return { ...loginNode, scowdPort: loginNode.scowd?.port };
+  return { ...loginNode, scowdPort };
 };
 
 export type Cluster = {
@@ -136,15 +137,7 @@ export const ClusterConfigSchema = Type.Object({
       autoSetupNginx: Type.Boolean({ description: "是否自动配置nginx", default: false }),
     }),
   ),
-  scowd: Type.Optional(
-    Type.Object({
-      enabled: Type.Optional(Type.Boolean({ description: "是否开启 scowd", default: true })),
-    }),
-  ),
-  loginNodes: Type.Union([
-    Type.Array(Type.String(), { description: "集群的登录节点地址", default: [] }),
-    Type.Array(LoginNodeConfigSchema),
-  ]),
+  loginNodes: Type.Array(LoginNodeConfigSchema, { description: "集群的登录节点", minItems: 1 }),
   loginDesktop: Type.Optional(LoginDeskopConfigSchema),
   turboVNCPath: Type.Optional(TurboVncConfigSchema),
   crossClusterFileTransfer: Type.Optional(
@@ -320,35 +313,15 @@ export const getClusterConfigs: GetClusterConfigFn<Record<string, ClusterConfigS
   );
 
   // 检查所有集群配置下的登陆节点地址是否重复，如果重复扔出错误
-  // 检查当 scowd enabled 时, scowd port 是否配置
   const uniqueAddressesList = new Set();
   const allAddressesList: string[] = [];
   for (const cluster in config) {
     if (Object.hasOwnProperty.call(config, cluster)) {
       const clusterInfo = config[cluster];
-      if (clusterInfo?.scowd?.enabled === false) {
-        throw new Error(
-          `Cluster ${cluster} sets scowd.enabled to false, but SSH backend is no longer supported. Please enable scowd for this cluster.`,
-        );
-      }
-
       if (clusterInfo && clusterInfo.loginNodes.length > 0) {
         clusterInfo.loginNodes.map((ln) => {
-          if (typeof ln === "string") {
-            uniqueAddressesList.add(ln);
-            allAddressesList.push(ln);
-
-            if (clusterInfo.scowd?.enabled) {
-              throw new Error("If scowd is enabled, scowd port must be configured for each LoginNode.");
-            }
-          } else {
-            uniqueAddressesList.add(ln.address);
-            allAddressesList.push(ln.address);
-
-            if (clusterInfo.scowd?.enabled && ln.scowd.port === undefined) {
-              throw new Error("If scowd is enabled, scowd port must be configured for each LoginNode.");
-            }
-          }
+          uniqueAddressesList.add(ln.address);
+          allAddressesList.push(ln.address);
         });
       }
     }

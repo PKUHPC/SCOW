@@ -5,8 +5,12 @@ displayName: hpc01
 loginNodes:
   - name: login01
     address: login01
+    scowd:
+      port: 9999
   - name: login02
     address: login02
+    scowd:
+      port: 9999
 
 # 适配器地址(ip地址:端口号)
 adapterUrl: "localhost:8999"

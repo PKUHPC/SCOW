@@ -34,18 +34,7 @@ export default /* #__PURE__*/ route(MarkMessageReadSchema, async (req, res) => {
 
   const { messageId } = req.body;
 
-  const notifClient =
-    publicConfig.NOTIF_ENABLED && publicConfig.NOTIF_ADDRESS
-      ? getNotificationNodeClient(publicConfig.NOTIF_ADDRESS)
-      : undefined;
-
-  if (!notifClient) {
-    console.error("Notification service unavailable", {
-      notifEnabled: publicConfig.NOTIF_ENABLED,
-      notifAddress: publicConfig.NOTIF_ADDRESS,
-    });
-    return { 503: { code: "SERVICE_TEMPORARILY_UNAVAILABLE" as const } };
-  }
+  const notifClient = getNotificationNodeClient(publicConfig.NOTIF_ADDRESS);
 
   const logInfo = {
     operatorUserId: info.identityId,

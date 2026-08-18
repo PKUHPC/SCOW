@@ -8,7 +8,6 @@ import {
 } from "@scow/protos/build/server/admin";
 import { randomUUID } from "crypto";
 import { Logger } from "pino";
-import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { AccountUserSyncRecord, SyncResult, SyncStatus } from "src/entities/AccountUserSyncRecord";
 import { MessageStatus } from "src/models/messageType";
@@ -31,7 +30,7 @@ export async function startAccountUserSynchronization(
   em: SqlEntityManager<MySqlDriver>,
   clusterPlugin: ClusterPlugin["clusters"],
   logger: Logger,
-  scowResourcePlugin?: ScowResourcePlugin["resource"],
+  scowResourcePlugin: ScowResourcePlugin["resource"],
   operatorId?: string,
   maxSyncDurationMinutes?: number,
   fetchPlugin?: FetchPlugin["fetch"],
@@ -58,12 +57,6 @@ export async function startAccountUserSynchronization(
   const isFetchJobRunning = fetchPlugin?.isRunning;
   if (isFetchJobRunning) {
     logger.warn("Can not start a synchronization task during fetching jobs.");
-    return;
-  }
-
-  // 确保 如果启用了资源管理服务，没有在资源服务未注入时开启同步任务
-  if (commonConfig.scowResource?.enabled && !scowResourcePlugin) {
-    logger.warn("Can not start a synchronization task when scow resource service is not ready.");
     return;
   }
 

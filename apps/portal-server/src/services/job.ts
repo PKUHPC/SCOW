@@ -5,12 +5,11 @@ import { jobInfoToPortalJobInfo, jobInfoToRunningjob } from "@scow/lib-scheduler
 import { getClusterAssignedAccounts } from "@scow/lib-scow-resource";
 import { libGetAccounts, libGetUserInfo } from "@scow/lib-server";
 import { libCalculateJobPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
-import { AccountStatusFilter, JobServiceServer, JobServiceService } from "@scow/protos/build/portal/job";
+import { JobServiceServer, JobServiceService } from "@scow/protos/build/portal/job";
 import { getClusterOps } from "src/clusterops";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
-import { filterAccountsByStatus } from "src/utils/app";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { convertMaxTimeToMinutes, validateMaxRunningTimeMinutes, HPCJobLabelType } from "src/utils/maxRunningTime";
@@ -40,63 +39,28 @@ export const jobServiceServer = plugin((server) => {
       const { cluster, userId, statusFilter } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
-      // 如果已部署了管理系统和资源管理系统，获取集群下已授权的账户 与管理系统数据的交集
-      if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled) {
-        // 获取用户在scow中的信息
-        const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
-        const tenantName = userInfo.tenantName;
-        // 获取资源管理中的这个集群和租户下授权的账户名信息
-        const clusterAssignedAccountNames = await getClusterAssignedAccounts(
-          commonConfig.scowResource,
-          cluster,
-          tenantName,
-        );
-        // 获取scow数据库中账户数据
-        const misAccounts = await libGetAccounts(
-          logger,
-          userId,
-          statusFilter,
-          config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
-        );
-
-        const filteredAccounts = misAccounts.accounts.filter((account) =>
-          clusterAssignedAccountNames.includes(account),
-        );
-
-        return [{ accounts: filteredAccounts }];
-      }
-
-      // 如果已部署了管理系统，从管理系统数据库中获取账户数据
-      if (config.MIS_DEPLOYED) {
-        const result = await libGetAccounts(
-          logger,
-          userId,
-          statusFilter,
-          config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
-        );
-        return [result];
-      }
-
-      const reply = await callOnOne(
+      const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
+      const tenantName = userInfo.tenantName;
+      // 获取资源管理中的这个集群和租户下授权的账户名信息
+      const clusterAssignedAccountNames = await getClusterAssignedAccounts(
+        commonConfig.scowResource,
         cluster,
+        tenantName,
+      );
+      // 获取scow数据库中账户数据
+      const misAccounts = await libGetAccounts(
         logger,
-        async (client) =>
-          await asyncClientCall(client.account, "listAccounts", {
-            userId,
-          }),
+        userId,
+        statusFilter,
+        config.MIS_SERVER_URL,
+        commonConfig.scowApi.auth.token,
       );
 
-      const accounts = reply.accounts;
+      const filteredAccounts = misAccounts.accounts.filter((account) =>
+        clusterAssignedAccountNames.includes(account),
+      );
 
-      if (statusFilter === undefined || statusFilter === AccountStatusFilter.ALL) {
-        return [{ accounts: accounts }];
-      }
-
-      const filterAccounts = await filterAccountsByStatus(cluster, userId, accounts, statusFilter, logger);
-
-      return [{ accounts: filterAccounts }];
+      return [{ accounts: filteredAccounts }];
     },
 
     listRunningJobs: async ({ request, logger }) => {
@@ -191,17 +155,14 @@ export const jobServiceServer = plugin((server) => {
       const { cluster, userId, account, partition, maxTime, maxTimeUnit } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
-      // 管理系统存在时，增加用户账户封锁状态, 授权集群分区等鉴权
-      if (config.MIS_DEPLOYED) {
-        await validateSubmitJobInfoUnderMis({
-          userId,
-          accountName: account,
-          clusterId: cluster,
-          logger,
-          partitionName: partition,
-          checkAccountApp: false,
-        });
-      }
+      await validateSubmitJobInfoUnderMis({
+        userId,
+        accountName: account,
+        clusterId: cluster,
+        logger,
+        partitionName: partition,
+        checkAccountApp: false,
+      });
 
       validateMaxRunningTimeMinutes(
         convertMaxTimeToMinutes(maxTime, maxTimeUnit),
@@ -239,10 +200,6 @@ export const jobServiceServer = plugin((server) => {
     },
 
     calculateJobPrice: async ({ request, logger }) => {
-      if (!config.MIS_DEPLOYED) {
-        return [{ accountPrice: numberToMoney(0) }];
-      }
-
       try {
         const { accountName, ...restRequest } = request;
         const price = await libCalculateJobPrice(
@@ -252,7 +209,7 @@ export const jobServiceServer = plugin((server) => {
             account: accountName,
           },
           config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
+          commonConfig.scowApi.auth.token,
         );
 
         return [{ accountPrice: price.accountPrice ?? numberToMoney(0) }];

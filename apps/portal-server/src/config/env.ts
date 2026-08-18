@@ -11,8 +11,7 @@ export const config = envConfig({
 
   PORTAL_BASE_PATH: str({ desc: "门户系统base path", default: "/" }),
 
-  MIS_DEPLOYED: bool({ desc: "是否部署了管理系统", default: false }),
-  MIS_SERVER_URL: str({ desc: "如果部署了管理系统，管理系统后端服务的路径", default: "" }),
+  MIS_SERVER_URL: str({ desc: "管理系统后端服务的路径", default: "mis-server:5000" }),
 
   DOWNLOAD_CHUNK_SIZE: num({ desc: "grpc下载文件时，每个message中的chunk的大小。单位字节", default: 3 * 1024 * 1024 }),
 

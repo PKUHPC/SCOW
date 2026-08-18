@@ -22,15 +22,15 @@ export interface ServerRuntimeConfig {
 
   CLUSTER_TEXTS_CONFIG: ClusterTextsConfigSchema;
 
-  SCOW_API_AUTH_TOKEN?: string;
+  SCOW_API_AUTH_TOKEN: string;
 
-  AUDIT_CONFIG: AuditConfigSchema | undefined;
+  AUDIT_CONFIG: AuditConfigSchema;
 
   SERVER_I18N_CONFIG_TEXTS: {};
 
   PROTOCOL: string;
 
-  SCOW_RESOURCE_CONFIG: ScowResourceConfigSchema | undefined;
+  SCOW_RESOURCE_CONFIG: ScowResourceConfigSchema;
 }
 
 export interface PublicRuntimeConfig {
@@ -83,8 +83,6 @@ export interface PublicRuntimeConfig {
 
   VERSION_TAG: string | undefined;
 
-  AUDIT_DEPLOYED: boolean;
-
   RUNTIME_I18N_CONFIG_TEXTS: {
     passwordPatternMessage: I18nStringType | undefined;
     accountNamePatternMessage: I18nStringType | undefined;
@@ -116,18 +114,13 @@ export interface PublicRuntimeConfig {
   JOB_CHARGE_DECIMAL_PRECISION: number;
   JOB_MIN_CHARGE: number;
 
-  NOTIF_ENABLED?: boolean;
-  NOTIF_ADDRESS?: string;
+  NOTIF_ADDRESS: string;
 
   BILL_ENABLED?: boolean;
   CHANGE_JOB_PRICE_TYPE: string;
 
   SYNC_HISTORY_DAY_PERIOD: MisConfigSchema["syncAccountUser"]["syncHistoryDayPeriod"];
   MAX_SYNC_DURATION_MINUTES: MisConfigSchema["syncAccountUser"]["maxSyncDurationMinutes"];
-
-  SCOW_RESOURCE_ENABLED?: boolean;
-
-  ALLOW_APP_AUTHORIZATION?: boolean;
 
   MAX_EXPORT_COUNT: number;
 

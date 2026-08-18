@@ -3,6 +3,8 @@ adapterUrl: localhost:6001
 loginNodes:
   - name: login
     address: login01
+    scowd:
+      port: 9999
 crossClusterFileTransfer:
   enabled: true
   transferNode: login01:8999

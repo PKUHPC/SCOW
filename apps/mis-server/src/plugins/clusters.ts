@@ -12,7 +12,7 @@ import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { getActivatedClusters, updateCluster } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
-import { certificates as scowdCertificates, clusterBackendNotSupported, generateScowdUrl } from "src/utils/scowd";
+import { certificates as scowdCertificates, generateScowdUrl } from "src/utils/scowd";
 
 type CallOnAllResult<T> = {
   cluster: string;
@@ -69,15 +69,11 @@ export const clustersPlugin = plugin(async (f) => {
     });
 
     await Promise.all(
-      Object.entries(activatedClusters).map(async ([clusterId, { displayName, scowd, loginNodes }]) => {
+      Object.values(activatedClusters).map(async ({ displayName, loginNodes }) => {
         const loginNode = getLoginNode(loginNodes[0]);
         const address = loginNode.address;
         const node = loginNode.name;
         const scowdPort = loginNode.scowdPort;
-
-        if (!scowd?.enabled || !scowdPort) {
-          throw clusterBackendNotSupported(clusterId);
-        }
 
         f.logger.info("Checking whether scowd on cluster %s is running normally", displayName);
         const scowdUrl = generateScowdUrl(address, scowdPort);

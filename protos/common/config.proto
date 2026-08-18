@@ -57,20 +57,16 @@ message ClusterConfigSchemaProto {
     // 集群的登录节点地址
     string address = 2;
     // scowd 相关配置
-    optional LoginNodeScowdConfigs scowd = 3;
+    LoginNodeScowdConfigs scowd = 3;
   }
   message LoginNodeConfigs {
     repeated LoginNodeConfigSchemaProto login_node_configs_value = 1;
   }
-  message LoginNodeAddresses {
-    repeated string login_node_addresses_value = 1;
-  }
   message LoginNodesProtoType {
+    reserved 2;
+    reserved "login_node_addresses";
     oneof value {
       LoginNodeConfigs login_node_configs = 1;
-      // 集群的登录节点地址
-      // default value = []
-      LoginNodeAddresses login_node_addresses = 2;
     }
   }
   message LoginDesktopConfigSchemaProto {
@@ -128,10 +124,6 @@ message ClusterConfigSchemaProto {
     bool enabled = 1;
   }
 
-  message ScowdConfigs {
-    bool enabled = 1;
-  }
-
   message Storage {
     bool enabled = 1;
     repeated string paths = 2;
@@ -155,8 +147,8 @@ message ClusterConfigSchemaProto {
   optional CrossClusterFileTransfer cross_cluster_file_transfer = 9;
   Hpc hpc = 10;
   Ai ai = 11;
-  // scowd 配置
-  ScowdConfigs scowd = 13;
+  reserved 13;
+  reserved "scowd";
   optional Storage storage = 14;
   optional I18nStringProtoType description = 15;
 }

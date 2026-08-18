@@ -359,7 +359,7 @@ export const dashboard = router({
 
       const commonConfig = getCommonConfig();
 
-      const userAffliction = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      const userAffliction = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
 
       const accountNames =
         userAffliction?.affiliations

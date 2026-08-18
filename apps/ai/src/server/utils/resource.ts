@@ -12,12 +12,7 @@ import { logger } from "./logger";
 export async function getAssignedClusterPartitions(userId: string): Promise<Record<string, string[]> | undefined> {
   const commonConfig = getCommonConfig();
 
-  // 如果没有部署管理系统或者资源管理系统为不可用，返回空
-  if (!config.MIS_SERVER_URL || !commonConfig.scowResource?.enabled) {
-    return undefined;
-  }
-
-  const userAffliction = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  const userAffliction = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
 
   const accountNames = userAffliction?.affiliations.map((a) => a.accountName);
   const tenantName = userAffliction?.tenantName;
@@ -43,12 +38,7 @@ export async function getUserAssignedResourceDetails(
 ): Promise<AccountAssignedResourceDetail[] | undefined> {
   const commonConfig = getCommonConfig();
 
-  // 如果没有部署管理系统或者资源管理系统为不可用，返回空
-  if (!config.MIS_SERVER_URL || !commonConfig.scowResource?.enabled) {
-    return undefined;
-  }
-
-  const userInfo = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  const userInfo = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
   const tenantName = userInfo?.tenantName;
 
   if (!tenantName) {
@@ -63,13 +53,13 @@ export async function getUserAssignedResourceDetails(
     userId,
     accountStatusFilter ? accountStatusFilterFromJSON(accountStatusFilter) : undefined,
     config.MIS_SERVER_URL,
-    commonConfig.scowApi?.auth?.token,
+    commonConfig.scowApi.auth.token,
   );
 
   const results = await Promise.allSettled(
     associatedAccounts.accounts.map(async (accountName: string) => {
       const accountAssignedClustersPartitions = await getUserAccountsClusterPartitions(
-        commonConfig.scowResource!,
+        commonConfig.scowResource,
         [accountName],
         tenantName,
       );

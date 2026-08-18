@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded } from "@mikro-orm/core";
 import { createUser } from "@scow/lib-auth";
@@ -30,6 +29,7 @@ import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { reloadEntity } from "src/utils/orm";
 import { insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 dayjs.extend(utc);
 
@@ -50,7 +50,7 @@ beforeEach(async () => {
 
   await server.ext.orm.em.fork().persistAndFlush(tenant);
 
-  client = new UserServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, UserServiceClient);
 });
 
 afterEach(async () => {

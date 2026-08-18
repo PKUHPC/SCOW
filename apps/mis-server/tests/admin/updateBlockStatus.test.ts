@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
 import { AdminServiceClient } from "@scow/protos/build/server/admin";
 import { createServer } from "src/app";
@@ -9,12 +8,14 @@ import { misConfig } from "src/config/mis";
 import { SystemState } from "src/entities/SystemState";
 import { BlockedData, insertBlockedData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient, mockAccountResourceOperations } from "tests/utils";
 
 let server: Server;
 let data: BlockedData;
 
 beforeEach(async () => {
   server = await createServer();
+  mockAccountResourceOperations(server.ext.resource);
 
   const em = server.ext.orm.em.fork();
 
@@ -45,7 +46,7 @@ it("update block status", async () => {
 });
 
 it("update block status with whitelist accounts", async () => {
-  const client = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, AccountServiceClient);
   await asyncClientCall(client, "whitelistAccount", {
     tenantName: data.tenant.name,
     accountName: data.blockedAccountB.accountName,
@@ -60,7 +61,7 @@ it("update block status with whitelist accounts", async () => {
 });
 
 it("gets current sync block status info", async () => {
-  const client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, AdminServiceClient);
   const info = await asyncClientCall(client, "getSyncBlockStatusInfo", {});
 
   expect(info.syncStarted).toEqual(misConfig.periodicSyncUserAccountBlockStatus?.enabled);
@@ -68,7 +69,7 @@ it("gets current sync block status info", async () => {
 });
 
 it("sync unblock and block account", async () => {
-  const client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, AdminServiceClient);
   const info = await asyncClientCall(client, "syncBlockStatus", {});
 
   expect(info.blockedFailedAccounts).not.toContain(data.blockedAccountB.accountName);
@@ -79,7 +80,7 @@ it("sync unblock and block account", async () => {
 });
 
 it("starts and stops sync block status ", async () => {
-  const client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, AdminServiceClient);
   await asyncClientCall(client, "setSyncBlockStatusState", { started: false });
 
   let info = await asyncClientCall(client, "getSyncBlockStatusInfo", {});

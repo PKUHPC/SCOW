@@ -85,21 +85,7 @@ export const notification = router({
         });
       }
 
-      const notifClient =
-        commonConfig?.notification?.enabled && commonConfig?.notification?.address
-          ? getNotificationNodeClient(commonConfig.notification.address)
-          : undefined;
-
-      if (!notifClient) {
-        subLogger.error("Notification service unavailable", {
-          notifEnabled: commonConfig?.notification?.enabled,
-          notifAddress: commonConfig?.notification?.address,
-        });
-        throw new TRPCError({
-          code: "NOT_IMPLEMENTED",
-          message: "SERVICE_TEMPORARILY_UNAVAILABLE",
-        });
-      }
+      const notifClient = getNotificationNodeClient(commonConfig.notification.address);
 
       try {
         const response = await notifClient.scowMessage.listMessages({
@@ -155,20 +141,7 @@ export const notification = router({
 
       const subLogger = logger.child({ user: user.identityId });
 
-      const notifConfig = commonConfig?.notification;
-      const notifClient =
-        notifConfig?.enabled && notifConfig?.address ? getNotificationNodeClient(notifConfig.address) : undefined;
-
-      if (!notifClient) {
-        subLogger.error("Notification service unavailable", {
-          notifEnabled: notifConfig?.enabled,
-          notifAddress: notifConfig?.address,
-        });
-        throw new TRPCError({
-          code: "NOT_IMPLEMENTED",
-          message: "SERVICE_TEMPORARILY_UNAVAILABLE",
-        });
-      }
+      const notifClient = getNotificationNodeClient(commonConfig.notification.address);
 
       const logInfo = {
         operatorUserId: user.identityId,

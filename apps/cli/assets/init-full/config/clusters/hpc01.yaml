@@ -2,10 +2,6 @@
 # 此文本支持国际化
 displayName: hpc01Name
 
-# socwd是否启动，默认开启，目前不开启scowd系统不可用
-# scowd:
-#   enabled: true
-
 # 跨集群传输功能
 # crossClusterFileTransfer:
 #   enabled: true
@@ -21,11 +17,11 @@ loginNodes:
     # 如果设置的是域名，请确认此节点的/etc/hosts中包含了域名到IP的解析信息
     address: login01
     scowd:
-      port: 8999
+      port: 9999
   - name: login02
     address: login02
     scowd:
-      port: 8999
+      port: 9999
 
 # 适配器地址(ip地址:端口号)
 adapterUrl: localhost:8972

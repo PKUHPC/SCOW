@@ -26,9 +26,9 @@ export interface ServerRuntimeConfig {
 
   SUBMIT_JOB_WORKING_DIR: string;
 
-  SCOW_API_AUTH_TOKEN?: string;
+  SCOW_API_AUTH_TOKEN: string;
 
-  AUDIT_CONFIG: AuditConfigSchema | undefined;
+  AUDIT_CONFIG: AuditConfigSchema;
 
   SERVER_I18N_CONFIG_TEXTS: {
     submitJopPromptText?: I18nStringType;
@@ -36,7 +36,7 @@ export interface ServerRuntimeConfig {
 
   PROTOCOL: string;
 
-  SCOW_RESOURCE_CONFIG: ScowResourceConfigSchema | undefined;
+  SCOW_RESOURCE_CONFIG: ScowResourceConfigSchema;
 }
 
 export interface PublicRuntimeConfig {
@@ -48,13 +48,9 @@ export interface PublicRuntimeConfig {
 
   ENABLE_APPS: boolean;
 
-  MIS_URL: string | undefined;
+  MIS_URL: string;
 
-  MIS_DEPLOYED: boolean;
-
-  MIS_SERVER_URL: string | undefined;
-
-  AUDIT_DEPLOYED: boolean;
+  MIS_SERVER_URL: string;
 
   AI_URL: string | undefined;
 
@@ -65,8 +61,6 @@ export interface PublicRuntimeConfig {
   PASSWORD_PATTERN: string | undefined;
 
   BASE_PATH: string;
-  // 上传（请求）文件的大小限制
-  CLIENT_MAX_BODY_SIZE: string;
 
   FILE_EDIT_SIZE: string | undefined;
   NON_EDITABLE_FILENAME_POSTFIXES: string[] | undefined;
@@ -90,13 +84,8 @@ export interface PublicRuntimeConfig {
   UI_EXTENSION?: UiExtensionConfigSchema;
   UI_CONFIG: UiConfigSchema | undefined;
 
-  NOTIF_ENABLED?: boolean;
-  NOTIF_ADDRESS?: string;
-  NOTIF_NAME?: string;
-
-  SCOW_RESOURCE_ENABLED: boolean | undefined;
-
-  ALLOW_APP_AUTHORIZATION?: boolean;
+  NOTIF_ADDRESS: string;
+  NOTIF_NAME: string;
 
   SHADOW_DESK_ENABLED?: boolean;
 

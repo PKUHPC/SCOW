@@ -27,7 +27,7 @@ export async function validateUserToken(token: string): Promise<string | undefin
 export async function getUserInfoForUserId(identityId: string): Promise<UserInfo> {
   const commonConfig = getCommonConfig();
 
-  const userInfo = await libWebGetUserInfo(identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  const userInfo = await libWebGetUserInfo(identityId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
 
   return {
     identityId,

@@ -1,5 +1,8 @@
 import { plugin } from "@ddadaal/tsgrpc-server";
-import { ConfigServiceServer, ConfigServiceService } from "@scow/scheduler-adapter-protos/build/config";
+import {
+  ConfigServiceServer,
+  ConfigServiceService,
+} from "@scow/scheduler-adapter-protos/build/config";
 import { clusterId } from "src/config/cluster";
 
 export const configServiceServer = plugin((server) => {
@@ -88,21 +91,63 @@ export const configServiceServer = plugin((server) => {
     },
 
     getAvailablePartitions: async () => {
-      return [];
+      return [{ partitions: [] }];
     },
     getClusterInfo: async () => {
-      return [];
+      return [
+        {
+          clusterName: "",
+          partitions: [],
+          nodeCount: 0,
+          runningNodeCount: 0,
+          idleNodeCount: 0,
+          notAvailableNodeCount: 0,
+          cpuCoreCount: 0,
+          runningCpuCount: 0,
+          idleCpuCount: 0,
+          notAvailableCpuCount: 0,
+          gpuCoreCount: 0,
+          runningGpuCount: 0,
+          idleGpuCount: 0,
+          notAvailableGpuCount: 0,
+          jobCount: 0,
+          runningJobCount: 0,
+          pendingJobCount: 0,
+        },
+      ];
     },
     getSummaryClusterInfo: async () => {
-      return [];
+      return [
+        {
+          clusterName: "",
+          partitions: [],
+          nodeCount: 0,
+          runningNodeCount: 0,
+          idleNodeCount: 0,
+          notAvailableNodeCount: 0,
+          cpuCoreCount: 0,
+          runningCpuCount: 0,
+          idleCpuCount: 0,
+          notAvailableCpuCount: 0,
+          gpuCoreCount: 0,
+          runningGpuCount: 0,
+          idleGpuCount: 0,
+          notAvailableGpuCount: 0,
+          runningJobCount: 0,
+          pendingJobCount: 0,
+          nodeUsage: 0,
+          cpuUsage: 0,
+          gpuUsage: 0,
+        },
+      ];
     },
 
     getClusterNodesInfo: async () => {
-      return [];
+      return [{ nodes: [] }];
     },
 
     listImplementedOptionalFeatures: async () => {
-      return [];
+      return [{ features: [] }];
     },
   });
 });

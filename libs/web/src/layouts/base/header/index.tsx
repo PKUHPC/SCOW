@@ -98,8 +98,7 @@ interface Props {
   from: "mis" | "portal";
   routeQuery: ExtensionRouteQuery;
   activeKeys: string[];
-  showOperationLog?: boolean;
-  operationLogUrl?: string;
+  operationLogUrl: string;
 }
 
 interface SourcedHeaderNavbarLink {
@@ -122,7 +121,6 @@ export const Header: React.FC<Props> = ({
   extensions,
   from,
   routeQuery,
-  showOperationLog,
   operationLogUrl,
 }) => {
   const [links, setLinks] = useState<SourcedHeaderNavbarLink[]>([]);
@@ -210,8 +208,8 @@ export const Header: React.FC<Props> = ({
             logout={logout}
             userLinks={userLinks}
             languageId={languageId}
-            showOperationLog={showOperationLog}
             operationLogUrl={operationLogUrl}
+            operationLogOpenInNewPage={from === "portal"}
           />
         </IndicatorPart>
       </RightContentPart>

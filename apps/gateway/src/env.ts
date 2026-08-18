@@ -14,7 +14,6 @@ export const config = envConfig({
   PORTAL_PATH: str({ desc: "门户系统路径", default: "/" }),
   PORTAL_PATH_INTERNAL_URL: str({ desc: "门户系统内部路径", default: "http://portal-web:3000" }),
 
-  MIS_ENABLED: bool({ desc: "是否启用管理系统", default: true }),
   MIS_PATH: str({ desc: "管理系统路径", default: "/mis" }),
   MIS_PATH_INTERNAL_URL: str({ desc: "管理系统内部路径", default: "http://mis-web:3000" }),
 

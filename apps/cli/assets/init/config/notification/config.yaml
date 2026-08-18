@@ -1,0 +1,14 @@
+db:
+  host: db
+  port: 3306
+  user: root
+  dbName: scow_notification
+
+scow:
+  misServerUrl: mis-server:5000
+
+noticeType:
+  siteMessage:
+    enabled: true
+
+deleteExpiredMessages: {}

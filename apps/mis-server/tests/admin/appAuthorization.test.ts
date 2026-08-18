@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType as HpcAppType } from "@scow/config/build/app";
 import { AppType as AiAppType } from "@scow/config/build/appForAi";
@@ -20,6 +19,7 @@ import * as appUtils from "src/utils/app";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server | undefined;
 let client: AppAuthorizationServiceClient;
@@ -61,7 +61,7 @@ beforeEach(async () => {
   server = createdServer;
   await insertInitialData(createdServer.ext.orm.em.fork());
   await createdServer.start();
-  client = new AppAuthorizationServiceClient(createdServer.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(createdServer.serverAddress, AppAuthorizationServiceClient);
 });
 
 afterEach(async () => {

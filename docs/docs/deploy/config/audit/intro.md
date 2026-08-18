@@ -12,7 +12,7 @@ title: 配置审计系统
 修改安装配置文件
 
 ```yaml title="install.yaml"
-# 确保审计系统会部署
+# 审计系统始终部署；此处仅覆盖默认部署参数
 audit:
 
   # dbPassword为审计系统数据库密码

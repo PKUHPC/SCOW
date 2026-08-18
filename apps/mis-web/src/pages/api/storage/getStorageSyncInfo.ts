@@ -49,7 +49,7 @@ export default route(GetStorageSyncInfoSchema, async (req, res) => {
     return;
   }
 
-  if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && info.tenant) {
+  if (info.tenant) {
     const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
     try {
       const response = await resourceClient.resource.getTenantAssignedClustersAndPartitions({

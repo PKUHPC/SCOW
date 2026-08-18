@@ -4,12 +4,13 @@ imageTag: master
 portal:
   enabled: true
 mis:
-  enabled: true
   dbPassword: must!chang3this
 log:
   fluentd:
     logDir: /var/log/fluentd
 auth: {}
 audit: {}
+resource: {}
+notification: {}
 gateway:
   proxyReadTimeout: 36000s

@@ -33,21 +33,19 @@ export const getLoginNodesTypeFormat = (
   protoType: ClusterConfigSchemaProto_LoginNodesProtoType | undefined,
 ): LoginNodeConfigSchema[] => {
   if (!protoType?.value) return [];
-  if (protoType.value.$case === "loginNodeAddresses") {
-    return protoType.value.loginNodeAddresses.loginNodeAddressesValue.map((item) => ({
-      name: item,
-      address: item,
-      scowd: undefined,
-    }));
-  } else {
-    const loginNodeConfigs = protoType.value.loginNodeConfigs;
+  const loginNodeConfigs = protoType.value.loginNodeConfigs;
 
-    return loginNodeConfigs.loginNodeConfigsValue.map((x) => ({
+  return loginNodeConfigs.loginNodeConfigsValue.map((x) => {
+    if (!x.scowd) {
+      throw new Error(`Missing scowd config for login node ${x.address}`);
+    }
+
+    return {
       name: getI18nTypeFormat(x.name),
       address: x.address,
       scowd: x.scowd,
-    }));
-  }
+    };
+  });
 };
 
 // protobuf中定义的grpc返回值的 ClusterConfigs 类型映射到前端

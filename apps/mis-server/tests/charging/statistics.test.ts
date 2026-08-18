@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
 import { dayjsToDateMessage } from "@scow/lib-server/build/date";
@@ -15,6 +14,7 @@ import { Tenant } from "src/entities/Tenant";
 import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 dayjs.extend(utc);
 
@@ -100,7 +100,7 @@ afterEach(async () => {
 });
 
 it("correct get Top 10 Charge Account", async () => {
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const today = dayjs().startOf("day");
 
@@ -122,7 +122,7 @@ it("correct get Top 10 Charge Account", async () => {
 });
 
 it("correct get daily Charge Amount in UTC+8 timezone", async () => {
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const today = dayjs().startOf("day");
 
@@ -148,7 +148,7 @@ it("correct get daily Charge Amount in UTC+8 timezone", async () => {
 });
 
 it("correct get Top 10 Pay Account", async () => {
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const today = dayjs().startOf("day");
 
@@ -170,7 +170,7 @@ it("correct get Top 10 Pay Account", async () => {
 });
 
 it("correct get daily Pay Amount in UTC+8 timezone", async () => {
-  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const client = createTestClient(server.serverAddress, ChargingServiceClient);
 
   const today = dayjs().startOf("day");
 

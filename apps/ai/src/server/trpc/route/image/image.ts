@@ -168,12 +168,12 @@ export const list = procedure
 
     let ownerNameMap: Record<string, string> = {};
 
-    if (ownerIds.length > 0 && config.MIS_DEPLOYED && config.MIS_SERVER_URL && commonConfig.scowApi?.auth?.token) {
+    if (ownerIds.length > 0) {
       try {
         const usersResponse = await libGetUsersByIds(
           ownerIds,
           config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
+          commonConfig.scowApi.auth.token,
         );
         ownerNameMap = Object.fromEntries((usersResponse.users ?? []).map((user) => [user.userId, user.userName]));
       } catch (error) {

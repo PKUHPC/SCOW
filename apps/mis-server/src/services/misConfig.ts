@@ -23,7 +23,7 @@ import {
   performClusterChecks,
   validateMigratableClustersConfig,
 } from "src/utils/migrateNode";
-import { clusterBackendNotSupported, getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
+import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 export const misConfigServiceServer = plugin((server) => {
   server.addService<ConfigServiceServer>(ConfigServiceService, {
@@ -113,10 +113,6 @@ export const misConfigServiceServer = plugin((server) => {
 
         const loginNode = getLoginNode(targetClusterLoginNodes[0]);
         const node = loginNode.name;
-
-        if (!configClusters[clusterId].scowd?.enabled) {
-          throw clusterBackendNotSupported(clusterId);
-        }
 
         const client = getScowdClient(clusterId);
 

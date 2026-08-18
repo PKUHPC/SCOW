@@ -1,6 +1,6 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials, status } from "@grpc/grpc-js";
+import { status } from "@grpc/grpc-js";
 import {
   CreateInitAdminRequest,
   InitServiceClient,
@@ -14,6 +14,7 @@ import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { createUserInDatabase } from "src/utils/createUser";
 import { reloadEntities, toRef } from "src/utils/orm";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient } from "tests/utils";
 
 let server: Server;
 let client: InitServiceClient;
@@ -21,7 +22,7 @@ let client: InitServiceClient;
 beforeEach(async () => {
   server = await createServer();
   await server.start();
-  client = new InitServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, InitServiceClient);
 });
 
 afterEach(async () => {

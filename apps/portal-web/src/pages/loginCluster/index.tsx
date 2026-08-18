@@ -19,7 +19,7 @@ import { ShellCardList } from "src/pageComponents/loginCluster/ShellCardList";
 import { Cluster, LoginDesktopCluster } from "src/pageComponents/loginCluster/types";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getLoginDesktopEnabled } from "src/utils/cluster";
-import { publicConfig, runtimeConfig } from "src/utils/config";
+import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 import { styled } from "styled-components";
 
@@ -169,37 +169,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
       .map((x) => x.clusterId) ?? [];
   const sortedCurrentClusterIds = clusterSortedIdList.filter((id) => activatedClusterIds.includes(id));
 
+  const userAssociatedClusterIds = await api.getUserAssociatedClusterIds({
+    query: {
+      token,
+      userId: info.identityId,
+    },
+  });
   // 用于新建和连接
-  let sortedClusterIdListForCreatingAndConnecting: string[];
+  const sortedClusterIdListForCreatingAndConnecting = sortedCurrentClusterIds.filter((id) =>
+    (userAssociatedClusterIds.clusterIds ?? []).includes(id),
+  );
   // 用于获取和删除
-  let sortedClusterIdListForGettingAndDeleting: string[];
-
-  // 1. 如果部署了管理系统，且部署了资源管理服务
-  // 选取已授权且在线集群的集群ID
-  if (publicConfig.MIS_DEPLOYED && runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {
-    const userAssociatedClusterIds = await api.getUserAssociatedClusterIds({
-      query: {
-        token,
-        userId: info.identityId,
-      },
-    });
-    sortedClusterIdListForCreatingAndConnecting = sortedCurrentClusterIds.filter((id) =>
-      (userAssociatedClusterIds.clusterIds ?? []).includes(id),
-    );
-    sortedClusterIdListForGettingAndDeleting = sortedCurrentClusterIds;
-  }
-  // 2. 如果部署了管理系统，未部署资源管理
-  // 选取在线集群的集群ID
-  else if (publicConfig.MIS_DEPLOYED) {
-    sortedClusterIdListForCreatingAndConnecting = sortedCurrentClusterIds;
-    sortedClusterIdListForGettingAndDeleting = sortedCurrentClusterIds;
-  }
-  // 3. 如果没有部署管理系统
-  // 选取系统所有已配置集群的集群ID
-  else {
-    sortedClusterIdListForCreatingAndConnecting = clusterSortedIdList;
-    sortedClusterIdListForGettingAndDeleting = clusterSortedIdList;
-  }
+  const sortedClusterIdListForGettingAndDeleting = sortedCurrentClusterIds;
 
   const shellClusters = sortedClusterIdListForCreatingAndConnecting.map(
     (clusterId) =>

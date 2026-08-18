@@ -46,13 +46,6 @@ export interface ScowResourcePlugin {
 
 export const scowResourcePlugin = (config: ScowResourceConfigSchema): Plugin =>
   plugin(async (f) => {
-    const logger = f.logger.child({ plugin: "scow-resource" });
-
-    if (!config?.enabled) {
-      logger.info("No scow-resource related configuration.");
-      return;
-    }
-
     const client = getScowResourceClient(config.address);
 
     const assignAccountOnCreate = async (params: AssignAccountOnCreateRequest) => {

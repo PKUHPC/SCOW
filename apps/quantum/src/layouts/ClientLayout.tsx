@@ -36,7 +36,6 @@ const ClientLayoutLoaded = ({
   initialLanguage,
   footerText,
   misUrl,
-  auditDeployed,
   aiUrl,
 }: {
   children: React.ReactNode;
@@ -44,7 +43,6 @@ const ClientLayoutLoaded = ({
   user: UserInfo;
   portalUrl: string;
   misUrl: string;
-  auditDeployed: boolean;
   aiUrl: string;
   versionTag?: string;
   languageConfig: SystemLanguageConfig;
@@ -109,8 +107,7 @@ const ClientLayoutLoaded = ({
       basePath={basePath}
       languageId={languageId}
       from="portal"
-      showOperationLog={auditDeployed && !!misUrl}
-      operationLogUrl={misUrl ? joinWithUrl(misUrl, "/operationLog") : undefined}
+      operationLogUrl={joinWithUrl(misUrl, "/operationLog")}
       headerNavbarLinks={navbarLinks}
       headerRightContent={
         languageConfig.isUsingI18n ? <LanguageSwitcher initialLanguage={initialLanguage} /> : undefined
@@ -182,7 +179,6 @@ export const ClientLayout = ({
             user={userQuery.data.user}
             portalUrl={publicConfigQuery.data.portalUrl}
             misUrl={publicConfigQuery.data.misUrl}
-            auditDeployed={publicConfigQuery.data.auditDeployed}
             languageConfig={publicConfigQuery.data.systemLanguageConfig}
             versionTag={publicConfigQuery.data.versionTag}
             initialLanguage={systemInitialLanguage}

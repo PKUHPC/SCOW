@@ -2,10 +2,9 @@ import { Cluster, ClusterActivationStatus, ClusterRuntimeInfo } from "@scow/conf
 
 /**
  * format clusters used in web into activated clusters only
- * @param clustersRuntimeInfo clusters activation data from db, if mis is not deployed => []
+ * @param clustersRuntimeInfo clusters activation data from db
  * @param  misConfigClusters config clusters type used in mis => {[clusterId: string]: Cluster},
  * @param configClusters config clusters type used in portal or other system => Cluster[]
- * @param misDeployed mis is deployed or not
  *
  * @returns misActivatedClusters
  * @returns activatedClusters
@@ -14,22 +13,14 @@ export function formatActivatedClusters({
   clustersRuntimeInfo,
   misConfigClusters,
   configClusters,
-  misDeployed = true,
 }: {
   clustersRuntimeInfo?: ClusterRuntimeInfo[];
   misConfigClusters?: Record<string, Cluster>;
   configClusters?: Cluster[];
-  misDeployed?: boolean;
 }): {
   misActivatedClusters?: Record<string, Cluster>;
   activatedClusters?: Cluster[];
 } {
-  // for system except mis, if mis is not deployed, using config clusters
-  if (!misDeployed) {
-    console.info("Mis is not deployed, using config clusters.");
-    return { activatedClusters: configClusters };
-  }
-
   if (!clustersRuntimeInfo || clustersRuntimeInfo.length === 0) {
     console.info("No available activated clusters in database.");
     return misConfigClusters ? { misActivatedClusters: {} } : { activatedClusters: [] };

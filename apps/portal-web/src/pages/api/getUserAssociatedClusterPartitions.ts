@@ -34,21 +34,15 @@ export default route(GetUserAssociatedClusterPartitionsSchema, async (req, res) 
   const accountNames = reply?.affiliations.map((a) => a.accountName);
   const tenantName = reply?.tenantName;
 
-  if (publicConfig.MIS_DEPLOYED && runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {
-    const resp = await getUserAccountsClusterPartitions(runtimeConfig.SCOW_RESOURCE_CONFIG, accountNames, tenantName);
+  const resp = await getUserAccountsClusterPartitions(runtimeConfig.SCOW_RESOURCE_CONFIG, accountNames, tenantName);
 
-    if (!resp) {
-      return { 403: null };
-    } else {
-      return {
-        200: {
-          clusterPartitions: resp,
-        },
-      };
-    }
+  if (!resp) {
+    return { 403: null };
   } else {
     return {
-      204: null,
+      200: {
+        clusterPartitions: resp,
+      },
     };
   }
 });

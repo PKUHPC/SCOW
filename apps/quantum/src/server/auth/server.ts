@@ -35,7 +35,7 @@ export async function getUserInfo(req: RequestType, res?: NextApiResponse): Prom
 
   const commonConfig = getCommonConfig();
 
-  if (req?.headers && commonConfig.scowApi?.auth?.token && commonConfig.scowApi.auth.token === token) {
+  if (req?.headers && commonConfig.scowApi.auth.token && commonConfig.scowApi.auth.token === token) {
     const userIdHeaderValue =
       req instanceof Request ? req.headers.get(xScowUserIdHeaderKey) : req.headers[xScowUserIdHeaderKey];
 
@@ -75,5 +75,5 @@ export async function changeEmail(req: RequestType, newEmail: string) {
 
   const commonConfig = getCommonConfig();
 
-  return await libWebChangeEmail(resp.identityId, newEmail, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  return await libWebChangeEmail(resp.identityId, newEmail, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
 }

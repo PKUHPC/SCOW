@@ -52,7 +52,6 @@ export default function Page() {
 
   const {
     publicConfig: { CLUSTERS: allClusters, DASHBOARD_USER_DISPLAY_MODE },
-    publicConfig,
     user,
     currentAvailableClusterIds: clusterIds,
   } = usePublicConfig();
@@ -83,7 +82,7 @@ export default function Page() {
 
   useEffect(() => {
     if (!isLoading && allSummaryClusters) {
-      // 根据依赖重新计算当前可用集群
+      // 根据依赖重新计算当前已授权集群
       const currentClusters = allClusters.filter((c) => clusterIds.includes(c.id));
       // 集群信息
       const successfulClusterIds = new Set(allSummaryClusters.map((c) => c.clusterId));
@@ -130,14 +129,12 @@ export default function Page() {
   return (
     <DashboardPageContent>
       <Row gutter={[16, 0]} wrap={true}>
-        <Col xs={24} md={publicConfig.NOTIF_ENABLED ? 17 : 24} xl={publicConfig.NOTIF_ENABLED ? 17 : 24}>
+        <Col xs={24} md={17} xl={17}>
           <QuickEntry />
         </Col>
-        {publicConfig.NOTIF_ENABLED && (
-          <NotificationCol xs={24} md={7} xl={7}>
-            <NotificationCard />
-          </NotificationCol>
-        )}
+        <NotificationCol xs={24} md={7} xl={7}>
+          <NotificationCard />
+        </NotificationCol>
       </Row>
       <DisplayModeContext.Provider value={isFullDisplayMode}>
         <OverviewTable

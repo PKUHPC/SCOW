@@ -1,0 +1,8 @@
+{
+  "label": "升级",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "本节介绍升级 SCOW 时需要执行的配置和数据迁移。"
+  }
+}

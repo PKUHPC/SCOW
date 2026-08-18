@@ -90,7 +90,7 @@ export async function checkUserAccountPermission(userId: string, accountName: st
     accountName,
     AccountStatusFilter.UNBLOCKED_ONLY,
     config.MIS_SERVER_URL,
-    commonConfig.scowApi?.auth?.token,
+    commonConfig.scowApi.auth.token,
   );
 }
 

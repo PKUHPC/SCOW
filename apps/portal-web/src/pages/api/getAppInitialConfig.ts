@@ -123,7 +123,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
           isAdmin,
         };
 
-        if (publicConfig.MIS_DEPLOYED && runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {
+        {
           const accountNames = misUserInfo.affiliations
             .filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED)
             .map((a) => a.accountName);
@@ -152,7 +152,6 @@ export default route(GetAppInitialConfigSchema, async (req) => {
           const initialActivatedClusters = formatActivatedClusters({
             clustersRuntimeInfo: runtimeClusters,
             configClusters: publicConfigClusters,
-            misDeployed: publicConfig.MIS_DEPLOYED,
           });
 
           // 如果用户关联账户的已授权集群存在，则系统初始集群为在线集群与已授权集群的交集

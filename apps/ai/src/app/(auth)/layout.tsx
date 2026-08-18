@@ -36,10 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const unreadMessagesQuery = trpc.notification.getUnreadMessages.useQuery(
     {
       messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert],
-    },
-    {
-      enabled: !!configQuery.data?.NOTIF_ENABLED,
-    },
+    }
   );
 
   const languageId = useI18n().currentLanguage.id;
@@ -112,20 +109,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         versionTag={publicConfig.VERSION_TAG}
         footerText={footerText}
       >
-        {publicConfig.NOTIF_ENABLED ? (
-          <NotificationLayout
-            interval={300000}
-            languageId={languageId}
-            onMarkMessageRead={async (messageId: number) => {
-              await createAppSessionMutation.mutateAsync({ messageId });
-            }}
-            fetchUnreadMessages={async () => unreadMessagesQuery.data?.results}
-          >
-            {children}
-          </NotificationLayout>
-        ) : (
-          children
-        )}
+        <NotificationLayout
+          interval={300000}
+          languageId={languageId}
+          onMarkMessageRead={async (messageId: number) => {
+            await createAppSessionMutation.mutateAsync({ messageId });
+          }}
+          fetchUnreadMessages={async () => unreadMessagesQuery.data?.results}
+        >
+          {children}
+        </NotificationLayout>
       </BaseLayout>
     </PublicConfigContext.Provider>
   );

@@ -27,7 +27,6 @@ import { JobPriceChangeModal } from "src/pageComponents/tenant/JobPriceChangeMod
 import { TenantSelector } from "src/pageComponents/tenant/TenantSelector";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
-import { publicConfig } from "src/utils/config";
 import { useJobIdsInput, validateJobIds } from "src/utils/jobIds";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
 import { useAuthorizedClusters } from "src/utils/useAuthorizedClusters";
@@ -88,8 +87,6 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
   const languageId = useI18n().currentLanguage.id;
 
   const { message } = App.useApp();
-  const resourceEnabled = publicConfig.SCOW_RESOURCE_ENABLED;
-  const tenantResourceEnabled = resourceEnabled && !platform;
 
   const rangeSearch = useRef(true);
   const [currentDiffQuery, setCurrentDiffQuery] = useState<DiffQuery | undefined>(undefined);
@@ -110,11 +107,15 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
   const [form] = Form.useForm<FilterForm>();
 
   const fetchAuthorizedClusterIds = useCallback(async () => {
+    if (platform) {
+      return undefined;
+    }
+
     const resp = await api.getTenantAssignedClustersAndPartitions({});
     return Object.keys(resp.assignedClusterPartitions ?? {});
-  }, []);
+  }, [platform]);
 
-  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, tenantResourceEnabled, fetchAuthorizedClusterIds);
+  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, fetchAuthorizedClusterIds);
 
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
 
@@ -214,7 +215,7 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
                       label={
                         <Space>
                           {t(pCommon("cluster"))}
-                          {tenantResourceEnabled ? (
+                          {!platform ? (
                             <Popover title={t("component.others.allClustersTooltip")}>
                               <QuestionCircleOutlined />
                             </Popover>
@@ -223,9 +224,7 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
                       }
                       name="clusters"
                     >
-                      <ClusterSelector
-                        authorizedClusterIds={tenantResourceEnabled ? authorizedClusterIds : undefined}
-                      />
+                      <ClusterSelector authorizedClusterIds={platform ? undefined : authorizedClusterIds} />
                     </Form.Item>
                     {platform ? (
                       <Form.Item label={t(pCommon("tenant"))} name="tenantName">
@@ -256,7 +255,7 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
                       label={
                         <Space>
                           {t(pCommon("cluster"))}
-                          {tenantResourceEnabled ? (
+                          {!platform ? (
                             <Popover title={t("component.others.allClustersTooltip")}>
                               <QuestionCircleOutlined />
                             </Popover>
@@ -265,9 +264,7 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
                       }
                       name="clusters"
                     >
-                      <ClusterSelector
-                        authorizedClusterIds={tenantResourceEnabled ? authorizedClusterIds : undefined}
-                      />
+                      <ClusterSelector authorizedClusterIds={platform ? undefined : authorizedClusterIds} />
                     </Form.Item>
                     <Form.Item
                       label={t(pCommon("clusterWorkId"))}

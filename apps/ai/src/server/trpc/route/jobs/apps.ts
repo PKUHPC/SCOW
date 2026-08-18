@@ -2,11 +2,10 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AppType } from "@scow/config/build/appForAi";
 import { getCommonConfig } from "@scow/config/src/common";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { AppScope, libGetAccounts, libGetUserAvailableApps, libGetUserAvailableClusterApps } from "@scow/lib-server";
+import { AppScope, libGetUserAvailableApps, libGetUserAvailableClusterApps } from "@scow/lib-server";
 import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { getI18nTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
-import { AccountStatusFilter as AccountStatusFilterProtos } from "@scow/protos/build/portal/job";
 import { GetUserAvailableClusterAppsResponse_App } from "@scow/protos/build/server/app_authorization";
 import { jobInfo_PodStatusToJSON } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
@@ -211,14 +210,14 @@ export const listAvailableApps = procedure
 
     const results = await Promise.allSettled(
       validClusterIds.map(async (clusterId) => {
-        // 如果开启了管理系统的授权应用功能
-        if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
+        // 过滤掉用户账户未授权的交互式应用
+        if (user.identityId) {
           const availableApps = await libGetUserAvailableClusterApps(
             logger,
             clusterId,
             user.identityId,
             config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token,
+            commonConfig.scowApi.auth.token,
             AppScope.AI,
           );
 
@@ -280,14 +279,14 @@ export const listAllAvailableAppsFromAllClusters = procedure
       return { apps: [] };
     }
 
-    // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
-    if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
+    // 仅返回关联账户下可用的交互式应用
+    if (user.identityId) {
       const { apps: availableApps } = await libGetUserAvailableApps(
         logger,
         availableClusterIds,
         user.identityId,
         config.MIS_SERVER_URL,
-        commonConfig.scowApi?.auth?.token,
+        commonConfig.scowApi.auth.token,
         AppScope.AI,
       );
       return {
@@ -358,12 +357,12 @@ export const listAppAvailableAccountsAndClusters = procedure
         }
 
         let appForbiddenAccounts: string[] = [];
-        if (config.MIS_DEPLOYED && config.MIS_SERVER_URL && commonConfig.allowAppAuthorization && appId) {
+        if (appId) {
           appForbiddenAccounts = await libWebGetAppForbiddenAccounts(
             clusterId,
             appId,
             config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token,
+            commonConfig.scowApi.auth.token,
             AppScope.AI,
           );
         }
@@ -382,37 +381,6 @@ export const listAppAvailableAccountsAndClusters = procedure
         Array.from(accountClusterMap.entries()).map(([account, clusters]) => [account, Array.from(clusters)]),
       ) as Record<string, string[]>;
     };
-
-    if (!commonConfig.scowResource?.enabled) {
-      let misAccounts: string[] | undefined;
-      if (config.MIS_DEPLOYED && commonConfig.scowApi?.auth?.token) {
-        const { accounts } = await libGetAccounts(
-          logger,
-          user.identityId,
-          AccountStatusFilterProtos.UNBLOCKED_ONLY,
-          config.MIS_SERVER_URL,
-          commonConfig.scowApi.auth.token,
-        );
-        misAccounts = accounts;
-      }
-
-      const accountClusters = await buildAccountClusters(currentAiClusterIds, async (clusterId) => {
-        if (misAccounts) {
-          return misAccounts;
-        }
-
-        const client = getAdapterClient(clusterId);
-        if (!client) {
-          logger.warn(`Cluster ${clusterId} not found when listing app available accounts.`);
-          return undefined;
-        }
-
-        const response = await asyncClientCall(client.account, "listAccounts", { userId: user.identityId });
-        return response.accounts ?? [];
-      });
-
-      return { accountClusters };
-    }
 
     const assignedResourceDetails =
       (await getUserAssignedResourceDetails(user.identityId, AccountStatusFilter.UNBLOCKED_ONLY)) ?? [];
@@ -657,9 +625,7 @@ export const createAppSession = procedure
     const apps = getClusterAppConfigs(clusterId);
     const app = checkAppExist(apps, appId);
 
-    // 管理系统存在时，增加用户账户封锁状态，授权应用，授权集群分区等鉴权
-    if (config.MIS_DEPLOYED) {
-      await validateSubmitAiJobInfoUnderMis({
+    await validateSubmitAiJobInfoUnderMis({
         userId,
         accountName: account,
         clusterId,
@@ -667,8 +633,7 @@ export const createAppSession = procedure
         partitionName: partition,
         checkAccountApp: true,
         appId,
-      });
-    }
+    });
 
     const proxyBasePath = join(BASE_PATH, "/api/proxy", clusterId);
 

@@ -11,7 +11,7 @@ export async function synchronizeBlockStatus(
   em: SqlEntityManager<MySqlDriver>,
   logger: Logger,
   clusterPlugin: ClusterPlugin,
-  scowResourcePlugin?: ScowResourcePlugin,
+  scowResourcePlugin: ScowResourcePlugin,
 ) {
   const { blockedFailedAccounts, blockedFailedUserAccounts } = await updateBlockStatusInSlurm(
     em,
@@ -22,7 +22,7 @@ export async function synchronizeBlockStatus(
     em,
     clusterPlugin.clusters,
     logger,
-    scowResourcePlugin?.resource,
+    scowResourcePlugin.resource,
   );
 
   lastSyncTime = new Date();

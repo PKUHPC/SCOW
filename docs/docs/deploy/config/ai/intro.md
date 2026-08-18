@@ -200,7 +200,7 @@ jobMonitor:
 
 如需启用 AI 作业用户信息映射功能，需要同时满足以下条件：
 
-1. 集群配置中已开启 `scowd.enabled`，并且 scowd 支持 `GetUserIdentityInfo` 接口。
+1. 登录节点已部署 scowd，并且 scowd 支持 `GetUserIdentityInfo` 接口。
 2. K8S 调度器适配器支持接收 `userIdmapInfo` 参数。
 3. 在集群配置文件的 `ai.idmap` 中开启该功能，并选择与集群 CSI 挂载方式匹配的 `mode`。
 
@@ -214,11 +214,6 @@ jobMonitor:
 | `bindfs` | 使用 bindfs 挂载模式。SCOW 会传递 uid/gid，适配器按该模式使用所需字段。 |
 
 ```yaml title="config/clusters/{K8S集群的ID}.yml"
-# 其他配置省略
-# ...
-scowd:
-  enabled: true
-
 ai:
   enabled: true
 

@@ -14,7 +14,6 @@ import {
 } from "@scow/protos/build/server/app_authorization";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
-import { commonConfig } from "src/config/common";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AppScope as EntityAppScope } from "src/entities/AppScope";
@@ -34,8 +33,6 @@ import {
 } from "src/utils/appAuthorization";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
-
-const APP_AUTHORIZATION_NOT_SUPPORTED = "App Authorization is not supported. Please confirm the common config file.";
 
 const formatAppScope = (appScope: AppScope | undefined) => {
   if (appScope === undefined) return "undefined";
@@ -100,15 +97,6 @@ const resolveClusterApps = (clusterId: string, appScope: AppScope | undefined) =
 export const appAuthorizationServiceServer = plugin((server) => {
   server.addService<AppAuthorizationServiceServer>(AppAuthorizationServiceService, {
     getTargetAppAuthorizations: async ({ request, em }) => {
-      // 验证功能是否开启
-      if (!commonConfig.allowAppAuthorization) {
-        throw new ServiceError({
-          code: Status.FAILED_PRECONDITION,
-          message: APP_AUTHORIZATION_NOT_SUPPORTED,
-          details: APP_AUTHORIZATION_NOT_SUPPORTED,
-        });
-      }
-
       const { pageSize, page, clusterId, targetType, tenantName, filterTargetName, filterAccountOwnerIdOrName } =
         request;
       const appScope = parseAppScope(clusterId, request.appScope);
@@ -287,14 +275,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
     },
 
     authorizeApp: async ({ request, em }) => {
-      if (!commonConfig.allowAppAuthorization) {
-        throw new ServiceError({
-          code: Status.FAILED_PRECONDITION,
-          message: APP_AUTHORIZATION_NOT_SUPPORTED,
-          details: APP_AUTHORIZATION_NOT_SUPPORTED,
-        });
-      }
-
       const { clusterId, appId, operatorId, action, target } = request;
       const appScope = parseAppScope(clusterId, request.appScope);
 
@@ -380,14 +360,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
     },
 
     getUserAvailableClusterApps: async ({ request, em }) => {
-      if (!commonConfig.allowAppAuthorization) {
-        throw new ServiceError({
-          code: Status.FAILED_PRECONDITION,
-          message: APP_AUTHORIZATION_NOT_SUPPORTED,
-          details: APP_AUTHORIZATION_NOT_SUPPORTED,
-        });
-      }
-
       const { clusterId, userId } = request;
       const appScope = parseAppScope(clusterId, request.appScope);
 
@@ -502,14 +474,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
     },
 
     getAppForbiddenAccounts: async ({ request, em }) => {
-      if (!commonConfig.allowAppAuthorization) {
-        throw new ServiceError({
-          code: Status.FAILED_PRECONDITION,
-          message: APP_AUTHORIZATION_NOT_SUPPORTED,
-          details: APP_AUTHORIZATION_NOT_SUPPORTED,
-        });
-      }
-
       const { clusterId, appId } = request;
       const appScope = parseAppScope(clusterId, request.appScope);
 
@@ -548,14 +512,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
     },
 
     checkAppIsDisabled: async ({ request, em }) => {
-      if (!commonConfig.allowAppAuthorization) {
-        throw new ServiceError({
-          code: Status.FAILED_PRECONDITION,
-          message: APP_AUTHORIZATION_NOT_SUPPORTED,
-          details: APP_AUTHORIZATION_NOT_SUPPORTED,
-        });
-      }
-
       const { clusterId, appId, accountName } = request;
       const appScope = parseAppScope(clusterId, request.appScope);
 
@@ -592,14 +548,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
     },
 
     getTenantApps: async ({ request, em }) => {
-      if (!commonConfig.allowAppAuthorization) {
-        throw new ServiceError({
-          code: Status.FAILED_PRECONDITION,
-          message: APP_AUTHORIZATION_NOT_SUPPORTED,
-          details: APP_AUTHORIZATION_NOT_SUPPORTED,
-        });
-      }
-
       const { clusterId, tenantName } = request;
       const appScope = parseAppScope(clusterId, request.appScope);
       const currentActivatedClusters = await getActivatedClusters(em, logger);
@@ -654,13 +602,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
     },
 
     updateDefaultApp: async ({ request, em }) => {
-      if (!commonConfig.allowAppAuthorization) {
-        throw new ServiceError({
-          code: Status.FAILED_PRECONDITION,
-          message: APP_AUTHORIZATION_NOT_SUPPORTED,
-          details: APP_AUTHORIZATION_NOT_SUPPORTED,
-        });
-      }
       const { clusterId, tenantName, appId, updateAction, operatorId } = request;
       const appScope = parseAppScope(clusterId, request.appScope);
 

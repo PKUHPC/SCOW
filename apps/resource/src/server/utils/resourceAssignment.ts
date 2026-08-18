@@ -1,5 +1,4 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ensureResourceManagementFeatureAvailable } from "@scow/lib-server";
 import { Logger } from "pino";
 import { getScowAccounts } from "src/server/mis-server/tenantAccount";
 import { getClusterUtils } from "src/utils/clusterAdapter";
@@ -104,8 +103,6 @@ export async function unAssignTenantAccountsThroughCluster(
       return;
     }
 
-    await ensureResourceManagementFeatureAvailable(adapterClient, logger);
-
     let completed = 0;
     await Promise.allSettled(
       accountNameList.map(async (accountName) => {
@@ -204,8 +201,6 @@ export async function assignTenantAccountsPartitionThroughCluster(
     const clustersUtil = await getClusterUtils();
     const startedAt = Date.now();
     await clustersUtil.callOnOne(clusterId, logger, async (adapterClient) => {
-      await ensureResourceManagementFeatureAvailable(adapterClient, logger);
-
       logger.info(
         "Start assigning partition %s of cluster %s to %d unblocked accounts of tenant %s.",
         partitionName,

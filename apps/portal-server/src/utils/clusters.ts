@@ -19,7 +19,7 @@ import { config } from "src/config/env";
 import { logger as pinoLogger } from "src/utils/logger";
 import { Logger } from "ts-log";
 
-import { clusterBackendNotSupported, clusterNotFound, loginNodeNotFound } from "./errors";
+import { clusterNotFound, loginNodeNotFound } from "./errors";
 import { getScowdClient } from "./scowd";
 
 export const certificates = createAdapterCertificates(config);
@@ -86,15 +86,11 @@ export const callOnOne: CallOnOne = async (cluster, logger, call) => {
 };
 
 export const checkActivatedClusters = async ({ clusterIds }: { clusterIds: string[] | string }) => {
-  if (!config.MIS_DEPLOYED) {
-    return;
-  }
-
   const activatedClusters = await libGetCurrentActivatedClusters(
     pinoLogger,
     configClusters,
     config.MIS_SERVER_URL,
-    commonConfig.scowApi?.auth?.token,
+    commonConfig.scowApi.auth.token,
   );
 
   return libCheckActivatedClusters({ clusterIds, activatedClusters, logger: pinoLogger });
@@ -109,18 +105,10 @@ export const checkUserClusterPermission = async ({
   clusterIds: string[] | string;
   logger?: Parameters<typeof libGetUserInfo>[0];
 }) => {
-  if (!config.MIS_DEPLOYED) {
-    return;
-  }
-
   await checkActivatedClusters({ clusterIds });
 
-  if (!commonConfig.scowResource?.enabled) {
-    return;
-  }
-
   const idsToCheck = Array.isArray(clusterIds) ? clusterIds : [clusterIds];
-  const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
   const accountNames = userInfo.affiliations.map((affiliation) => affiliation.accountName);
 
   const userAssociatedClusterIds = await getUserAccountsClusterIds(
@@ -142,16 +130,7 @@ export const checkUserClusterPermission = async ({
 };
 
 export async function checkClusters(logger: Logger, activatedClusters: Record<string, ClusterConfigSchema>) {
-  const scowdClusters: Record<string, ClusterConfigSchema> = {};
-  Object.entries(activatedClusters).map(([id, config]) => {
-    if (config.scowd?.enabled) {
-      scowdClusters[id] = config;
-      return;
-    }
-
-    throw clusterBackendNotSupported(id);
-  });
-  await checkClustersScowdHealth(logger, scowdClusters);
+  await checkClustersScowdHealth(logger, activatedClusters);
 }
 
 export async function checkClustersScowdHealth(logger: Logger, clusters: Record<string, ClusterConfigSchema>) {

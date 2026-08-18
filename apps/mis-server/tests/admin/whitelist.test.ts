@@ -1,6 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ChannelCredentials } from "@grpc/grpc-js";
 import { Loaded } from "@mikro-orm/core";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
@@ -13,6 +12,7 @@ import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { reloadEntity, toRef } from "src/utils/orm";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
+import { createTestClient, mockAccountResourceOperations } from "tests/utils";
 
 let server: Server;
 let em: SqlEntityManager<MySqlDriver>;
@@ -22,9 +22,10 @@ let a: Loaded<Account, "tenant">;
 
 beforeEach(async () => {
   server = await createServer();
+  mockAccountResourceOperations(server.ext.resource);
   await server.start();
 
-  client = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  client = createTestClient(server.serverAddress, AccountServiceClient);
 
   em = server.ext.orm.em.fork();
 

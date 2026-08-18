@@ -2,6 +2,7 @@ import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStor
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
 import { AiIcon, HighComputingIcon, MisIcon, QuantumIcon } from "@scow/lib-web/build/layouts/base/header/icons";
+import { joinWithUrl } from "@scow/utils";
 import { theme } from "antd";
 import { join } from "path";
 import { PropsWithChildren, useMemo } from "react";
@@ -86,8 +87,8 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
       versionTag={versionTag}
       basePath={publicConfig.BASE_PATH}
       userLinks={publicConfig.USER_LINKS}
-      showOperationLog={publicConfig.AUDIT_DEPLOYED}
       from="mis"
+      operationLogUrl={joinWithUrl(publicConfig.BASE_PATH, "/operationLog")}
       extensionStoreData={uiExtensionStore.data}
       languageId={languageId}
       headerNavbarLinks={navbarLinks}

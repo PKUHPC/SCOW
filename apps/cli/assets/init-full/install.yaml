@@ -27,13 +27,9 @@
 #   #   # portal-server的5000映射到。不填写则不映射
 #   #   # portalServer: 127.0.0.1:7572
 
-# 管理系统相关配置。默认不部署
-# 如果不部署，请删除或者注释整个部分
+# 管理系统相关配置。管理系统始终部署，以下配置均有默认值
 # mis:
-#   # 是否启用管理系统。默认为true
-#   # enabled: true
-
-#   # 门户系统路径相对于整个系统的部署路径。默认/
+#   # 管理系统路径相对于整个系统的部署路径。默认/mis
 #   # 若设置则/开头，不要以/结尾.
 #   # 如果BASE_PATH为/root1，PORTAL.BASE_PATH为/root2，那么最终访问管理系统的路径是/root1/root2
 #   # basePath: /
@@ -41,7 +37,7 @@
 #   # mysql数据库的镜像地址。默认为mysql:8
 #   # mysqlImage: "mysql:8"
 
-#   # 管理系统数据库的密码。如果部署管理系统，则必须配置
+#   # 管理系统数据库的密码。默认must!chang3this
 #   # 第一次启动管理系统时会使用此密码初始化管理系统数据库，之后如需修改需要手动在数据库中修改
 #   # dbPassword: "myst!chang3this"
 
@@ -106,13 +102,13 @@
 #     # environment:
 #     #   - DEBUG=log
 
-# 审计系统相关配置。默认不部署
+# 审计系统相关配置。审计系统始终部署，以下配置均有默认值
 # audit:
 #   # 审计系统服务url，默认audit-server:5000
 #   # url: audit-server:5000
 #   # mysql数据库的镜像地址。默认为mysql:8
 #   # mysqlImage: "mysql:8"
-#   # 审计系统数据库的密码。如果部署审计系统，则必须配置
+#   # 审计系统数据库的密码。默认must!chang3this
 #   # 第一次启动审计系统时会使用此密码初始化审计系统数据库，之后如需修改需要手动在数据库中修改
 #   # dbPassword: must!chang3this
 #   # 端口映射。如果不进行二次开发，请勿开放
@@ -201,11 +197,11 @@
 #     # 云平台的token，必填
 #     token: "云平台的token"
 
-# 是否启用消息系统服务
+# 消息系统部署配置。消息系统始终部署
 # notification:
 #   basePath: /notif
 
-# 是否启用资源管理服务
+# 资源管理系统部署配置。资源管理系统始终部署
 # resource:
 #   basePath: /resource
 

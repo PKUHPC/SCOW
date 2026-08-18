@@ -10,7 +10,6 @@ import { blockAccount, unblockAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
-import { commonConfig } from "src/config/common";
 import { Account } from "src/entities/Account";
 import { AppScope } from "src/entities/AppScope";
 import { Cluster } from "src/entities/Cluster";
@@ -23,7 +22,7 @@ import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo } from "src/utils/accountUserState";
 import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
 import { createUserInDatabase } from "src/utils/createUser";
-import { ensureScowdCluster, getScowdClient } from "src/utils/scowd";
+import { getScowdClient } from "src/utils/scowd";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const tenantServiceServer = plugin((server) => {
@@ -135,37 +134,34 @@ export const tenantServiceServer = plugin((server) => {
           throw { code: Status.INTERNAL, message: "Error creating tenant in database." } as ServiceError;
         });
 
-        // 如果开启授权应用功能
         // 在所有集群下不添加应用到租户的默认授权应用
-        if (commonConfig.allowAppAuthorization) {
-          for (const [clusterId, config] of Object.entries(configClusters)) {
-            const foundCluster = await em.findOne(Cluster, {
-              clusterId: clusterId,
-            });
-            if (!foundCluster) {
-              throw {
-                code: Status.NOT_FOUND,
-                message: `Cluster (ID: ${clusterId}) for authorizing application is not found`,
-                details: "CLUSTER_NOT_FOUND",
-              } as ServiceError;
-            }
-
-            const scopedApps = [
-              ...(config.hpc.enabled ? [{ appScope: AppScope.HPC, apps: getClusterAppConfigs(clusterId) }] : []),
-              ...(config.ai.enabled ? [{ appScope: AppScope.AI, apps: getAiClusterAppConfigs(clusterId) }] : []),
-            ];
-
-            for (const { appScope, apps } of scopedApps) {
-              for (const appId of Object.keys(apps)) {
-                em.persist(
-                  new TenantDefaultAppRemovedList({ cluster: foundCluster, tenant: newTenant, appId, appScope }),
-                );
-              }
-            }
+        for (const [clusterId, config] of Object.entries(configClusters)) {
+          const foundCluster = await em.findOne(Cluster, {
+            clusterId: clusterId,
+          });
+          if (!foundCluster) {
+            throw {
+              code: Status.NOT_FOUND,
+              message: `Cluster (ID: ${clusterId}) for authorizing application is not found`,
+              details: "CLUSTER_NOT_FOUND",
+            } as ServiceError;
           }
 
-          await em.flush();
+          const scopedApps = [
+            ...(config.hpc.enabled ? [{ appScope: AppScope.HPC, apps: getClusterAppConfigs(clusterId) }] : []),
+            ...(config.ai.enabled ? [{ appScope: AppScope.AI, apps: getAiClusterAppConfigs(clusterId) }] : []),
+          ];
+
+          for (const { appScope, apps } of scopedApps) {
+            for (const appId of Object.keys(apps)) {
+              em.persist(
+                new TenantDefaultAppRemovedList({ cluster: foundCluster, tenant: newTenant, appId, appScope }),
+              );
+            }
+          }
         }
+
+        await em.flush();
 
         // 在数据库中创建user
         const user = await createUserInDatabase(userId, userName, userEmail, tenantName, logger, em)
@@ -197,8 +193,6 @@ export const tenantServiceServer = plugin((server) => {
             // 设置用户的存储配额
             for (const [cluster, config] of Object.entries(configClusters)) {
               if (config.storage?.enabled) {
-                ensureScowdCluster(cluster);
-
                 const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
                 const scowdClient = getScowdClient(cluster, userId);
 

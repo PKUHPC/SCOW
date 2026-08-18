@@ -6,14 +6,9 @@ export const libGetUserQuotaUsage = async (
   userId: string,
   cluster: string,
   paths: string[],
-  misServerUrl?: string,
+  misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<GetUserStorageUsageResponse> => {
-  if (!misServerUrl) {
-    console.log("Mis is not deployed, can not get userInfo from mis.");
-    return { quotaUsage: [] } as GetUserStorageUsageResponse;
-  }
-
   const config = {
     SERVER_URL: misServerUrl,
     SCOW_API_AUTH_TOKEN: scowApiAuthToken,

@@ -13,22 +13,9 @@ export const scowdClientNotFound = (cluster: string) => {
   return { code: Status.NOT_FOUND, message: `The scowd client on cluster ${cluster} was not found` } as ServiceError;
 };
 
-export const clusterBackendNotSupported = (cluster: string) => {
-  return {
-    code: Status.FAILED_PRECONDITION,
-    message: `cluster ${cluster} does not support the current backend. Please enable scowd for this cluster.`,
-  } as ServiceError;
-};
-
-export const ensureScowdCluster = (cluster: string) => {
-  if (!configClusters[cluster]?.scowd?.enabled) {
-    throw clusterBackendNotSupported(cluster);
-  }
-};
-
 export const certificates = createScowdCertificates(config);
 
-export function generateScowdUrl(address: string, scowdPort: number | undefined) {
+export function generateScowdUrl(address: string, scowdPort: number) {
   return config.SCOWD_SSL_ENABLED
     ? `https://${removePort(address)}:${scowdPort}`
     : `http://${removePort(address)}:${scowdPort}`;
@@ -51,7 +38,6 @@ const getClientByCluster = createBalancedScowdClientGetter({
   getLoginNode,
   getLoginNodeAddress: (loginNode) => loginNode.address,
   getLoginNodeScowdUrl,
-  isScowdEnabled: (clusterInfo) => !!clusterInfo?.scowd?.enabled,
   certificates,
   logger,
 });

@@ -41,9 +41,13 @@ passwordPattern:
 # systemLanguage: "zh_cn"
 
 
-# scow资源管理系统
-# scowResource:
-#   # 是否scow资源管理系统
-#   enabled: true
-#   # 资源管理系统url
-#   address: http://localhost:6003
+scowApi:
+  auth:
+    token: test-scow-api-token-at-least-32-chars
+
+scowResource:
+  address: http://resource:3000/resource
+
+notification:
+  name: notification
+  address: http://notification:3000/notification

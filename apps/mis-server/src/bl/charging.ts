@@ -60,7 +60,7 @@ export async function pay(
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
   logger: Logger,
   clusterPlugin: ClusterPlugin,
-  scowResourcePlugin?: ScowResourcePlugin,
+  scowResourcePlugin: ScowResourcePlugin,
 ) {
   const { target, amount, comment, operatorId, ipAddress, type } = request;
 
@@ -118,7 +118,7 @@ export async function pay(
       currentActivatedClusters,
       clusterPlugin.clusters,
       logger,
-      scowResourcePlugin?.resource,
+      scowResourcePlugin.resource,
     );
   }
 

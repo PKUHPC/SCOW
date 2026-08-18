@@ -17,17 +17,11 @@ interface FilterFormWithClusters {
 export const useAuthorizedClusters = <T extends FilterFormWithClusters>(
   form: FormInstance<T>,
   setQuery: Dispatch<SetStateAction<T>>,
-  resourceEnabled: boolean | undefined,
   fetchFn: () => Promise<string[] | undefined>,
 ) => {
   const [authorizedClusterIds, setAuthorizedClusterIds] = useState<string[] | undefined>(undefined);
 
   useEffect(() => {
-    if (!resourceEnabled) {
-      setAuthorizedClusterIds(undefined);
-      return;
-    }
-
     let canceled = false;
 
     fetchFn()
@@ -45,10 +39,10 @@ export const useAuthorizedClusters = <T extends FilterFormWithClusters>(
     return () => {
       canceled = true;
     };
-  }, [resourceEnabled, fetchFn]);
+  }, [fetchFn]);
 
   useEffect(() => {
-    if (!resourceEnabled || !authorizedClusterIds) {
+    if (!authorizedClusterIds) {
       return;
     }
 
@@ -62,7 +56,7 @@ export const useAuthorizedClusters = <T extends FilterFormWithClusters>(
       "clusters",
       (currentClusters ?? []).filter((c) => authorizedClusterIds.includes(c.id)),
     );
-  }, [resourceEnabled, authorizedClusterIds, form, setQuery]);
+  }, [authorizedClusterIds, form, setQuery]);
 
   return authorizedClusterIds;
 };

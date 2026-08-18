@@ -42,7 +42,7 @@ export default route(GetTenantAssignedClustersAndPartitionsSchema, async (req, r
 
   let tenantAssignedClustersAndPartitions: AssignedClusterPartitions | undefined;
 
-  if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && tenantName) {
+  if (tenantName) {
     const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
     try {
       const response = await resourceClient.resource.getTenantAssignedClustersAndPartitions({

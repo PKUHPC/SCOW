@@ -27,4 +27,4 @@ passwordPattern:
 
 scowApi:
   auth:
-    token: test
+    token: test-scow-api-token-at-least-32-chars

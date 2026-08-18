@@ -16,8 +16,8 @@ interface Props {
   logout: (() => void) | undefined;
   userLinks?: UserLink[];
   languageId: string;
-  showOperationLog?: boolean;
-  operationLogUrl?: string;
+  operationLogUrl: string;
+  operationLogOpenInNewPage: boolean;
 }
 
 const Container = styled.div`
@@ -48,8 +48,8 @@ export const UserIndicator: React.FC<Props> = ({
   logout,
   userLinks,
   languageId,
-  showOperationLog,
   operationLogUrl,
+  operationLogOpenInNewPage,
 }) => {
   const { token } = useToken();
 
@@ -65,23 +65,18 @@ export const UserIndicator: React.FC<Props> = ({
                 key: "profileLink",
                 label: <Link href="/profile">{getCurrentLangLibWebText(languageId, "userIndicatorInfo")}</Link>,
               },
-              ...(showOperationLog
-                ? [
-                    {
-                      key: "operationLogLink",
-                      // 跨系统入口传入 operationLogUrl 并在新标签页打开；MIS 不传 URL，保留原有站内路由行为。
-                      label: operationLogUrl ? (
-                        <Typography.Link href={operationLogUrl} target="_blank" rel="noopener noreferrer">
-                          {getCurrentLangLibWebText(languageId, "userIndicatorOperationLog")}
-                        </Typography.Link>
-                      ) : (
-                        <Link href="/operationLog">
-                          {getCurrentLangLibWebText(languageId, "userIndicatorOperationLog")}
-                        </Link>
-                      ),
-                    },
-                  ]
-                : []),
+              {
+                key: "operationLogLink",
+                label: (
+                  <Typography.Link
+                    href={operationLogUrl}
+                    target={operationLogOpenInNewPage ? "_blank" : undefined}
+                    rel={operationLogOpenInNewPage ? "noopener noreferrer" : undefined}
+                  >
+                    {getCurrentLangLibWebText(languageId, "userIndicatorOperationLog")}
+                  </Typography.Link>
+                ),
+              },
               ...(userLinks
                 ? userLinks.map((link) => {
                     return {

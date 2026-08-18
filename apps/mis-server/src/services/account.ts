@@ -22,7 +22,6 @@ import {
 import { blockAccount, unblockAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { authUrl } from "src/config";
-import { commonConfig } from "src/config/common";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
@@ -414,31 +413,27 @@ export const accountServiceServer = plugin((server) => {
       });
 
       const entitiesToPersist: (Account | UserAccount | AccountAppBlacklist)[] = [account, userAccount];
-      // 如果开启授权应用功能
       // 新建账户时按照所属租户禁用默认应用列表来写入账户禁用app
-      if (commonConfig.allowAppAuthorization) {
-        const affiliatedTenantBlackAppList = await em.find(
-          TenantDefaultAppRemovedList,
-          {
-            tenant: tenant,
-          },
-          { populate: ["tenant"] },
-        );
+      const affiliatedTenantBlackAppList = await em.find(
+        TenantDefaultAppRemovedList,
+        {
+          tenant: tenant,
+        },
+        { populate: ["tenant"] },
+      );
 
-        const accountDisabledApps = affiliatedTenantBlackAppList.map((t) => {
-          return new AccountAppBlacklist({
-            account: account,
-            cluster: t.cluster,
-            appId: t.appId,
-            appScope: t.appScope,
-          });
+      const accountDisabledApps = affiliatedTenantBlackAppList.map((t) => {
+        return new AccountAppBlacklist({
+          account: account,
+          cluster: t.cluster,
+          appId: t.appId,
+          appScope: t.appScope,
         });
-        // 将禁用应用列表添加到要持久化的实体列表中
-        entitiesToPersist.push(...accountDisabledApps);
-      }
+      });
+      // 将禁用应用列表添加到要持久化的实体列表中
+      entitiesToPersist.push(...accountDisabledApps);
 
       try {
-        // 如果开启授权应用功能，新建账户时按照所属租户禁用的app列表来写入账户禁用app
         await em.persistAndFlush(entitiesToPersist);
       } catch (e) {
         if (e instanceof UniqueConstraintViolationException) {
@@ -478,67 +473,40 @@ export const accountServiceServer = plugin((server) => {
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
-      // 如果已配置资源管理扩展功能，向资源管理数据库写入账户的默认授权集群与分区
       // 创建账户失败时写入的默认授权集群分区不会回滚，下次写入同名租户下同名账户默认集群分区时会覆盖
-      if (commonConfig.scowResource?.enabled) {
-        logger.debug("Assigning account %s to resource management", accountName);
-        await server.ext.resource
-          .assignAccountOnCreate({
-            accountName,
-            tenantName: tenant.name,
-          })
-          .catch(async (e) => {
-            const error = mapTRPCExceptionToGRPC(e);
-            logger.error("Failed to assign account %s to resource management: %s", accountName, error);
-            await rollback(error);
-          });
-      }
+      logger.debug("Assigning account %s to resource management", accountName);
+      await server.ext.resource
+        .assignAccountOnCreate({
+          accountName,
+          tenantName: tenant.name,
+        })
+        .catch(async (e) => {
+          const error = mapTRPCExceptionToGRPC(e);
+          logger.error("Failed to assign account %s to resource management: %s", accountName, error);
+          await rollback(error);
+        });
 
       logger.info("Creating account in cluster.");
       if (shouldBlockInCluster) {
-        if (commonConfig.scowResource?.enabled) {
-          await Promise.all(
-            Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
-              await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
-                let accountAlreadyExists = false;
-                const authorizedPartitions = await server.ext.resource.getAccountAssignedPartitionsForCluster({
-                  accountName,
-                  tenantName: account.tenant.getProperty("name"),
-                  clusterId,
-                });
-
-                await asyncClientCall(client.account, "createAccount", {
-                  accountName,
-                  ownerUserId: ownerId,
-                  accountBlocked: true,
-                  // 账户原因要求封锁时，adapter 根据 accountBlocked 封锁；授权分区仍表示账户已有资源授权。
-                  partitionStrategy: {
-                    $case: "authorizedPartitions" as const,
-                    authorizedPartitions: { partitions: authorizedPartitions ?? [] },
-                  },
-                }).catch((e) => {
-                  accountAlreadyExists = handleCreateAccountError(e);
-                });
-                if (accountAlreadyExists) {
-                  await convergeExistingAccount(
-                    () => asyncClientCall(client.account, "blockAccount", { accountName }),
-                    `Account ${accountName} hasn't been created. Block failed`,
-                  );
-                }
-              });
-            }),
-          ).catch(async (e) => {
-            logger.error("Failed to create/block account %s in clusters: %s", accountName, e);
-            await rollback(e);
-          });
-        } else {
-          await server.ext.clusters
-            .callOnAll(currentActivatedClusters, logger, async (client) => {
+        await Promise.all(
+          Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
+            await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
               let accountAlreadyExists = false;
+              const authorizedPartitions = await server.ext.resource.getAccountAssignedPartitionsForCluster({
+                accountName,
+                tenantName: account.tenant.getProperty("name"),
+                clusterId,
+              });
+
               await asyncClientCall(client.account, "createAccount", {
                 accountName,
                 ownerUserId: ownerId,
                 accountBlocked: true,
+                // 账户原因要求封锁时，adapter 根据 accountBlocked 封锁；授权分区仍表示账户已有资源授权。
+                partitionStrategy: {
+                  $case: "authorizedPartitions" as const,
+                  authorizedPartitions: { partitions: authorizedPartitions ?? [] },
+                },
               }).catch((e) => {
                 accountAlreadyExists = handleCreateAccountError(e);
               });
@@ -548,111 +516,83 @@ export const accountServiceServer = plugin((server) => {
                   `Account ${accountName} hasn't been created. Block failed`,
                 );
               }
-            })
-            .catch(async (e) => {
-              logger.error("Failed to create/block account %s in clusters: %s", accountName, e);
-              await rollback(e);
             });
-        }
+          }),
+        ).catch(async (e) => {
+          logger.error("Failed to create/block account %s in clusters: %s", accountName, e);
+          await rollback(e);
+        });
         // 如果判断为要在集群中解封时
       } else {
-        if (commonConfig.scowResource?.enabled) {
-          const results = await Promise.allSettled(
-            Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
-              await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
-                // assignAccountOnCreate 已在前面写入资源管理服务，此处拿到的是租户默认授权分区。
-                const authorizedPartitions = await server.ext.resource.getAccountAssignedPartitionsForCluster({
-                  accountName,
-                  tenantName: account.tenant.getProperty("name"),
-                  clusterId,
-                });
-
-                let accountAlreadyExists = false;
-                await asyncClientCall(client.account, "createAccount", {
-                  accountName,
-                  ownerUserId: ownerId,
-                  accountBlocked: false,
-                  // 直接按授权分区创建，消除"先全量开放再封锁"的窗口期。
-                  partitionStrategy: {
-                    $case: "authorizedPartitions" as const,
-                    authorizedPartitions: { partitions: authorizedPartitions ?? [] },
-                  },
-                }).catch((e) => {
-                  if (e.code === Status.ALREADY_EXISTS) {
-                    logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
-                    accountAlreadyExists = true;
-                  } else {
-                    throw e;
-                  }
-                });
-
-                if (accountAlreadyExists) {
-                  // 账户在 Slurm 中已存在（上次创建失败留下的残留），
-                  // association 状态未知，通过 realignment 强制收敛到正确授权分区。
-                  await unblockAccountAssignedPartitionsInCluster(
-                    accountName,
-                    account.tenant.getProperty("name"),
-                    clusterId,
-                    server.ext.clusters,
-                    logger,
-                    server.ext.resource,
-                  );
-                }
+        const results = await Promise.allSettled(
+          Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
+            await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
+              // assignAccountOnCreate 已在前面写入资源管理服务，此处拿到的是租户默认授权分区。
+              const authorizedPartitions = await server.ext.resource.getAccountAssignedPartitionsForCluster({
+                accountName,
+                tenantName: account.tenant.getProperty("name"),
+                clusterId,
               });
-            }),
-          );
 
-          const errors = results.reduce((acc: { clusterId: string; reason: any }[], result, index) => {
-            if (result.status === "rejected") {
-              acc.push({ clusterId: Object.keys(currentActivatedClusters)[index], reason: result.reason });
-            }
-            return acc;
-          }, []);
-
-          if (errors.length > 0) {
-            const errorDetails = errors
-              .map((error) => {
-                return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
-              })
-              .join("; ");
-
-            logger.error("Failed to create/unblock account %s in some clusters: %s", accountName, errorDetails);
-
-            const error = new GrpcServiceError({
-              code: status.INTERNAL,
-              message: `Account ${accountName} hasn't been created. Unblock failed.`,
-              details: errorDetails,
-              metadata: scowErrorMetadata(CLUSTEROPS_ERROR_CODE, { clusterErrors: JSON.stringify(errorDetails) }),
-            });
-            // 回滚 mis 数据库中数据
-            await rollback(error);
-          }
-
-          // 如果没有配置资源管理服务，则调用适配器的 unblockAccount 接口进行解封
-        } else {
-          await server.ext.clusters
-            .callOnAll(currentActivatedClusters, logger, async (client) => {
               let accountAlreadyExists = false;
               await asyncClientCall(client.account, "createAccount", {
                 accountName,
                 ownerUserId: ownerId,
-                // 未开启资源管理时不传 partitionStrategy，保持旧的全量分区创建语义。
-                // 新建成功时 createAccount 已经得到可用账户；只有 ALREADY_EXISTS 残留账户才继续调用 unblockAccount 收敛。
                 accountBlocked: false,
+                // 直接按授权分区创建，消除"先全量开放再封锁"的窗口期。
+                partitionStrategy: {
+                  $case: "authorizedPartitions" as const,
+                  authorizedPartitions: { partitions: authorizedPartitions ?? [] },
+                },
               }).catch((e) => {
-                accountAlreadyExists = handleCreateAccountError(e);
+                if (e.code === Status.ALREADY_EXISTS) {
+                  logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
+                  accountAlreadyExists = true;
+                } else {
+                  throw e;
+                }
               });
+
               if (accountAlreadyExists) {
-                await convergeExistingAccount(
-                  () => asyncClientCall(client.account, "unblockAccount", { accountName }),
-                  `Account ${accountName} hasn't been created. Unblock failed`,
+                // 账户在 Slurm 中已存在（上次创建失败留下的残留），
+                // association 状态未知，通过 realignment 强制收敛到正确授权分区。
+                await unblockAccountAssignedPartitionsInCluster(
+                  accountName,
+                  account.tenant.getProperty("name"),
+                  clusterId,
+                  server.ext.clusters,
+                  logger,
+                  server.ext.resource,
                 );
               }
-            })
-            .catch(async (e) => {
-              logger.error("Failed to create/unblock account %s in clusters: %s", accountName, e);
-              await rollback(e);
             });
+          }),
+        );
+
+        const errors = results.reduce((acc: { clusterId: string; reason: any }[], result, index) => {
+          if (result.status === "rejected") {
+            acc.push({ clusterId: Object.keys(currentActivatedClusters)[index], reason: result.reason });
+          }
+          return acc;
+        }, []);
+
+        if (errors.length > 0) {
+          const errorDetails = errors
+            .map((error) => {
+              return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
+            })
+            .join("; ");
+
+          logger.error("Failed to create/unblock account %s in some clusters: %s", accountName, errorDetails);
+
+          const error = new GrpcServiceError({
+            code: status.INTERNAL,
+            message: `Account ${accountName} hasn't been created. Unblock failed.`,
+            details: errorDetails,
+            metadata: scowErrorMetadata(CLUSTEROPS_ERROR_CODE, { clusterErrors: JSON.stringify(errorDetails) }),
+          });
+          // 回滚 mis 数据库中数据
+          await rollback(error);
         }
       }
 

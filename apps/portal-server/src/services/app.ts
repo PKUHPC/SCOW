@@ -37,8 +37,7 @@ import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { getAccountUnavailableReasons } from "src/services/config";
 import { convertAttributesFixedValue, convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
-import { filterAccountsByStatus } from "src/utils/app";
-import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
+import { checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { logger } from "src/utils/logger";
 import { HPCJobLabelType, validateMaxRunningTimeMinutes } from "src/utils/maxRunningTime";
@@ -156,18 +155,15 @@ export const appServiceServer = plugin((server) => {
         });
       }
 
-      // 管理系统存在时，增加用户账户封锁状态，授权应用，授权集群分区等鉴权
-      if (config.MIS_DEPLOYED) {
-        await validateSubmitJobInfoUnderMis({
-          userId,
-          accountName: account,
-          clusterId: cluster,
-          logger,
-          partitionName: partition,
-          checkAccountApp: true,
-          appId,
-        });
-      }
+      await validateSubmitJobInfoUnderMis({
+        userId,
+        accountName: account,
+        clusterId: cluster,
+        logger,
+        partitionName: partition,
+        checkAccountApp: true,
+        appId,
+      });
 
       validateMaxRunningTimeMinutes(
         maxTime,
@@ -441,8 +437,8 @@ export const appServiceServer = plugin((server) => {
       let accountStatuses: Record<string, AccountStatus> = {};
       let allUserAccounts: string[] = [];
 
-      if (config.MIS_DEPLOYED && userId) {
-        userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      if (userId) {
+        userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi.auth.token);
         allUserAccounts = (userInfo.affiliations ?? [])
           .filter((a) => a.accountState !== AccountState.ACCOUNT_DELETED)
           .map((a) => a.accountName);
@@ -450,7 +446,7 @@ export const appServiceServer = plugin((server) => {
         if (allUserAccounts.length > 0 && userInfo.tenantName) {
           accountStatuses = (
             await asyncClientCall(
-              getClientFn(config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)(UserServiceClient),
+              getClientFn(config.MIS_SERVER_URL, commonConfig.scowApi.auth.token)(UserServiceClient),
               "getUserStatus",
               { userId, tenantName: userInfo.tenantName, accountNames: allUserAccounts },
             )
@@ -473,7 +469,7 @@ export const appServiceServer = plugin((server) => {
       // 分区授权由后续 getAvailablePartitionsForCluster 继续控制。
       let resourceFilteredAccountSet: Set<string> | undefined;
       let resourceClusterAccountSet: Set<string> | undefined;
-      if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled && userId && userInfo) {
+      if (userId && userInfo) {
         const [allAssigned, { accounts: unblockedAccounts }] = await Promise.all([
           getUserAccountsClusterPartitionsByAccount(commonConfig.scowResource, allUserAccounts, userInfo.tenantName),
           libGetAccounts(
@@ -481,7 +477,7 @@ export const appServiceServer = plugin((server) => {
             userId,
             AccountStatusFilter.UNBLOCKED_ONLY,
             config.MIS_SERVER_URL,
-            commonConfig.scowApi?.auth?.token,
+            commonConfig.scowApi.auth.token,
           ),
         ]);
 
@@ -498,14 +494,14 @@ export const appServiceServer = plugin((server) => {
         ? allUserAccounts.filter((a) => resourceClusterAccountSet!.has(a))
         : allUserAccounts;
 
-      // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的应用
-      if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && userId) {
+      // 仅返回关联账户下可用的应用
+      if (userId) {
         const availableApps = await libGetUserAvailableClusterApps(
           logger,
           cluster,
           userId,
           config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
+          commonConfig.scowApi.auth.token,
           AppScope.HPC,
         );
 
@@ -527,8 +523,7 @@ export const appServiceServer = plugin((server) => {
       const apps = getClusterAppConfigs(cluster);
       let accountsResult: string[] = [];
 
-      if (config.MIS_DEPLOYED && userId) {
-        // 开启resource 已预先获取并过滤了账户，直接复用；否则单独请求 MIS
+      if (userId) {
         accountsResult = resourceFilteredAccountSet
           ? Array.from(resourceFilteredAccountSet)
           : (
@@ -537,34 +532,12 @@ export const appServiceServer = plugin((server) => {
                 userId,
                 AccountStatusFilter.UNBLOCKED_ONLY,
                 config.MIS_SERVER_URL,
-                commonConfig.scowApi?.auth?.token,
+                commonConfig.scowApi.auth.token,
               )
             ).accounts;
-      } else if (!config.MIS_DEPLOYED && userId) {
-        const reply = await callOnOne(
-          cluster,
-          logger,
-          async (client) =>
-            await asyncClientCall(client.account, "listAccounts", {
-              userId,
-            }),
-        );
-        accountsResult = await filterAccountsByStatus(
-          cluster,
-          userId,
-          reply.accounts,
-          AccountStatusFilter.UNBLOCKED_ONLY,
-          logger,
-        );
       }
 
-      const accountAvailabilities = config.MIS_DEPLOYED
-        ? buildAccountAvailabilities(clusterAccounts)
-        : accountsResult.map((account) => ({
-            accountName: account,
-            available: true,
-            unavailableReasons: [],
-          }));
+      const accountAvailabilities = buildAccountAvailabilities(clusterAccounts);
 
       return [
         {

@@ -37,7 +37,6 @@ import { blockUserInAccount, unblockUserInAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { processExpiredWhitelist } from "src/bl/whitelist";
 import { authUrl } from "src/config";
-import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
@@ -280,85 +279,54 @@ export const userServiceServer = plugin((server) => {
         blockThresholdAmount,
       ).shouldBlockInCluster;
 
-      if (commonConfig.scowResource?.enabled) {
-        const results = await Promise.allSettled(
-          Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
-            await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
-              const authorizedPartitions =
-                (await server.ext.resource.getAccountAssignedPartitionsForCluster({
-                  accountName,
-                  tenantName,
-                  clusterId,
-                })) ?? [];
-              const usablePartitions = isAccountBlocked ? [] : authorizedPartitions;
+      const results = await Promise.allSettled(
+        Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
+          await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
+            const authorizedPartitions =
+              (await server.ext.resource.getAccountAssignedPartitionsForCluster({
+                accountName,
+                tenantName,
+                clusterId,
+              })) ?? [];
+            const usablePartitions = isAccountBlocked ? [] : authorizedPartitions;
 
-              try {
-                await asyncClientCall(client.user, "addUserToAccount", {
-                  userId,
-                  accountName,
-                  // usablePartitions 表示该新增用户当前实际可使用分区，不表达账户封锁原因。
-                  partitionStrategy: {
-                    $case: "usablePartitions" as const,
-                    usablePartitions: { partitions: usablePartitions },
-                  },
-                });
-              } catch (e: any) {
-                if (isAlreadyExistsError(e)) {
-                  if (isAccountBlocked) {
-                    // 用户已存在时，账户原因封锁仍需收敛到账户级封锁状态。
-                    await asyncClientCall(client.account, "blockAccount", { accountName });
-                  } else {
-                    // 用户在调度器中已存在（残留或重复请求），按当前资源授权状态重整账户分区。
-                    await unblockAccountAssignedPartitionsInCluster(
-                      accountName,
-                      tenantName,
-                      clusterId,
-                      server.ext.clusters,
-                      logger,
-                      server.ext.resource,
-                    );
-                  }
-                } else {
-                  throw e;
-                }
-              }
-            });
-          }),
-        );
-
-        const realErrors = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-        if (realErrors.length > 0) {
-          throw realErrors[0].reason;
-        }
-      } else {
-        const noResourceResults = await Promise.allSettled(
-          Object.entries(currentActivatedClusters).map(async ([clusterId]) => {
-            await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
-              try {
-                await asyncClientCall(client.user, "addUserToAccount", {
-                  userId,
-                  accountName,
-                });
+            try {
+              await asyncClientCall(client.user, "addUserToAccount", {
+                userId,
+                accountName,
+                // usablePartitions 表示该新增用户当前实际可使用分区，不表达账户封锁原因。
+                partitionStrategy: {
+                  $case: "usablePartitions" as const,
+                  usablePartitions: { partitions: usablePartitions },
+                },
+              });
+            } catch (e: any) {
+              if (isAlreadyExistsError(e)) {
                 if (isAccountBlocked) {
+                  // 用户已存在时，账户原因封锁仍需收敛到账户级封锁状态。
                   await asyncClientCall(client.account, "blockAccount", { accountName });
-                }
-              } catch (e: any) {
-                if (isAlreadyExistsError(e)) {
-                  if (isAccountBlocked) {
-                    await asyncClientCall(client.account, "blockAccount", { accountName });
-                  }
                 } else {
-                  throw e;
+                  // 用户在调度器中已存在（残留或重复请求），按当前资源授权状态重整账户分区。
+                  await unblockAccountAssignedPartitionsInCluster(
+                    accountName,
+                    tenantName,
+                    clusterId,
+                    server.ext.clusters,
+                    logger,
+                    server.ext.resource,
+                  );
                 }
+              } else {
+                throw e;
               }
-            });
-          }),
-        );
+            }
+          });
+        }),
+      );
 
-        const noResourceErrors = noResourceResults.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-        if (noResourceErrors.length > 0) {
-          throw noResourceErrors[0].reason;
-        }
+      const realErrors = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (realErrors.length > 0) {
+        throw realErrors[0].reason;
       }
 
       const newUserAccount = new UserAccount({

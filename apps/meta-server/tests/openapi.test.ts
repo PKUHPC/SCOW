@@ -5,10 +5,11 @@ it("creates openapi sources from enabled components", () => {
   const sources = getOpenApiSources({
     basePath: "/scow",
     portal: { enabled: true, basePath: "/" },
-    mis: { enabled: true, basePath: "/mis" },
+    mis: { basePath: "/mis" },
     ai: { enabled: false, basePath: "/ai" },
     resource: { basePath: "/resource" },
-  } as InstallConfigSchema);
+    notification: { basePath: "/notification" },
+  } as unknown as InstallConfigSchema);
 
   expect(sources).toEqual([
     {
@@ -24,6 +25,12 @@ it("creates openapi sources from enabled components", () => {
       internalUrl: "http://mis-web:3000/scow/mis/api/openapi.json",
     },
     {
+      name: "notification",
+      systemBasePath: "/scow",
+      publicBasePath: "/scow/notification",
+      internalUrl: "http://notification:3000/scow/notification/api/openapi.json",
+    },
+    {
       name: "resource",
       systemBasePath: "/scow",
       publicBasePath: "/scow/resource",
@@ -37,24 +44,28 @@ it("overrides openapi source internal urls", () => {
     {
       basePath: "/",
       portal: { enabled: true, basePath: "/" },
-      mis: { enabled: true, basePath: "/mis" },
-    } as InstallConfigSchema,
+      mis: { basePath: "/mis" },
+      notification: { basePath: "/notification" },
+      resource: { basePath: "/resource" },
+    } as unknown as InstallConfigSchema,
     {
       portal: "http://localhost:5001/api/openapi.json",
       mis: "http://localhost:5003/api/openapi.json",
     },
   );
 
-  expect(sources).toMatchObject([
-    {
-      name: "portal",
-      internalUrl: "http://localhost:5001/api/openapi.json",
-    },
-    {
-      name: "mis",
-      internalUrl: "http://localhost:5003/api/openapi.json",
-    },
-  ]);
+  expect(sources).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: "portal",
+        internalUrl: "http://localhost:5001/api/openapi.json",
+      }),
+      expect.objectContaining({
+        name: "mis",
+        internalUrl: "http://localhost:5003/api/openapi.json",
+      }),
+    ]),
+  );
 });
 
 it("merges openapi specs and prefixes component refs", async () => {

@@ -67,15 +67,13 @@ export function getOpenApiSources(
 ): OpenApiSource[] {
   return [
     ...(config.portal?.enabled ? [createSource("portal", config, config.portal.basePath, internalUrlOverrides)] : []),
-    ...(config.mis?.enabled ? [createSource("mis", config, config.mis.basePath, internalUrlOverrides)] : []),
+    createSource("mis", config, config.mis.basePath, internalUrlOverrides),
     ...(config.ai?.enabled ? [createSource("ai", config, config.ai.basePath, internalUrlOverrides)] : []),
     ...(config.quantum?.enabled
       ? [createSource("quantum", config, config.quantum.basePath, internalUrlOverrides)]
       : []),
-    ...(config.notification
-      ? [createSource("notification", config, config.notification.basePath, internalUrlOverrides)]
-      : []),
-    ...(config.resource ? [createSource("resource", config, config.resource.basePath, internalUrlOverrides)] : []),
+    createSource("notification", config, config.notification.basePath, internalUrlOverrides),
+    createSource("resource", config, config.resource.basePath, internalUrlOverrides),
   ];
 }
 

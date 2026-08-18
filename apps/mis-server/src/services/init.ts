@@ -12,7 +12,7 @@ import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { createUserInDatabase } from "src/utils/createUser";
-import { ensureScowdCluster, getScowdClient } from "src/utils/scowd";
+import { getScowdClient } from "src/utils/scowd";
 import { userExists } from "src/utils/userExists";
 
 export const initServiceServer = plugin((server) => {
@@ -69,8 +69,6 @@ export const initServiceServer = plugin((server) => {
           // 设置用户的存储配额
           for (const [cluster, config] of Object.entries(configClusters)) {
             if (config.storage?.enabled) {
-              ensureScowdCluster(cluster);
-
               const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
               const scowdClient = getScowdClient(cluster);
 

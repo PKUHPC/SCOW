@@ -8,17 +8,14 @@ import { getAssignedClusterPartitions, getUserAssignedResourceDetails } from "sr
 import { z } from "zod";
 
 export const resource = router({
-  // 获取当前登录用户的可用 集群ID 列表
-  // (1) 如果没有部署管理系统且资源管理系统为不可用，返回当前系统已配置集群ID
-  // (2) 如果部署了管理系统，没有部署资源管理，则返回管理系统在线集群ID
-  // (3) 如果部署了管理系统和资源管理，则返回已授权的在线集群ID
+  // 获取当前登录用户已授权的集群 ID 列表
   getCurrentUserAssignedClusters: authProcedure
     .meta({
       openapi: {
         method: "GET",
         path: "/resource/currentClusterIds",
         tags: ["currentClusterIds"],
-        summary: "获取资源管理系统中已授权的 可用集群ID 列表",
+        summary: "获取当前登录用户已授权的集群 ID 列表",
       },
     })
     .input(z.void())
@@ -40,8 +37,7 @@ export const resource = router({
       return { clusterIds: results };
     }),
 
-  // 获取资源管理系统中用户关联账户的已授权的集群分区信息
-  // 未配置资源管理返回{clusterPartitions: undefined}
+  // 获取资源管理系统中用户关联账户的已授权集群分区信息
   getUserAssociatedClusterPartitions: authProcedure
     .meta({
       openapi: {
@@ -70,8 +66,7 @@ export const resource = router({
       return { clusterPartitions: results };
     }),
 
-  // 获取资源管理中用户关联的账户，账户已授权集群与分区信息
-  // 未配置资源管理返回{results: undefined}
+  // 获取资源管理中用户关联的账户，以及账户已授权的集群与分区信息
   getUserAssignedResourceDetails: authProcedure
     .meta({
       openapi: {

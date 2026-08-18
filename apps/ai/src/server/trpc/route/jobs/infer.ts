@@ -2,7 +2,6 @@ import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
-import { config } from "src/server/config/env";
 import { AiJobSubmitRecord } from "src/server/entities/AiJobSubmitRecord";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -176,17 +175,15 @@ export const submitInferJob = procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    // 管理系统存在时，增加用户账户封锁状态，授权集群分区等鉴权
-    if (config.MIS_DEPLOYED) {
-      await validateSubmitAiJobInfoUnderMis({
+    // 校验用户账户封锁状态和集群分区授权
+    await validateSubmitAiJobInfoUnderMis({
         userId,
         accountName: account,
         clusterId,
         logger,
         partitionName: partition,
         checkAccountApp: false,
-      });
-    }
+    });
 
     const em = await forkEntityManager();
     const { modelVersions, image: existImage } = await checkCreateAppEntity({

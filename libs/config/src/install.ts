@@ -140,9 +140,8 @@ export const InstallConfigSchema = Type.Object({
     ),
   ),
 
-  mis: Type.Optional(
-    Type.Object({
-      enabled: Type.Boolean({ description: "是否启用管理系统", default: true }),
+  mis: Type.Object(
+    {
       mysqlImage: Type.String({ description: "管理系统数据库镜像", default: "mysql:8" }),
       basePath: Type.String({ description: "管理系统的部署路径，相对于整个系统的", default: "/mis" }),
       dbPassword: Type.String({ description: "管理系统数据库密码", default: "must!chang3this" }),
@@ -157,7 +156,8 @@ export const InstallConfigSchema = Type.Object({
           ),
         }),
       ),
-    }),
+    },
+    { default: {} },
   ),
 
   auth: Type.Object(
@@ -235,25 +235,23 @@ export const InstallConfigSchema = Type.Object({
     { default: {} },
   ),
 
-  audit: Type.Optional(
-    Type.Object(
-      {
-        mysqlImage: Type.String({ description: "审计系统数据库镜像", default: "mysql:8" }),
-        dbPassword: Type.String({ description: "审计系统数据库密码", default: "must!chang3this" }),
+  audit: Type.Object(
+    {
+      mysqlImage: Type.String({ description: "审计系统数据库镜像", default: "mysql:8" }),
+      dbPassword: Type.String({ description: "审计系统数据库密码", default: "must!chang3this" }),
 
-        portMappings: Type.Optional(
-          Type.Object({
-            db: Type.Optional(Type.Union([Type.String(), Type.Integer()], { description: "数据库映射出来的端口" })),
-            auditServer: Type.Optional(
-              Type.Union([Type.String(), Type.Integer()], {
-                description: "audit-server映射出来的端口",
-              }),
-            ),
-          }),
-        ),
-      },
-      { description: "审计系统部署选项，如果不设置，则不部署审计系统" },
-    ),
+      portMappings: Type.Optional(
+        Type.Object({
+          db: Type.Optional(Type.Union([Type.String(), Type.Integer()], { description: "数据库映射出来的端口" })),
+          auditServer: Type.Optional(
+            Type.Union([Type.String(), Type.Integer()], {
+              description: "audit-server映射出来的端口",
+            }),
+          ),
+        }),
+      ),
+    },
+    { description: "审计系统部署选项", default: {} },
   ),
 
   ai: Type.Optional(
@@ -285,16 +283,18 @@ export const InstallConfigSchema = Type.Object({
     }),
   ),
 
-  resource: Type.Optional(
-    Type.Object({
+  resource: Type.Object(
+    {
       basePath: Type.String({ description: "资源管理系统的部署路径，相对于整个系统的basePath", default: "/resource" }),
-    }),
+    },
+    { default: {} },
   ),
 
-  notification: Type.Optional(
-    Type.Object({
+  notification: Type.Object(
+    {
       basePath: Type.String({ description: "消息系统的部署路径，相对于整个系统的basePath", default: "/notification" }),
-    }),
+    },
+    { default: {} },
   ),
 
   misc: Type.Optional(

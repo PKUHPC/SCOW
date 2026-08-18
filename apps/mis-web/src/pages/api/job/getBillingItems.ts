@@ -140,11 +140,10 @@ export default /* #__PURE__*/ route(GetBillingItemsSchema, async (req, res) => {
 
   const nextId = calculateNextId(reply.activeItems, tenant);
 
-  // 如果查询条件 tenantName 存在 且已部署资源管理服务的情况
-  // 判断分区是否为已授权分区
+  // 如果查询条件 tenantName 存在，判断分区是否为已授权分区
   let tenantAssignedClustersAndPartitions: AssignedClusterPartitions | undefined;
 
-  if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && tenant) {
+  if (tenant) {
     const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
     try {
       const response = await resourceClient.resource.getTenantAssignedClustersAndPartitions({

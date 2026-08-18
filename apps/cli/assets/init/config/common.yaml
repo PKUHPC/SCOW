@@ -6,3 +6,14 @@ passwordPattern:
       default: 必须包含字母，长度大于等于8位
       en: Must contain letter and at least 8 characters in length.
       zh_cn: 必须包含字母，长度大于等于8位
+
+scowApi:
+  auth:
+    token: must-change-this-scow-api-token
+
+scowResource:
+  address: http://resource:3000/resource
+
+notification:
+  name: notification
+  address: http://notification:3000/notification

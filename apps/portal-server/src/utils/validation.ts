@@ -36,7 +36,7 @@ export async function validateSubmitJobInfoUnderMis({
     accountName,
     AccountStatusFilter.UNBLOCKED_ONLY,
     config.MIS_SERVER_URL,
-    commonConfig.scowApi?.auth?.token,
+    commonConfig.scowApi.auth.token,
   );
   if (!isUserAvailableInAccount) {
     throw new DetailedError({
@@ -46,23 +46,20 @@ export async function validateSubmitJobInfoUnderMis({
     });
   }
 
-  // 2.如果配置资源管理，检查集群分区是否已授权
-  if (commonConfig.scowResource?.enabled) {
-    const isClusterPartitionAuthorized = await isAccountAuthorizedInClusterPartition(
-      commonConfig.scowResource,
-      accountName,
-      clusterId,
-      partitionName,
-    );
-    if (!isClusterPartitionAuthorized) {
-      throw new DetailedError({
-        code: Status.PERMISSION_DENIED,
-        message:
-          `Account ${accountName} is not authorized in cluster ${clusterId}` +
-          (partitionName ? ` and partition ${partitionName}` : ""),
-        details: [errorInfo("CLUSTER_PARTITION_NOT_AVAILABLE")],
-      });
-    }
+  const isClusterPartitionAuthorized = await isAccountAuthorizedInClusterPartition(
+    commonConfig.scowResource,
+    accountName,
+    clusterId,
+    partitionName,
+  );
+  if (!isClusterPartitionAuthorized) {
+    throw new DetailedError({
+      code: Status.PERMISSION_DENIED,
+      message:
+        `Account ${accountName} is not authorized in cluster ${clusterId}` +
+        (partitionName ? ` and partition ${partitionName}` : ""),
+      details: [errorInfo("CLUSTER_PARTITION_NOT_AVAILABLE")],
+    });
   }
 
   // 3.如果开启授权应用，检查应用是否已对账户禁用
@@ -73,14 +70,14 @@ export async function validateSubmitJobInfoUnderMis({
       details: [errorInfo("APP_NOT_PROVIDED")],
     });
   }
-  if (checkAccountApp && appId && commonConfig.allowAppAuthorization) {
+  if (checkAccountApp && appId) {
     const isAppDisabledToAccount = await libCheckAppIsDisabled(
       logger,
       clusterId,
       appId,
       accountName,
       config.MIS_SERVER_URL,
-      commonConfig.scowApi?.auth?.token,
+      commonConfig.scowApi.auth.token,
       AppScope.HPC,
     );
 

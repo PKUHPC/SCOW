@@ -137,11 +137,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     return;
   }
 
-  if (!clusters[cluster].scowd?.enabled || loginNode.scowdPort === undefined) {
-    closeWithData(`scowd is not available on login node ${loginNode.address}`);
-    return;
-  }
-
   const scowdUrl = getLoginNodeScowdUrl(cluster, loginNode.address);
   if (!scowdUrl) {
     closeWithData(`scowd is not available on login node ${loginNode.address}`);
@@ -151,7 +146,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   const { result: isRootShellEnabled } = await libQueryIsUserEnabledRootShell(
     identityId,
     config.MIS_SERVER_URL,
-    commonConfig.scowApi?.auth?.token,
+    commonConfig.scowApi.auth.token,
   );
 
   if (!isRootShellEnabled) {

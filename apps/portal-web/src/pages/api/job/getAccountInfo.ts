@@ -37,10 +37,6 @@ export default route(GetAccountInfoSchema, async (req, res) => {
   const info = await auth(req, res);
   if (!info) { return; }
 
-  if (!publicConfig.MIS_DEPLOYED || !publicConfig.MIS_SERVER_URL) {
-    return { 204: null };
-  }
-
   const { accountName } = req.query;
 
   const userInfo = await libWebGetUserInfo(

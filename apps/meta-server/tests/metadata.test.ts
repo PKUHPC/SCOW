@@ -17,12 +17,12 @@ it("returns enabled component base paths with system base path", () => {
   const metadata = getMetadata({
     basePath: "/scow",
     portal: { enabled: true, basePath: "/" },
-    mis: { enabled: true, basePath: "/mis" },
+    mis: { basePath: "/mis" },
     ai: { enabled: false, basePath: "/ai" },
     quantum: { enabled: true, basePath: "/quantum" },
     notification: { basePath: "/notification" },
     resource: { basePath: "/resource" },
-  } as InstallConfigSchema);
+  } as unknown as InstallConfigSchema);
 
   expect(metadata).toEqual({
     basePath: "/scow",
@@ -49,8 +49,10 @@ it("does not prefix component paths when system base path is root", () => {
   const metadata = getMetadata({
     basePath: "/",
     portal: { enabled: true, basePath: "/" },
-    mis: { enabled: true, basePath: "/mis" },
-  } as InstallConfigSchema);
+    mis: { basePath: "/mis" },
+    notification: { basePath: "/notification" },
+    resource: { basePath: "/resource" },
+  } as unknown as InstallConfigSchema);
 
   expect(metadata.components.portal).toBe("/");
   expect(metadata.components.mis).toBe("/mis");
@@ -68,7 +70,9 @@ jest.mock("@scow/config/build/install", () => ({
   getInstallConfig: (path: string) => ({
     basePath: path.includes("root") ? "/" : "/scow",
     portal: { enabled: true, basePath: "/" },
-    mis: { enabled: true, basePath: "/mis" },
+    mis: { basePath: "/mis" },
+    notification: { basePath: "/notification" },
+    resource: { basePath: "/resource" },
   }),
 }));
 

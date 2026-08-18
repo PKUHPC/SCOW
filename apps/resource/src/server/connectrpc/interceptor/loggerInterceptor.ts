@@ -1,7 +1,6 @@
 import { Code, ConnectError, type Interceptor } from "@connectrpc/connect";
 import { extractLogContext, runWithLogContext, withLogContext } from "@scow/lib-server";
 import { randomUUID } from "crypto";
-import { commonConfig } from "src/server/config/common";
 import { logger } from "src/utils/logger";
 
 // 统一包装资源管理服务返回给客户端的ConnectError
@@ -19,21 +18,6 @@ export const loggerInterceptor: Interceptor = (next) => async (req) => {
 
   return runWithLogContext(logContext, async () => {
     const start = Date.now();
-
-    // 在处理请求前检查功能是否开启
-    if (!commonConfig.scowResource?.enabled) {
-      const durationMs = Date.now() - start;
-      const errorMeta = {
-        path: req.url,
-        input: req.message,
-        error: "Resource management feature is disabled",
-        connectCode: Code.Unimplemented,
-        durationMs,
-      };
-
-      requestLogger.error(errorMeta);
-      throw wrapResourceConnectError("Resource management feature is currently disabled", Code.Unimplemented);
-    }
 
     // 处理请求
     try {
