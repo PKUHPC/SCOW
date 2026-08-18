@@ -10,6 +10,7 @@ import (
 
 	"scow-adapters/pkg/ai/client"
 	"scow-adapters/pkg/ai/db/models"
+	"scow-adapters/pkg/ai/inference"
 	qw "scow-adapters/pkg/ai/services/job"
 	"scow-adapters/pkg/ai/train"
 	"scow-adapters/pkg/ai/utils"
@@ -154,6 +155,19 @@ func (i *K8sInformer) handleVcJobDelete(obj interface{}) {
 	wg.Add(1)
 	go func() { // 删除依赖资源
 		defer wg.Done()
+		if job.JobType == utils.Inference {
+			if err := inference.DeleteInferenceJob(
+				job.NewJobName,
+				job.GpuType,
+				job.Partition,
+				uint32(job.PODsReq),
+				i.clientSet,
+				i.VcClientSet,
+			); err != nil {
+				logrus.Errorf("jobName %s delete inference vcjob resources failed due to: %s", jobName, err)
+			}
+			return
+		}
 		vcjob := train.NewVCJob(
 			train.WithJobName(job.NewJobName),
 			train.WithUserName(job.UserName),

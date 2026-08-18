@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"scow-adapters/pkg/ai/db/models"
+	"scow-adapters/pkg/ai/inference"
+	"scow-adapters/pkg/ai/train"
 	"scow-adapters/pkg/ai/utils"
 
 	"github.com/sirupsen/logrus"
@@ -56,11 +58,7 @@ func (tm *Timer) recoverTimersOnStartup() {
 		logrus.Infof("Recover Timers For Job: %v On Startup", job.NewJobName)
 		// 计算剩余超时时间
 		pods := utils.GetPodsByJobName(job.NewJobName)
-		if job.JobType == utils.Inference {
-			elapsed = utils.GetElapsedSecondsByDeployPods(job, pods)
-		} else {
-			elapsed = utils.GetVCJobDurationByJobName(job, pods)
-		}
+		elapsed = utils.GetJobElapsedSeconds(job, pods)
 		remaining := int64(job.Timelimit)*60 - elapsed // job的Timelimit是存储的分钟
 		if remaining <= 0 {
 			// 立即触发超时
@@ -131,11 +129,7 @@ func (tm *Timer) timeoutDeletion(job *models.JobTable) error {
 	}
 	pods := utils.GetPodsByJobName(nowJob.NewJobName)
 	var elapsed int64
-	if nowJob.JobType == utils.Inference {
-		elapsed = utils.GetElapsedSecondsByDeployPods(nowJob, pods)
-	} else {
-		elapsed = utils.GetVCJobDurationByJobName(nowJob, pods)
-	}
+	elapsed = utils.GetJobElapsedSeconds(nowJob, pods)
 	limit := int64(nowJob.Timelimit) * 60
 	if elapsed < limit {
 		remaining := limit - elapsed
@@ -148,13 +142,20 @@ func (tm *Timer) timeoutDeletion(job *models.JobTable) error {
 	jobName := nowJob.NewJobName
 	namespace := nowJob.Partition
 	if nowJob.JobType == utils.Inference {
-		err := utils.LocalCancelInferenceJob(jobName, nowJob.GpuType, namespace, tm.k8sClient)
+		err := inference.DeleteInferenceJob(
+			jobName,
+			nowJob.GpuType,
+			namespace,
+			uint32(nowJob.PODsReq),
+			tm.k8sClient,
+			tm.vcClient,
+		)
 		if err != nil {
 			logrus.Errorf("Delete inference job failed.")
 			return err
 		}
 	} else {
-		err := utils.LocalCancelVcJob(jobName, nowJob.GpuType, namespace, tm.k8sClient, tm.vcClient)
+		err := train.DeleteVCJobResources(nowJob, tm.k8sClient, tm.vcClient)
 		if err != nil {
 			logrus.Errorf("CancelJob failed %v", err)
 			return err

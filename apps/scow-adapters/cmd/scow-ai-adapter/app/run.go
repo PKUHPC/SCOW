@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	volcanoclientset "volcano.sh/apis/pkg/client/clientset/versioned"
 
@@ -27,6 +26,7 @@ import (
 	"scow-adapters/pkg/ai/controller"
 	"scow-adapters/pkg/ai/informer"
 	aimonitor "scow-adapters/pkg/ai/monitor"
+	"scow-adapters/pkg/ai/resourcecleanup"
 	"scow-adapters/pkg/ai/services/account"
 	"scow-adapters/pkg/ai/services/app"
 	sc "scow-adapters/pkg/ai/services/config"
@@ -53,6 +53,7 @@ func runApp() {
 	log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level), config.Value.LogConfig.FilePath)
 	// 创建一个通道用于程序退出信号
 	shutdown := make(chan struct{})
+	cleanupStop := make(chan struct{})
 
 	// 检查过期时间
 	if err := binary.CheckExpireTime(); err != nil {
@@ -105,6 +106,7 @@ func runApp() {
 	}
 	tm := timer.NewTimerManager(client, volcanoClient)
 	defer tm.Stop()
+	go resourcecleanup.StartCleanupTimer(cleanupStop, aiclient.DB, client, volcanoClient, resourcecleanup.RetryInterval)
 
 	// 启动集群指标采集（节点/核心/加速卡/作业 + DB 指标）
 	monitor.StartClusterMetricsCollector(aimonitor.NewCollector(
@@ -162,8 +164,10 @@ func runApp() {
 	go queueAndLabelController.Start()
 	defer queueAndLabelController.Stop()
 
-	// 检查devhost 的configmap
-	go wait.Until(func() { controller.CheckDevHostConfigMap(client, volcanoClient) }, time.Minute*30, shutdown)
+	// 启动时检查devhost 的configmap
+	controller.CheckDevHostConfigMap(client, volcanoClient)
+	// 启动时检查vllm ray scripts 的configmap
+	controller.CheckVLLMRayScriptsConfigMap(client, volcanoClient)
 
 	go informer.Run(tm, client, volcanoClient)
 
@@ -195,6 +199,7 @@ func runApp() {
 	case <-shutdown:
 		logrus.Info("Received expiration shutdown signal. Initiating graceful shutdown...")
 	}
+	close(cleanupStop)
 
 	// 关闭服务器和监听器
 	s.GracefulStop() // 优雅关闭gRPC服务

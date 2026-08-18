@@ -10,9 +10,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	k8sclient "k8s.io/client-go/kubernetes"
 
 	"scow-adapters/pkg/ai/client"
 	"scow-adapters/pkg/ai/db/models"
+	"scow-adapters/pkg/ai/inference"
 	qw "scow-adapters/pkg/ai/services/job"
 	"scow-adapters/pkg/ai/utils"
 )
@@ -39,23 +41,13 @@ func (i *K8sInformer) handleDeploymentUpdate(obj interface{}) {
 	if job.State == status {
 		return
 	}
-	currentTime := uint64(time.Now().Unix())
-	updates := map[string]interface{}{
-		"mod_time": currentTime,
-		"state":    status,
+	if status != utils.PendingStatus && status != utils.FailedStatus && status != utils.RunningStatus {
+		logrus.Warnf("[handleDeploymentUpdate] deploy %s, unknown status %s", jobName, status)
+		return
 	}
-	switch status {
-	case utils.PendingStatus:
-		// 只更新状态，不改变 time_start
-	case utils.FailedStatus:
-		updates["time_start"] = startTime
-		updates["time_end"] = endTime
-	case utils.RunningStatus:
-		logrus.Tracef("[handleDeploymentUpdate] jobName: %s, startTime: %d", jobName, startTime)
-		// 防止pod重新拉取之后更新开始时间
-		if job.TimeStart == 0 {
-			updates["time_start"] = startTime
-		}
+	currentTime := uint64(time.Now().Unix())
+	updates := BuildDeploymentStatusUpdates(job, status, startTime, endTime, currentTime)
+	if status == utils.RunningStatus {
 		// 首次进入 Running 时启动定时器
 		if job.State != utils.RunningStatus && job.Timelimit > 0 {
 			remaining := int64(job.Timelimit) * 60
@@ -75,9 +67,6 @@ func (i *K8sInformer) handleDeploymentUpdate(obj interface{}) {
 				i.timer.StartTimer(job, remaining)
 			}
 		}
-	default:
-		logrus.Warnf("[handleDeploymentUpdate] deploy %s, unknown status %s", jobName, status)
-		return
 	}
 	err = client.DB.Model(&job).Updates(updates).Error
 	if err != nil {
@@ -85,6 +74,30 @@ func (i *K8sInformer) handleDeploymentUpdate(obj interface{}) {
 		return
 	}
 	logrus.Infof("update job %s status %s successful", jobName, status)
+}
+
+// BuildDeploymentStatusUpdates 根据 Deployment 状态生成作业更新字段。
+func BuildDeploymentStatusUpdates(job *models.JobTable, status string, startTime, endTime, currentTime uint64) map[string]interface{} {
+	updates := map[string]interface{}{
+		"mod_time": currentTime,
+		"state":    status,
+	}
+	switch status {
+	case utils.FailedStatus:
+		// 已运行作业在适配器重启后的首次同步中可能被识别为失败，
+		// 此时必须保留原始开始时间，避免将其刷新为本次状态变更时间。
+		if job.TimeStart == 0 {
+			updates["time_start"] = startTime
+		}
+		updates["time_end"] = endTime
+	case utils.RunningStatus:
+		logrus.Tracef("[BuildDeploymentStatusUpdates] jobName: %s, startTime: %d", job.NewJobName, startTime)
+		// 防止 Pod 重新拉取之后更新开始时间。
+		if job.TimeStart == 0 {
+			updates["time_start"] = startTime
+		}
+	}
+	return updates
 }
 
 func (i *K8sInformer) handleDeploymentDelete(obj interface{}) {
@@ -134,7 +147,17 @@ func (i *K8sInformer) handleDeploymentDelete(obj interface{}) {
 		cancel.(context.CancelFunc)()
 		i.timer.Timers.Delete(jobName)
 	}
+	if job.JobType == utils.Inference {
+		if err := deleteSingleInferenceResources(jobName, job.GpuType, deploy.Namespace, i.clientSet); err != nil {
+			logrus.Errorf("delete single inference resources failed, job name: %v, error: %v", jobName, err)
+		}
+	}
 	logrus.Infof("delete deploy  %s successful", jobName)
+}
+
+func deleteSingleInferenceResources(jobName, gpuType, namespace string, cli k8sclient.Interface) error {
+	job := inference.NewInferenceDeleteJob(jobName, gpuType, namespace, 1, cli, nil)
+	return inference.NewSingleInference(job).Delete()
 }
 
 func (i *K8sInformer) getDeploymentPods(deployment *appv1.Deployment) ([]*corev1.Pod, error) {
@@ -170,7 +193,7 @@ func (i *K8sInformer) resolveDeployStatus(deploy *appv1.Deployment) (status stri
 		logrus.Errorf("[resolveDeployStatus] get pods for deploy %s error: %v", deploy.Name, err)
 		return
 	}
-	if hasAbnormalPod(pods) {
+	if HasTerminalAbnormalPod(pods) {
 		status = utils.FailedStatus
 		endTime = uint64(time.Now().Unix())
 		startTime = endTime
@@ -262,19 +285,25 @@ func deployTimeUnix(t metav1.Time) uint64 {
 	return uint64(unixTime)
 }
 
-// 检查 Pod 容器是否处于异常状态（CrashLoopBackOff、镜像拉取失败、非 0 退出等）。
-// 返回 true 表示存在异常，false 表示 Pod 正在正常启动中。
-func hasAbnormalPod(pods []*corev1.Pod) bool {
+// HasTerminalAbnormalPod 检查不会被 Kubernetes 自动恢复的 Pod 异常。
+// 可重启容器的非零退出和 CrashLoopBackOff 由 BackOff 事件计数处理，不能在一次
+// Deployment 同步中直接判定作业失败。
+func HasTerminalAbnormalPod(pods []*corev1.Pod) bool {
 	for _, pod := range pods {
+		if pod.Status.Phase == corev1.PodFailed {
+			logrus.Warnf("pod %s has terminal phase: %s", pod.Name, pod.Status.Phase)
+			return true
+		}
 		for _, cs := range pod.Status.ContainerStatuses {
 			if cs.State.Waiting != nil {
 				switch cs.State.Waiting.Reason {
-				case "CrashLoopBackOff", "ImagePullBackOff", "ErrImagePull":
+				case "ImagePullBackOff", "ErrImagePull":
 					logrus.Warnf("pod %s has abnormal state: %s, reason: %s", pod.Name, "Waiting", cs.State.Waiting.Reason)
 					return true
 				}
 			}
-			if cs.State.Terminated != nil && cs.State.Terminated.ExitCode != 0 {
+			if pod.Spec.RestartPolicy == corev1.RestartPolicyNever &&
+				cs.State.Terminated != nil && cs.State.Terminated.ExitCode != 0 {
 				logrus.Warnf("pod %s has abnormal state: %s, exit code: %d", pod.Name, "Terminated", cs.State.Terminated.ExitCode)
 				return true
 			}

@@ -34,6 +34,7 @@ func InitDB() {
 		// 给pod表添加start_time字段，给job表添加is_preempt字段
 		migrations.AddStartTimeAndIsPreemptMigration(),
 		migrations.AddAppSessionTableMigration(),
+		migrations.AddResourceCleanupMigration(),
 	})
 	if err := m.Migrate(); err != nil {
 		panic(fmt.Sprintf("Could not migrate: %v", err))

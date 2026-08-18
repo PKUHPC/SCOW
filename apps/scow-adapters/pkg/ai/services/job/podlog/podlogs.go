@@ -3,7 +3,6 @@ package podlogs
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 )
 
 var (
@@ -80,6 +79,6 @@ func (slp *PodLogPrinter) Reader() ([]byte, error) {
 	}); err != nil {
 		return content, err
 	}
-	content, err = ioutil.ReadAll(slp.Pipe.Reader)
+	content, err = io.ReadAll(slp.Pipe.Reader)
 	return content, nil
 }

@@ -387,10 +387,8 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 	podTables := utils.GetPodsByJobName(jobInfo.NewJobName)
 	if jobInfo.State == utils.PendingStatus && len(podTables) <= int(jobInfo.PODsReq) {
 		elapsedSeconds = 0
-	} else if jobInfo.JobType == utils.Inference { // deploy 类型的作业，计费单独算
-		elapsedSeconds = utils.GetElapsedSecondsByDeployPods(&jobInfo, podTables)
 	} else {
-		elapsedSeconds = utils.GetVCJobDurationByJobName(&jobInfo, podTables)
+		elapsedSeconds = utils.GetJobElapsedSeconds(&jobInfo, podTables)
 	}
 	if podInfo = utils.GetPodInfoFromPodTables(podTables); len(podInfo) == 0 {
 		logrus.Warnf("GetPodInfo  is null")
@@ -576,7 +574,11 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb
 	logrus.Infof("job name: %s, status:%s", jobName, state)
 
 	if state == utils.CanceledStatus {
-		logrus.Infof("Cancel job %s ignored because it is already canceled", jobName)
+		if errCode, err := cleanupJobResource(jobInfo); err != nil {
+			logrus.Errorf("CancelJob cleanup canceled job %s failed: %v", jobName, err)
+			return nil, ce.RichError(codes.Internal, errCode, err.Error())
+		}
+		logrus.Infof("Cancel canceled job %s cleanup success", jobName)
 		return &pb.CancelJobResponse{}, nil
 	}
 	if state == utils.FailedStatus {
@@ -645,16 +647,10 @@ func (s *ServerJob) CancelJob(ctx context.Context, in *pb.CancelJobRequest) (*pb
 }
 
 func cleanupJobResource(jobInfo *models.JobTable) (string, error) {
-	if jobInfo.JobType == utils.InferJob {
-		k8sClient, err := utils.GetK8sClient()
-		if err != nil {
-			logrus.Errorf("failed to build k8s client: %v", err)
-			return "NEW_K8S_CLIENT_FAILED", err
-		}
-		logrus.Infof("CancelJob: JobType： %v, job name: %v", jobInfo.JobType, jobInfo.NewJobName)
-		return "CANCEL_INFERENCE_JOB_FAILED", utils.LocalCancelInferenceJob(jobInfo.NewJobName, jobInfo.GpuType, jobInfo.Partition, k8sClient)
+	if jobInfo.JobType == utils.Inference {
+		return inference.CleanupInferenceResource(jobInfo)
 	}
-	return "CANCEL_JOB_FAILED", CancelVCJob(jobInfo.NewJobName, jobInfo.UserName)
+	return "CANCEL_JOB_FAILED", CancelVCJob(jobInfo)
 }
 
 func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *pb.ChangeJobTimeLimitRequest) (*pb.ChangeJobTimeLimitResponse, error) {
@@ -676,11 +672,7 @@ func (s *ServerJob) ChangeJobTimeLimit(ctx context.Context, in *pb.ChangeJobTime
 	if state == "PENDING" || state == "RUNNING" {
 		var elapsedSeconds int64
 		if state == "RUNNING" {
-			if job.JobType == utils.Inference { // deploy 类型的作业，计费单独算
-				elapsedSeconds = utils.GetElapsedSecondsByDeployPods(job, pods)
-			} else {
-				elapsedSeconds = utils.GetVCJobDurationByJobName(job, pods)
-			}
+			elapsedSeconds = utils.GetJobElapsedSeconds(job, pods)
 			logrus.Infof("job %v elapsed seconds %v", job.NewJobName, elapsedSeconds)
 		}
 
@@ -880,10 +872,11 @@ func (s *ServerJob) SubmitInferJob(ctx context.Context, in *pb.SubmitInferJobReq
 	} else {
 		gpuType = in.ExtraOptions[3]
 	}
+	totalGpuCount := in.GpuCount * in.NodeCount
 	jobTable = models.JobTable{
 		Account:    in.Account,
 		CPUsReq:    uint(in.CoreCount) * uint(in.NodeCount),
-		GPUsReq:    uint(in.GpuCount),
+		GPUsReq:    uint(totalGpuCount),
 		PODsReq:    uint(in.NodeCount),
 		JobName:    in.JobName,
 		NewJobName: newJobName,

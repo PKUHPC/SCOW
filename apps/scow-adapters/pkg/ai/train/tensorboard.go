@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -18,6 +19,7 @@ import (
 	"scow-adapters/pkg/ai/client"
 	"scow-adapters/pkg/ai/config"
 	"scow-adapters/pkg/ai/db/models"
+	"scow-adapters/pkg/ai/resourcecleanup"
 	"scow-adapters/pkg/ai/utils"
 	ce "scow-adapters/pkg/common/error"
 )
@@ -196,19 +198,26 @@ func (vj *VCJob) DeleteTensorboard() {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		_ = utils.DeletePodGroup(name, vj.GetNamespace())
+		if err := utils.DeletePodGroup(name, vj.GetNamespace()); err != nil && !apierrors.IsNotFound(err) {
+			logrus.Errorf("delete tensorboard podGroup %s failed due to %s", name, err)
+			resourcecleanup.RecordFailure(resourcecleanup.ResourceKindPodGroup, vj.GetNamespace(), name, err)
+		}
 	}()
 	go func() {
 		defer wg.Done()
-		_ = vj.K8sClient.CoreV1().Services(vj.GetNamespace()).Delete(context.TODO(), name, metav1.DeleteOptions{})
+		if err := utils.DeleteService(name, vj.GetNamespace(), vj.K8sClient); err != nil {
+			logrus.Errorf("delete tensorboard service %s failed due to %s", name, err)
+			resourcecleanup.RecordFailure(resourcecleanup.ResourceKindService, vj.GetNamespace(), name, err)
+		}
 	}()
 	err := vj.K8sClient.AppsV1().Deployments(vj.GetNamespace()).Delete(context.TODO(), name, metav1.DeleteOptions{})
 	wg.Wait()
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
+		resourcecleanup.RecordFailure(resourcecleanup.ResourceKindDeployment, vj.GetNamespace(), name, err)
 		logrus.Errorf("delete tensorboard deploy %s failed due to %s", name, err)
 		return
 	}
-	return
+	logrus.Infof("delete tensorboard deploy %s successfully", name)
 }
 
 func SetTensorboardNodePortToDB(name string, port int) (err error) {

@@ -1,7 +1,6 @@
 package informer
 
 import (
-	"context"
 	"errors"
 	"strconv"
 	"strings"
@@ -10,10 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"scow-adapters/pkg/ai/client"
 	"scow-adapters/pkg/ai/db/models"
+	"scow-adapters/pkg/ai/inference"
+	"scow-adapters/pkg/ai/train"
 	"scow-adapters/pkg/ai/utils"
 )
 
@@ -185,18 +185,33 @@ func (i *K8sInformer) DeleteResource(podName, namespace string) {
 		logrus.Errorf("[DeleteResource] get job info by pod name %s error: %v", podName, err)
 		return
 	}
-  // 更新 job 及其所有关联 pod 状态为 Failed
+	// 多个 Pod 可能同时触发 BackOff 事件。作业已经进入终态并记录结束时间后，
+	// 后续事件无需重复更新状态或再次删除同一组 Kubernetes 资源。
+	if job.TimeEnd != 0 && (job.State == utils.FailedStatus ||
+		job.State == utils.CompletedStatus || job.State == utils.CanceledStatus ||
+		job.State == utils.TimeOutStatus) {
+		logrus.Infof("[DeleteResource] job %s is already terminal, skip duplicate cleanup", job.NewJobName)
+		return
+	}
+	// 更新 job 及其所有关联 pod 状态为 Failed
 	if err := utils.UpdateJobStatusByJobName(job.NewJobName, utils.FailedStatus); err != nil {
 		logrus.Errorf("[DeleteResource] update job %s status error: %v", job.NewJobName, err)
 	}
 	if err := utils.UpdatePodStatusByJobName(job.NewJobName, utils.FailedStatus); err != nil {
 		logrus.Errorf("[DeleteResource] update pods for job %s status error: %v", job.NewJobName, err)
 	}
-  // 删除k8s相关资源
+	// 删除k8s相关资源
 	if job.JobType == utils.Inference {
-		err = utils.LocalCancelInferenceJob(job.NewJobName, job.GpuType, namespace, i.clientSet)
+		err = inference.DeleteInferenceJob(
+			job.NewJobName,
+			job.GpuType,
+			namespace,
+			uint32(job.PODsReq),
+			i.clientSet,
+			i.VcClientSet,
+		)
 	} else {
-		err = i.VcClientSet.BatchV1alpha1().Jobs(namespace).Delete(context.TODO(), job.NewJobName, metav1.DeleteOptions{})
+		err = train.DeleteVCJobResources(job, i.clientSet, i.VcClientSet)
 	}
 	if err != nil {
 		logrus.Errorf("[DeleteResource] delete job %s error: %v", job.NewJobName, err)

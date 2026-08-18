@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	pb "scow-adapters/gen/go"
-	"scow-adapters/pkg/ai/client"
 	"scow-adapters/pkg/ai/db/models"
 	"scow-adapters/pkg/ai/train"
 	"scow-adapters/pkg/ai/utils"
@@ -67,37 +66,16 @@ func TrainVCJob(in *pb.SubmitJobRequest, jobName, workDir string) error {
 	return nil
 }
 
-func CancelVCJob(jobName, username string) (err error) {
-	job := models.JobTable{}
-	err = client.DB.Where("new_job_name = ? ", jobName).First(&job).Error // 通过作业名查作业信息
-	if err != nil {
-		logrus.Errorf("DB select jobName %s error: %v", jobName, err)
-		return nil
-	}
-	//vcjob := train.NewVCJob(jobName, username, job.Partition)
-	vcjob := train.NewVCJob(
-		train.WithJobName(jobName),
-		train.WithUserName(username),
-		train.WithNamespace(job.Partition),
-		train.WithAccelerator(job.GpuType),
-		train.WithJobType(job.JobType),
-		train.WithTensorboardLog(job.TensorboardLogPath),
-	)
-	if job.JupyterLabProxyPath != "" {
-		vcjob.SetJupyterLabInfo(train.JupyterLabInfo{
-			ProxyPath: job.JupyterLabProxyPath,
-		})
-	}
-	if job.VscodeBinPath != "" {
-		vcjob.SetVsCodeInfo(train.VsCodeInfo{
-			BinPath: job.VscodeBinPath,
-		})
-	}
-	err = vcjob.SetArgs()
+func CancelVCJob(job *models.JobTable) error {
+	k8sClient, err := utils.GetK8sClient()
 	if err != nil {
 		return err
 	}
-	return vcjob.Delete()
+	volcanoClient, err := utils.GetVolcanoClient()
+	if err != nil {
+		return err
+	}
+	return train.DeleteVCJobResources(job, k8sClient, volcanoClient)
 }
 
 func TrainVCJobApp(vj *train.VCJob) error {

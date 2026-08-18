@@ -217,14 +217,27 @@ func UpdateJobStatusByJobName(jobName, state string) error {
 		return err
 	}
 	updates := map[string]interface{}{
-		"state":    state,
-		"time_end": uint64(time.Now().Unix()),
+		"state": state,
 	}
-	// 如果 time_start 为 0，补写当前时间
+	// 终态可能由多个 Pod/Event 重复触发。结束时间只在首次进入终态时写入，
+	// 否则每次重复事件都会把 time_end 推迟，导致 elapsed_seconds 持续增长。
+	if isTerminalJobStatus(state) && job.TimeEnd == 0 {
+		updates["time_end"] = uint64(time.Now().Unix())
+	}
+	// 如果 time_start 为 0，补写当前时间。
 	if job.TimeStart == 0 {
 		updates["time_start"] = uint64(time.Now().Unix())
 	}
 	return client.DB.Model(&job).Updates(updates).Error
+}
+
+func isTerminalJobStatus(state string) bool {
+	switch state {
+	case CompletedStatus, FailedStatus, CanceledStatus, TimeOutStatus:
+		return true
+	default:
+		return false
+	}
 }
 
 func getJobDurationFallback(job *models.JobTable) int64 {
@@ -240,6 +253,17 @@ func getJobDurationFallback(job *models.JobTable) int64 {
 		return timeEnd - timeStart
 	}
 	return 0
+}
+
+func IsDistributedInferenceJob(job *models.JobTable) bool {
+	return job != nil && job.JobType == Inference && job.PODsReq > 1
+}
+
+func GetJobElapsedSeconds(job *models.JobTable, pods []*models.PodTable) int64 {
+	if job.JobType == Inference && !IsDistributedInferenceJob(job) {
+		return GetElapsedSecondsByDeployPods(job, pods)
+	}
+	return GetVCJobDurationByJobName(job, pods)
 }
 
 func GetVCJobDurationByJobName(job *models.JobTable, pods []*models.PodTable) (duration int64) {

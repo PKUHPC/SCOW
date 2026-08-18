@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"reflect"
 
 	"github.com/sirupsen/logrus"
@@ -10,7 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/kubernetes"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 	volcanoclient "volcano.sh/apis/pkg/client/clientset/versioned"
 
@@ -22,23 +23,25 @@ var devhostConfigYAML []byte
 
 const DevHostConfigMapName = "dev-tools-startup"
 
-func CheckDevHostConfigMap(k8sClient *kubernetes.Clientset, volcanoClientSet *volcanoclient.Clientset) {
+func CheckDevHostConfigMap(k8sClient k8sclient.Interface, volcanoClientSet volcanoclient.Interface) {
 	// 目前队列名就是命名空间
 	queues, err := utils.GetVolcanoQueue(volcanoClientSet)
 	if err != nil {
 		logrus.Errorf("CheckDevHostConfigMap get queue failed err:%v", err)
+		return
 	}
 	for _, queue := range queues {
-		EnsureConfigMap(k8sClient, queue.Name)
+		if err := EnsureConfigMap(k8sClient, queue.Name); err != nil {
+			logrus.Errorf("Ensure namespace %s %s ConfigMap err:%v", queue.Name, DevHostConfigMapName, err)
+		}
 	}
 	logrus.Infof("CheckDevHostConfigMap finished, total %d queues", len(queues))
 }
 
-func EnsureConfigMap(k8sClient *kubernetes.Clientset, namespace string) {
+func EnsureConfigMap(k8sClient k8sclient.Interface, namespace string) error {
 	desired, err := DesiredDevHostConfigMap(namespace)
 	if err != nil {
-		logrus.Errorf("load devhost ConfigMap template failed err:%v", err)
-		return
+		return fmt.Errorf("load devhost ConfigMap template: %w", err)
 	}
 
 	cmClient := k8sClient.CoreV1().ConfigMaps(namespace)
@@ -70,8 +73,9 @@ func EnsureConfigMap(k8sClient *kubernetes.Clientset, namespace string) {
 		return err
 	})
 	if err != nil {
-		logrus.Errorf("Ensure namespace %s %s ConfigMap err:%v", namespace, DevHostConfigMapName, err)
+		return fmt.Errorf("ensure namespace %s %s ConfigMap: %w", namespace, DevHostConfigMapName, err)
 	}
+	return nil
 }
 
 // DesiredDevHostConfigMap loads the dev host startup ConfigMap template for the namespace.

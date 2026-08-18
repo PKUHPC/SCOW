@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -11,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -152,7 +153,7 @@ func (c *QueueLabelController) handleUpdateConfigMap(oldObj, newObj interface{})
 	for q := range removedQueues {
 		logrus.Infof("[queueLabelController] the queue %v is remove in configmap: %v", q, PartitionCmName)
 		if err := c.volcanoClient.SchedulingV1beta1().Queues().Delete(
-			context.TODO(), q, metav1.DeleteOptions{}); err != nil && !errors.IsNotFound(err) {
+			context.TODO(), q, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
 			logrus.Errorf("[queueLabelController] failed delete queue %s, error: %v", q, err)
 		}
 		// 清理节点标签
@@ -164,6 +165,10 @@ func (c *QueueLabelController) handleUpdateConfigMap(oldObj, newObj interface{})
 
 func (c *QueueLabelController) createOrUpdateVolcanoQueue(QueueInfo QueueSpec, name, cpu, memory string, cardResources map[string]string) error {
 	logrus.Tracef("[createOrUpdateVolcanoQueue]: %v", QueueInfo)
+	if err := c.ensureQueueNamespaceResources(name); err != nil {
+		return err
+	}
+
 	reclaim := true
 	queueClient := c.volcanoClient.SchedulingV1beta1().Queues()
 	annoLabels := map[string]string{}
@@ -184,24 +189,8 @@ func (c *QueueLabelController) createOrUpdateVolcanoQueue(QueueInfo QueueSpec, n
 	if QueueInfo.CPUModel != "" {
 		annoLabels["cpu_model"] = QueueInfo.CPUModel
 	}
-	go func() { //新的队列要提前创建命名空间
-		clientSet, _ := utils.GetK8sClient()
-		exist, err := utils.CheckNameSpace(name, clientSet)
-		if err != nil {
-			logrus.Errorf("check namespace failed: %v", err)
-			return
-		}
-		// ns 不存在的时候创建ns
-		if !exist {
-			_, err = utils.CreateNameSpace(name, clientSet)
-			if err != nil {
-				logrus.Errorf("create namespace failed: %v", err)
-				return
-			}
-		}
-	}()
 	existing, err := queueClient.Get(context.TODO(), name, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		queue := &v1beta1.Queue{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        name,
@@ -234,6 +223,22 @@ func (c *QueueLabelController) createOrUpdateVolcanoQueue(QueueInfo QueueSpec, n
 		return err
 	}
 	return err
+}
+
+func (c *QueueLabelController) ensureQueueNamespaceResources(name string) error {
+	exists, err := utils.CheckNameSpace(name, c.k8sClient)
+	if err != nil {
+		return fmt.Errorf("check namespace %s: %w", name, err)
+	}
+	if !exists {
+		if _, err := utils.CreateNameSpace(name, c.k8sClient); err != nil {
+			return fmt.Errorf("create namespace %s: %w", name, err)
+		}
+	}
+	return stderrors.Join(
+		EnsureConfigMap(c.k8sClient, name),
+		EnsureVLLMRayScriptsConfigMap(c.k8sClient, name),
+	)
 }
 
 // 节点标签清理
@@ -307,7 +312,7 @@ func (c *QueueLabelController) checkLabelConsistency() error {
 
 	// 1. 获取当前的 partition-info ConfigMap
 	cm, err := c.k8sClient.CoreV1().ConfigMaps(utils.GetCurrentNamespace()).Get(context.TODO(), PartitionCmName, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		logrus.Warnf("[queueLabelController] ConfigMap %s not found, skipping consistency check", PartitionCmName)
 		return nil
 	}
@@ -380,7 +385,7 @@ func (c *QueueLabelController) checkLabelConsistency() error {
 		labelKey := fmt.Sprintf("queue-%s", queueName)
 		for _, nodeName := range expectedNodes {
 			node, err := c.k8sClient.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				logrus.Warnf("[queueLabelController] Configured node %s for queue %s not found in cluster", nodeName, queueName)
 				continue
 			}

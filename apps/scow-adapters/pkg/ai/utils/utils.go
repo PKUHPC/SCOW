@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
@@ -22,7 +21,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 	volcanoclientset "volcano.sh/apis/pkg/client/clientset/versioned"
@@ -73,7 +71,7 @@ type PathMap struct {
 // GetWebJobFileContent 获取web类应用文件内容
 func GetWebJobFileContent(filePath string) (int, string, error) {
 	var serverSessionContent ServerSessionContent
-	fileContent, err := ioutil.ReadFile(filePath)
+	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return 0, "", err
 	}
@@ -88,7 +86,7 @@ func GetWebJobFileContent(filePath string) (int, string, error) {
 }
 
 // GenerateNodePort 生成nodeport 端口
-func GenerateNodePort(cli *k8sclient.Clientset) (int, error) {
+func GenerateNodePort(cli k8sclient.Interface) (int, error) {
 	var (
 		nodePort int
 		minPort  = 30000
@@ -131,76 +129,6 @@ func RunCommand(command string) (string, error) {
 	return outputStr, nil
 }
 
-func LocalCancelInferenceJob(jobName, gpuType, namespace string, cli *k8sclient.Clientset) error {
-	err := cli.AppsV1().Deployments(namespace).Delete(context.TODO(), jobName, metav1.DeleteOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		logrus.Errorf("delete inference job failed, job name: %v, error: %v", jobName, err)
-		return err
-	}
-	// delete podGroup
-	//if err = DeletePodGroup(jobName, namespace); err != nil {
-	//	logrus.Errorf("delete podGroup %s failed due to %s", jobName, err)
-	//}
-
-	err = DeleteService(jobName, namespace, cli)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		logrus.Errorf("delete inference service failed, service name: %v, error: %v", jobName, err)
-		return err
-	}
-
-	if AcceleratorIsAscend(gpuType) {
-		cmName := fmt.Sprintf("rings-config-%s", jobName)
-		err = DeleteConfigmap(cmName, namespace, cli)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return nil
-			}
-			logrus.Errorf("Delete inference configmap failed.")
-			return err
-		}
-	}
-	return nil
-}
-
-func LocalCancelVcJob(jobName, gpuType, namespace string, cli *k8sclient.Clientset, vcClient *volcanoclientset.Clientset) error {
-	err := vcClient.BatchV1alpha1().Jobs(namespace).Delete(context.TODO(), jobName, metav1.DeleteOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		} else {
-			return err
-		}
-	}
-
-	err = DeleteService(jobName, namespace, cli)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		logrus.Errorf("delete inference service failed, service name: %v, error: %v", jobName, err)
-		return err
-	}
-
-	if AcceleratorIsAscend(gpuType) {
-		cmName := fmt.Sprintf("rings-config-%s", jobName)
-		err = DeleteConfigmap(cmName, namespace, cli)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return nil
-			}
-			logrus.Errorf("Delete inference configmap failed.")
-			return err
-		}
-	}
-	return nil
-}
-
 func GetJobInfo(jobs []models.JobTable, fields []string) (jobDetail []*pb.JobInfo) {
 	for _, job := range jobs {
 		var (
@@ -240,10 +168,8 @@ func GetJobInfo(jobs []models.JobTable, fields []string) (jobDetail []*pb.JobInf
 		podTables := GetPodsByJobName(job.NewJobName)
 		if job.State == PendingStatus && len(podTables) <= int(job.PODsReq) {
 			elapsedSeconds = 0
-		} else if job.JobType == Inference { // deploy 类型的作业，计费单独算
-			elapsedSeconds = GetElapsedSecondsByDeployPods(&job, podTables)
 		} else {
-			elapsedSeconds = GetVCJobDurationByJobName(&job, podTables)
+			elapsedSeconds = GetJobElapsedSeconds(&job, podTables)
 		}
 
 		if job.State != QueuedStatus {

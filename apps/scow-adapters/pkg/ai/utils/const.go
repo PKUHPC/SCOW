@@ -44,6 +44,8 @@ const (
 	Volcano = "volcano"
 	Creator = "creator"
 
+	VLLMRayScriptsConfigMapName = "vllm-ray-scripts"
+
 	RDMANetworkKey = "k8s.v1.cni.cncf.io/networks"
 	IPCLOCK        = "IPC_LOCK"
 

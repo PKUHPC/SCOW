@@ -941,9 +941,12 @@ func CopyFromPod(podName, namespace, srcPath, localPath string) error {
 }
 
 // DeleteConfigmap 删除configmap
-func DeleteConfigmap(configmapName, namespace string, cli *k8sclient.Clientset) error {
+func DeleteConfigmap(configmapName, namespace string, cli k8sclient.Interface) error {
 	err := cli.CoreV1().ConfigMaps(namespace).Delete(context.Background(), configmapName, metav1.DeleteOptions{})
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
 		logrus.Errorf("delete configmap failed, configmap name: %v, error: %v", configmapName, err)
 		return err
 	}
@@ -951,7 +954,7 @@ func DeleteConfigmap(configmapName, namespace string, cli *k8sclient.Clientset) 
 }
 
 // CreateNameSpace 创建namespace
-func CreateNameSpace(nameSpace string, cli *k8sclient.Clientset) (bool, error) { // 定义命名空间对象
+func CreateNameSpace(nameSpace string, cli k8sclient.Interface) (bool, error) { // 定义命名空间对象
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nameSpace,
@@ -966,7 +969,7 @@ func CreateNameSpace(nameSpace string, cli *k8sclient.Clientset) (bool, error) {
 }
 
 // CheckNameSpace check 指定 namespace的信息
-func CheckNameSpace(nameSpace string, cli *k8sclient.Clientset) (bool, error) {
+func CheckNameSpace(nameSpace string, cli k8sclient.Interface) (bool, error) {
 	_, err := cli.CoreV1().Namespaces().Get(context.TODO(), nameSpace, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -979,7 +982,7 @@ func CheckNameSpace(nameSpace string, cli *k8sclient.Clientset) (bool, error) {
 }
 
 // DeleteService 删除相应的svc
-func DeleteService(serviceName, nameSpace string, cli *k8sclient.Clientset) error {
+func DeleteService(serviceName, nameSpace string, cli k8sclient.Interface) error {
 	// 构造Service的删除选项，例如是否级联删除
 	deleteOptions := metav1.DeleteOptions{
 		GracePeriodSeconds: &[]int64{0}[0], // 立即删除，根据实际情况调整
@@ -1015,7 +1018,7 @@ func GetSvcInfo(svcName, ns string, cli *k8sclient.Clientset) (int32, int32, err
 }
 
 // GetSvcNodePort 获取已分配的nodePort 端口
-func GetSvcNodePort(cli *k8sclient.Clientset) (string, error) {
+func GetSvcNodePort(cli k8sclient.Interface) (string, error) {
 	var nodePortStr string
 	// 获取的是所有namespace的信息
 	services, err := cli.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})

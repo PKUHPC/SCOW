@@ -28,7 +28,7 @@ func GetQueueByName(queueName string) (queue models.PartitionTable, err error) {
 	return queue, nil
 }
 
-func GetVolcanoQueue(client *volcano.Clientset) (queueList []v1beta1.Queue, err error) {
+func GetVolcanoQueue(client volcano.Interface) (queueList []v1beta1.Queue, err error) {
 	queues, err := client.SchedulingV1beta1().Queues().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("GetVolcanoQueue error: %v", err)

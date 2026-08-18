@@ -16,17 +16,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
+	k8sclient "k8s.io/client-go/kubernetes"
+	volcanoclientset "volcano.sh/apis/pkg/client/clientset/versioned"
 
 	pb "scow-adapters/gen/go"
 	"scow-adapters/pkg/ai/config"
+	"scow-adapters/pkg/ai/db/models"
+	"scow-adapters/pkg/ai/resourcecleanup"
 	"scow-adapters/pkg/ai/utils"
 	ce "scow-adapters/pkg/common/error"
 )
 
 type VCJob struct {
 	In                *pb.SubmitJobRequest
-	K8sClient         *kubernetes.Clientset
+	K8sClient         k8sclient.Interface
 	CrdClient         *dynamic.DynamicClient
 	UserName          string
 	JobName           string
@@ -426,10 +429,12 @@ func (vj *VCJob) DeleteResource() {
 	}()
 	go func() { // 删除secret
 		defer wg.Done()
-		_ = utils.DeleteImageRegistrySecret(vj.Namespace, vj.JobName)
+		if err := utils.DeleteImageRegistrySecretWithClient(vj.Namespace, vj.JobName, vj.K8sClient); err != nil {
+			resourcecleanup.RecordFailure(resourcecleanup.ResourceKindSecret, vj.Namespace, vj.JobName, err)
+		}
 	}()
 	wg.Wait()
-	logrus.Infof("[DeleteResource] delete vcjob  %s resource successful", vj.GetJobName())
+	logrus.Infof("[DeleteResource] cleanup vcjob %s resources completed", vj.GetJobName())
 }
 
 func (vj *VCJob) CreateJob() error { // create volcano job
@@ -470,15 +475,12 @@ func (vj *VCJob) CreateJob() error { // create volcano job
 }
 
 func (vj *VCJob) DeleteVcjobConfigMap() {
-	gvr := schema.GroupVersionResource{
-		Group:    "",
-		Version:  "v1",
-		Resource: "configmaps",
-	}
 	configmapName := fmt.Sprintf("rings-config-%s", vj.GetJobName())
-	err := vj.CrdClient.Resource(gvr).Namespace(vj.GetNamespace()).Delete(context.TODO(), configmapName, metav1.DeleteOptions{})
+	err := utils.DeleteConfigmap(configmapName, vj.GetNamespace(), vj.K8sClient)
 	if err != nil {
+		resourcecleanup.RecordFailure(resourcecleanup.ResourceKindConfigMap, vj.GetNamespace(), configmapName, err)
 		logrus.Errorf("vcjob delete configmap %s failed due to %v", vj.GetJobName(), err)
+		return
 	}
 	logrus.Infof("vcjob delete configmap %s successful", configmapName)
 }
@@ -489,16 +491,49 @@ func (vj *VCJob) Delete() error { // delete volcano job
 		logrus.Errorf("failed to build volcano client: %v", err)
 		return err
 	}
-	vj.DeleteResource()
-	err = volcanoClient.BatchV1alpha1().Jobs(vj.GetNamespace()).Delete(context.TODO(), vj.GetJobName(), metav1.DeleteOptions{})
+	return vj.delete(volcanoClient)
+}
+
+func (vj *VCJob) delete(volcanoClient volcanoclientset.Interface) error {
+	err := volcanoClient.BatchV1alpha1().Jobs(vj.GetNamespace()).Delete(context.TODO(), vj.GetJobName(), metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return nil
+			err = nil
 		} else {
 			return err
 		}
 	}
+	vj.DeleteResource()
 	return nil
+}
+
+func DeleteVCJobResources(job *models.JobTable, cli k8sclient.Interface, volcanoClient volcanoclientset.Interface) error {
+	if job == nil {
+		return fmt.Errorf("job is nil")
+	}
+	if cli == nil {
+		return fmt.Errorf("k8s client is nil")
+	}
+	if volcanoClient == nil {
+		return fmt.Errorf("volcano client is nil")
+	}
+
+	vcjob := NewVCJob(
+		WithJobName(job.NewJobName),
+		WithUserName(job.UserName),
+		WithNamespace(job.Partition),
+		WithAccelerator(job.GpuType),
+		WithJobType(job.JobType),
+		WithTensorboardLog(job.TensorboardLogPath),
+	)
+	vcjob.K8sClient = cli
+	if job.JupyterLabProxyPath != "" {
+		vcjob.SetJupyterLabInfo(JupyterLabInfo{ProxyPath: job.JupyterLabProxyPath})
+	}
+	if job.VscodeBinPath != "" {
+		vcjob.SetVsCodeInfo(VsCodeInfo{BinPath: job.VscodeBinPath})
+	}
+	return vcjob.delete(volcanoClient)
 }
 
 func (vj *VCJob) GetUnstructured() (volcanoJob *unstructured.Unstructured, err error) {
@@ -669,14 +704,11 @@ func (vj *VCJob) DeleteService() {
 		SvcList = append(SvcList, fmt.Sprintf("%s-%s", jupyterlab, vj.JobName))
 	}
 	for _, name := range SvcList {
-		err := vj.K8sClient.CoreV1().Services(vj.GetNamespace()).Delete(context.Background(), name, metav1.DeleteOptions{})
+		err := utils.DeleteService(name, vj.GetNamespace(), vj.K8sClient)
 		if err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			} else {
-				logrus.Errorf("delete vcjob service %s failed, err: %v", name, err)
-				continue
-			}
+			resourcecleanup.RecordFailure(resourcecleanup.ResourceKindService, vj.GetNamespace(), name, err)
+			logrus.Errorf("delete vcjob service %s failed, err: %v", name, err)
+			continue
 		}
 		logrus.Infof("delete vcjob service %s successful", vj.GetJobName())
 	}
@@ -696,7 +728,14 @@ func (vj *VCJob) CreateSecret() error {
 		return fmt.Errorf("image address is null")
 	}
 	registry := strings.Split(vj.In.ExtraOptions[2], ":")[0]
-	err := utils.CreateImageRegistrySecret(vj.GetNamespace(), vj.JobName, registry, vj.In.PrivateImageRepositoryCredentials.UserName, vj.In.PrivateImageRepositoryCredentials.Password)
+	err := utils.CreateImageRegistrySecretWithClient(
+		vj.GetNamespace(),
+		vj.JobName,
+		registry,
+		vj.In.PrivateImageRepositoryCredentials.UserName,
+		vj.In.PrivateImageRepositoryCredentials.Password,
+		vj.K8sClient,
+	)
 	if err != nil {
 		return err
 	}

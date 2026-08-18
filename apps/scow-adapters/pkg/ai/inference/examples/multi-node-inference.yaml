@@ -1,0 +1,320 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vllm-ray-scripts
+data:
+  multi-node-serving.sh: |
+    #!/bin/bash
+    set -e
+
+    subcommand=$1
+    shift
+
+    ray_port=6379
+    ray_init_timeout=300
+    declare -a start_params
+
+    case "$subcommand" in
+      worker)
+        ray_address=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --ray_address=*)
+              ray_address="${1#*=}"
+              ;;
+            --ray_port=*)
+              ray_port="${1#*=}"
+              ;;
+            --ray_init_timeout=*)
+              ray_init_timeout="${1#*=}"
+              ;;
+            *)
+              start_params+=("$1")
+              ;;
+          esac
+          shift
+        done
+
+        if [ -z "$ray_address" ]; then
+          echo "Error: Missing argument --ray_address"
+          exit 1
+        fi
+
+        for (( i=0; i < ray_init_timeout; i+=5 )); do
+          if ray start --address="${ray_address}:${ray_port}" --block "${start_params[@]}"; then
+            echo "Worker: Ray runtime started with head address ${ray_address}:${ray_port}"
+            exit 0
+          fi
+          echo "Waiting until the ray worker is active..."
+          sleep 5
+        done
+
+        echo "Ray worker starts timeout, head address: ${ray_address}:${ray_port}"
+        exit 1
+        ;;
+
+      leader)
+        ray_cluster_size=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --ray_port=*)
+              ray_port="${1#*=}"
+              ;;
+            --ray_cluster_size=*)
+              ray_cluster_size="${1#*=}"
+              ;;
+            --ray_init_timeout=*)
+              ray_init_timeout="${1#*=}"
+              ;;
+            *)
+              start_params+=("$1")
+              ;;
+          esac
+          shift
+        done
+
+        if [ -z "$ray_cluster_size" ]; then
+          echo "Error: Missing argument --ray_cluster_size"
+          exit 1
+        fi
+
+        ray start --head --port="${ray_port}" "${start_params[@]}"
+
+        for (( i=0; i < ray_init_timeout; i+=5 )); do
+          active_nodes=$(python3 -c 'import ray; ray.init(address="auto"); print(sum(node["Alive"] for node in ray.nodes()))')
+          if [ "$active_nodes" -eq "$ray_cluster_size" ]; then
+            echo "All ray workers are active and the ray cluster is initialized successfully."
+            exit 0
+          fi
+          echo "Wait for all ray workers to be active. ${active_nodes}/${ray_cluster_size} is active"
+          sleep 5
+        done
+
+        echo "Waiting for all ray workers to be active timed out."
+        exit 1
+        ;;
+
+      *)
+        echo "unknown subcommand: $subcommand"
+        exit 1
+        ;;
+    esac
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-ray-head
+  namespace: default
+spec:
+  type: ClusterIP
+  publishNotReadyAddresses: true
+  selector:
+    app: vllm-multinode
+    role: head
+  ports:
+    - name: ray
+      port: 6379
+      targetPort: 6379
+    - name: ray-node
+      port: 6380
+      targetPort: 6380
+    - name: ray-object
+      port: 6381
+      targetPort: 6381
+    - name: dashboard
+      port: 8265
+      targetPort: 8265
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-openai
+  namespace: default
+  labels:
+    app: vllm-multinode
+    role: head
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8000"
+spec:
+  type: NodePort
+  selector:
+    app: vllm-multinode
+    role: head
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      nodePort: 30081
+---
+apiVersion: batch.volcano.sh/v1alpha1
+kind: Job
+metadata:
+  name: vllm-multinode
+  namespace: default
+spec:
+  schedulerName: volcano
+  minAvailable: 2
+  queue: default
+  plugins:
+    env: []
+  policies:
+    - event: PodEvicted
+      action: RestartJob
+    - event: PodFailed
+      action: RestartJob
+  tasks:
+    - name: head
+      replicas: 1
+      policies:
+        - event: TaskCompleted
+          action: CompleteJob
+      template:
+        metadata:
+          labels:
+            app: vllm-multinode
+            role: head
+        spec:
+          restartPolicy: OnFailure
+          terminationGracePeriodSeconds: 30
+          containers:
+            - name: vllm-head
+              image: ghcr.io/volcano-sh/vllm-openai:v0.10.0-cu128-nixl-v0.4.1-lmcache-0.3.2
+              command: ["sh", "-c"]
+              args:
+                - |
+                  /scripts/multi-node-serving.sh leader \
+                    --ray_cluster_size=2 \
+                    --ray_port=6379 \
+                    --node-ip-address=${POD_IP} \
+                    --dashboard-host=0.0.0.0 \
+                    --node-manager-port=6380 \
+                    --object-manager-port=6381 \
+                    --min-worker-port=10002 \
+                    --max-worker-port=19999 \
+                    --num-gpus=1 &&
+                  python3 -m vllm.entrypoints.openai.api_server \
+                    --host 0.0.0.0 \
+                    --port 8000 \
+                    --model /models/Qwen3-8B \
+                    --served-model-name Qwen/Qwen3-8B \
+                    --tensor-parallel-size 1 \
+                    --pipeline-parallel-size 2 \
+                    --distributed-executor-backend ray \
+                    --gpu-memory-utilization 0.9 \
+                    --max-model-len 32768 \
+                    --trust-remote-code
+              env:
+                - name: RAY_ADDRESS
+                  value: 127.0.0.1:6379
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: NCCL_IB_DISABLE
+                  value: "1"
+                - name: UCX_TLS
+                  value: tcp,cuda_copy,cuda_ipc
+              ports:
+                - containerPort: 8000
+                  name: http
+                - containerPort: 6379
+                  name: ray
+                - containerPort: 6380
+                  name: ray-node
+                - containerPort: 6381
+                  name: ray-object
+                - containerPort: 8265
+                  name: dashboard
+              resources:
+                limits:
+                  nvidia.com/gpu: "1"
+              volumeMounts:
+                - name: models
+                  mountPath: /models
+                  readOnly: true
+                - name: shared-mem
+                  mountPath: /dev/shm
+                - name: ray-scripts
+                  mountPath: /scripts
+                  readOnly: true
+              readinessProbe:
+                periodSeconds: 10
+                failureThreshold: 3
+                tcpSocket:
+                  port: 8000
+              livenessProbe:
+                periodSeconds: 30
+                failureThreshold: 3
+                tcpSocket:
+                  port: 6379
+          volumes:
+            - name: models
+              hostPath:
+                path: /data/home/demo_admin/models/
+                type: Directory
+            - name: shared-mem
+              emptyDir:
+                medium: Memory
+            - name: ray-scripts
+              configMap:
+                name: vllm-ray-scripts
+                defaultMode: 0755
+    - name: worker
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: vllm-multinode
+            role: worker
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: vllm-worker
+              image: ghcr.io/volcano-sh/vllm-openai:v0.10.0-cu128-nixl-v0.4.1-lmcache-0.3.2
+              command: ["sh", "-c"]
+              args:
+                - |
+                  /scripts/multi-node-serving.sh worker \
+                    --ray_address=vllm-ray-head.default.svc.cluster.local \
+                    --ray_port=6379 \
+                    --node-ip-address=${POD_IP} \
+                    --node-manager-port=6380 \
+                    --object-manager-port=6381 \
+                    --min-worker-port=10002 \
+                    --max-worker-port=19999 \
+                    --num-gpus=1
+              env:
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: NCCL_IB_DISABLE
+                  value: "1"
+                - name: UCX_TLS
+                  value: tcp,cuda_copy,cuda_ipc
+              resources:
+                limits:
+                  nvidia.com/gpu: "1"
+              volumeMounts:
+                - name: models
+                  mountPath: /models
+                  readOnly: true
+                - name: shared-mem
+                  mountPath: /dev/shm
+                - name: ray-scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: models
+              hostPath:
+                path: /data/home/demo_admin/models/
+                type: Directory
+            - name: shared-mem
+              emptyDir:
+                medium: Memory
+            - name: ray-scripts
+              configMap:
+                name: vllm-ray-scripts
+                defaultMode: 0755
