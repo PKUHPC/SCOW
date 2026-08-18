@@ -97,16 +97,6 @@ it("serves unified web preview and rewrites root portal api without duplicate ap
   expect(nginxConf).toContain("try_files $uri $uri/ /unified/index.html;");
 });
 
-it("does not expose the unified MIS API when MIS is disabled", () => {
-  const nginxConf = getNginxConfig({
-    ...config,
-    MIS_ENABLED: false,
-    UNIFIED_WEB_ENABLED: true,
-  });
-
-  expect(nginxConf).not.toContain("location /api/unified/mis/");
-});
-
 it("rewrites unified api routes with a custom base path", () => {
   const nginxConf = getNginxConfig({
     ...config,

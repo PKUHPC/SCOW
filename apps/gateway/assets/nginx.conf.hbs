@@ -46,7 +46,6 @@ server {
   }
   {{/if}}
 
-  {{#if MIS_ENABLED}}
   location {{ UNIFIED_API_BASE_PATH }}/mis/ {
     set $mis_path_url {{ MIS_PATH_INTERNAL_URL }};
     rewrite ^{{ UNIFIED_API_BASE_PATH }}/mis/(.*)$ {{ MIS_API_UPSTREAM_PATH }}/$1 break;
@@ -57,7 +56,6 @@ server {
     include includes/headers;
     include includes/websocket;
   }
-  {{/if}}
 
   {{#if AI_ENABLED}}
   location {{ UNIFIED_API_BASE_PATH }}/ai/ {

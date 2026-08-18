@@ -62,7 +62,7 @@
 - `libs/web` 快捷入口静态 message 改为 `App.useApp()`，避免主题上下文警告。
 - `apps/unified-web/vite.config.ts` 预构建 `@scow/config` 和共享 QuickEntry 的 CommonJS 子路径。
 - `apps/mis-web/src/pages/api/getAppInitialConfig.ts` 暴露修改密码开关、密码规则和国际化错误提示。
-- Gateway nginx 与 dev proxy 增加受 `MIS_ENABLED` 控制的 `/api/unified/mis/*` 重写。
+- Gateway nginx 与 dev proxy 增加始终可用的 `/api/unified/mis/*` 重写；MIS 是必选基础系统，不再设置启停开关。
 
 ### 线上修复：API 隔离与登录守卫
 

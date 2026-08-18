@@ -62,15 +62,13 @@ function getRoutes(): ProxyRoute[] {
         ),
       );
     }
-    if (config.MIS_ENABLED) {
-      routes.push(
-        route(
-          joinPath(basePath, "/api/unified/mis"),
-          `${trimTrailingSlash(config.MIS_PATH_INTERNAL_URL)}${joinPath(basePath, config.MIS_PATH, "/api")}`,
-          { stripPrefix: true },
-        ),
-      );
-    }
+    routes.push(
+      route(
+        joinPath(basePath, "/api/unified/mis"),
+        `${trimTrailingSlash(config.MIS_PATH_INTERNAL_URL)}${joinPath(basePath, config.MIS_PATH, "/api")}`,
+        { stripPrefix: true },
+      ),
+    );
     if (config.AI_ENABLED) {
       routes.push(
         route(
