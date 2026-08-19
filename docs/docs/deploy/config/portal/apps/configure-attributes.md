@@ -124,6 +124,7 @@ attributes:
 | `select`   | 选项的列表                        | 否    | 如果`type`是`select`，必须配置此项，指明具体的选项，具体配置办法见`select`示例                        |                      |
 | `commandSelect` | 对象 | 否 | 如果`type`是`commandSelect`，必须配置此项。包含`script`属性，值为可执行脚本，该脚本的标准输出将被解析为下拉选项。 |
 | `fixedValue`   | 固定值对象                   | 否    | 包含固定值的值`value`和是否在页面中隐藏`hidden`的配置。如果配置此项，则将覆盖`defaultValue`和`placeholder`的配置，表单元素值将为固定值。详细说明参见[配置fixedValue](#配置fixedvalue的html表单)。                     |                      |
+| `file` | 文件输入配置 | 否 | 仅用于`type: file`，可限制用户只能选择文件或目录，并可在文件模式下限制扩展名。 |
 
 ### 配置输入类型为文本的HTML表单
 
@@ -246,6 +247,38 @@ attributes:
 
 如果用户输入了`/user/test/new-script.sh`，且用户具有该绝对路径的读权限，那么计算节点的环境变量`fileDir=/user/test/new-script.sh`可以在应用启动时被读取。
 
+`file.selectionType`可以设置为`file`或`directory`。未配置`file`时，文件和目录均可选择。
+
+仅允许选择目录：
+
+```yaml
+attributes:
+  - type: file
+    name: workingDirectory
+    label: 工作目录
+    file:
+      selectionType: directory
+```
+
+仅允许选择文件，可通过`extensions`限制文件扩展名：
+
+```yaml
+attributes:
+  - type: file
+    name: scriptPath
+    label: 启动脚本
+    placeholder: 请选择 .sh 或 .tar.gz 文件
+    file:
+      selectionType: file
+      extensions:
+        - ".sh"
+        - ".tar.gz"
+```
+
+`extensions`为可选配置；不配置时允许选择任意扩展名的文件。配置时必须是非空数组，且只能用于
+`selectionType: file`。每项必须包含开头的`.`，匹配时仅忽略
+ASCII 英文字母大小写，并支持`.tar.gz`等复合扩展名。配置扩展名后，文件选择器继续展示目录以供导航，
+文件列表仅展示符合扩展名的文件, 建议当有限制extensions时增加placeholder提示。创建应用时服务端会再次校验实际路径类型和扩展名。
 
 ### 配置输入类型为密码的HTML表单
 

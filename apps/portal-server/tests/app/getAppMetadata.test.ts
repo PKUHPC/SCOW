@@ -1,10 +1,16 @@
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
+import { AttributeType, FileSelectionType } from "@scow/config/build/app";
 import { I18nStringType } from "@scow/config/build/i18n";
 import { getClientFn } from "@scow/lib-server";
-import { appCustomAttribute_AttributeTypeToJSON, AppServiceClient } from "@scow/protos/build/portal/app";
+import {
+  appCustomAttribute_AttributeTypeToJSON,
+  AppServiceClient,
+  FileInputConfig_SelectionType,
+} from "@scow/protos/build/portal/app";
 import { createServer } from "src/app";
 import { commonConfig } from "src/config/common";
+import * as appUtils from "src/utils/app";
 import { getI18nTypeFormat } from "tests/file/utils";
 
 jest.mock("src/utils/clusters", () => ({
@@ -27,7 +33,6 @@ interface AppCustomAttribute {
   select: SelectOption[];
 }
 
-
 let server: Server;
 let client: AppServiceClient;
 
@@ -40,6 +45,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  jest.restoreAllMocks();
   await server.close();
 });
 
@@ -125,4 +131,34 @@ it("get app metadata", async () => {
       placeholder: "",
     },
   ]);
+});
+
+it("returns file input constraints", async () => {
+  const apps = appUtils.getClusterAppConfigs("hpc01");
+  jest.spyOn(appUtils, "getClusterAppConfigs").mockReturnValue({
+    ...apps,
+    vscode: {
+      ...apps.vscode,
+      attributes: [
+        ...(apps.vscode.attributes ?? []),
+        {
+          type: AttributeType.file,
+          name: "scriptPath",
+          label: "Script",
+          required: true,
+          file: {
+            selectionType: FileSelectionType.file,
+            extensions: [".sh", ".tar.gz"],
+          },
+        },
+      ],
+    },
+  });
+
+  const reply = await asyncUnaryCall(client, "getAppMetadata", { appId: "vscode", cluster: "hpc01" });
+
+  expect(reply.attributes.at(-1)?.file).toEqual({
+    selectionType: FileInputConfig_SelectionType.FILE,
+    extensions: [".sh", ".tar.gz"],
+  });
 });

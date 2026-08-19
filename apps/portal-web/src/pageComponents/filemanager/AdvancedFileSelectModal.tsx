@@ -1,6 +1,7 @@
 import type { DataNode, EventDataNode } from "antd/es/tree";
 
 import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, UploadOutlined } from "@ant-design/icons";
+import { matchesFileExtension } from "@scow/utils";
 import { Button, message, Modal, Tree } from "antd";
 import Link from "next/link";
 import { join } from "path";
@@ -11,7 +12,7 @@ import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { FileInfo, FileType } from "src/pages/api/file/list";
-import { getExtension, isDecompressibleFile, isParentOrSameFolder } from "src/server/file";
+import { isDecompressibleFile, isParentOrSameFolder } from "src/server/file";
 import { fileInfoKey } from "src/utils/file";
 import { styled } from "styled-components";
 
@@ -214,16 +215,36 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
     setDirTree([]);
   };
 
+  const showSelectionError = (fileInfo?: FileInfo) => {
+    if (
+      fileInfo?.type === "FILE" &&
+      allowedExtensions !== undefined &&
+      !matchesFileExtension(fileInfo.name, allowedExtensions)
+    ) {
+      message.info(t(p("fileExtensionNotAllowed"), [allowedExtensions.join(", ")]));
+    } else if (allowedFileType.length === 1 && allowedFileType[0] === "FILE") {
+      message.info(t(p("fileRequired")));
+    } else if (allowedFileType.length === 1 && allowedFileType[0] === "DIR") {
+      message.info(t(p("directoryRequired")));
+    } else {
+      message.info(t(p("notAllowed")));
+    }
+  };
+
   const onOkClick = () => {
     // 不选中文件夹的，直接把所在目录作为值
     if (!selectedFileInfo) {
-      onSubmit(path);
-      closeModal();
+      if (allowedFileType.includes("DIR")) {
+        onSubmit(path);
+        closeModal();
+      } else {
+        showSelectionError();
+      }
       return;
     }
 
     if (!checkFileSelectability(selectedFileInfo)) {
-      message.info(t(p("notAllowed")));
+      showSelectionError(selectedFileInfo);
       return;
     }
 
@@ -246,9 +267,41 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   const checkFileSelectability = (fileInfo: FileInfo) => {
     return (
       allowedFileType.includes(fileInfo.type) &&
-      (allowedExtensions === undefined || allowedExtensions.includes(getExtension(fileInfo.name)))
+      (fileInfo.type !== "FILE" ||
+        allowedExtensions === undefined ||
+        matchesFileExtension(fileInfo.name, allowedExtensions))
     );
   };
+
+  const filterVisibleFiles = useCallback(
+    (files: FileInfo[]) =>
+      files.filter(
+        (file) =>
+          !file.name.startsWith(".") &&
+          (file.type !== "FILE" ||
+            allowedExtensions === undefined ||
+            matchesFileExtension(file.name, allowedExtensions)),
+      ),
+    [allowedExtensions],
+  );
+
+  useEffect(() => {
+    if (selectedKeys.length === 0) {
+      return;
+    }
+
+    const selectedKey = selectedKeys[0];
+    const latestSelectedFile = filterVisibleFiles(curDirContent?.items ?? []).find(
+      (file) => fileInfoKey(file, path) === selectedKey,
+    );
+
+    if (!latestSelectedFile) {
+      setSelectedKeys([]);
+      setSelectedFileInfo(undefined);
+    } else if (latestSelectedFile !== selectedFileInfo) {
+      setSelectedFileInfo(latestSelectedFile);
+    }
+  }, [curDirContent, filterVisibleFiles, path, selectedFileInfo, selectedKeys]);
 
   const keysToFiles = (keys: React.Key[]) => {
     return curDirContent?.items.filter((x) => keys.includes(fileInfoKey(x, path))) ?? [];
@@ -366,7 +419,7 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
               <FileTable
                 style={{ flex: 1, overflowX: "auto" }}
                 files={curDirContent?.items || []}
-                filesFilter={(files) => files.filter((file) => !file.name.startsWith("."))}
+                filesFilter={filterVisibleFiles}
                 loading={isDirContentLoading || isHomeDirLoading}
                 fileNameRender={(fileName: string) => <Button type="link">{fileName}</Button>}
                 hiddenColumns={["mtime", "mode", "action"]}

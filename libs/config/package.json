@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@scow/lib-config": "workspace:*",
+    "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13"
   },
   "devDependencies": {

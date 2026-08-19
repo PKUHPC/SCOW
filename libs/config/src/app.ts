@@ -1,4 +1,5 @@
 import { GetConfigFn, getDirConfig } from "@scow/lib-config";
+import { areFileExtensionsValid, matchesFileExtension } from "@scow/utils";
 import { Static, Type } from "@sinclair/typebox";
 import { isAbsolute } from "path";
 import { DEFAULT_CONFIG_BASE_PATH } from "src/constants";
@@ -43,6 +44,22 @@ export enum AttributeType {
   commandSelect = "commandSelect",
   password = "password",
 }
+
+export enum FileSelectionType {
+  file = "file",
+  directory = "directory",
+}
+
+export const FileInputConfigSchema = Type.Object({
+  selectionType: Type.Enum(FileSelectionType, { description: "文件输入框允许选择的路径类型" }),
+  extensions: Type.Optional(
+    Type.Array(Type.String({ description: "允许选择的文件扩展名，需包含开头的点" }), {
+      description: "仅文件模式下允许选择的文件扩展名",
+      minItems: 1,
+    }),
+  ),
+});
+export type FileInputConfigSchema = Static<typeof FileInputConfigSchema>;
 
 export const WebAppConfigSchema = Type.Object({
   proxyType: Type.Enum(
@@ -159,6 +176,7 @@ export const AppConfigSchema = Type.Object({
         ),
         commandSelect: Type.Optional(CommandSelectConfigSchema),
         fixedValue: Type.Optional(FixedValueSchema),
+        file: Type.Optional(FileInputConfigSchema),
       }),
     ),
   ),
@@ -199,6 +217,18 @@ export const getAppConfigs: GetConfigFn<Record<string, AppConfigSchema>> = (base
     }
     if (config.attributes) {
       config.attributes.forEach((item) => {
+        if (item.file && item.type !== AttributeType.file) {
+          throw new Error(
+            `App ${id}'s form attribute "${item.name}" configures file constraints, but its type is ${item.type}.`,
+          );
+        }
+        if (item.file?.selectionType === FileSelectionType.directory && item.file.extensions) {
+          throw new Error(`App ${id}'s form attribute "${item.name}" cannot configure extensions in directory mode.`);
+        }
+        if (item.file?.extensions && !areFileExtensionsValid(item.file.extensions)) {
+          throw new Error(`App ${id}'s form attribute "${item.name}" configures invalid or duplicate extensions.`);
+        }
+
         if (item.type === AttributeType.select && !item.select) {
           throw new Error(`
           App ${id}'s form attributes of name ${item.name} is of type select but select options is not set`);
@@ -236,10 +266,27 @@ export const getAppConfigs: GetConfigFn<Record<string, AppConfigSchema>> = (base
         // 如果类型是file,验证配置的value需要为绝对路径
         if (item.type === AttributeType.file) {
           const pathToValidate = item.fixedValue?.value ?? item.defaultValue;
+          const hasConfiguredValue = pathToValidate !== undefined && pathToValidate !== "";
+
+          if (item.file && hasConfiguredValue && typeof pathToValidate !== "string") {
+            throw new Error(
+              `App ${id}'s constrained file attribute "${item.name}" requires its effective value to be a string.`,
+            );
+          }
           if (pathToValidate && !isAbsolute(pathToValidate.toString())) {
             throw new Error(
               `App ${id}'s form attribute "${item.name}" requires an absolute path, ` +
                 `but the value "${pathToValidate}" is not absolute.`,
+            );
+          }
+          if (
+            typeof pathToValidate === "string" &&
+            pathToValidate !== "" &&
+            item.file?.extensions &&
+            !matchesFileExtension(pathToValidate, item.file.extensions)
+          ) {
+            throw new Error(
+              `App ${id}'s form attribute "${item.name}" value does not match its configured extensions.`,
             );
           }
         }

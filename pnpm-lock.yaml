@@ -2251,6 +2251,9 @@ importers:
       '@scow/lib-config':
         specifier: workspace:*
         version: link:../libconfig
+      '@scow/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@sinclair/typebox':
         specifier: 0.34.13
         version: 0.34.13

@@ -2,8 +2,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { AppType, AttributeType } from "@scow/config/build/app";
-import { validateLinuxAbsolutePath } from "@scow/utils";
+import { AppType, AttributeType, FileSelectionType } from "@scow/config/build/app";
 import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
 import {
   AppScope,
@@ -20,6 +19,7 @@ import {
   AppServiceServer,
   AppServiceService,
   ConnectToAppResponse,
+  FileInputConfig_SelectionType,
   FixedValue,
   GetAppMetadataResponse_ReservedAppAttribute,
   getAppMetadataResponse_ReservedAppAttributeNameFromJSON,
@@ -30,8 +30,10 @@ import { AppSession } from "@scow/protos/build/portal/app";
 import { AccountStatusFilter } from "@scow/protos/build/portal/job";
 import { AccountState, AccountStatus, UserServiceClient } from "@scow/protos/build/server/user";
 import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
-import { camelToSnakeCase } from "@scow/utils";
+import { validateLinuxAbsolutePath } from "@scow/utils";
+import { camelToSnakeCase, matchesFileExtension } from "@scow/utils";
 import { getClusterOps } from "src/clusterops";
+import { FileType } from "src/clusterops/api/file";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
@@ -172,6 +174,12 @@ export const appServiceServer = plugin((server) => {
       );
 
       const attributesConfig = app.attributes;
+      const constrainedFileAttributes: {
+        attributeName: string;
+        fileConfig: NonNullable<NonNullable<typeof attributesConfig>[number]["file"]>;
+        path: string;
+      }[] = [];
+
       attributesConfig?.forEach((attribute) => {
         if (attribute.required && !(attribute.name in customAttributes) && attribute.name !== "sbatchOptions") {
           throw new DetailedError({
@@ -208,6 +216,36 @@ export const appServiceServer = plugin((server) => {
                 });
               }
             }
+            if (!attribute.file) {
+              break;
+            }
+
+            {
+              const path = customAttributes[attribute.name];
+              if (attribute.required && !path) {
+                throw new DetailedError({
+                  code: Status.INVALID_ARGUMENT,
+                  message: `custom form attribute ${attribute.name} is required but empty`,
+                  details: [errorInfo("INVALID ARGUMENT")],
+                });
+              }
+              if (!path) {
+                break;
+              }
+              if (attribute.file.extensions && !matchesFileExtension(path, attribute.file.extensions)) {
+                throw new DetailedError({
+                  code: Status.INVALID_ARGUMENT,
+                  message: `custom form attribute ${attribute.name} does not match the configured file extensions`,
+                  details: [errorInfo("INVALID ARGUMENT")],
+                });
+              }
+
+              constrainedFileAttributes.push({
+                attributeName: attribute.name,
+                fileConfig: attribute.file,
+                path,
+              });
+            }
             break;
 
           case AttributeType.select:
@@ -243,6 +281,21 @@ export const appServiceServer = plugin((server) => {
 
       if (!clusterops) {
         throw clusterNotFound(cluster);
+      }
+
+      for (const constrainedAttribute of constrainedFileAttributes) {
+        const metadata = await clusterops.file.getFileMetadata({ userId, path: constrainedAttribute.path }, logger);
+
+        const expectedType =
+          constrainedAttribute.fileConfig.selectionType === FileSelectionType.file ? FileType.FILE : FileType.DIR;
+
+        if (metadata.type !== expectedType) {
+          throw new DetailedError({
+            code: Status.INVALID_ARGUMENT,
+            message: `custom form attribute ${constrainedAttribute.attributeName} has an unexpected file type`,
+            details: [errorInfo("INVALID ARGUMENT")],
+          });
+        }
       }
 
       const reply = await clusterops.app.createApp(
@@ -413,19 +466,30 @@ export const appServiceServer = plugin((server) => {
             commandSelect: {
               script: item.commandSelect?.script || "",
             },
+            file: item.file
+              ? {
+                  selectionType:
+                    item.file.selectionType === FileSelectionType.file
+                      ? FileInputConfig_SelectionType.FILE
+                      : FileInputConfig_SelectionType.DIRECTORY,
+                  extensions: item.file.extensions ?? [],
+                }
+              : undefined,
           });
         });
       }
 
       const comment = app.appComment ? getI18nSeverTypeFormat(app.appComment) : undefined;
 
-      return [{
-        appName: app.name,
-        attributes: attributes,
-        appComment: comment,
-        reservedAppAttributes,
-        ignoreGpu: app.ignoreGpu ?? false,
-      }];
+      return [
+        {
+          appName: app.name,
+          attributes: attributes,
+          appComment: comment,
+          reservedAppAttributes,
+          ignoreGpu: app.ignoreGpu ?? false,
+        },
+      ];
     },
 
     listAvailableApps: async ({ request }) => {

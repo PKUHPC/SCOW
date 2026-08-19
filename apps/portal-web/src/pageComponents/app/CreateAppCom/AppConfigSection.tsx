@@ -9,6 +9,7 @@ import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Sele
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { createLinuxAbsolutePathValidator } from "@scow/lib-web/build/utils/form";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { matchesFileExtension } from "@scow/utils";
 import { Form, type FormInstance } from "antd";
 import { Rule } from "antd/es/form";
 import { useMemo } from "react";
@@ -56,6 +57,17 @@ export const AppConfigSection = ({
               rootNotAllowed: t(p("rootNotAllowed")),
             }),
           );
+          const allowedExtensions = item.file?.extensions;
+          if (allowedExtensions) {
+            rules.push({
+              validator: async (_, value) => {
+                if (!value || (typeof value === "string" && matchesFileExtension(value, allowedExtensions))) {
+                  return;
+                }
+                throw new Error(t(p("fileExtensionNotAllowed"), [allowedExtensions.join(", ")]));
+              },
+            });
+          }
         }
 
         const placeholder = item.placeholder ?? "";
@@ -117,7 +129,14 @@ export const AppConfigSection = ({
                 prefix={
                   <div style={{ marginRight: "4px" }}>
                     <AdvancedFileSelectModal
-                      allowedFileType={["DIR", "FILE"]}
+                      allowedFileType={
+                        item.file?.selectionType === "FILE"
+                          ? ["FILE"]
+                          : item.file?.selectionType === "DIRECTORY"
+                            ? ["DIR"]
+                            : ["DIR", "FILE"]
+                      }
+                      allowedExtensions={item.file?.extensions}
                       onSubmit={(path: string) => {
                         form.setFields([{ name: item.name, value: path, touched: true }]);
                         form.validateFields([item.name]);

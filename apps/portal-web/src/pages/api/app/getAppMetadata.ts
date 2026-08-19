@@ -6,9 +6,12 @@ import { getI18nTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
 import {
   appCustomAttribute_AttributeTypeToJSON,
   AppServiceClient,
+  FileInputConfig,
+  FileInputConfig_SelectionType,
   FixedValue as FixedValueProto,
   getAppMetadataResponse_ReservedAppAttributeNameToJSON,
 } from "@scow/protos/build/portal/app";
+import { areFileExtensionsValid } from "@scow/utils";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { ReservedAppAttributeName } from "src/models/job";
@@ -41,6 +44,12 @@ export const CommandSelectConfig = Type.Object({
 });
 export type CommandSelectConfig = Static<typeof CommandSelectConfig>;
 
+export const FileInputConfigSchema = Type.Object({
+  selectionType: Type.Union([Type.Literal("FILE"), Type.Literal("DIRECTORY")]),
+  extensions: Type.Optional(Type.Array(Type.String())),
+});
+export type FileInputConfigSchema = Static<typeof FileInputConfigSchema>;
+
 // Cannot use AppCustomAttribute from protos
 export const AppCustomAttribute = Type.Object({
   type: Type.Union([
@@ -65,6 +74,7 @@ export const AppCustomAttribute = Type.Object({
   ),
   select: Type.Array(SelectOption),
   commandSelect: Type.Optional(CommandSelectConfig),
+  file: Type.Optional(FileInputConfigSchema),
 });
 export type AppCustomAttribute = Static<typeof AppCustomAttribute>;
 
@@ -132,6 +142,33 @@ export const GetAppMetadataSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
+class InvalidFileInputConfigError extends Error {}
+
+function convertFileInputConfig(file: FileInputConfig | undefined): FileInputConfigSchema | undefined {
+  if (!file) {
+    return undefined;
+  }
+  if (!areFileExtensionsValid(file.extensions)) {
+    throw new InvalidFileInputConfigError("Invalid file extension configuration");
+  }
+
+  switch (file.selectionType) {
+    case FileInputConfig_SelectionType.FILE:
+      return {
+        selectionType: "FILE",
+        extensions: file.extensions.length > 0 ? file.extensions : undefined,
+      };
+    case FileInputConfig_SelectionType.DIRECTORY:
+      if (file.extensions.length > 0) {
+        throw new InvalidFileInputConfigError("Directory file input cannot configure extensions");
+      }
+      return { selectionType: "DIRECTORY" };
+    case FileInputConfig_SelectionType.SELECTION_TYPE_UNSPECIFIED:
+    default:
+      throw new InvalidFileInputConfigError("Unknown file selection type");
+  }
+}
+
 export default /* #__PURE__*/ route(GetAppMetadataSchema, async (req, res) => {
   const info = await auth(req, res);
 
@@ -145,33 +182,48 @@ export default /* #__PURE__*/ route(GetAppMetadataSchema, async (req, res) => {
 
   return asyncUnaryCall(client, "getAppMetadata", { appId, cluster }).then(
     (reply) => {
-      const attributes: AppCustomAttribute[] = reply.attributes.map((item) => ({
-        type: appCustomAttribute_AttributeTypeToJSON(item.type) as AppCustomAttribute["type"],
-        label: getI18nTypeFormat(item.label),
-        name: item.name,
-        fixedValue:
-          item.fixedValue?.value !== undefined
-            ? {
-                value:
-                  item.fixedValue.value?.$case === "text" ? item.fixedValue.value.text : item.fixedValue.value.number,
-                hidden: item.fixedValue?.hidden,
-              }
+      let attributes: AppCustomAttribute[];
+      try {
+        attributes = reply.attributes.map((item) => ({
+          type: appCustomAttribute_AttributeTypeToJSON(item.type) as AppCustomAttribute["type"],
+          label: getI18nTypeFormat(item.label),
+          name: item.name,
+          fixedValue:
+            item.fixedValue?.value !== undefined
+              ? {
+                  value:
+                    item.fixedValue.value?.$case === "text" ? item.fixedValue.value.text : item.fixedValue.value.number,
+                  hidden: item.fixedValue?.hidden,
+                }
+              : undefined,
+          select: item.options?.map((option) => {
+            return {
+              value: option.value,
+              label: getI18nTypeFormat(option.label),
+              requireGpu: option.requireGpu,
+            };
+          }),
+          required: item.required,
+          defaultValue: item.defaultInput
+            ? item.defaultInput?.$case === "text"
+              ? item.defaultInput.text
+              : item.defaultInput.number
             : undefined,
-        select: item.options?.map((option) => {
-          return {
-            value: option.value,
-            label: getI18nTypeFormat(option.label),
-            requireGpu: option.requireGpu,
-          };
-        }),
-        required: item.required,
-        defaultValue: item.defaultInput
-          ? item.defaultInput?.$case === "text"
-            ? item.defaultInput.text
-            : item.defaultInput.number
-          : undefined,
-        placeholder: getI18nTypeFormat(item.placeholder),
-      }));
+          placeholder: getI18nTypeFormat(item.placeholder),
+          file: convertFileInputConfig(item.file),
+        }));
+      } catch (error) {
+        if (!(error instanceof InvalidFileInputConfigError)) {
+          throw error;
+        }
+
+        return {
+          500: {
+            code: "APP_CONFIG_ERROR" as const,
+            error: "Invalid application file input configuration",
+          },
+        };
+      }
 
       const getFixedValueResp = (fixedValueProto: FixedValueProto): FixedValue => {
         if (!fixedValueProto?.value) {

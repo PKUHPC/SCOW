@@ -144,6 +144,17 @@ message CommandSelect {
   string script = 1;
 }
 
+message FileInputConfig {
+  enum SelectionType {
+    SELECTION_TYPE_UNSPECIFIED = 0;
+    FILE = 1;
+    DIRECTORY = 2;
+  }
+
+  SelectionType selection_type = 1;
+  repeated string extensions = 2;
+}
+
 message AppCustomAttribute {
   enum AttributeType {
     NUMBER = 0;
@@ -165,6 +176,7 @@ message AppCustomAttribute {
   optional I18nStringProtoType placeholder = 8;
   optional FixedValue fixed_value = 9;
   optional CommandSelect command_select = 10;
+  optional FileInputConfig file = 11;
 }
 
 message GetAppMetadataResponse {
