@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	craneProtos "scow-adapters/gen/crane-ai"
 	protos "scow-adapters/gen/go"
@@ -111,8 +112,19 @@ func GetAllAccount() ([]*craneProtos.AccountInfo, error) {
 
 // CheckAccount 检查账户名是否非法
 func CheckAccount(name string) error {
+	if name == "" {
+		return fmt.Errorf("account name cannot be empty")
+	}
 	if len(name) > 30 {
-		return fmt.Errorf("name is too long (up to 30)")
+		return fmt.Errorf("account name must not exceed 30 characters")
+	}
+	if strings.ContainsAny(name, "*.$-") {
+		return fmt.Errorf("account name cannot contain '*', '.', '$', or '-'")
+	}
+	for _, r := range name {
+		if unicode.IsSpace(r) || unicode.IsControl(r) {
+			return fmt.Errorf("account name cannot contain whitespace or control characters")
+		}
 	}
 	return nil
 }

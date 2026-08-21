@@ -50,7 +50,10 @@ var (
 		"DEADLINE":      10,
 		"OUT_OF_MEMORY": 11,
 	}
+	accountNameRe = regexp.MustCompile(`^[A-Za-z0-9_-]{1,63}$`)
 )
+
+const maxSlurmAccountNameBytes = 63
 
 type PartitionInfo struct {
 	Describe   string
@@ -540,12 +543,10 @@ func CheckUser(name string) error {
 	return nil
 }
 
-// CheckAccount 检查账户名是否非法
+// CheckAccount 校验 Slurm account 名称，避免数据库与 Shell 传参歧义。
 func CheckAccount(name string) error {
-	// 检查账户名中是否包含大写字母
-	resultAcct := checkNameLegal(name)
-	if !resultAcct {
-		return fmt.Errorf("the account contains illegal characters")
+	if len(name) == 0 || len(name) > maxSlurmAccountNameBytes || !accountNameRe.MatchString(name) {
+		return fmt.Errorf("the account must be 1-63 characters containing only letters, digits, underscores, and hyphens")
 	}
 	return nil
 }

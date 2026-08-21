@@ -87,6 +87,10 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *pb.CreateAccountR
 	logrus.Infof("Received request CreateAccount: %v", in)
 	accountName := in.AccountName
 	userName := in.OwnerUserId
+	if err := utils.CheckAccount(accountName); err != nil {
+		logrus.Errorf("CreateAccount failed: %v", err)
+		return nil, ce.RichError(codes.InvalidArgument, "ACCOUNT_NAME_INVALID", err.Error())
+	}
 	// 检查账号名是否存在
 	exist, err := utils.SelectAccountExists(accountName)
 	if err != nil {

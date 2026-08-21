@@ -257,6 +257,9 @@ func UpdateAccountPartitions(accountName string, partitions string) error {
 }
 
 func CreateAccount(account string) error {
+	if err := CheckAccount(account); err != nil {
+		return err
+	}
 	tx := client.DB.Begin()
 	currentTime := time.Now().Unix()
 	accountInfo := models.AcctTable{
@@ -273,6 +276,9 @@ func CreateAccount(account string) error {
 }
 
 func CreateAccountIfUserExits(account, user, partitions string, gpuQuota uint32, blocked int) error {
+	if err := CheckAccount(account); err != nil {
+		return err
+	}
 	tx := client.DB.Begin()
 	currentTime := time.Now().Unix()
 	accountInfo := models.AcctTable{
@@ -301,6 +307,9 @@ func CreateAccountIfUserExits(account, user, partitions string, gpuQuota uint32,
 }
 
 func CreateAccountIfUserNotExits(account, user, partitions string, gpuQuota uint32, blocked int) error {
+	if err := CheckAccount(account); err != nil {
+		return err
+	}
 	tx := client.DB.Begin()
 	currentTime := time.Now().Unix()
 	accountInfo := models.AcctTable{

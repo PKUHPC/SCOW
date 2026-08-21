@@ -147,6 +147,9 @@ func SelectAccountExists(account string) (bool, error) {
 }
 
 func CreateAccount(accountName string, partitions ...[]string) error {
+	if err := CheckAccount(accountName); err != nil {
+		return err
+	}
 	var partitionList []string
 	if len(partitions) > 0 && len(partitions[0]) > 0 {
 		partitionList = partitions[0]

@@ -329,6 +329,9 @@ func DeleteUserWithAccount(ctx context.Context, user, account string, acctList [
 
 // CreateAccount 使用slurm命令创建账户
 func CreateAccount(ctx context.Context, account string) error {
+	if err := CheckAccount(account); err != nil {
+		return err
+	}
 	args := []string{"-i", "create", "account", fmt.Sprintf("name=%s", account)}
 	exitCode, stdout, stderr, err := ExecuteCommandContext(ctx, client.SACCTMGR, args...)
 	if err != nil {
