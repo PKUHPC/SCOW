@@ -34,6 +34,8 @@ const ResourceOptionButton = styled(RoundedButton)`
 interface Option {
   label: string;
   value: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 interface ClusterOption {
@@ -228,20 +230,32 @@ export const ResourceConfigSection = ({
       <Form form={form} colon={false} requiredMark={false} initialValues={{ queue: activeResourceTab }}>
         <InlineFormItem name="account" label={<Label>{t(p("accountLabel"))}</Label>} rules={[{ required: true }]}>
           <Space wrap>
-            {accountOptions.map(({ label, value }) => (
-              <ResourceOptionButton
-                size="large"
-                key={value}
-                type={selectedAccount === value ? "primary" : "default"}
-                $selected={selectedAccount === value}
-                onClick={() => {
-                  markAccountTouched();
-                  form.setFieldValue("account", value);
-                }}
-              >
-                {label}
-              </ResourceOptionButton>
-            ))}
+            {accountOptions.map(({ label, value, disabled, disabledReason }) => {
+              const button = (
+                <ResourceOptionButton
+                  size="large"
+                  key={value}
+                  type={selectedAccount === value ? "primary" : "default"}
+                  $selected={selectedAccount === value}
+                  disabled={disabled}
+                  onClick={() => {
+                    if (disabled) return;
+                    markAccountTouched();
+                    form.setFieldValue("account", value);
+                  }}
+                >
+                  {label}
+                </ResourceOptionButton>
+              );
+
+              return disabled && disabledReason ? (
+                <Tooltip key={value} title={disabledReason}>
+                  <span>{button}</span>
+                </Tooltip>
+              ) : (
+                button
+              );
+            })}
           </Space>
         </InlineFormItem>
 

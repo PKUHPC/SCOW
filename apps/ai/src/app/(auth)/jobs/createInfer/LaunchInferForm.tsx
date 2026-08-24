@@ -4,7 +4,7 @@ import type { ColumnsType } from "antd/es/table";
 import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 import type { InferTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
-import { FixedFooter, FooterActions } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
@@ -46,7 +46,6 @@ import type {
   BaseFormValues,
   CommandCacheEntry,
   CPUQueueRow,
-  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
@@ -61,6 +60,7 @@ import type {
 
 import {
   buildEnvPayload,
+  buildAccountOptions,
   buildResubmitResourceSelections,
   buildSelectionPathLookup,
   buildUnavailableParams,
@@ -314,16 +314,14 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
 
   const accountClusterMap = appAvailableAccountsAndClusters?.accountClusters ?? {};
-
+  const accountDetails = appAvailableAccountsAndClusters?.accountDetails ?? [];
   // 账户下拉选项根据 cluster 关联关系动态生成
   const accountOptions = useMemo(
     () =>
-      Object.keys(accountClusterMap).map((account) => ({
-        label: account,
-        value: account,
-      })),
-    [accountClusterMap],
+      buildAccountOptions(accountDetails, t),
+    [accountDetails, t],
   );
+  const availableAccountOptions = useMemo(() => accountOptions.filter(({ disabled }) => !disabled), [accountOptions]);
 
   // ----------- 表单字段监听 -----------
   // 通过 Form.useWatch 实时感知三个分表单中的关键字段，后续计算和副作用均依赖这些最新值
@@ -1003,17 +1001,20 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (resubmitResourceAppliedRef.current) {
       return;
     }
+    if (!appAvailableAccountsAndClusters) {
+      return;
+    }
 
     const targetAccount = createInferParams.account;
     const targetCluster = createInferParams.clusterId;
 
-    const accountAvailable = targetAccount ? accountOptions.some((option) => option.value === targetAccount) : false;
+    const accountAvailable = targetAccount
+      ? availableAccountOptions.some((option) => option.value === targetAccount)
+      : false;
 
-    const targetClusterOption = targetCluster
-      ? clusterOptions.find((option) => option.id === targetCluster && !option.disabled)
-      : undefined;
-
-    const clusterExists = Boolean(targetClusterOption);
+    const clusterExists = Boolean(
+      targetAccount && targetCluster && accountAvailable && accountClusterMap[targetAccount]?.includes(targetCluster),
+    );
 
     const nextValues: Partial<ResourceFormValues> = {};
 
@@ -1029,10 +1030,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       resourceForm.setFieldsValue(nextValues);
     }
 
-    if ((targetAccount ? accountAvailable : true) && (targetCluster ? clusterExists : true)) {
-      resubmitResourceAppliedRef.current = true;
-    }
-  }, [accountOptions, clusterOptions, createInferParams, resourceForm]);
+    resubmitResourceAppliedRef.current = true;
+  }, [accountClusterMap, appAvailableAccountsAndClusters, availableAccountOptions, createInferParams, resourceForm]);
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
@@ -1253,17 +1252,17 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (createInferParams && !resubmitResourceAppliedRef.current) {
       return;
     }
-    if (!accountOptions.length) {
+    if (!availableAccountOptions.length) {
       resourceForm.setFieldValue("account", undefined);
       return;
     }
 
     const currentAccount = selectedAccount ?? resourceForm.getFieldValue("account");
 
-    if (!currentAccount || !accountOptions.some((option) => option.value === currentAccount)) {
-      resourceForm.setFieldValue("account", accountOptions[0].value);
+    if (!currentAccount || !availableAccountOptions.some((option) => option.value === currentAccount)) {
+      resourceForm.setFieldValue("account", availableAccountOptions[0].value);
     }
-  }, [accountOptions, createInferParams, resourceForm, selectedAccount]);
+  }, [availableAccountOptions, createInferParams, resourceForm, selectedAccount]);
 
   // 选中账户发生变化时，若当前集群不可用则自动切换到第一个可用集群
   useEffect(() => {
@@ -1552,7 +1551,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       mountPoints: (appValues.mountPoints ?? [])
         .filter((m: MountPointField | undefined) => m?.source && m?.target)
         .map((m: MountPointField) => ({ path: m.source, target: m.target })),
-      envVariables: (appValues.envVariables ?? []).filter((e: EnvVariableField | undefined) => e?.key),
+      envVariables: buildEnvPayload(appValues.envVariables),
       command: appValues.command ?? "",
       containerServicePort: appValues.containerServicePort ?? 8080,
     };
@@ -1753,8 +1752,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     } = await buildUnavailableParams({
       fd,
       templateCluster,
-      isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
-      getAvailableAccounts: () => accountOptions.map((o) => o.value),
+      isAccountAvailable: (acc) => availableAccountOptions.some((o) => o.value === acc),
+      getAvailableAccounts: () => availableAccountOptions.map((o) => o.value),
       getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
       selectedAccount,
       selectedCluster,
@@ -1874,7 +1873,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
       appForm.setFieldsValue({
         mountPoints: normalizeMountPoints(cleanedFormData.mountPoints as unknown[] | undefined),
-        envVariables: normalizeEnvVariables(cleanedFormData.envVariables as unknown[] | undefined),
+        envVariables: mergeResubmitEnvVariables(
+          normalizeEnvVariables(cleanedFormData.envVariables as unknown[] | undefined),
+        ),
       });
 
       const clusterChanged = templateCluster !== finalCluster;
@@ -2021,9 +2022,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
                     }}
                   >
                     <HeaderTitle>{t(pInfer("createInferTitle"))}</HeaderTitle>
-                    {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                    <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
                       {t(pInfer("templateButton"))}
-                    </Button> */}
+                    </Button>
                   </HeaderRow>
                 }
               >
@@ -2114,7 +2115,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       </JobPageLayout>
 
       <FixedFooter>
-        {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
+        <div style={{ marginLeft: 208, marginRight: "auto" }}>
           <FooterStatValue
             $isPrimaryColor
             style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
@@ -2131,7 +2132,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           >
             {t(p("saveAsTemplate"))}
           </FooterStatValue>
-        </div> */}
+        </div>
         <FooterActions>
           <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
           <Button type="primary" onClick={handleSubmit} loading={createInferJobMutation.isPending}>

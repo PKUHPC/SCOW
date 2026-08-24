@@ -3,7 +3,7 @@
 import type { ColumnsType } from "antd/es/table";
 import type { DevTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
-import { FixedFooter, FooterActions } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
@@ -57,6 +57,7 @@ import type {
 
 import {
   buildUnavailableParams,
+  buildAccountOptions,
   cleanFormData,
   buildEnvPayload,
   convertDurationToHours,
@@ -64,6 +65,7 @@ import {
   initBuiltinEnvVariables,
   mapQueuesToRows,
   mergeResubmitEnvVariables,
+  normalizeEnvVariables,
   sanitizeFormMountAndEnvValues,
 } from "../LaunchJobForm.utils";
 import { PublicImageOption } from "../PublicImageOption";
@@ -351,6 +353,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
 
   const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
+  const accountDetails = appAvailableAccountsAndClusters?.accountDetails ?? [];
 
   const accountClusterMap = useMemo(() => {
     const devHostClusterIds = new Set(availableClusters.map(({ id }) => id));
@@ -382,12 +385,13 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
   const accountOptions = useMemo(
     () =>
-      Object.keys(accountClusterMap).map((account) => ({
-        label: account,
-        value: account,
-      })),
-    [accountClusterMap],
+      buildAccountOptions(
+        accountDetails.filter(({ accountName }) => accountName in accountClusterMap),
+        t,
+      ),
+    [accountClusterMap, accountDetails, t],
   );
+  const availableAccountOptions = useMemo(() => accountOptions.filter(({ disabled }) => !disabled), [accountOptions]);
 
   // ----------- 服务请求与变更提示 -----------
   // 提交开发机任务的 RPC 请求，集中处理成功跳转和常见错误提示
@@ -764,11 +768,16 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     if (resubmitResourceAppliedRef.current) {
       return;
     }
+    if (!appAvailableAccountsAndClusters || partitionLoading || allClustersLoading) {
+      return;
+    }
 
     const targetAccount = createDevParams.account;
     const targetCluster = createDevParams.clusterId;
 
-    const accountAvailable = targetAccount ? accountOptions.some((option) => option.value === targetAccount) : false;
+    const accountAvailable = targetAccount
+      ? availableAccountOptions.some((option) => option.value === targetAccount)
+      : false;
 
     const targetClusterOption = targetCluster
       ? clusterOptions.find((option) => option.id === targetCluster && !option.disabled)
@@ -790,10 +799,16 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       resourceForm.setFieldsValue(nextValues);
     }
 
-    if ((targetAccount ? accountAvailable : true) && (targetCluster ? clusterExists : true)) {
-      resubmitResourceAppliedRef.current = true;
-    }
-  }, [accountOptions, clusterOptions, createDevParams, resourceForm]);
+    resubmitResourceAppliedRef.current = true;
+  }, [
+    allClustersLoading,
+    appAvailableAccountsAndClusters,
+    availableAccountOptions,
+    clusterOptions,
+    createDevParams,
+    partitionLoading,
+    resourceForm,
+  ]);
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
@@ -978,17 +993,17 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     if (createDevParams && !resubmitResourceAppliedRef.current) {
       return;
     }
-    if (!accountOptions.length) {
+    if (!availableAccountOptions.length) {
       resourceForm.setFieldValue("account", undefined);
       return;
     }
 
     const currentAccount = selectedAccount ?? resourceForm.getFieldValue("account");
 
-    if (!currentAccount || !accountOptions.some((option) => option.value === currentAccount)) {
-      resourceForm.setFieldValue("account", accountOptions[0].value);
+    if (!currentAccount || !availableAccountOptions.some((option) => option.value === currentAccount)) {
+      resourceForm.setFieldValue("account", availableAccountOptions[0].value);
     }
-  }, [accountOptions, createDevParams, resourceForm, selectedAccount]);
+  }, [availableAccountOptions, createDevParams, resourceForm, selectedAccount]);
 
   // 可用集群列表变化时，若当前集群不可用则自动切换到第一个可用集群
   useEffect(() => {
@@ -1256,6 +1271,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       mountPoints: (appValues.mountPoints ?? [])
         .filter((m: MountPointField | undefined) => m?.source && m?.target)
         .map((m: MountPointField) => ({ path: m.source, target: m.target })),
+      envVariables: buildEnvPayload(appValues.envVariables),
     };
   };
 
@@ -1345,6 +1361,11 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       }));
       appForm.setFieldsValue({ mountPoints });
     }
+    appForm.setFieldsValue({
+      envVariables: mergeResubmitEnvVariables(
+        normalizeEnvVariables(formData.envVariables as unknown[] | undefined),
+      ),
+    });
     const tplPartition = formData.partition as string | undefined;
     if (tplPartition) {
       const effectiveAccount = resourceForm.getFieldValue("account") ?? selectedAccount ?? "";
@@ -1522,8 +1543,8 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     const { unavailableParams, effectiveAccount, effectiveCluster } = await buildUnavailableParams({
       fd,
       templateCluster,
-      isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
-      getAvailableAccounts: () => accountOptions.map((o) => o.value),
+      isAccountAvailable: (acc) => availableAccountOptions.some((o) => o.value === acc),
+      getAvailableAccounts: () => availableAccountOptions.map((o) => o.value),
       getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
       selectedAccount,
       selectedCluster,
@@ -1580,9 +1601,9 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
                     }}
                   >
                     <HeaderTitle>{t(pDev("createDevTitle"))}</HeaderTitle>
-                    {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                    <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
                       {t(pDev("templateButton"))}
-                    </Button> */}
+                    </Button>
                   </HeaderRow>
                 }
               >
@@ -1668,7 +1689,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       </JobPageLayout>
 
       <FixedFooter>
-        {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
+        <div style={{ marginLeft: 208, marginRight: "auto" }}>
           <FooterStatValue
             $isPrimaryColor
             style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
@@ -1685,7 +1706,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
           >
             {t(p("saveAsTemplate"))}
           </FooterStatValue>
-        </div> */}
+        </div>
         <FooterActions>
           <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
           <Button type="primary" onClick={handleSubmit} loading={createDevJobMutation.isPending}>
