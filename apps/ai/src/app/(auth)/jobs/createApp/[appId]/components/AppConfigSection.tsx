@@ -5,11 +5,8 @@ import { Checkbox } from "@scow/lib-web/build/components/styledAntdCom/Checkbox"
 import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput, RoundedPasswordInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
-import {
-  SectionTitle,
-  TitledSectionCard as SectionCard,
-} from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { Form, type FormInstance, Space } from "antd";
+import { SectionCard, SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { Form, type FormInstance } from "antd";
 import Markdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
@@ -20,6 +17,8 @@ import {
   ImageDescriptionBox,
   ImageSegmentedControl,
   ImageSelectorWrapper,
+  RemoteCredentialsRow,
+  RemoteImageAddressRow,
 } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
@@ -87,7 +86,7 @@ export const AppConfigSection = ({
   const modelsPlaceholder = isModelsLoading ? t(p("models.loading")) : t(p("models.placeholder"));
 
   return (
-    <SectionCard title={<SectionTitle>{t(p("title"))}</SectionTitle>}>
+    <SectionCard bordered={false} title={<SectionTitle>{t(p("title"))}</SectionTitle>}>
       <Form form={form} colon={false} requiredMark={false}>
         <InlineFormItem
           label={
@@ -108,25 +107,27 @@ export const AppConfigSection = ({
 
             {selectedImageSource === "remote" ? (
               <>
-                <Form.Item
-                  name="image"
-                  rules={[
-                    { required: true, message: t(p("imageField.remoteAddressRequired")) },
-                    createImageAddressValidator(t(p("imageField.remoteAddressInvalid"))),
-                  ]}
-                  style={{ marginBottom: 0 }}
-                >
-                  <RoundedInput
-                    size="large"
-                    placeholder={t(p("imageField.remotePlaceholder"))}
-                    onBlur={() => form.validateFields(["image"])}
-                  />
-                </Form.Item>
-                <Form.Item name="usePrivateImage" valuePropName="checked" noStyle>
-                  <Checkbox>{t(p("imageField.usePrivateImage"))}</Checkbox>
-                </Form.Item>
+                <RemoteImageAddressRow>
+                  <Form.Item
+                    name="image"
+                    rules={[
+                      { required: true, message: t(p("imageField.remoteAddressRequired")) },
+                      createImageAddressValidator(t(p("imageField.remoteAddressInvalid"))),
+                    ]}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <RoundedInput
+                      size="large"
+                      placeholder={t(p("imageField.remotePlaceholder"))}
+                      onBlur={() => form.validateFields(["image"])}
+                    />
+                  </Form.Item>
+                  <Form.Item name="usePrivateImage" valuePropName="checked" noStyle>
+                    <Checkbox>{t(p("imageField.usePrivateImage"))}</Checkbox>
+                  </Form.Item>
+                </RemoteImageAddressRow>
                 {usePrivateRemoteImage ? (
-                  <Space direction="vertical" size={8} style={{ width: "100%", marginTop: 8 }}>
+                  <RemoteCredentialsRow>
                     <Form.Item
                       name="remoteUsername"
                       noStyle
@@ -145,7 +146,7 @@ export const AppConfigSection = ({
                         visibilityToggle
                       />
                     </Form.Item>
-                  </Space>
+                  </RemoteCredentialsRow>
                 ) : null}
               </>
             ) : (

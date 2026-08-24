@@ -1,21 +1,19 @@
 import type { ColumnsType } from "antd/es/table";
 
-import { RoundedButton as ClusterButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
+import { MaxTimeSelector } from "@scow/lib-web/build/components/job/MaxTimeSelector";
+import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import { AddonAfterSelect, RoundedInputNumberWithAddonAfter } from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { RoundedInputNumber } from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import { PresetNumberSelector } from "@scow/lib-web/build/components/styledAntdCom/SegmentedButtons";
 import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
-import {
-  SectionTitle,
-  TitledSectionCard as SectionCard,
-} from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { SectionCard, SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
-import { Form, type FormInstance, Select, Space, Tooltip } from "antd";
+import { Form, type FormInstance, Space, Tooltip } from "antd";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { useQueueTabSelection } from "src/app/(auth)/jobs/hooks/useQueueTabSelection";
+import { MAX_TIME_PRESETS, MAX_TIME_UNITS } from "src/app/(auth)/jobs/maxTime";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { styled } from "styled-components";
 
 import type {
   CPUQueueRow,
@@ -28,9 +26,15 @@ import type {
 
 const p = prefix("app.jobs.resourceConfigSection.");
 
+const ResourceOptionButton = styled(RoundedButton)`
+  border-radius: 4px !important;
+`;
+
 interface Option {
   label: string;
   value: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 interface ClusterOption {
@@ -59,6 +63,8 @@ interface ResourceConfigSectionProps {
   qosOptions: string[];
   maxTimeUnit: MaxTimeUnit;
   onMaxTimeUnitChange: (unit: MaxTimeUnit) => void;
+  selectedPresetUnit?: MaxTimeUnit;
+  onSelectedPresetUnitChange: (unit: MaxTimeUnit | undefined) => void;
   maxJobRunningTimeHours?: number;
   isResubmit?: boolean;
 }
@@ -83,10 +89,15 @@ export const ResourceConfigSection = ({
   qosOptions,
   maxTimeUnit,
   onMaxTimeUnitChange,
+  selectedPresetUnit,
+  onSelectedPresetUnitChange,
   maxJobRunningTimeHours,
   isResubmit,
 }: ResourceConfigSectionProps) => {
   const t = useI18nTranslateToString();
+  const selectedAccount = Form.useWatch<string | undefined>("account", form);
+  const selectedQos = Form.useWatch<string | undefined>("priority", form);
+  const effectiveMaxTimeUnit = selectedPresetUnit ?? maxTimeUnit;
   const { sortedGpuRows, sortedCpuRows, handleTabChange, markAccountTouched, markClusterTouched } =
     useQueueTabSelection({
       gpuRows,
@@ -156,27 +167,50 @@ export const ResourceConfigSection = ({
 
     return 1;
   })();
-
+  const cpuInputMax = selectedQueueOption ? selectedQueueOption.totalUnits / selectedQueueOption.totalNodes : 1;
   return (
-    <SectionCard title={<SectionTitle>{t(p("title"))}</SectionTitle>}>
+    <SectionCard bordered={false} title={<SectionTitle>{t(p("title"))}</SectionTitle>}>
       <Form form={form} colon={false} requiredMark={false} initialValues={{ queue: activeResourceTab }}>
         <InlineFormItem name="account" label={<Label>{t(p("accountLabel"))}</Label>} rules={[{ required: true }]}>
-          <RoundedSelect
-            size="large"
-            options={accountOptions}
-            placeholder={t(p("accountPlaceholder"))}
-            onChange={(value) => {
-              markAccountTouched();
-              form.setFieldValue("account", value);
-            }}
-          />
+          <Space wrap>
+            {accountOptions.map(({ label, value, disabled, disabledReason }) => {
+              const button = (
+                <ResourceOptionButton
+                  size="large"
+                  key={value}
+                  type={selectedAccount === value ? "primary" : "default"}
+                  $selected={selectedAccount === value}
+                  disabled={disabled}
+                  onClick={() => {
+                    if (disabled) {
+                      return;
+                    }
+                    markAccountTouched();
+                    form.setFieldValue("account", value);
+                  }}
+                >
+                  {label}
+                </ResourceOptionButton>
+              );
+
+              if (!disabled || !disabledReason) {
+                return button;
+              }
+
+              return (
+                <Tooltip key={value} title={disabledReason}>
+                  <span>{button}</span>
+                </Tooltip>
+              );
+            })}
+          </Space>
         </InlineFormItem>
 
         <InlineFormItem name="cluster" label={<Label>{t(p("clusterLabel"))}</Label>} rules={[{ required: true }]}>
           <Space wrap>
             {clusterOptions.map(({ id, name, disabled }) => {
               const button = (
-                <ClusterButton
+                <ResourceOptionButton
                   size="large"
                   key={id}
                   type={selectedCluster === id ? "primary" : "default"}
@@ -191,7 +225,7 @@ export const ResourceConfigSection = ({
                   }}
                 >
                   {name}
-                </ClusterButton>
+                </ResourceOptionButton>
               );
 
               if (!disabled) {
@@ -212,13 +246,25 @@ export const ResourceConfigSection = ({
         </InlineFormItem>
 
         <InlineFormItem name="priority" label={<Label>{t(p("priorityLabel"))}</Label>} rules={[{ required: true }]}>
-          <RoundedSelect
-            size="large"
-            options={qosOptions.map((qos) => ({ label: qos, value: qos }))}
-            placeholder={t(p("priorityPlaceholder"))}
-            disabled={!qosOptions.length}
-            style={{ width: "480px" }}
-          />
+          <Space wrap>
+            {qosOptions.length ? (
+              qosOptions.map((qos) => (
+                <ResourceOptionButton
+                  size="large"
+                  key={qos}
+                  type={selectedQos === qos ? "primary" : "default"}
+                  $selected={selectedQos === qos}
+                  onClick={() => form.setFieldValue("priority", qos)}
+                >
+                  {qos}
+                </ResourceOptionButton>
+              ))
+            ) : (
+              <ResourceOptionButton size="large" disabled>
+                {t(p("priorityPlaceholder"))}
+              </ResourceOptionButton>
+            )}
+          </Space>
         </InlineFormItem>
 
         {activeResourceTab === "gpu" ? (
@@ -228,14 +274,11 @@ export const ResourceConfigSection = ({
             rules={[{ required: true, type: "integer" }]}
             helpTip={t("app.jobs.appConfigSection.environmentVariables.gpuHelpTip")}
           >
-            <RoundedInputNumber
-              size="large"
-              step={1}
-              min={1}
-              precision={0}
+            <PresetNumberSelector
               max={gpuInputMax}
               disabled={!selectedQueueOption}
-              style={{ width: "480px" }}
+              placeholder={t(p("otherValuePlaceholder"))}
+              disabledTooltip={t(p("presetDisabledTooltip"))}
             />
           </InlineFormItem>
         ) : (
@@ -244,13 +287,11 @@ export const ResourceConfigSection = ({
             label={<Label>{t(p("cpuLabel"))}</Label>}
             rules={[{ required: true, type: "integer" }]}
           >
-            <RoundedInputNumber
-              size="large"
-              min={1}
-              precision={0}
-              max={selectedQueueOption ? selectedQueueOption?.totalUnits / selectedQueueOption.totalNodes : 1}
+            <PresetNumberSelector
+              max={cpuInputMax}
               disabled={!selectedQueueOption}
-              style={{ width: "480px" }}
+              placeholder={t(p("otherValuePlaceholder"))}
+              disabledTooltip={t(p("presetDisabledTooltip"))}
             />
           </InlineFormItem>
         )}
@@ -264,28 +305,28 @@ export const ResourceConfigSection = ({
               validator: validateConfigMaxJobRunningHours(
                 t(p("maxRunTimeExceed"), [maxJobRunningTimeHours?.toString() ?? ""]),
                 t(p("maxRunTimePositive")),
-                maxTimeUnit,
+                effectiveMaxTimeUnit,
                 maxJobRunningTimeHours,
               ),
             },
           ]}
         >
-          <RoundedInputNumberWithAddonAfter
-            size="large"
-            min={1}
-            step={1}
-            style={{ width: "calc(480px - 72px)", minWidth: "130px" }}
-            addonAfter={
-              <AddonAfterSelect
-                style={{ minWidth: "72px" }}
-                value={maxTimeUnit}
-                onChange={(value) => onMaxTimeUnitChange(value as MaxTimeUnit)}
-              >
-                <Select.Option value="min">{t(p("durationUnits.minute"))}</Select.Option>
-                <Select.Option value="hour">{t(p("durationUnits.hour"))}</Select.Option>
-                <Select.Option value="day">{t(p("durationUnits.day"))}</Select.Option>
-              </AddonAfterSelect>
-            }
+          <MaxTimeSelector
+            disabled={!selectedQueueOption}
+            maxRunningTimeHours={maxJobRunningTimeHours}
+            disabledTooltip={t(p("maxRunTimeExceed"), [maxJobRunningTimeHours?.toString() ?? ""])}
+            maxTimeUnit={maxTimeUnit}
+            onMaxTimeUnitChange={onMaxTimeUnitChange}
+            selectedPresetUnit={selectedPresetUnit}
+            onSelectedPresetUnitChange={onSelectedPresetUnitChange}
+            labels={{
+              minutes: t(p("durationUnits.minute")),
+              hours: t(p("durationUnits.hour")),
+              days: t(p("durationUnits.day")),
+              otherValue: t(p("otherValuePlaceholder")),
+            }}
+            units={MAX_TIME_UNITS}
+            presets={MAX_TIME_PRESETS}
           />
         </InlineFormItem>
       </Form>

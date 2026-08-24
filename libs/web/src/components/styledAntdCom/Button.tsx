@@ -23,7 +23,7 @@ export type RoundedButtonProps = ButtonProps & RoundedButtonOwnProps;
 export const RoundedButton = styled(WaveDisabledButton)<RoundedButtonOwnProps>`
   ${({ $width }) => ($width ? `width: ${$width};` : "")}
   height: ${({ $height }) => $height ?? "36px"} !important;
-  font-size: 14px;
+  font-size: 14px !important;
   font-weight: 300;
   line-height: 22px;
   padding: 0px 16px;

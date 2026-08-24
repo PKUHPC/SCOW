@@ -1,6 +1,11 @@
 import type { ColumnsType } from "antd/es/table";
 import type { ReactNode } from "react";
 
+import {
+  createMaxTimePresets,
+  MaxTimeSelector,
+  type MaxTimeUnits,
+} from "@scow/lib-web/build/components/job/MaxTimeSelector";
 import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
@@ -13,12 +18,12 @@ import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form
 import { Form, type FormInstance, Space } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { ReservedAppAttributeName, TimeUnit } from "src/models/job";
-import { MaxTimeSelector } from "src/pageComponents/job/submitJobCom/ResourceConfigSection";
 import { ReservedAppAttribute } from "src/pages/api/app/getAppMetadata";
 import { Partition } from "src/pages/api/cluster";
 
-import { getReservedAppAttributeConfig } from "../LauchAppFormUtils";
 import type { AccountOption } from "../LaunchAppForm";
+
+import { getReservedAppAttributeConfig } from "../LauchAppFormUtils";
 import { AppResourceFormValues, FixedOrEditableFormItem } from "./FixedOrEditableFormItem";
 
 export type PartitionTabKey = "cpu" | "gpu";
@@ -63,6 +68,12 @@ interface ResourceConfigSectionProps {
 
 const p = prefix("pageComp.app.launchAppForm.");
 const PARTITION_TABLE_SELECTION_WIDTH = 48;
+const MAX_TIME_UNITS: MaxTimeUnits<TimeUnit> = {
+  minutes: TimeUnit.MINUTES,
+  hours: TimeUnit.HOURS,
+  days: TimeUnit.DAYS,
+};
+const MAX_TIME_PRESETS = createMaxTimePresets(MAX_TIME_UNITS);
 
 export const ResourceConfigSection = ({
   form,
@@ -442,6 +453,8 @@ export const ResourceConfigSection = ({
                 days: t(p("day")),
                 otherValue: t(p("nodeCountOtherPlaceholder")),
               }}
+              units={MAX_TIME_UNITS}
+              presets={MAX_TIME_PRESETS}
             />
           }
           isNumberAttribute={true}

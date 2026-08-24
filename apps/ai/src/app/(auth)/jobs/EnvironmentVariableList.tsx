@@ -31,13 +31,16 @@ const EnvInputs = styled.div`
   gap: 12px;
 `;
 
-// 占位符，用于对齐没有删除按钮的静态行
-const ActionPlaceholder = styled.div`
-  width: 24px; // 与 RemoveButton 宽度一致
+const EnvActionButton = styled(RemoveButton)``;
+
+const EnvActions = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
 `;
 
-const EnvRemoveButton = styled(RemoveButton)`
-  margin-top: 10px;
+const EnvActionPlaceholder = styled.div`
+  width: 52px;
 `;
 
 const p = prefix("app.jobs.environmentVariableList.");
@@ -196,21 +199,30 @@ export const EnvironmentVariableList = ({ clusterId, homeDir }: Props) => {
                 </EnvInputs>
 
                 {isBuiltIn ? (
-                  <ActionPlaceholder />
+                  <EnvActionPlaceholder />
                 ) : (
-                  <EnvRemoveButton
-                    icon={<MinusOutlined />}
-                    onClick={() => remove(name)}
-                    aria-label={t(p("removeAriaLabel"))}
-                  />
+                  <EnvActions>
+                    <EnvActionButton
+                      icon={<MinusOutlined />}
+                      onClick={() => remove(name)}
+                      aria-label={t(p("removeAriaLabel"))}
+                    />
+                    <EnvActionButton
+                      icon={<PlusOutlined />}
+                      onClick={() => add({}, name + 1)}
+                      aria-label={t(p("addButton"))}
+                    />
+                  </EnvActions>
                 )}
               </EnvRow>
             );
           })}
 
-          <AddButton icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />} onClick={() => add({})}>
-            {t(p("addButton"))}
-          </AddButton>
+          {fields.every(({ name }) => name < RESERVED_ENV_KEYS.length) ? (
+            <AddButton icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />} onClick={() => add({})}>
+              {t(p("addButton"))}
+            </AddButton>
+          ) : null}
         </EnvListContainer>
       )}
     </Form.List>

@@ -373,7 +373,11 @@ interface ResourceSelectorFieldValue {
   __targetTouched?: boolean;
 }
 
-const RowRemoveButton = styled(RemoveButton)`
+const RowRemoveButton = styled(RemoveButton)``;
+
+const RowActions = styled.div`
+  display: flex;
+  gap: 8px;
   margin-top: 10px;
 `;
 
@@ -636,20 +640,29 @@ export const ResourceSelectorList = ({
                   />
                 </Form.Item>
 
-                <RowRemoveButton
-                  icon={<MinusOutlined />}
-                  onClick={() => remove(field.name)}
-                  aria-label={removeAriaLabel}
-                />
+                <RowActions>
+                  <RowRemoveButton
+                    icon={<MinusOutlined />}
+                    onClick={() => remove(field.name)}
+                    aria-label={removeAriaLabel}
+                  />
+                  <RowRemoveButton
+                    icon={<PlusOutlined />}
+                    onClick={() => add(undefined, field.name + 1)}
+                    aria-label={addButtonText}
+                  />
+                </RowActions>
               </Row>
             ))}
 
-            <AddButton
-              icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />}
-              onClick={() => add(undefined)}
-            >
-              {addButtonText}
-            </AddButton>
+            {fields.length === 0 ? (
+              <AddButton
+                icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />}
+                onClick={() => add(undefined)}
+              >
+                {addButtonText}
+              </AddButton>
+            ) : null}
 
             <ErrorList errors={errors} />
           </ListContainer>

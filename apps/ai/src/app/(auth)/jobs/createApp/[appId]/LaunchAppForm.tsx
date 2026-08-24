@@ -5,7 +5,8 @@ import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shar
 import type { CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import type { AppTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions } from "@scow/lib-web/build/components/job/Footer";
+import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
   HeaderRow,
@@ -20,7 +21,15 @@ import {
 } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
+import {
+  JobContainer,
+  JobMainContent,
+  JobPageLayout,
+  JobSidePanel,
+  JobSidePanelInner,
+  JobSidePanelScrollBox,
+} from "@scow/lib-web/build/layouts/base/JobContainer";
+import { convertDurationToHours } from "@scow/lib-web/build/utils/form";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Typography } from "antd";
 import { Rule } from "antd/es/form";
@@ -28,12 +37,16 @@ import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Markdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
 import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
 import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
-import { HeaderAvatar } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { HeaderAvatar, SidePanelGroupWrapper, StyledBackIcon } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
@@ -41,6 +54,7 @@ import { JobType } from "src/models/Job";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { styled, useTheme } from "styled-components";
 
 import type {
   AppFormValues,
@@ -70,7 +84,6 @@ import {
   buildUnavailableParams,
   buildVersionLookup,
   cleanFormData,
-  convertDurationToHours,
   deriveQueueStats,
   getCommandCacheKey,
   initBuiltinEnvVariables,
@@ -102,7 +115,6 @@ const pPublicOption = prefix("app.jobs.publicImageOption.");
 type LaunchAppFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchAppFormKey, `imageSourceTabs.${string}`>;
 type ImagePlaceholderKey = Extract<LaunchAppFormKey, `imagePlaceholders.${string}`>;
-type QueueFooterLabelKey = Extract<LaunchAppFormKey, `queueFooterLabels.${string}`>;
 
 // 镜像来源配置（label & placeholder 的 key）
 const IMAGE_SOURCE_TAB_CONFIG: readonly {
@@ -123,24 +135,59 @@ const IMAGE_PLACEHOLDER_KEYS: Record<ImageSourceKey, ImagePlaceholderKey> = {
   remote: "imagePlaceholders.remote",
 } as const;
 
-// 根据队列类型自定义底部统计栏的字段文案
-const QUEUE_LABEL_KEYS: Record<
-  QueueKind,
-  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
-> = {
-  gpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-  cpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-};
-
 type TranslateFn = ReturnType<typeof useI18nTranslateToString>;
+
+const AppCommentContainer = styled.div`
+  max-width: 100%;
+  overflow-x: auto;
+  color: ${({ theme }) => theme.palette.gray[8]};
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: max-content;
+    max-width: 100%;
+    margin: 8px 0;
+  }
+
+  th,
+  td {
+    border: 1px solid ${({ theme }) => theme.token.colorBorder};
+    padding: 8px 12px;
+  }
+
+  pre {
+    background-color: ${({ theme }) => theme.token.colorFillTertiary};
+    border-radius: 4px;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  code {
+    background-color: ${({ theme }) => theme.token.colorFillTertiary};
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+`;
+
+const SidePanelDivider = styled.div`
+  height: 1px;
+  margin: 16px 0px;
+  background: ${({ theme }) => theme.palette.gray[4]};
+  flex-shrink: 0;
+`;
 
 // GPU 队列表格列定义，包含显卡信息与资源情况
 const buildGpuColumns = (t: TranslateFn): ColumnsType<GPUQueueRow> => [
@@ -248,6 +295,7 @@ export const LaunchAppForm = ({
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
+  const theme = useTheme();
   const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
 
   // 配置文件中所有的AI集群
@@ -259,6 +307,19 @@ export const LaunchAppForm = ({
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
   const [appForm] = Form.useForm<AppFormValues>();
+
+  useEffect(() => {
+    const messageKey = "createAppClusterParamError";
+    const clusterAvailable = clusterId ? currentAvailableClusterIds.includes(clusterId) : false;
+
+    if (!clusterAvailable) {
+      message.error({
+        key: messageKey,
+        content: t(p("invalidClusterParam"), [clusterId ?? ""]),
+      });
+      return;
+    }
+  }, [clusterId, currentAvailableClusterIds]);
 
   const hasInitializedBuiltinEnvVariablesRef = useRef(false);
   useEffect(() => {
@@ -319,10 +380,6 @@ export const LaunchAppForm = ({
   const commandCacheRef = useRef<Record<string, CommandCacheEntry>>({});
   // 防止同步命令时触发双向写入造成的死循环
   const isSyncingCommandRef = useRef(false);
-  const previousClusterRef = useRef<string | undefined>(undefined);
-  const hasClusterSelectionRef = useRef(false);
-  const hasClusterSwitchedRef = useRef(false);
-  const isClusterResettingRef = useRef(false);
   const isApplyingTemplateRef = useRef(false);
   const resubmitImageAppliedRef = useRef(false);
   const resubmitResourceAppliedRef = useRef(false);
@@ -337,6 +394,7 @@ export const LaunchAppForm = ({
   const resubmitMountEnvAppliedRef = useRef(false);
   const resubmitCustomFieldsAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
+  const [selectedPresetUnit, setSelectedPresetUnit] = useState<MaxTimeUnit | undefined>("min");
 
   // createAppParams is used directly by resubmit effects (no template merge)
 
@@ -371,14 +429,16 @@ export const LaunchAppForm = ({
     }
   }, [appAvailableAccountsAndClusters, appId, appUnauthorizedMessage, clusterId, message]);
 
-  // 账户下拉选项根据 cluster 关联关系动态生成
+  // 创建应用的集群由入口页决定，账户只展示能访问该集群的项。
   const accountOptions = useMemo(
     () =>
-      Object.keys(accountClusterMap).map((account) => ({
-        label: account,
-        value: account,
-      })),
-    [accountClusterMap],
+      Object.entries(accountClusterMap)
+        .filter(([, clusters]) => (clusterId ? clusters.includes(clusterId) : false))
+        .map(([account]) => ({
+          label: account,
+          value: account,
+        })),
+    [accountClusterMap, clusterId],
   );
 
   // ----------- 表单字段监听 -----------
@@ -393,6 +453,15 @@ export const LaunchAppForm = ({
   const priority = Form.useWatch("priority", resourceForm) ?? "";
   const selectedGpuCount = Form.useWatch("gpuCores", resourceForm) ?? 0;
   const selectedCpuCount = Form.useWatch("cpuCores", resourceForm) ?? 0;
+  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
+
+  const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
+    { accountName: selectedAccount! },
+    {
+      enabled: Boolean(publicConfig.MIS_DEPLOYED && selectedAccount),
+      retry: false,
+    },
+  );
 
   // ----------- 服务请求与变更提示 -----------
   // 创建应用作业的 RPC 请求，集中处理成功跳转和常见错误提示
@@ -436,80 +505,6 @@ export const LaunchAppForm = ({
   });
 
   const sanitizeAppFormValues = () => sanitizeFormMountAndEnvValues(appForm);
-
-  // ----- 在外部状态变化时同步表单值 -----
-  // 当用户切换集群、或从预填数据恢复到不同集群时，需要清理依赖于集群的字段，避免旧值残留
-  // 处理「再次提交」场景下的账户/集群回填，确保历史选择优先生效
-  useEffect(() => {
-    const previousCluster = previousClusterRef.current;
-    if (previousCluster === selectedCluster) {
-      return;
-    }
-    const hadClusterSelection = hasClusterSelectionRef.current;
-    previousClusterRef.current = selectedCluster;
-    if (selectedCluster !== undefined) {
-      hasClusterSelectionRef.current = true;
-    }
-    if (previousCluster === undefined && selectedCluster === undefined) {
-      return;
-    }
-    const applyingTemplate = isApplyingTemplateRef.current;
-    if (hadClusterSelection && !applyingTemplate) {
-      hasClusterSwitchedRef.current = true;
-    }
-    const shouldReset = hadClusterSelection;
-    isClusterResettingRef.current = true;
-
-    resubmitImageAppliedRef.current = false;
-    // 如果已应用过再次提交的队列，则不再重复应用，保持用户后续选择
-    if (!resubmitQueueEverAppliedRef.current) {
-      resubmitQueueAppliedRef.current = false;
-    }
-    if (!applyingTemplate) {
-      resubmitCascaderAppliedRef.current = {
-        datasets: shouldReset,
-        algorithms: shouldReset,
-        models: shouldReset,
-      };
-      resubmitMountEnvAppliedRef.current = shouldReset;
-      resubmitCustomFieldsAppliedRef.current = shouldReset;
-    }
-    if (shouldReset && !applyingTemplate) {
-      resourceForm.setFieldsValue({ priority: undefined });
-      appForm.setFieldsValue({
-        image: undefined,
-        command: undefined,
-        usePrivateImage: false,
-        remoteUsername: undefined,
-        remotePassword: undefined,
-        datasets: [],
-        algorithms: [],
-        models: [],
-        mountPoints: [],
-        envVariables: [],
-      });
-      const draftSnapshot = imageSourceDraftsRef.current;
-      imageSourceDraftsRef.current = {
-        preset: { image: draftSnapshot.preset?.image },
-        mine: {},
-        public: {},
-        remote: {
-          image: draftSnapshot.remote?.image,
-          usePrivateImage: draftSnapshot.remote?.usePrivateImage,
-          remoteUsername: draftSnapshot.remote?.remoteUsername,
-          remotePassword: draftSnapshot.remote?.remotePassword,
-        },
-      };
-      setSelectedQueueKey(undefined);
-      commandCacheRef.current = {};
-      isSyncingCommandRef.current = false;
-      setSelectedImageSource("preset");
-    }
-
-    Promise.resolve().then(() => {
-      isClusterResettingRef.current = false;
-    });
-  }, [appForm, resourceForm, selectedCluster]);
 
   // ----------- 交互处理逻辑 -----------
   const handleImageSourceChange = (nextSource: ImageSourceKey) => {
@@ -1080,7 +1075,6 @@ export const LaunchAppForm = ({
         {
           label: effectiveAppImage,
           value: effectiveAppImage,
-          description: getI18nConfigCurrentText(effectiveAppComment, languageId),
           displayLabel: effectiveAppImage,
           startCommand: effectiveAppStartCommand,
           rawName,
@@ -1117,7 +1111,7 @@ export const LaunchAppForm = ({
         })) as ImageOption[];
     }
     return [];
-  }, [effectiveAppComment, effectiveAppImage, images, selectedImageSource, effectiveAppStartCommand, languageId]);
+  }, [effectiveAppImage, images, selectedImageSource, effectiveAppStartCommand, languageId]);
 
   // 统一选中值的类型，避免数字 ID 与字符串之间的比较问题
   const normalizedSelectedImageValue =
@@ -1147,7 +1141,6 @@ export const LaunchAppForm = ({
       trimmedResubmitCommand &&
       resubmitSource === selectedImageSource &&
       resubmitCommandKey &&
-      !hasClusterSwitchedRef.current &&
       !resubmitCommandLockedRef.current &&
       currentCommandKey === resubmitCommandKey
     ) {
@@ -1223,9 +1216,6 @@ export const LaunchAppForm = ({
   useEffect(() => {
     // 同步最新的预置镜像信息，避免 props 更新后表单仍展示旧值
     imageSourceDraftsRef.current.preset = effectiveAppImage ? { image: effectiveAppImage } : {};
-    if (isClusterResettingRef.current) {
-      return;
-    }
     if (selectedImageSource === "preset" && appForm.getFieldValue("image") !== effectiveAppImage) {
       appForm.setFieldsValue({ image: effectiveAppImage });
     }
@@ -1342,10 +1332,6 @@ export const LaunchAppForm = ({
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
 
-  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
-  const gpuLabel = t(p(gpuLabelKey));
-  const cpuLabel = t(p(cpuLabelKey));
-  const memoryLabel = t(p(memoryLabelKey));
 
   const displayedGpu = activeResourceTab === "gpu" ? (selectedGpuCount > 0 ? selectedGpuCount : "-") : "-";
 
@@ -1397,28 +1383,33 @@ export const LaunchAppForm = ({
     },
   );
 
-  const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)} ${t(p("yuan"))}`;
+  const formattedHourlyPrice = jobOneHourPrice == null ? "-" : jobOneHourPrice.toFixed(2);
 
-  // 结合账户配置和全局配置生成可点击的集群按钮列表
-  // 根据账户授权过滤可用集群，并映射出按钮需要的展示文案
+  // 创建应用的集群由入口页决定，这里只展示入口集群，并根据在线状态与账户授权标记是否可用。
   const clusterOptions = useMemo(() => {
-    const allowedClusters = new Set<string>(selectedAccount ? (accountClusterMap[selectedAccount] ?? []) : []);
-    // 当前用户关联可用账户下的所有可用在线集群
-    const associateClusterIds = new Set<string>(currentAvailableClusterIds ?? []);
-    // 获取AI可用在线集群
-    const activatedAvailableClusters = CLUSTERS.filter((c) => {
-      return associateClusterIds.has(c.id);
-    });
-    // 只展示：(系统在线的集群) 且 (用户至少有一个账户能访问该集群)
-    return activatedAvailableClusters.map((cluster) => ({
-      id: cluster.id,
-      name: getI18nConfigCurrentText(cluster.name, languageId),
-      disabled: !selectedAccount || !allowedClusters.has(cluster.id),
-    }));
-  }, [CLUSTERS, accountClusterMap, currentAvailableClusterIds, languageId, selectedAccount]);
+    if (!clusterId) {
+      return [];
+    }
+
+    const cluster = CLUSTERS.find((item) => item.id === clusterId);
+    if (!cluster) {
+      return [];
+    }
+
+    const clusterOnline = (currentAvailableClusterIds ?? []).includes(clusterId);
+    const accountAuthorized = selectedAccount ? (accountClusterMap[selectedAccount] ?? []).includes(clusterId) : false;
+
+    return [
+      {
+        id: cluster.id,
+        name: getI18nConfigCurrentText(cluster.name, languageId),
+        disabled: !clusterOnline || !accountAuthorized,
+      },
+    ];
+  }, [CLUSTERS, accountClusterMap, clusterId, currentAvailableClusterIds, languageId, selectedAccount]);
 
   useEffect(() => {
-    // 再次提交时回填账户与集群，避免默认值覆盖历史配置
+    // 再次提交时只回填账户；集群由入口页 clusterId 固定同步。
     if (!createAppParams) {
       resubmitResourceAppliedRef.current = false;
       return;
@@ -1426,36 +1417,19 @@ export const LaunchAppForm = ({
     if (resubmitResourceAppliedRef.current) {
       return;
     }
+    if (!accountOptions.length) {
+      return;
+    }
 
     const targetAccount = createAppParams.account;
-    const targetCluster = createAppParams.clusterId;
-
     const accountAvailable = targetAccount ? accountOptions.some((option) => option.value === targetAccount) : false;
 
-    const targetClusterOption = targetCluster
-      ? clusterOptions.find((option) => option.id === targetCluster && !option.disabled)
-      : undefined;
-
-    const clusterExists = Boolean(targetClusterOption);
-
-    const nextValues: Partial<ResourceFormValues> = {};
-
     if (accountAvailable && resourceForm.getFieldValue("account") !== targetAccount) {
-      nextValues.account = targetAccount;
+      resourceForm.setFieldValue("account", targetAccount);
     }
 
-    if (clusterExists && resourceForm.getFieldValue("cluster") !== targetCluster) {
-      nextValues.cluster = targetCluster;
-    }
-
-    if (Object.keys(nextValues).length > 0) {
-      resourceForm.setFieldsValue(nextValues);
-    }
-
-    if ((targetAccount ? accountAvailable : true) && (targetCluster ? clusterExists : true)) {
-      resubmitResourceAppliedRef.current = true;
-    }
-  }, [accountOptions, clusterOptions, createAppParams, resourceForm]);
+    resubmitResourceAppliedRef.current = true;
+  }, [accountOptions, createAppParams, resourceForm]);
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
@@ -1500,6 +1474,9 @@ export const LaunchAppForm = ({
         value = minutes / 60;
       }
       setMaxTimeUnit(unit);
+      setSelectedPresetUnit(
+        MAX_TIME_PRESETS.find((preset) => preset.maxTime === value && preset.maxTimeUnit === unit)?.maxTimeUnit,
+      );
       maxTimeValue = value;
     }
 
@@ -1587,8 +1564,17 @@ export const LaunchAppForm = ({
     selectedCluster,
     setActiveResourceTab,
     setMaxTimeUnit,
+    setSelectedPresetUnit,
     setSelectedQueueKey,
   ]);
+
+  useEffect(() => {
+    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
+    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
+      resourceForm.setFieldValue("maxTime", 30);
+      setSelectedPresetUnit("min");
+    }
+  }, [resourceForm, selectedMaxTime]);
 
   // 单位或配置上限变化时触发校验，让用户看到最新提示
   useEffect(() => {
@@ -1596,7 +1582,7 @@ export const LaunchAppForm = ({
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [maxTimeUnit, maxJobRunningTimeHours, resourceForm]);
+  }, [maxTimeUnit, maxJobRunningTimeHours, resourceForm, selectedPresetUnit]);
 
   // 将生成的作业名称与表单字段保持一致，便于 Form 校验
   useEffect(() => {
@@ -1658,41 +1644,17 @@ export const LaunchAppForm = ({
     }
   }, [accountOptions, createAppParams, resourceForm, selectedAccount]);
 
-  // 选中账户变化时，若当前集群不可用则优先使用 URL 的 clusterId，否则回退到首个可用集群
+  // 集群由入口页决定，表单字段只同步入口 clusterId。
   useEffect(() => {
-    if (createAppParams && !resubmitResourceAppliedRef.current) {
+    if (!clusterId) {
       return;
     }
-    const currentAccount = selectedAccount ?? resourceForm.getFieldValue("account");
-    const currentCluster = selectedCluster ?? resourceForm.getFieldValue("cluster");
 
-    const availableClusters = currentAccount ? (accountClusterMap[currentAccount] ?? []) : [];
-    const quickEntryTargetCluster = !createAppParams ? clusterId : undefined;
-    const firstEnabledCluster = clusterOptions.find((option) => !option.disabled)?.id;
-
-    const initialCluster = clusterOptions.some((option) => option.id === quickEntryTargetCluster && !option.disabled)
-      ? quickEntryTargetCluster
-      : firstEnabledCluster;
-
-    if (!currentAccount || !availableClusters.length) {
-      if (currentCluster !== undefined) {
-        resourceForm.setFieldValue("cluster", undefined);
-      }
-      return;
+    const currentCluster = resourceForm.getFieldValue("cluster");
+    if (currentCluster !== clusterId) {
+      resourceForm.setFieldValue("cluster", clusterId);
     }
-    if (!currentCluster || !availableClusters.includes(currentCluster) || !initialCluster) {
-      resourceForm.setFieldValue("cluster", initialCluster);
-    }
-  }, [
-    accountClusterMap,
-    clusterOptions,
-    clusterId,
-    createAppParams,
-    currentAvailableClusterIds,
-    resourceForm,
-    selectedAccount,
-    selectedCluster,
-  ]);
+  }, [clusterId, resourceForm]);
 
   // 与标签状态保持同步，确保 queue 字段符合 GPU / CPU 的切换
   useEffect(() => {
@@ -1758,9 +1720,6 @@ export const LaunchAppForm = ({
     if (!imageOptionsForSource.length) {
       return;
     }
-    if (isClusterResettingRef.current) {
-      return;
-    }
 
     const currentImage = appForm.getFieldValue("image");
     if (typeof currentImage === "string" && currentImage.trim()) {
@@ -1801,17 +1760,7 @@ export const LaunchAppForm = ({
       return;
     }
 
-    if (isClusterResettingRef.current) {
-      resubmitImageAppliedRef.current = false;
-      return;
-    }
-
     const { source, draft } = resubmitImagePreference;
-    if (hasClusterSwitchedRef.current && (source === "mine" || source === "public")) {
-      imageSourceDraftsRef.current[source] = {};
-      resubmitImageAppliedRef.current = true;
-      return;
-    }
     const signature = JSON.stringify({
       source,
       image: draft.image ?? null,
@@ -2007,7 +1956,7 @@ export const LaunchAppForm = ({
       gpuCount: selectedGpuCount > 0 ? selectedGpuCount : undefined,
       gpuType: gpuTypeValue ?? undefined,
       maxTime: resourceValues.maxTime ?? 60,
-      maxTimeUnit,
+      maxTimeUnit: selectedPresetUnit ?? maxTimeUnit,
       isImagePrivate:
         selectedImageSource === "mine" || selectedImageSource === "public" ? selectedImageSource === "mine" : undefined,
       image:
@@ -2112,7 +2061,10 @@ export const LaunchAppForm = ({
 
       const memoryMb = memoryPerUnitMb ? Math.max(0, Math.round(memoryPerUnitMb * unitCount)) : undefined;
 
-      const maxTimeMinutes = Math.max(1, Math.round(convertDurationToHours(maxTime, maxTimeUnit) * 60));
+      const maxTimeMinutes = Math.max(
+        1,
+        Math.round(convertDurationToHours(maxTime, selectedPresetUnit ?? maxTimeUnit) * 60),
+      );
 
       // 将级联选择值映射回后端所需的 {id, isPrivate} 列表
       const algorithmLookup = buildVersionLookup(
@@ -2222,18 +2174,19 @@ export const LaunchAppForm = ({
   };
 
   const handleTemplateUse = async (formData: TemplateFormData, templateCluster: string) => {
+    if (!clusterId) {
+      message.error(t(p("selectValidAccountClusterQueue")));
+      return;
+    }
+
     const fd = formData;
 
-    const {
-      unavailableParams,
-      effectiveAccount: effectiveAcc,
-      effectiveCluster,
-    } = await buildUnavailableParams({
+    const { unavailableParams, effectiveAccount: effectiveAcc } = await buildUnavailableParams({
       fd,
       templateCluster,
       isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
       getAvailableAccounts: () => accountOptions.map((o) => o.value),
-      getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
+      getClustersForAccount: (acc) => ((accountClusterMap[acc] ?? []).includes(clusterId) ? [clusterId] : []),
       selectedAccount,
       selectedCluster,
       selectedQueueKey,
@@ -2250,16 +2203,21 @@ export const LaunchAppForm = ({
     const applyFn = async () => {
       const cleanedFormData = cleanFormData(fd, unavailableParams);
       isApplyingTemplateRef.current = true;
-      hasClusterSwitchedRef.current = false;
       commandCacheRef.current = {};
 
-      resourceForm.setFieldsValue({ account: effectiveAcc, cluster: effectiveCluster });
+      resourceForm.setFieldsValue({ account: effectiveAcc, cluster: clusterId });
 
       const tplMaxTime = cleanedFormData.maxTime as number | undefined;
       const tplMaxTimeUnit = cleanedFormData.maxTimeUnit as MaxTimeUnit | undefined;
       if (tplMaxTimeUnit) {
         setMaxTimeUnit(tplMaxTimeUnit);
       }
+      setSelectedPresetUnit(
+        tplMaxTime != null && tplMaxTimeUnit
+          ? MAX_TIME_PRESETS.find((preset) => preset.maxTime === tplMaxTime && preset.maxTimeUnit === tplMaxTimeUnit)
+              ?.maxTimeUnit
+          : undefined,
+      );
 
       const tplPartition = cleanedFormData.partition as string | undefined;
       const tplCoreCount = cleanedFormData.coreCount as number | undefined;
@@ -2269,7 +2227,7 @@ export const LaunchAppForm = ({
 
       if (tplPartition) {
         const partitionsForCluster = await trpcUtils.config.getAvailablePartitions
-          .fetch({ accountName: effectiveAcc, clusterId: effectiveCluster })
+          .fetch({ accountName: effectiveAcc, clusterId })
           .catch(() => undefined);
         if (partitionsForCluster) {
           const matched = partitionsForCluster.find((pt) => pt.name === tplPartition);
@@ -2368,7 +2326,7 @@ export const LaunchAppForm = ({
         }
       }
 
-      const clusterChanged = templateCluster !== effectiveCluster;
+      const clusterChanged = templateCluster !== clusterId;
 
       const tplDatasets = (cleanedFormData.datasets ?? []) as { id: number; isPrivate: boolean }[];
       const tplAlgorithms = (cleanedFormData.algorithms ?? []) as { id: number; isPrivate: boolean }[];
@@ -2376,13 +2334,13 @@ export const LaunchAppForm = ({
       if (!clusterChanged && (tplDatasets.length || tplAlgorithms.length || tplModels.length)) {
         const [fetchedDatasets, fetchedAlgorithms, fetchedModels] = await Promise.all([
           tplDatasets.length
-            ? trpcUtils.dataset.getAllDatasetVersions.fetch({ clusterId: effectiveCluster }).catch(() => undefined)
+            ? trpcUtils.dataset.getAllDatasetVersions.fetch({ clusterId }).catch(() => undefined)
             : undefined,
           tplAlgorithms.length
-            ? trpcUtils.algorithm.getAllAlgorithmVersions.fetch({ clusterId: effectiveCluster }).catch(() => undefined)
+            ? trpcUtils.algorithm.getAllAlgorithmVersions.fetch({ clusterId }).catch(() => undefined)
             : undefined,
           tplModels.length
-            ? trpcUtils.model.getAllModelVersions.fetch({ clusterId: effectiveCluster }).catch(() => undefined)
+            ? trpcUtils.model.getAllModelVersions.fetch({ clusterId }).catch(() => undefined)
             : undefined,
         ]);
 
@@ -2521,7 +2479,7 @@ export const LaunchAppForm = ({
             const fetchedImages = await trpcUtils.image.list
               .fetch({
                 isPublic: tplIsImagePrivate ? parseBooleanParam(false) : parseBooleanParam(true),
-                clusterId: effectiveCluster,
+                clusterId,
                 withExternal: "true",
                 types: ImageType.APP,
               })
@@ -2570,73 +2528,136 @@ export const LaunchAppForm = ({
   // ======================= 渲染 =======================
   return (
     <>
-      <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
-        <PaddedCard
-          title={
-            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                {appLogoSrc ? <HeaderAvatar size={32} src={appLogoSrc} /> : null}
-                <HeaderTitle>{t(p("createAppTitle"), [effectiveAppName ?? ""])}</HeaderTitle>
-              </span>
-              {/* 先隐藏 */}
-              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                {t(p("templateButton"))}
-              </Button> */}
-            </HeaderRow>
-          }
-        >
-          <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
-          </BorderlessCard>
-        </PaddedCard>
+      <JobPageLayout>
+        <JobMainContent>
+          <JobContainer direction="vertical" size={0}>
+            <div style={{ position: "relative" }}>
+              <StyledBackIcon onClick={handleCancel} />
+              <PaddedCard
+                styles={{ header: { borderBottom: "none" } }}
+                title={
+                  <HeaderRow
+                    align="center"
+                    size={16}
+                    style={{
+                      justifyContent: "space-between",
+                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
+                      paddingBottom: 24,
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                      {appLogoSrc ? <HeaderAvatar size={32} src={appLogoSrc} /> : null}
+                      <HeaderTitle>{t(p("createAppTitle"), [effectiveAppName ?? ""])}</HeaderTitle>
+                    </span>
+                    {/* 先隐藏 */}
+                    {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                      {t(p("templateButton"))}
+                    </Button> */}
+                  </HeaderRow>
+                }
+              >
+                <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
+                  <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
+                </BorderlessCard>
+              </PaddedCard>
+            </div>
 
-        <ResourceConfigSection
-          form={resourceForm}
-          accountOptions={accountOptions}
-          clusterOptions={clusterOptions}
-          selectedCluster={selectedCluster}
-          activeResourceTab={activeResourceTab}
-          onActiveResourceTabChange={handleActiveResourceTabChange}
-          gpuColumns={gpuColumns}
-          cpuColumns={cpuColumns}
-          gpuRows={gpuRows}
-          cpuRows={cpuRows}
-          queueLoading={getAvailablePartitionIsLoading}
-          selectedQueueKey={selectedQueueKey}
-          onQueueSelect={handleQueueSelect}
-          selectedQueueOption={selectedQueueOption}
-          queueTotalUnits={queueTotalUnits}
-          gpuUnitLimit={gpuUnitLimit}
-          qosOptions={qosOptions}
-          maxTimeUnit={maxTimeUnit}
-          onMaxTimeUnitChange={handleMaxTimeUnitChange}
-          maxJobRunningTimeHours={maxJobRunningTimeHours}
-          isResubmit={Boolean(createAppParams)}
-        />
+            <ResourceConfigSection
+              form={resourceForm}
+              accountOptions={accountOptions}
+              clusterOptions={clusterOptions}
+              selectedCluster={selectedCluster}
+              activeResourceTab={activeResourceTab}
+              onActiveResourceTabChange={handleActiveResourceTabChange}
+              gpuColumns={gpuColumns}
+              cpuColumns={cpuColumns}
+              gpuRows={gpuRows}
+              cpuRows={cpuRows}
+              queueLoading={getAvailablePartitionIsLoading}
+              selectedQueueKey={selectedQueueKey}
+              onQueueSelect={handleQueueSelect}
+              selectedQueueOption={selectedQueueOption}
+              queueTotalUnits={queueTotalUnits}
+              gpuUnitLimit={gpuUnitLimit}
+              qosOptions={qosOptions}
+              maxTimeUnit={maxTimeUnit}
+              onMaxTimeUnitChange={handleMaxTimeUnitChange}
+              selectedPresetUnit={selectedPresetUnit}
+              onSelectedPresetUnitChange={setSelectedPresetUnit}
+              maxJobRunningTimeHours={maxJobRunningTimeHours}
+              isResubmit={Boolean(createAppParams)}
+            />
 
-        <AppConfigSection
-          form={appForm}
-          imageSourceTabs={imageSourceTabs}
-          selectedImageSource={selectedImageSource}
-          onImageSourceChange={handleImageSourceChange}
-          imagePlaceholder={imagePlaceholder}
-          imageOptions={imageOptionsForSource}
-          isImagesLoading={isImagesLoading}
-          selectedImageOption={selectedImageOption}
-          usePrivateRemoteImage={usePrivateRemoteImage}
-          currentCommandDefault={currentCommandDefault}
-          customFormItems={customFormItems}
-          datasetCategories={datasetCategories}
-          algorithmCategories={algorithmCategories}
-          modelCategories={modelCategories}
-          isDatasetsLoading={isDatasetsLoading}
-          isAlgorithmsLoading={isAlgorithmsLoading}
-          isModelsLoading={isModelsLoading}
-          selectedCluster={selectedCluster}
-          displayRender={renderCascaderLabels}
-          homeDir={userHomeDir?.path}
-        />
-      </PageContainer>
+            <AppConfigSection
+              form={appForm}
+              imageSourceTabs={imageSourceTabs}
+              selectedImageSource={selectedImageSource}
+              onImageSourceChange={handleImageSourceChange}
+              imagePlaceholder={imagePlaceholder}
+              imageOptions={imageOptionsForSource}
+              isImagesLoading={isImagesLoading}
+              selectedImageOption={selectedImageOption}
+              usePrivateRemoteImage={usePrivateRemoteImage}
+              currentCommandDefault={currentCommandDefault}
+              customFormItems={customFormItems}
+              datasetCategories={datasetCategories}
+              algorithmCategories={algorithmCategories}
+              modelCategories={modelCategories}
+              isDatasetsLoading={isDatasetsLoading}
+              isAlgorithmsLoading={isAlgorithmsLoading}
+              isModelsLoading={isModelsLoading}
+              selectedCluster={selectedCluster}
+              displayRender={renderCascaderLabels}
+              homeDir={userHomeDir?.path}
+            />
+          </JobContainer>
+        </JobMainContent>
+
+        <JobSidePanel>
+          <JobSidePanelInner>
+            <SidePanelGroupWrapper>
+              {effectiveAppComment && (
+                <>
+                  <JobSidePanelScrollBox>
+                    <AppCommentContainer>
+                      <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {getI18nConfigCurrentText(effectiveAppComment, languageId)}
+                      </Markdown>
+                    </AppCommentContainer>
+                  </JobSidePanelScrollBox>
+                  <SidePanelDivider />
+                </>
+              )}
+              <JobSideInfo
+                labels={{
+                  totalGpuCount: t(p("sideInfo.totalGpuCount")),
+                  totalCoreCount: t(p("sideInfo.totalCoreCount")),
+                  totalMemory: t(p("sideInfo.totalMemory")),
+                  costPerHour: t(p("hourlyCostLabel")),
+                  pricingStandard: t(p("chargeStandard")),
+                  yuan: t(p("yuan")),
+                  hours: t(p("hours")),
+                  accountNameLabel: t(p("sideInfo.accountNameLabel")),
+                  whitelistTag: t(p("sideInfo.whitelistTag")),
+                  accountOwner: t(p("sideInfo.accountOwner")),
+                  accountBalance: t(p("sideInfo.accountBalance")),
+                  accountBlockThreshold: t(p("sideInfo.accountBlockThreshold")),
+                  userUsedLimit: t(p("sideInfo.userUsedLimit")),
+                  userChargeNoLimit: t(p("sideInfo.userChargeNoLimit")),
+                }}
+                totalGpuCount={displayedGpu}
+                totalCpuCount={displayedCpu}
+                totalMemory={displayedMemory}
+                hourlyPrice={formattedHourlyPrice}
+                showHourlyPriceUnit={jobOneHourPrice != null}
+                pricingStandardUrl={join(misPath, "/user/partitions")}
+                showAccountInfo={publicConfig.MIS_DEPLOYED}
+                accountInfo={accountInfo ?? null}
+              />
+            </SidePanelGroupWrapper>
+          </JobSidePanelInner>
+        </JobSidePanel>
+      </JobPageLayout>
 
       <FixedFooter>
         {/* 先隐藏 */}
@@ -2658,28 +2679,6 @@ export const LaunchAppForm = ({
             {t(p("saveAsTemplate"))}
           </FooterStatValue>
         </div> */}
-        <FooterStats>
-          <span>
-            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
-          </span>
-          <span>
-            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
-          </span>
-          <span>
-            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("hourlyCostLabel"))}
-            <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
-          </span>
-          <a
-            onClick={() => {
-              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
-            }}
-          >
-            <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
-          </a>
-        </FooterStats>
         <FooterActions>
           <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
           <Button type="primary" onClick={handleSubmit} loading={createAppSessionMutation.isPending}>

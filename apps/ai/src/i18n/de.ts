@@ -309,6 +309,7 @@ export default {
       createApps: {
         create: "Erstellen",
         title: "Anwendung erstellen",
+        cluster: "Cluster",
         searchPlaceholder: "Anwendungsnamen eingeben",
         noSearchResult: "Keine interaktive Anwendung bezogen auf '{}' wurde gefunden",
         appNotFoundMessage: "Keine interaktive Anwendung zur Erstellung verfügbar.",

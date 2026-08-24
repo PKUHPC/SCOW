@@ -29,7 +29,11 @@ const MountInputs = styled.div`
   gap: 12px;
 `;
 
-const MountRemoveButton = styled(RemoveButton)`
+const MountActionButton = styled(RemoveButton)``;
+
+const MountActions = styled.div`
+  display: flex;
+  gap: 8px;
   margin-top: 10px;
 `;
 
@@ -114,17 +118,26 @@ export const MountPointList = ({ clusterId, homeDir }: Props) => {
                 </Form.Item>
               </MountInputs>
 
-              <MountRemoveButton
-                icon={<MinusOutlined />}
-                onClick={() => remove(name)}
-                aria-label={t(p("removeAriaLabel"))}
-              />
+              <MountActions>
+                <MountActionButton
+                  icon={<MinusOutlined />}
+                  onClick={() => remove(name)}
+                  aria-label={t(p("removeAriaLabel"))}
+                />
+                <MountActionButton
+                  icon={<PlusOutlined />}
+                  onClick={() => add({}, name + 1)}
+                  aria-label={t(p("addButton"))}
+                />
+              </MountActions>
             </MountRow>
           ))}
 
-          <AddButton icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />} onClick={() => add({})}>
-            {t(p("addButton"))}
-          </AddButton>
+          {fields.length === 0 ? (
+            <AddButton icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />} onClick={() => add({})}>
+              {t(p("addButton"))}
+            </AddButton>
+          ) : null}
         </MountListContainer>
       )}
     </Form.List>

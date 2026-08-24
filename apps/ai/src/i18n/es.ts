@@ -309,6 +309,7 @@ export default {
       createApps: {
         create: "Crear",
         title: "Crear Aplicación",
+        cluster: "Clúster",
         searchPlaceholder: "Ingrese nombre de aplicación",
         noSearchResult: "No se encontró ninguna aplicación interactiva relacionada con '{}'",
         appNotFoundMessage: "No hay aplicación interactiva disponible para crear.",

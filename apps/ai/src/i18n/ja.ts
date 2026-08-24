@@ -307,6 +307,7 @@ export default {
       createApps: {
         create: "作成",
         title: "アプリケーションを作成",
+        cluster: "クラスター",
         searchPlaceholder: "アプリケーション名を入力",
         noSearchResult: "'{}'に関連するインタラクティブアプリケーションが見つかりませんでした",
         appNotFoundMessage: "作成可能なインタラクティブアプリケーションがありません。",
