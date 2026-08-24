@@ -34,11 +34,22 @@ message ListAccountsResponse {
 }
 
 message ListAllJobsRequest {
+  enum TimeType {
+    SUBMIT_TIME = 0;
+    END_TIME = 1;
+  }
+
   string user_id = 1;
   string cluster = 2;
 
   google.protobuf.Timestamp start_time = 3;
   google.protobuf.Timestamp end_time = 4;
+
+  optional string account = 5;
+  repeated string states = 6;
+  optional uint32 job_id = 7;
+  optional string job_name = 8;
+  TimeType time_type = 9;
 }
 
 message JobInfo {

@@ -21,8 +21,7 @@ export default {
     dashboard: "Панель",
     job: {
       title: "Задания",
-      runningJobs: "Выполняемые задания",
-      allJobs: "Все задания",
+      allJobs: "Управление заданиями",
       submitJob: "Отправить задание",
     },
     apps: {
@@ -80,24 +79,28 @@ export default {
         searchForm: {
           clusterLabel: "Кластер",
           time: "Время",
-          popoverTitle:
-            "Запрос всех активных заданий" +
-            " (отправка, ожидание, запуск, выполнение, ошибка, завершено) за указанный период",
+          keywordType: "Поле поиска",
           jobId: "ID задания",
+          jobName: "Название задания",
+          keyword: "Ключевое слово",
+          account: "Аккаунт",
+          state: "Состояние",
+          allStates: "Все",
+          timeType: "Тип времени",
+          submitTime: "Время отправки",
+          endTime: "Время окончания",
+          invalidJobId: "Введите допустимый ID задания",
         },
         tableInfo: {
           jobId: "ID задания",
           jobName: "Название задания",
+          cluster: "Кластер",
           account: "Аккаунт",
           partition: "Раздел",
-          qos: "QOS",
           state: "Состояние",
           submitTime: "Время отправки",
-          startTime: "Время начала",
           endTime: "Время окончания",
           elapsed: "Затраченное время",
-          timeLimit: "Максимальное время выполнения",
-          reason: "Причина",
           more: "Ещё",
           operation: "Операция",
           linkToPath: "Перейти к каталогу",
@@ -134,32 +137,6 @@ export default {
         submissionTime: "Время отправки",
         timeLimit: "Максимальное время выполнения",
         drawerTitle: "Подробности задания",
-      },
-      runningJobTable: {
-        filterForm: {
-          cluster: "Кластер",
-          jobId: "ID задания",
-        },
-        jobInfoTable: {
-          cluster: "Кластер",
-          jobId: "ID задания",
-          account: "Аккаунт",
-          name: "Название задания",
-          partition: "Раздел",
-          qos: "QOS",
-          nodes: "Узлы",
-          cores: "Ядра",
-          gpus: "Акселераторы",
-          state: "Состояние",
-          runningOrQueueTime: "Время выполнения/ожидания",
-          reason: "Причина",
-          timeLimit: "Максимальное время выполнения",
-          more: "Ещё",
-          operation: "Операция",
-          linkToPath: "Перейти к каталогу",
-          popConfirm: "Вы уверены, что хотите отменить это задание?",
-          successMessage: "Запрос на отмену задания отправлен!",
-        },
       },
       submitJobForm: {
         errorMessage: "Не удалось отправить задание",
@@ -673,12 +650,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "Все задания",
-        pageTitle: "Мои задания",
-      },
-      runningJobs: {
-        title: "Выполняемые задания",
-        pageTitle: "Мои выполняемые задания",
+        title: "Управление заданиями",
+        pageTitle: "Управление заданиями",
       },
       submit: {
         title: "Отправить задание",

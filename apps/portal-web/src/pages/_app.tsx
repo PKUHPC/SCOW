@@ -2,7 +2,6 @@ import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
 import "src/styles/globals.css";
 import "swagger-ui-react/swagger-ui.css";
-
 import type { AppContext, AppProps } from "next/app";
 
 import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";

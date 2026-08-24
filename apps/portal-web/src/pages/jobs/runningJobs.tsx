@@ -1,20 +1,15 @@
-import { NextPage } from "next";
-import { requireAuth } from "src/auth/requireAuth";
-import { PageTitle } from "src/components/PageTitle";
-import { useI18nTranslateToString } from "src/i18n";
-import { RunningJobQueryTable } from "src/pageComponents/job/RunningJobTable";
-import { Head } from "src/utils/head";
+import { GetServerSideProps } from "next";
 
-export const RunningJobsPage: NextPage = requireAuth(() => true)(({ userStore }) => {
-  const t = useI18nTranslateToString();
-
-  return (
-    <div>
-      <Head title={t("pages.jobs.runningJobs.title")} />
-      <PageTitle titleText={t("pages.jobs.runningJobs.title")} />
-      <RunningJobQueryTable userId={userStore.user.identityId} />
-    </div>
-  );
+/**
+ * 保留旧入口，避免已有书签或外部链接失效；作业页面已经统一到作业管理页。
+ */
+export const getServerSideProps: GetServerSideProps = async () => ({
+  redirect: {
+    destination: "/jobs/allJobs",
+    permanent: false,
+  },
 });
 
-export default RunningJobsPage;
+export default function RunningJobsRedirect() {
+  return null;
+}

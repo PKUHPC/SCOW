@@ -1,6 +1,7 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
-import { JobServiceClient } from "@scow/protos/build/portal/job";
+import { JobServiceClient, ListAllJobsRequest_TimeType } from "@scow/protos/build/portal/job";
+import { jobStates } from "@scow/utils";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getClient } from "src/utils/client";
@@ -41,6 +42,11 @@ export const GetAllJobsSchema = typeboxRouteSchema({
     cluster: Type.String(),
     startTime: Type.String(),
     endTime: Type.String(),
+    timeType: Type.Optional(Type.Union([Type.Literal("submitTime"), Type.Literal("endTime")])),
+    jobId: Type.Optional(Type.Integer({ minimum: 1, maximum: 0xffffffff })),
+    jobName: Type.Optional(Type.String()),
+    account: Type.Optional(Type.String()),
+    state: Type.Optional(Type.Union([Type.Literal("ALL"), ...jobStates.map((state) => Type.Literal(state))])),
   }),
 
   responses: {
@@ -61,7 +67,7 @@ export default route(GetAllJobsSchema, async (req, res) => {
     return;
   }
 
-  const { cluster, startTime, endTime } = req.query;
+  const { cluster, startTime, endTime, timeType, jobId, jobName, account, state } = req.query;
 
   const client = getClient(JobServiceClient);
 
@@ -70,6 +76,11 @@ export default route(GetAllJobsSchema, async (req, res) => {
     cluster,
     startTime,
     endTime,
+    account: account?.trim() || undefined,
+    states: state && state !== "ALL" ? [state] : [],
+    jobId,
+    jobName: jobName?.trim() || undefined,
+    timeType: timeType === "endTime" ? ListAllJobsRequest_TimeType.END_TIME : ListAllJobsRequest_TimeType.SUBMIT_TIME,
   }).then(({ results }) => ({
     200: {
       results: results.map((job) => ({

@@ -22,8 +22,7 @@ export default {
     dashboard: "Dashboard",
     job: {
       title: "Jobs",
-      runningJobs: "Laufende Jobs",
-      allJobs: "Alle Jobs",
+      allJobs: "Jobverwaltung",
       submitJob: "Job einreichen",
     },
     apps: {
@@ -81,24 +80,28 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Zeit",
-          popoverTitle:
-            "Alle aktiven Jobs (Einreichen, Warten, Starten, Laufen, Fehlgeschlagen, Abgeschlossen)" +
-            " in diesem Zeitraum abfragen",
+          keywordType: "Suchfeld",
           jobId: "Job-ID",
+          jobName: "Jobname",
+          keyword: "Suchbegriff",
+          account: "Konto",
+          state: "Status",
+          allStates: "Alle",
+          timeType: "Zeittyp",
+          submitTime: "Einreichungszeit",
+          endTime: "Endzeit",
+          invalidJobId: "Geben Sie eine gültige Job-ID ein",
         },
         tableInfo: {
           jobId: "Job-ID",
           jobName: "Jobname",
+          cluster: "Cluster",
           account: "Konto",
           partition: "Partition",
-          qos: "QOS",
           state: "Status",
           submitTime: "Abgabezeit",
-          startTime: "Startzeit",
           endTime: "Endzeit",
           elapsed: "Vergangene Zeit",
-          timeLimit: "Maximale Laufzeit",
-          reason: "Begründung",
           more: "Mehr",
           operation: "Aktion",
           linkToPath: "Zum Verzeichnis",
@@ -135,32 +138,6 @@ export default {
         submissionTime: "Abgabezeit",
         timeLimit: "Maximale Laufzeit",
         drawerTitle: "Jobdetails",
-      },
-      runningJobTable: {
-        filterForm: {
-          cluster: "Cluster",
-          jobId: "Job-ID",
-        },
-        jobInfoTable: {
-          cluster: "Cluster",
-          jobId: "Job-ID",
-          account: "Konto",
-          name: "Jobname",
-          partition: "Partition",
-          qos: "QOS",
-          nodes: "Knoten",
-          cores: "Kerne",
-          gpus: "Beschleunigerkarten",
-          state: "Status",
-          runningOrQueueTime: "Lauf-/Wartezeit",
-          reason: "Begründung",
-          timeLimit: "Maximale Laufzeit",
-          more: "Mehr",
-          operation: "Aktion",
-          linkToPath: "Zum Verzeichnis",
-          popConfirm: "Möchten Sie diesen Job wirklich abbrechen?",
-          successMessage: "Anfrage zur Jobbeendigung wurde gesendet",
-        },
       },
       submitJobForm: {
         errorMessage: "Jobeinreichung fehlgeschlagen",
@@ -672,12 +649,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "Alle Jobs",
-        pageTitle: "Meine Jobs",
-      },
-      runningJobs: {
-        title: "Laufende Jobs",
-        pageTitle: "Meine laufenden Jobs",
+        title: "Jobverwaltung",
+        pageTitle: "Jobverwaltung",
       },
       submit: {
         title: "Job einreichen",

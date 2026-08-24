@@ -21,8 +21,7 @@ export default {
     dashboard: "Panel",
     job: {
       title: "Trabajos",
-      runningJobs: "Trabajos en ejecución",
-      allJobs: "Todos los trabajos",
+      allJobs: "Gestión de trabajos",
       submitJob: "Enviar trabajo",
     },
     apps: {
@@ -80,24 +79,28 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Tiempo",
-          popoverTitle:
-            "Consulta todos los trabajos activos" +
-            " (como enviados, en espera, iniciados, en ejecución, fallidos, completados) en este intervalo de tiempo",
+          keywordType: "Campo de consulta",
           jobId: "ID de trabajo",
+          jobName: "Nombre del trabajo",
+          keyword: "Palabra clave",
+          account: "Cuenta",
+          state: "Estado",
+          allStates: "Todos",
+          timeType: "Tipo de hora",
+          submitTime: "Hora de envío",
+          endTime: "Hora de fin",
+          invalidJobId: "Introduzca un ID de trabajo válido",
         },
         tableInfo: {
           jobId: "ID de trabajo",
           jobName: "Nombre del trabajo",
+          cluster: "Clúster",
           account: "Cuenta",
           partition: "Partición",
-          qos: "QOS",
           state: "Estado",
           submitTime: "Hora de envío",
-          startTime: "Hora de inicio",
           endTime: "Hora de fin",
           elapsed: "Tiempo transcurrido",
-          timeLimit: "Tiempo máximo de ejecución",
-          reason: "Motivo",
           more: "Más",
           operation: "Operación",
           linkToPath: "Ir al directorio",
@@ -134,32 +137,6 @@ export default {
         submissionTime: "Hora de envío",
         timeLimit: "Tiempo máximo de ejecución",
         drawerTitle: "Detalles del trabajo",
-      },
-      runningJobTable: {
-        filterForm: {
-          cluster: "Cluster",
-          jobId: "ID de trabajo",
-        },
-        jobInfoTable: {
-          cluster: "Cluster",
-          jobId: "ID de trabajo",
-          account: "Cuenta",
-          name: "Nombre del trabajo",
-          partition: "Partición",
-          qos: "QOS",
-          nodes: "Nodos",
-          cores: "Cores",
-          gpus: "Tarjetas aceleradoras",
-          state: "Estado",
-          runningOrQueueTime: "Tiempo de ejecución/espera",
-          reason: "Motivo",
-          timeLimit: "Tiempo máximo de ejecución",
-          more: "Más",
-          operation: "Operación",
-          linkToPath: "Ir al directorio",
-          popConfirm: "¿Confirmas que quieres cancelar este trabajo?",
-          successMessage: "Se ha enviado la solicitud de cancelación del trabajo",
-        },
       },
       submitJobForm: {
         errorMessage: "Error al enviar el trabajo",
@@ -673,12 +650,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "Todos los trabajos",
-        pageTitle: "Mis trabajos",
-      },
-      runningJobs: {
-        title: "Trabajos en ejecución",
-        pageTitle: "Mis trabajos en ejecución",
+        title: "Gestión de trabajos",
+        pageTitle: "Gestión de trabajos",
       },
       submit: {
         title: "Enviar trabajo",

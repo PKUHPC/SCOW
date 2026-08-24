@@ -69,17 +69,6 @@ export const QuickEntry: React.FC = () => {
         },
       },
       {
-        id: "runningJob",
-        name: "runningJobs",
-        entry: {
-          $case: "pageLink" as const,
-          pageLink: {
-            path: "/jobs/runningJobs",
-            icon: "BookOutlined",
-          },
-        },
-      },
-      {
         id: "allJobs",
         name: "allJobs",
         entry: {

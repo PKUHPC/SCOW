@@ -1218,7 +1218,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix }
         }
         onOk={() => {
           setSubmitSuccessJobId(null);
-          router.push("/jobs/runningJobs");
+          router.push("/jobs/allJobs");
         }}
         onCancel={() => setSubmitSuccessJobId(null)}
         maskClosable={false}

@@ -24,8 +24,7 @@ export default {
     dashboard: "Dashboard",
     job: {
       title: "Jobs",
-      runningJobs: "Running Jobs",
-      allJobs: "All Jobs",
+      allJobs: "Job Management",
       submitJob: "Submit Job",
     },
     apps: {
@@ -87,24 +86,28 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Time",
-          popoverTitle:
-            "Query all active jobs (such as job submission, pending, started, running, " +
-            "failed, completed) in this time range",
+          keywordType: "Query Field",
           jobId: "Job ID",
+          jobName: "Job Name",
+          keyword: "Keyword",
+          account: "Account",
+          state: "State",
+          allStates: "All",
+          timeType: "Time Type",
+          submitTime: "Submission Time",
+          endTime: "End Time",
+          invalidJobId: "Enter a valid job ID",
         },
         tableInfo: {
           jobId: "Job ID",
           jobName: "Job Name",
+          cluster: "Cluster",
           account: "Account",
           partition: "Partition",
-          qos: "QOS",
           state: "State",
           submitTime: "Submission Time",
-          startTime: "Start Time",
           endTime: "End Time",
           elapsed: "Elapsed Time",
-          timeLimit: "Maximum Running Time",
-          reason: "Reason",
           more: "More",
           operation: "Operation",
           linkToPath: "Go to Directory",
@@ -142,33 +145,6 @@ export default {
         timeWaitTip: "Clock differences between nodes are normal and do not affect job execution or billing.",
         timeLimit: "Maximum Running Time",
         drawerTitle: "Job Details",
-      },
-      // runningJobTable
-      runningJobTable: {
-        filterForm: {
-          cluster: "Cluster",
-          jobId: "Job ID",
-        },
-        jobInfoTable: {
-          cluster: "Cluster",
-          jobId: "Job ID",
-          account: "Account",
-          name: "Job Name",
-          partition: "Partition",
-          qos: "QOS",
-          nodes: "Nodes",
-          cores: "Cores",
-          gpus: "Accelerator Cards",
-          state: "State",
-          runningOrQueueTime: "Running/Pending Time",
-          reason: "Reason",
-          timeLimit: "Maximum Running Time",
-          more: "More",
-          operation: "Operation",
-          linkToPath: "Go to Directory",
-          popConfirm: "Are you sure you want to cancel this job?",
-          successMessage: "Job cancellation request has been submitted!",
-        },
       },
       // submitJobForm
       submitJobForm: {
@@ -941,12 +917,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "aLL Jobs",
-        pageTitle: "My Jobs",
-      },
-      runningJobs: {
-        title: "Running Jobs",
-        pageTitle: "My Running Jobs",
+        title: "Job Management",
+        pageTitle: "Job Management",
       },
       submit: {
         title: "Submit Job",

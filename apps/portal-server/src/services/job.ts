@@ -1,20 +1,60 @@
+import type { ServiceError } from "@grpc/grpc-js";
+
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
+import { Status } from "@grpc/grpc-js/build/src/constants";
 import { numberToMoney } from "@scow/lib-decimal";
 import { jobInfoToPortalJobInfo, jobInfoToRunningjob } from "@scow/lib-scheduler-adapter";
 import { getClusterAssignedAccounts } from "@scow/lib-scow-resource";
 import { libGetAccounts, libGetUserInfo } from "@scow/lib-server";
 import { libCalculateJobPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
-import { JobServiceServer, JobServiceService } from "@scow/protos/build/portal/job";
+import {
+  JobServiceServer,
+  JobServiceService,
+  type ListAllJobsRequest,
+  ListAllJobsRequest_TimeType,
+} from "@scow/protos/build/portal/job";
+import { type GetJobsRequest_Filter } from "@scow/scheduler-adapter-protos/build/job";
+import { isJobState } from "@scow/utils";
 import { getClusterOps } from "src/clusterops";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
+import { getClusterLoginNode } from "src/utils/clusterNodes";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { convertMaxTimeToMinutes, validateMaxRunningTimeMinutes, HPCJobLabelType } from "src/utils/maxRunningTime";
-import { getClusterLoginNode } from "src/utils/clusterNodes";
 import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
+
+export const listAllJobsRequestToSchedulerFilter = ({
+  userId,
+  account,
+  states,
+  jobId,
+  jobName,
+  startTime,
+  endTime,
+  timeType,
+}: ListAllJobsRequest): GetJobsRequest_Filter => {
+  const invalidStates = states.filter((state) => !isJobState(state));
+  if (invalidStates.length > 0) {
+    throw {
+      code: Status.INVALID_ARGUMENT,
+      details: `Invalid job states: ${invalidStates.join(", ")}`,
+    } as ServiceError;
+  }
+
+  const timeRange = { startTime, endTime };
+
+  return {
+    users: [userId],
+    accounts: account ? [account] : [],
+    states,
+    jobId,
+    jobName,
+    ...(timeType === ListAllJobsRequest_TimeType.END_TIME ? { endTime: timeRange } : { submitTime: timeRange }),
+  };
+};
 
 export const jobServiceServer = plugin((server) => {
   server.addService<JobServiceServer>(JobServiceService, {
@@ -56,9 +96,7 @@ export const jobServiceServer = plugin((server) => {
         commonConfig.scowApi.auth.token,
       );
 
-      const filteredAccounts = misAccounts.accounts.filter((account) =>
-        clusterAssignedAccountNames.includes(account),
-      );
+      const filteredAccounts = misAccounts.accounts.filter((account) => clusterAssignedAccountNames.includes(account));
 
       return [{ accounts: filteredAccounts }];
     },
@@ -106,7 +144,7 @@ export const jobServiceServer = plugin((server) => {
     },
 
     listAllJobs: async ({ request, logger }) => {
-      const { cluster, userId, endTime, startTime } = request;
+      const { cluster } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const reply = await callOnOne(
@@ -139,12 +177,7 @@ export const jobServiceServer = plugin((server) => {
               "mem_alloc_mb",
             ],
             jobTypes: [],
-            filter: {
-              users: [userId],
-              accounts: [],
-              states: [],
-              submitTime: { startTime, endTime },
-            },
+            filter: listAllJobsRequestToSchedulerFilter(request),
           }),
       );
 

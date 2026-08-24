@@ -1,13 +1,14 @@
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { formatDateTime, getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, DatePicker, Form, Select, Spin, Table } from "antd";
+import { App, Button, Form, Select, Spin, Table } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
+import { DateTimeRangePicker } from "src/components/DateTimeRangePicker";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
@@ -77,7 +78,7 @@ export const ChargeTable: React.FC<Props> = ({
     idsOrNames: string | undefined;
   }>({
     names: accountNames,
-    time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
+    time: [getInclusiveDateRangeStart(now, 1, "week"), now.endOf("day")],
     types: undefined,
     idsOrNames: undefined,
   }); // 查询对象
@@ -100,14 +101,14 @@ export const ChargeTable: React.FC<Props> = ({
   useDidUpdateEffect(() => {
     form.setFieldsValue({
       names: accountNames,
-      time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
+      time: [getInclusiveDateRangeStart(now, 1, "week"), now.endOf("day")],
       types: undefined,
       idsOrNames: undefined,
     });
     setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
     setQuery({
       names: accountNames,
-      time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
+      time: [getInclusiveDateRangeStart(now, 1, "week"), now.endOf("day")],
       types: undefined,
       idsOrNames: undefined,
     });
@@ -119,8 +120,8 @@ export const ChargeTable: React.FC<Props> = ({
     const getChargesInfo = await api.getCharges({
       query: {
         accountNames: query.names,
-        startTime: query.time[0].clone().startOf("day").toISOString(),
-        endTime: query.time[1].clone().endOf("day").toISOString(),
+        startTime: query.time[0].toISOString(),
+        endTime: query.time[1].toISOString(),
         types: query.types,
         isPlatformRecords,
         searchType,
@@ -139,8 +140,8 @@ export const ChargeTable: React.FC<Props> = ({
     return await api.getChargeRecordsTotalCount({
       query: {
         accountNames: query.names,
-        startTime: query.time[0].clone().startOf("day").toISOString(),
-        endTime: query.time[1].clone().endOf("day").toISOString(),
+        startTime: query.time[0].toISOString(),
+        endTime: query.time[1].toISOString(),
         types: query.types,
         isPlatformRecords,
         searchType,
@@ -177,8 +178,8 @@ export const ChargeTable: React.FC<Props> = ({
         count: totalCount,
         timeZone: timeZone,
         query: {
-          startTime: query.time[0].clone().startOf("day").toISOString(),
-          endTime: query.time[1].clone().endOf("day").toISOString(),
+          startTime: query.time[0].toISOString(),
+          endTime: query.time[1].toISOString(),
           accountNames: query.names,
           types: query.types,
           searchType: searchType,
@@ -233,7 +234,7 @@ export const ChargeTable: React.FC<Props> = ({
               <Input style={{ width: 180 }} placeholder={t("common.ownerIdOrName")} />
             </Form.Item>
             <Form.Item label={t(pCommon("time"))} name="time">
-              <DatePicker.RangePicker allowClear={false} presets={getDefaultPresets(languageId)} />
+              <DateTimeRangePicker />
             </Form.Item>
             <Form.Item label={t("common.type")} name="type">
               <Select

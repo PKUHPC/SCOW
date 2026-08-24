@@ -142,12 +142,46 @@ func GetJobTimeLimitsBatch(jobIds []int) (map[int]int64, error) {
 	return result, nil
 }
 
+// resolveUnfinishedJobSubmitTime 优先使用 SlurmDB 的提交时间，缺失时回退到 squeue %V。
+func resolveUnfinishedJobSubmitTime(submitTimesMap map[int]int64, jobId int, squeueSubmitTime string) (int64, bool) {
+	if submitTime, exists := submitTimesMap[jobId]; exists && submitTime > 0 {
+		return submitTime, true
+	}
+
+	if timestamp := ConvertJobStartTime(squeueSubmitTime); timestamp != nil {
+		return timestamp.Seconds, true
+	}
+
+	return 0, false
+}
+
+// matchesSubmitTimeRange 只使用真实提交时间做有界范围判断；无界范围不排除时间缺失的作业。
+func matchesSubmitTimeRange(submitTime int64, submitTimeExists bool, submitTimeRange *pb.TimeRange) bool {
+	if submitTimeRange == nil {
+		return true
+	}
+
+	startTime := submitTimeRange.GetStartTime().GetSeconds()
+	endTime := submitTimeRange.GetEndTime().GetSeconds()
+	hasBoundary := startTime != 0 || endTime != 0
+	if hasBoundary && !submitTimeExists {
+		return false
+	}
+
+	return (startTime == 0 || submitTime >= startTime) && (endTime == 0 || submitTime <= endTime)
+}
+
 func GetUnfinishedJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 	logrus.Infof("Start get unfinished jobs")
 	var (
 		args    []string
 		jobInfo []*pb.JobInfo
 	)
+
+	// 未结束作业没有结束时间，因此不会命中结束时间筛选。
+	if in.Filter.EndTime != nil {
+		return &pb.GetJobsResponse{Jobs: jobInfo}, nil
+	}
 
 	// 声明pending作业原因相关变量，稍后与其他查询一起并发执行
 	var pendingReasonMap map[int]string
@@ -264,13 +298,13 @@ func GetUnfinishedJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 
 	wg.Wait()
 
-	// 如果批量查询失败，记录错误但继续处理
+	// 批量查询失败时降级使用 squeue %V 中的真实提交时间。
 	if pendingErr != nil {
 		logrus.Warnf("Pending jobs reason query failed: %v", pendingErr)
 		pendingReasonMap = make(map[int]string)
 	}
 	if submitErr != nil {
-		logrus.Warnf("Batch submit time query failed: %v", submitErr)
+		logrus.Warnf("Batch submit time query failed, fallback to squeue submit time: %v", submitErr)
 		submitTimesMap = make(map[int]int64)
 	}
 	if limitErr != nil {
@@ -314,12 +348,16 @@ func GetUnfinishedJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 			jobTimeLimitMinutes = GetTimeLimit(singleJobInfo[6])
 		}
 
-		// 优化提交时间处理
-		if submitTime, exists := submitTimesMap[singleJobId]; exists {
-			jobTimeSubmit = &timestamppb.Timestamp{Seconds: submitTime}
-		} else {
-			jobTimeSubmit = &timestamppb.Timestamp{Seconds: time.Now().Unix()}
+		// 展示兜底值不能参与筛选；先尝试两个真实数据源，再做范围判断。
+		submitTime, submitTimeExists := resolveUnfinishedJobSubmitTime(submitTimesMap, singleJobId, singleJobInfo[14])
+		if !matchesSubmitTimeRange(submitTime, submitTimeExists, in.Filter.SubmitTime) {
+			continue
 		}
+		if !submitTimeExists {
+			// submit_time 是必填返回字段；此值只用于无时间边界时的兼容展示。
+			submitTime = time.Now().Unix()
+		}
+		jobTimeSubmit = &timestamppb.Timestamp{Seconds: submitTime}
 
 		singleJobJobNodesAllocTemp, _ := strconv.Atoi(singleJobInfo[4])
 		jobNodesReq = int32(singleJobJobNodesAllocTemp)
@@ -951,7 +989,7 @@ func getSelectJobSql(in *pb.GetJobsRequest) (string, string, []interface{}, []in
 		uidList, stateIdList                                           []int
 		jobSelectSql, jobSelectTotalSql                                string
 		params, totalParams                                            []interface{}
-		orderStr, accountsString, uidListString, stateIdListString     string
+		orderStr, uidListString, stateIdListString                     string
 	)
 
 	if in.Sort != nil {
@@ -969,9 +1007,6 @@ func getSelectJobSql(in *pb.GetJobsRequest) (string, string, []interface{}, []in
 		if in.Filter.SubmitTime != nil {
 			submitStartTime = in.Filter.SubmitTime.StartTime.GetSeconds()
 			submitEndTime = in.Filter.SubmitTime.EndTime.GetSeconds()
-		}
-		if in.Filter.Accounts != nil {
-			accountsString = "'" + strings.Join(in.Filter.Accounts, "','") + "'"
 		}
 		if in.Filter.Users != nil {
 			for _, user := range in.Filter.Users {
@@ -1008,8 +1043,14 @@ func getSelectJobSql(in *pb.GetJobsRequest) (string, string, []interface{}, []in
 		if stateIdListString != "" {
 			conditions = append(conditions, fmt.Sprintf("state IN (%s)", stateIdListString))
 		}
-		if accountsString != "" {
-			conditions = append(conditions, fmt.Sprintf("account IN (%s)", accountsString))
+		if len(in.Filter.Accounts) > 0 {
+			// 账户名来自调用方，必须通过占位符传入，不能直接拼接到 SQL 中。
+			accountPlaceholders := strings.TrimSuffix(strings.Repeat("?,", len(in.Filter.Accounts)), ",")
+			conditions = append(conditions, fmt.Sprintf("account IN (%s)", accountPlaceholders))
+			for _, account := range in.Filter.Accounts {
+				params = append(params, account)
+				totalParams = append(totalParams, account)
+			}
 		}
 		// Slurm 会为未结束作业保存预期 time_end。EndTime 查询必须同时限制为终态，
 		// 并让列表 SQL 与 count SQL 复用该条件，避免分页缺项和 TotalCount 偏大。

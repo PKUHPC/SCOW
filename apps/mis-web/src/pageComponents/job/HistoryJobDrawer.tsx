@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
+
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Descriptions, Drawer, Space, Tooltip } from "antd";
-import type { ReactNode } from "react";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { formatTime } from "src/models/job";

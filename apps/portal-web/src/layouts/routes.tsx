@@ -15,7 +15,6 @@ import {
   FileTransferInfoIcon,
   JobIcon,
   LoginClusterIcon,
-  RunningJobsIcon,
   SubmitJobIcon,
 } from "src/icons/headerIcons/headerIcons";
 import { User } from "src/stores/UserStore";
@@ -55,13 +54,8 @@ export const userRoutes: (
             Icon: JobIcon,
             text: t("routes.job.title"),
             path: "/jobs",
-            clickToPath: "/jobs/runningJobs",
+            clickToPath: "/jobs/allJobs",
             children: [
-              {
-                Icon: RunningJobsIcon,
-                text: t("routes.job.runningJobs"),
-                path: "/jobs/runningJobs",
-              },
               {
                 Icon: AllJobsIcon,
                 text: t("routes.job.allJobs"),

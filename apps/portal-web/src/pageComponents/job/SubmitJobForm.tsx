@@ -654,7 +654,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
         })
         .then(({ jobId }) => {
           message.success(t(p("successMessage")) + jobId);
-          Router.push("/jobs/runningJobs");
+          Router.push("/jobs/allJobs");
         });
     } finally {
       setSubmitting(false);

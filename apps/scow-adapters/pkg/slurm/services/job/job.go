@@ -321,6 +321,15 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "Slurm adapter does not support AI job types.")
 	}
 
+	if in.Filter != nil {
+		for _, account := range in.Filter.Accounts {
+			if err := utils.CheckAccount(account); err != nil {
+				logrus.Errorf("GetJobs failed: %v", err)
+				return nil, ce.RichError(codes.InvalidArgument, "ACCOUNT_CONTAIN_ILLEGAL_CHARACTERS", err.Error())
+			}
+		}
+	}
+
 	// 查询未结束作业，使用命令行查询时效性更高
 	if utils.IsGetUnfinishedJobs(in) {
 		response, err := utils.GetUnfinishedJobs(in)

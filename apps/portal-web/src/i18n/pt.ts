@@ -21,8 +21,7 @@ export default {
     dashboard: "Painel",
     job: {
       title: "Tarefas",
-      runningJobs: "Tarefas em execução",
-      allJobs: "Todas as tarefas",
+      allJobs: "Gestão de tarefas",
       submitJob: "Submeter tarefa",
     },
     apps: {
@@ -80,24 +79,28 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Tempo",
-          popoverTitle:
-            "Consultar todas as tarefas ativas" +
-            " (como envio, pendente, iniciado, em execução, com falha, concluído) neste intervalo de tempo",
+          keywordType: "Campo de consulta",
           jobId: "ID da tarefa",
+          jobName: "Nome da tarefa",
+          keyword: "Palavra-chave",
+          account: "Conta",
+          state: "Estado",
+          allStates: "Todos",
+          timeType: "Tipo de horário",
+          submitTime: "Hora de envio",
+          endTime: "Hora de término",
+          invalidJobId: "Insira um ID de tarefa válido",
         },
         tableInfo: {
           jobId: "ID da tarefa",
           jobName: "Nome da tarefa",
+          cluster: "Cluster",
           account: "Conta",
           partition: "Partição",
-          qos: "QOS",
           state: "Estado",
           submitTime: "Hora de envio",
-          startTime: "Hora de início",
           endTime: "Hora de término",
           elapsed: "Tempo decorrido",
-          timeLimit: "Tempo máximo de execução",
-          reason: "Motivo",
           more: "Mais",
           operation: "Operação",
           linkToPath: "Ir para diretório",
@@ -133,32 +136,6 @@ export default {
         submissionTime: "Hora de envio",
         timeLimit: "Tempo máximo de execução",
         drawerTitle: "Detalhes da tarefa",
-      },
-      runningJobTable: {
-        filterForm: {
-          cluster: "Cluster",
-          jobId: "ID da tarefa",
-        },
-        jobInfoTable: {
-          cluster: "Cluster",
-          jobId: "ID da tarefa",
-          account: "Conta",
-          name: "Nome da tarefa",
-          partition: "Partição",
-          qos: "QOS",
-          nodes: "Nós",
-          cores: "CPUs",
-          gpus: "Aceleradores",
-          state: "Estado",
-          runningOrQueueTime: "Tempo de execução/pendência",
-          reason: "Motivo",
-          timeLimit: "Tempo máximo de execução",
-          more: "Mais",
-          operation: "Operação",
-          linkToPath: "Ir para diretório",
-          popConfirm: "Tem certeza de que deseja cancelar esta tarefa?",
-          successMessage: "Pedido de cancelamento da tarefa foi enviado!",
-        },
       },
       submitJobForm: {
         errorMessage: "Falha ao submeter tarefa",
@@ -670,12 +647,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "Todas as tarefas",
-        pageTitle: "Minhas tarefas",
-      },
-      runningJobs: {
-        title: "Tarefas em execução",
-        pageTitle: "Minhas tarefas em execução",
+        title: "Gestão de tarefas",
+        pageTitle: "Gestão de tarefas",
       },
       submit: {
         title: "Submeter tarefa",

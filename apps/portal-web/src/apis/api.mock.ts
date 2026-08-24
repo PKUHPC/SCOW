@@ -72,17 +72,6 @@ export const mockApi: MockApi<typeof api> = {
         },
       },
       {
-        id: "runningJob",
-        name: "runningJobs",
-        entry: {
-          $case: "pageLink",
-          pageLink: {
-            path: "/jobs/runningJobs",
-            icon: "BookOutlined",
-          },
-        },
-      },
-      {
         id: "allJobs",
         name: "allJobs",
         entry: {

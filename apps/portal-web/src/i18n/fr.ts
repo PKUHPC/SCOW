@@ -21,8 +21,7 @@ export default {
     dashboard: "Tableau de bord",
     job: {
       title: "Jobs",
-      runningJobs: "Jobs en cours",
-      allJobs: "Tous les jobs",
+      allJobs: "Gestion des jobs",
       submitJob: "Soumettre un job",
     },
     apps: {
@@ -80,24 +79,28 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Temps",
-          popoverTitle:
-            "Interroger tous les jobs actifs" +
-            " (soumis, en attente, démarrés, en cours, échoués, terminés) sur cette plage de temps",
+          keywordType: "Champ de recherche",
           jobId: "ID du job",
+          jobName: "Nom du job",
+          keyword: "Mot-clé",
+          account: "Compte",
+          state: "Statut",
+          allStates: "Tous",
+          timeType: "Type d'heure",
+          submitTime: "Heure de soumission",
+          endTime: "Heure de fin",
+          invalidJobId: "Saisissez un ID de job valide",
         },
         tableInfo: {
           jobId: "ID du job",
           jobName: "Nom du job",
+          cluster: "Cluster",
           account: "Compte",
           partition: "Partition",
-          qos: "QOS",
           state: "Statut",
           submitTime: "Heure de soumission",
-          startTime: "Heure de début",
           endTime: "Heure de fin",
           elapsed: "Temps écoulé",
-          timeLimit: "Temps d'exécution maximal",
-          reason: "Raison",
           more: "Plus",
           operation: "Opération",
           linkToPath: "Aller au répertoire",
@@ -134,32 +137,6 @@ export default {
         submissionTime: "Heure de soumission",
         timeLimit: "Temps d'exécution maximal",
         drawerTitle: "Détails du job",
-      },
-      runningJobTable: {
-        filterForm: {
-          cluster: "Cluster",
-          jobId: "ID du job",
-        },
-        jobInfoTable: {
-          cluster: "Cluster",
-          jobId: "ID du job",
-          account: "Compte",
-          name: "Nom du job",
-          partition: "Partition",
-          qos: "QOS",
-          nodes: "Nœuds",
-          cores: "Cœurs",
-          gpus: "Cartes accélératrices",
-          state: "Statut",
-          runningOrQueueTime: "Temps d'exécution/attente",
-          reason: "Raison",
-          timeLimit: "Temps d'exécution maximal",
-          more: "Plus",
-          operation: "Opération",
-          linkToPath: "Aller au répertoire",
-          popConfirm: "Confirmer l'annulation de ce job ?",
-          successMessage: "La demande d'annulation du job a été soumise",
-        },
       },
       submitJobForm: {
         errorMessage: "Échec de la soumission du job",
@@ -680,12 +657,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "Tous les jobs",
-        pageTitle: "Mes jobs",
-      },
-      runningJobs: {
-        title: "Jobs en cours",
-        pageTitle: "Mes jobs en cours",
+        title: "Gestion des jobs",
+        pageTitle: "Gestion des jobs",
       },
       submit: {
         title: "Soumettre un job",

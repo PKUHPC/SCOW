@@ -1,14 +1,15 @@
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { formatDateTime, getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, DatePicker, Form, Table } from "antd";
+import { App, Button, Form, Table } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
+import { DateTimeRangePicker } from "src/components/DateTimeRangePicker";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
-import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { PaymentSortBy, PaymentSortOrder } from "src/models/payment";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
@@ -72,7 +73,6 @@ const pCommon = prefix("common.");
 
 export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
   const t = useI18nTranslateToString();
-  const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FilterForm>();
 
@@ -91,7 +91,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
     accountName: accountName,
     // 租户名
     names: [],
-    time: [today.subtract(1, "year"), today],
+    time: [getInclusiveDateRangeStart(today, 1, "year"), today],
     types: [],
     operatorIdOrName: "",
     ownerIdOrName: "",
@@ -113,8 +113,8 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
   const { data, isLoading } = useAsync({
     promiseFn: useCallback(async () => {
       const param = {
-        startTime: query.time[0].clone().startOf("day").toISOString(),
-        endTime: query.time[1].clone().endOf("day").toISOString(),
+        startTime: query.time[0].toISOString(),
+        endTime: query.time[1].toISOString(),
         types: query.types,
         operatorIdOrName: query.operatorIdOrName,
         ownerIdOrName: query.ownerIdOrName,
@@ -166,8 +166,8 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
         count: total,
         timeZone: timeZone,
         query: {
-          startTime: query.time[0].clone().startOf("day").toISOString(),
-          endTime: query.time[1].clone().endOf("day").toISOString(),
+          startTime: query.time[0].toISOString(),
+          endTime: query.time[1].toISOString(),
           targetNames:
             searchType === SearchType.selfAccount ? (query.accountName ? [query.accountName] : undefined) : query.names,
           searchType: searchType,
@@ -272,7 +272,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
             </Form.Item>
           ) : undefined}
           <Form.Item label={t(p("topUpTime"))} name="time">
-            <DatePicker.RangePicker allowClear={false} presets={getDefaultPresets(languageId)} />
+            <DateTimeRangePicker />
           </Form.Item>
           <Form.Item label={t("common.type")} name="type">
             <Input style={{ width: 180 }} placeholder={t(p("searchTypePlaceholder"))} />

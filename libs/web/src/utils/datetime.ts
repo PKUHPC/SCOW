@@ -7,6 +7,13 @@ export function formatDateTime(str: string): string {
   return dayjs(str).format("YYYY-MM-DD HH:mm:ss");
 }
 
+// “最近 N 个周期”按自然日计算且首尾均包含，因此开始日期是向前推 N 个周期后的次日零点。
+export const getInclusiveDateRangeStart = (
+  endTime: dayjs.Dayjs,
+  amount: number,
+  unit: "day" | "week" | "month" | "year",
+) => endTime.subtract(amount, unit).add(1, "day").startOf("day");
+
 export const getDefaultPresets = (languageId: string): TimeRangePickerProps["presets"] => {
   const now = dayjs();
   const end = now.endOf("day");
@@ -24,9 +31,9 @@ export const getDefaultPresets = (languageId: string): TimeRangePickerProps["pre
     { label: tWeek, value: [now.startOf("week"), end] },
     { label: tMonth, value: [now.startOf("month"), end] },
     { label: tYear, value: [now.startOf("year"), end] },
-    { label: threeMonths, value: [now.subtract(3, "month").startOf("day"), end] },
-    { label: sixMonths, value: [now.subtract(6, "month").startOf("day"), end] },
-    { label: oneYear, value: [now.subtract(1, "year").startOf("day"), end] },
+    { label: threeMonths, value: [getInclusiveDateRangeStart(end, 3, "month"), end] },
+    { label: sixMonths, value: [getInclusiveDateRangeStart(end, 6, "month"), end] },
+    { label: oneYear, value: [getInclusiveDateRangeStart(end, 1, "year"), end] },
   ];
 };
 
@@ -43,11 +50,11 @@ export const getAdminStatPresets = (languageId: string): TimeRangePickerProps["p
 
   return [
     { label: oneday, value: [yesterday.startOf("day"), yesterdayEnd] },
-    { label: oneWeek, value: [yesterday.subtract(1, "week"), yesterdayEnd] },
-    { label: oneMonth, value: [yesterday.subtract(1, "month"), yesterdayEnd] },
-    { label: threeMonths, value: [yesterday.subtract(3, "month").startOf("day"), yesterdayEnd] },
-    { label: sixMonths, value: [yesterday.subtract(6, "month").startOf("day"), yesterdayEnd] },
-    { label: oneYear, value: [yesterday.subtract(1, "year").startOf("day"), yesterdayEnd] },
+    { label: oneWeek, value: [getInclusiveDateRangeStart(yesterdayEnd, 1, "week"), yesterdayEnd] },
+    { label: oneMonth, value: [getInclusiveDateRangeStart(yesterdayEnd, 1, "month"), yesterdayEnd] },
+    { label: threeMonths, value: [getInclusiveDateRangeStart(yesterdayEnd, 3, "month"), yesterdayEnd] },
+    { label: sixMonths, value: [getInclusiveDateRangeStart(yesterdayEnd, 6, "month"), yesterdayEnd] },
+    { label: oneYear, value: [getInclusiveDateRangeStart(yesterdayEnd, 1, "year"), yesterdayEnd] },
   ];
 };
 

@@ -1,13 +1,14 @@
 import { OperationType } from "@scow/lib-operation-log/build/index";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { formatDateTime, getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, DatePicker, Form, Select, Table } from "antd";
+import { App, Button, Form, Select, Table } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { DateTimeRangePicker } from "src/components/DateTimeRangePicker";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { getI18nCurrentText, prefix, useI18n, useI18nTranslate, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
@@ -78,7 +79,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, tenantName
     return {
       operatorUserId: undefined,
       operationType: undefined,
-      operationTime: [today.clone().subtract(30, "day"), today],
+      operationTime: [getInclusiveDateRangeStart(today, 30, "day"), today],
       operationResult: undefined,
       operationDetail: undefined,
       customEventType: undefined,
@@ -275,7 +276,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, tenantName
             <Input placeholder={t(p("keywordsPlaceholder"))} style={{ width: 180 }} />
           </Form.Item>
           <Form.Item label={t(p("operationTime"))} name="operationTime">
-            <DatePicker.RangePicker showTime allowClear={false} presets={getDefaultPresets(languageId)} />
+            <DateTimeRangePicker />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">

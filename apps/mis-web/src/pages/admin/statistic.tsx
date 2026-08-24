@@ -6,7 +6,7 @@ import {
   WalletOutlined,
 } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
-import { getAdminStatPresets } from "@scow/lib-web/build/utils/datetime";
+import { getAdminStatPresets, getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { Card, Col, DatePicker, Row, Space } from "antd";
 import dayjs from "dayjs";
 import { NextPage } from "next";
@@ -80,8 +80,9 @@ export const PlatformStatisticsPage: NextPage = requireAuth((u) =>
   const OperationTypeTexts = getOperationTypeTexts(t);
 
   const today = dayjs().endOf("day");
+  const yesterday = today.subtract(1, "day");
   const [query, setQuery] = useState<{ filterTime: [dayjs.Dayjs, dayjs.Dayjs] }>({
-    filterTime: [today.clone().subtract(8, "day"), today.clone().subtract(1, "day")],
+    filterTime: [getInclusiveDateRangeStart(yesterday, 1, "week"), yesterday],
   });
 
   const getStatisticInfoFn = useCallback(async () => {

@@ -3,9 +3,13 @@ package utils
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "scow-adapters/gen/go"
-	"scow-adapters/pkg/slurm/config"
+	slurmConfig "scow-adapters/pkg/slurm/config"
 )
 
 func TestIsFinishedJobState(t *testing.T) {
@@ -43,11 +47,11 @@ func TestIsFinishedJobState(t *testing.T) {
 }
 
 func TestGetSelectJobSqlUsesFinishedJobStates(t *testing.T) {
-	originalConfig := config.SlurmValue
-	config.SlurmValue = &config.SlurmConfig{
-		MySQLConfig: config.MySQLConfig{ClusterName: "test_cluster"},
+	originalConfig := slurmConfig.SlurmValue
+	slurmConfig.SlurmValue = &slurmConfig.SlurmConfig{
+		MySQLConfig: slurmConfig.MySQLConfig{ClusterName: "test_cluster"},
 	}
-	t.Cleanup(func() { config.SlurmValue = originalConfig })
+	t.Cleanup(func() { slurmConfig.SlurmValue = originalConfig })
 
 	in := &pb.GetJobsRequest{
 		Filter: &pb.GetJobsRequest_Filter{EndTime: &pb.TimeRange{}},
@@ -60,6 +64,50 @@ func TestGetSelectJobSqlUsesFinishedJobStates(t *testing.T) {
 			t.Errorf("%s = %q, want condition %q", name, query, wantCondition)
 		}
 	}
+}
+
+func TestResolveUnfinishedJobSubmitTime(t *testing.T) {
+	squeueSubmitTime := "2025-09-25T15:19:19"
+	parsedSqueueSubmitTime := time.Date(2025, 9, 25, 15, 19, 19, 0, time.Local).Unix()
+
+	t.Run("prefer SlurmDB time", func(t *testing.T) {
+		submitTime, exists := resolveUnfinishedJobSubmitTime(map[int]int64{1: 123}, 1, squeueSubmitTime)
+		require.True(t, exists)
+		require.Equal(t, int64(123), submitTime)
+	})
+
+	t.Run("fallback to squeue time when SlurmDB row is missing", func(t *testing.T) {
+		submitTime, exists := resolveUnfinishedJobSubmitTime(map[int]int64{}, 1, squeueSubmitTime)
+		require.True(t, exists)
+		require.Equal(t, parsedSqueueSubmitTime, submitTime)
+	})
+
+	t.Run("fallback to squeue time when SlurmDB time is zero", func(t *testing.T) {
+		submitTime, exists := resolveUnfinishedJobSubmitTime(map[int]int64{1: 0}, 1, squeueSubmitTime)
+		require.True(t, exists)
+		require.Equal(t, parsedSqueueSubmitTime, submitTime)
+	})
+
+	t.Run("report missing when neither source has a valid time", func(t *testing.T) {
+		submitTime, exists := resolveUnfinishedJobSubmitTime(map[int]int64{}, 1, "N/A")
+		require.False(t, exists)
+		require.Zero(t, submitTime)
+	})
+}
+
+func TestMatchesSubmitTimeRange(t *testing.T) {
+	boundedRange := &pb.TimeRange{
+		StartTime: timestamppb.New(time.Unix(100, 0)),
+		EndTime:   timestamppb.New(time.Unix(200, 0)),
+	}
+
+	require.True(t, matchesSubmitTimeRange(0, false, nil))
+	require.True(t, matchesSubmitTimeRange(0, false, &pb.TimeRange{}))
+	require.False(t, matchesSubmitTimeRange(0, false, boundedRange))
+	require.True(t, matchesSubmitTimeRange(100, true, boundedRange))
+	require.True(t, matchesSubmitTimeRange(200, true, boundedRange))
+	require.False(t, matchesSubmitTimeRange(99, true, boundedRange))
+	require.False(t, matchesSubmitTimeRange(201, true, boundedRange))
 }
 
 func TestIsValidJobInfo(t *testing.T) {
@@ -110,4 +158,36 @@ func TestIsValidJobInfo(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetSelectJobSqlUsesParametersForAccounts(t *testing.T) {
+	originalConfig := slurmConfig.SlurmValue
+	slurmConfig.SlurmValue = &slurmConfig.SlurmConfig{
+		MySQLConfig: slurmConfig.MySQLConfig{ClusterName: "cluster"},
+	}
+	t.Cleanup(func() {
+		slurmConfig.SlurmValue = originalConfig
+	})
+
+	request := &pb.GetJobsRequest{
+		Filter: &pb.GetJobsRequest_Filter{
+			Accounts: []string{"account_1", "account') OR 1=1 #"},
+		},
+	}
+
+	query, totalQuery, params, totalParams := getSelectJobSql(request)
+
+	require.Contains(t, query, "account IN (?,?)")
+	require.Contains(t, totalQuery, "account IN (?,?)")
+	require.NotContains(t, query, "account_1")
+	require.NotContains(t, totalQuery, "account_1")
+	require.NotContains(t, query, "OR 1=1")
+	require.NotContains(t, totalQuery, "OR 1=1")
+	require.Equal(t, []interface{}{"account_1", "account') OR 1=1 #"}, params)
+	require.Equal(t, []interface{}{"account_1", "account') OR 1=1 #"}, totalParams)
+}
+
+func TestCheckAccountRejectsIllegalAccountName(t *testing.T) {
+	require.NoError(t, CheckAccount("account_1"))
+	require.Error(t, CheckAccount("account') OR 1=1 #"))
 }

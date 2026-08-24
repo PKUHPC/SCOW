@@ -24,8 +24,7 @@ export default {
     dashboard: "仪表盘",
     job: {
       title: "作业",
-      runningJobs: "未结束的作业",
-      allJobs: "所有作业",
+      allJobs: "作业管理",
       submitJob: "提交作业",
     },
     apps: {
@@ -87,23 +86,28 @@ export default {
         searchForm: {
           clusterLabel: "集群",
           time: "时间",
-          popoverTitle: "查询该时间区域内所有有活动（如作业提交、等待中、开始、运行、失败、完成）的作业",
-
+          keywordType: "查询字段",
           jobId: "作业ID",
+          jobName: "作业名",
+          keyword: "关键字",
+          account: "账户",
+          state: "状态",
+          allStates: "全部",
+          timeType: "时间类型",
+          submitTime: "提交时间",
+          endTime: "结束时间",
+          invalidJobId: "请输入有效的作业ID",
         },
         tableInfo: {
           jobId: "作业ID",
           jobName: "作业名",
+          cluster: "集群",
           account: "账户",
           partition: "分区",
-          qos: "QOS",
           state: "状态",
           submitTime: "提交时间",
-          startTime: "开始时间",
           endTime: "结束时间",
           elapsed: "运行时间",
-          timeLimit: "最长运行时间",
-          reason: "说明",
           more: "更多",
           operation: "操作",
           linkToPath: "进入目录",
@@ -141,33 +145,6 @@ export default {
         timeWaitTip: "不同节点间时间可能存在时差属于正常现象，不影响作业运行和计费",
         timeLimit: "最长运行时间",
         drawerTitle: "作业详细信息",
-      },
-      // runningJobTable
-      runningJobTable: {
-        filterForm: {
-          cluster: "集群",
-          jobId: "作业ID",
-        },
-        jobInfoTable: {
-          cluster: "集群",
-          jobId: "作业ID",
-          account: "账户",
-          name: "作业名",
-          partition: "分区",
-          qos: "QOS",
-          nodes: "节点数",
-          cores: "CPU核心数",
-          gpus: "加速卡卡数",
-          state: "状态",
-          runningOrQueueTime: "运行/排队时间",
-          reason: "说明",
-          timeLimit: "最长运行时间",
-          more: "更多",
-          operation: "操作",
-          linkToPath: "进入目录",
-          popConfirm: "确定结束这个任务吗?",
-          successMessage: "任务结束请求已经提交!",
-        },
       },
       // submitJobForm
       submitJobForm: {
@@ -920,12 +897,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "所有作业",
-        pageTitle: "本用户所有所有作业",
-      },
-      runningJobs: {
-        title: "未结束的作业",
-        pageTitle: "本用户未结束的作业",
+        title: "作业管理",
+        pageTitle: "作业管理",
       },
       submit: {
         title: "提交作业",

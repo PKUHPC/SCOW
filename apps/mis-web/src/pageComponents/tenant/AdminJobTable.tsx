@@ -3,18 +3,19 @@ import type { FilterForm } from "src/utils/jobIds";
 
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { formatDateTime, getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, Button, DatePicker, Divider, Form, Input, Popover, Space, Table } from "antd";
+import { App, Button, Divider, Form, Input, Popover, Space, Table } from "antd";
 import dayjs from "dayjs";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { ClusterSelector } from "src/components/ClusterSelector";
+import { DateTimeRangePicker } from "src/components/DateTimeRangePicker";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -84,7 +85,6 @@ const filterFormToQuery = (query: FilterForm, rangeSearch: boolean): GetJobFilte
 
 export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platform = false, tenantName }) => {
   const t = useI18nTranslateToString();
-  const languageId = useI18n().currentLanguage.id;
 
   const { message } = App.useApp();
 
@@ -100,7 +100,7 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
       ownerIdOrName: "",
       accountName: "",
       tenantName: undefined,
-      jobEndTime: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
+      jobEndTime: [getInclusiveDateRangeStart(now, 1, "week"), now.endOf("day")],
       clusters: [],
     };
   });
@@ -241,7 +241,7 @@ export const AdminJobTable: React.FC<Props & { platform?: boolean }> = ({ platfo
                       <TrimInput placeholder={t(p("ownerIdOrNamePlaceholder"))} />
                     </Form.Item>
                     <Form.Item label={t(p("jobEndTime"))} name="jobEndTime">
-                      <DatePicker.RangePicker showTime allowClear={false} presets={getDefaultPresets(languageId)} />
+                      <DateTimeRangePicker />
                     </Form.Item>
                   </>
                 ),

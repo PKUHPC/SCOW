@@ -1,4 +1,4 @@
-import { parseTime } from "@scow/lib-web/build/utils/datetime";
+import { getInclusiveDateRangeStart, parseTime } from "@scow/lib-web/build/utils/datetime";
 import { TimeRangePickerProps } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 
@@ -15,9 +15,9 @@ export const defaultPresets: TimeRangePickerProps["presets"] = (() => {
     { label: "本周", value: [now.startOf("week"), end] },
     { label: "本月", value: [now.startOf("month"), end] },
     { label: "今年", value: [now.startOf("year"), end] },
-    { label: "3个月", value: [now.subtract(3, "month").startOf("day"), end] },
-    { label: "6个月", value: [now.subtract(6, "month").startOf("day"), end] },
-    { label: "一年", value: [now.subtract(1, "year").startOf("day"), end] },
+    { label: "3个月", value: [getInclusiveDateRangeStart(end, 3, "month"), end] },
+    { label: "6个月", value: [getInclusiveDateRangeStart(end, 6, "month"), end] },
+    { label: "一年", value: [getInclusiveDateRangeStart(end, 1, "year"), end] },
   ];
 })();
 

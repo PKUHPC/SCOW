@@ -4,25 +4,13 @@ import type { Cluster } from "src/utils/cluster";
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { HttpError } from "@ddadaal/next-typed-api-routes-runtime";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { formatDateTime, getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import {
-  App,
-  AutoComplete,
-  Button,
-  DatePicker,
-  Divider,
-  Form,
-  InputNumber,
-  Popover,
-  Space,
-  Table,
-  Tooltip,
-} from "antd";
+import { App, AutoComplete, Button, Divider, Form, InputNumber, Popover, Space, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -31,6 +19,7 @@ import { useStore } from "simstate";
 import { api } from "src/apis";
 import { DetailIcon } from "src/assets/operationIcon";
 import { ClusterSelector } from "src/components/ClusterSelector";
+import { DateTimeRangePicker } from "src/components/DateTimeRangePicker";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -103,8 +92,6 @@ export const JobTable: React.FC<Props> = ({
   priceTexts,
 }) => {
   const t = useI18nTranslateToString();
-  const languageId = useI18n().currentLanguage.id;
-
   const { message } = App.useApp();
 
   const rangeSearch = useRef(true);
@@ -120,7 +107,7 @@ export const JobTable: React.FC<Props> = ({
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
     return {
-      jobEndTime: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
+      jobEndTime: [getInclusiveDateRangeStart(now, 1, "week"), now.endOf("day")],
       jobId: undefined,
       clusters: [],
       accountName: typeof accountNames === "string" ? accountNames : undefined,
@@ -322,7 +309,7 @@ export const JobTable: React.FC<Props> = ({
                       </Form.Item>
                     ) : undefined}
                     <Form.Item label={t(p("jobEndTime"))} name="jobEndTime">
-                      <DatePicker.RangePicker showTime presets={getDefaultPresets(languageId)} allowClear={false} />
+                      <DateTimeRangePicker />
                     </Form.Item>
                   </>
                 ),
@@ -479,9 +466,9 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
             width="13%"
             ellipsis
             title={t(pCommon("user"))}
-            render={(user, record) => !record.userName
-              ? t(pCommon("nonPlatformUser"))
-              : `${record.userName} (ID:${user})`}
+            render={(user, record) =>
+              !record.userName ? t(pCommon("nonPlatformUser")) : `${record.userName} (ID:${user})`
+            }
             sorter={true}
           />
         ) : undefined}

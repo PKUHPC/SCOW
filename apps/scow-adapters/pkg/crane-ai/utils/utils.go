@@ -468,6 +468,8 @@ func GetCraneStatesList(stateList []string) []craneProtos.JobStatus {
 			statesList = append(statesList, craneProtos.JobStatus_Failed)
 		} else if value == "TIMEOUT" {
 			statesList = append(statesList, craneProtos.JobStatus_ExceedTimeLimit)
+		} else if value == "SUSPENDED" {
+			statesList = append(statesList, craneProtos.JobStatus_Suspended)
 		} else {
 			statesList = append(statesList, craneProtos.JobStatus_Invalid)
 		}

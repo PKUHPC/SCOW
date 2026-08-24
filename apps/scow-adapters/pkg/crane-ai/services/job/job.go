@@ -415,29 +415,37 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 
 		logrus.Tracef("request: %v", base)
 
-		var startTimeFilter, endTimeFilter int64
-
-		if in.Filter.EndTime != nil {
-			startTimeFilter = in.Filter.EndTime.StartTime.GetSeconds()
-			endTimeFilter = in.Filter.EndTime.EndTime.GetSeconds()
-		} else if in.Filter.SubmitTime != nil {
-			startTimeFilter = in.Filter.SubmitTime.StartTime.GetSeconds()
-			endTimeFilter = in.Filter.SubmitTime.EndTime.GetSeconds()
+		if endTimeRange := in.Filter.EndTime; endTimeRange != nil {
+			interval := &craneProtos.TimeInterval{}
+			if startTime := endTimeRange.StartTime.GetSeconds(); startTime != 0 {
+				interval.LowerBound = timestamppb.New(time.Unix(startTime, 0))
+			}
+			if endTime := endTimeRange.EndTime.GetSeconds(); endTime != 0 {
+				interval.UpperBound = timestamppb.New(time.Unix(endTime, 0))
+			}
+			if interval.LowerBound != nil || interval.UpperBound != nil {
+				base.FilterEndTimeInterval = interval
+			}
 		}
 
-		if startTimeFilter != 0 || endTimeFilter != 0 {
+		if submitTimeRange := in.Filter.SubmitTime; submitTimeRange != nil {
 			interval := &craneProtos.TimeInterval{}
-			if startTimeFilter != 0 {
-				interval.LowerBound = timestamppb.New(time.Unix(startTimeFilter, 0))
+			if startTime := submitTimeRange.StartTime.GetSeconds(); startTime != 0 {
+				interval.LowerBound = timestamppb.New(time.Unix(startTime, 0))
 			}
-			if endTimeFilter != 0 {
-				interval.UpperBound = timestamppb.New(time.Unix(endTimeFilter, 0))
+			if endTime := submitTimeRange.EndTime.GetSeconds(); endTime != 0 {
+				interval.UpperBound = timestamppb.New(time.Unix(endTime, 0))
 			}
-			base.FilterEndTimeInterval = interval
+			if interval.LowerBound != nil || interval.UpperBound != nil {
+				base.FilterSubmitTimeInterval = interval
+			}
 		}
 
 		if in.Filter.JobName != nil {
 			base.FilterJobNames = []string{*in.Filter.JobName}
+		}
+		if in.Filter.JobId != nil {
+			base.FilterJobIds = []*craneProtos.JobIdSelector{{JobId: *in.Filter.JobId}}
 		}
 		request = base
 	} else {

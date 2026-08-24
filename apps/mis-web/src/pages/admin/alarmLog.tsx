@@ -1,16 +1,17 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { Button, DatePicker, Form, Popover, Select, Space } from "antd";
+import { Button, Form, Popover, Select, Space } from "antd";
 import dayjs from "dayjs";
 import { NextPage } from "next";
 import { useCallback, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
 import { requireAuth } from "src/auth/requireAuth";
+import { DateTimeRangePicker } from "src/components/DateTimeRangePicker";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { PageTitle } from "src/components/PageTitle";
-import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18nTranslateToString } from "src/i18n";
 import { PlatformRole } from "src/models/User";
 import { AllAlarmLogsTable } from "src/pageComponents/admin/AllAlarmLogsTable";
 import { Head } from "src/utils/head";
@@ -34,7 +35,7 @@ export const AlarmLogPage: NextPage = requireAuth((u) => u.platformRoles.include
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
     return {
-      time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
+      time: [getInclusiveDateRangeStart(now, 1, "week"), now.endOf("day")],
       status: "",
       id: undefined,
       uid: undefined,
@@ -44,7 +45,6 @@ export const AlarmLogPage: NextPage = requireAuth((u) => u.platformRoles.include
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
 
   const t = useI18nTranslateToString();
-  const languageId = useI18n().currentLanguage.id;
   const [form] = Form.useForm<FilterForm>();
 
   const getAlarmLogs = useCallback(async () => {
@@ -132,7 +132,7 @@ export const AlarmLogPage: NextPage = requireAuth((u) => u.platformRoles.include
             }
             name="time"
           >
-            <DatePicker.RangePicker showTime presets={getDefaultPresets(languageId)} allowClear={false} />
+            <DateTimeRangePicker />
           </Form.Item>
           <Form.Item name="status" label={t(p("status"))}>
             <Select

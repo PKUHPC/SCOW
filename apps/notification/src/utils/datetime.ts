@@ -1,3 +1,4 @@
+import { getInclusiveDateRangeStart } from "@scow/lib-web/build/utils/datetime";
 import { TimeRangePickerProps } from "antd";
 import dayjs from "dayjs";
 
@@ -24,9 +25,9 @@ export const getDefaultPresets = (languageId: string): TimeRangePickerProps["pre
     { label: tWeek, value: [now.startOf("week"), end] },
     { label: tMonth, value: [now.startOf("month"), end] },
     { label: tYear, value: [now.startOf("year"), end] },
-    { label: threeMonths, value: [now.subtract(3, "month").startOf("day"), end] },
-    { label: sixMonths, value: [now.subtract(6, "month").startOf("day"), end] },
-    { label: oneYear, value: [now.subtract(1, "year").startOf("day"), end] },
+    { label: threeMonths, value: [getInclusiveDateRangeStart(end, 3, "month"), end] },
+    { label: sixMonths, value: [getInclusiveDateRangeStart(end, 6, "month"), end] },
+    { label: oneYear, value: [getInclusiveDateRangeStart(end, 1, "year"), end] },
   ];
 };
 
