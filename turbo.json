@@ -15,6 +15,10 @@
       "dependsOn": ["^build", "generate"],
       "outputs": [".next/**", "build/**"]
     },
+    "@scow/cli#build": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": ["build/**", "exe/**"]
+    },
     "prepareDev": {
       "dependsOn": ["^build"],
       "outputs": ["src/generated", "build"],
