@@ -1,5 +1,6 @@
 export default {
   common: {
+    return: "Zurück",
     finalError: "Anfrage fehlgeschlagen, bitte versuchen Sie es später erneut",
     noSpaceError:
       "Unzureichender Speicherplatz," + " bitte bereinigen Sie den Speicher oder kontaktieren Sie den Administrator",

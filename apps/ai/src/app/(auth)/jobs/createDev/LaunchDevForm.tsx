@@ -4,13 +4,9 @@ import type { ColumnsType } from "antd/es/table";
 import type { DevTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { JobPageHeader } from "@scow/lib-web/build/components/job/JobPageHeader";
 import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
-import {
-  BorderlessCard,
-  HeaderRow,
-  HeaderTitle,
-  PaddedCard,
-} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import { BorderlessCard, PaddedCard } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import {
   JobContainer,
@@ -29,7 +25,7 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
 import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
 import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
-import { SidePanelGroupWrapper, StyledBackIcon } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { SidePanelGroupWrapper } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
@@ -38,7 +34,6 @@ import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
-import { useTheme } from "styled-components";
 
 import type {
   AppFormValues,
@@ -81,6 +76,7 @@ interface Props {
 
 const p = prefix("app.jobs.launchAppForm.");
 const pDev = prefix("app.jobs.launchDevForm.");
+const pJobDetails = prefix("app.jobs.jobDetails.");
 
 type LaunchDevFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchDevFormKey, `imageSourceTabs.${string}`>;
@@ -200,7 +196,6 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
-  const theme = useTheme();
   // const i18n = useI18n();
   const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
@@ -378,7 +373,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
     { accountName: selectedAccount! },
     {
-      enabled: Boolean(publicConfig.MIS_DEPLOYED && selectedAccount),
+      enabled: Boolean(selectedAccount),
       retry: false,
     },
   );
@@ -1362,9 +1357,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       appForm.setFieldsValue({ mountPoints });
     }
     appForm.setFieldsValue({
-      envVariables: mergeResubmitEnvVariables(
-        normalizeEnvVariables(formData.envVariables as unknown[] | undefined),
-      ),
+      envVariables: mergeResubmitEnvVariables(normalizeEnvVariables(formData.envVariables as unknown[] | undefined)),
     });
     const tplPartition = formData.partition as string | undefined;
     if (tplPartition) {
@@ -1583,30 +1576,21 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   // ======================= 渲染 =======================
   return (
     <>
+      <JobPageHeader
+        title={t(pDev("createDevTitle"))}
+        backLabel={t(pJobDetails("return"))}
+        onBack={handleCancel}
+        action={
+          <Button type="primary" onClick={() => setTemplateListOpen(true)}>
+            {t(pDev("templateButton"))}
+          </Button>
+        }
+      />
       <JobPageLayout>
         <JobMainContent>
           <JobContainer direction="vertical" size={0}>
             <div style={{ position: "relative" }}>
-              <StyledBackIcon style={{ top: 34 }} onClick={handleCancel} />
-              <PaddedCard
-                styles={{ header: { borderBottom: "none" } }}
-                title={
-                  <HeaderRow
-                    align="center"
-                    size={16}
-                    style={{
-                      justifyContent: "space-between",
-                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
-                      paddingBottom: 24,
-                    }}
-                  >
-                    <HeaderTitle>{t(pDev("createDevTitle"))}</HeaderTitle>
-                    <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                      {t(pDev("templateButton"))}
-                    </Button>
-                  </HeaderRow>
-                }
-              >
+              <PaddedCard>
                 <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
                   <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
                 </BorderlessCard>
@@ -1680,7 +1664,6 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
                 hourlyPrice={formattedHourlyPrice}
                 showHourlyPriceUnit={jobOneHourPrice != null}
                 pricingStandardUrl={join(misPath, "/user/partitions")}
-                showAccountInfo={publicConfig.MIS_DEPLOYED}
                 accountInfo={accountInfo ?? null}
               />
             </SidePanelGroupWrapper>

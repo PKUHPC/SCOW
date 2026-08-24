@@ -147,3 +147,15 @@ const backSVG = () => {
 };
 
 export const BackIcon = createIcon(backSVG, 1);
+
+// 单箭头返回图标
+const singleBackSVG = () => (
+  <svg width="10" height="14" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M7.65039 0.270582C8.06807 -0.0901573 8.74546 -0.0902305 9.16309 0.270582C9.58047 0.631794 9.58056 1.21801 9.16309 1.57918L3.02637 6.88582L9.16309 12.1925C9.58048 12.5537 9.58058 13.1399 9.16309 13.501C8.7455 13.8619 8.06809 13.8617 7.65039 13.501L0 6.88582L7.65039 0.270582Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const SingleBackIcon = createIcon(singleBackSVG);

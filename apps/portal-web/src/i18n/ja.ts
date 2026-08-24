@@ -1,5 +1,6 @@
 export default {
   common: {
+    return: "戻る",
     finalError: "リクエストに失敗しました。後でもう一度お試しください",
     noSpaceError: "ストレージ容量が不足しています。容量を整理するか管理者に連絡してください",
     timeSubmit: "提出時刻",

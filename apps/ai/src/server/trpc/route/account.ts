@@ -37,7 +37,7 @@ export const accountRouter = router({
     .query(async ({ input, ctx: { user } }) => {
       const commonConfig = getCommonConfig();
 
-      if (!config.MIS_DEPLOYED || !config.MIS_SERVER_URL) {
+      if (!config.MIS_SERVER_URL) {
         return null;
       }
 

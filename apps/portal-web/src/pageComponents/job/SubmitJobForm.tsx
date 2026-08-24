@@ -1,11 +1,10 @@
 import { parsePlaceholder } from "@scow/lib-config/build/parse";
 import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { JobPageHeader } from "@scow/lib-web/build/components/job/JobPageHeader";
 import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import { AntdButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import {
   BorderlessCard,
-  HeaderRow,
-  HeaderTitle,
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
@@ -35,7 +34,7 @@ import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { formatSize } from "src/utils/format";
-import { styled, useTheme } from "styled-components";
+import { styled } from "styled-components";
 
 import { BaseInfoSection } from "./submitJobCom/BaseInfoSection";
 import { JobConfigSection } from "./submitJobCom/JobConfigSection";
@@ -97,7 +96,6 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
   }
 
   const { message, modal } = App.useApp();
-  const theme = useTheme();
 
   const [baseForm] = Form.useForm<BaseFormValues>();
   const [resourceForm] = Form.useForm<ResourceFormValues>();
@@ -946,6 +944,14 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
 
   return (
     <>
+      {!isGetAccountClustersWithUnavailableReasons && (
+        <JobPageHeader
+          title={t(p("title"))}
+          action={<Button type="primary" onClick={() => setTemplateListOpen(true)}>
+            {t(p("templateButton"))}
+          </Button>}
+        />
+      )}
       <JobPageLayout>
         {isGetAccountClustersWithUnavailableReasons ? (
           <JobPageLoading>
@@ -955,28 +961,7 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
           <>
             <JobMainContent>
               <JobContainer direction="vertical" size={0}>
-                <PaddedCard
-                  styles={{ header: { borderBottom: "none" } }}
-                  title={
-                    <HeaderRow
-                      align="center"
-                      style={{
-                        justifyContent: "space-between",
-                        borderBottom: `1px solid ${theme.palette.gray[4]}`,
-                        paddingBottom: 24,
-                      }}
-                    >
-                      <HeaderTitle>{t(p("title"))}</HeaderTitle>
-                      <Button
-                        type="link"
-                        style={{ padding: 0, fontSize: 16 }}
-                        onClick={() => setTemplateListOpen(true)}
-                      >
-                        {t(p("templateButton"))}
-                      </Button>
-                    </HeaderRow>
-                  }
-                >
+                <PaddedCard>
                   <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
                     <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
                   </BorderlessCard>

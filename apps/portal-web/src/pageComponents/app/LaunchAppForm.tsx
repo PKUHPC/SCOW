@@ -2,18 +2,16 @@ import type { ReactNode } from "react";
 import type { AppTemplateDetail } from "src/pages/api/app/listAppTemplates";
 
 import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { JobPageHeader } from "@scow/lib-web/build/components/job/JobPageHeader";
 import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
-  HeaderRow,
-  HeaderTitle,
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { BackIcon } from "@scow/lib-web/build/icons/commonIcons";
 import {
   JobContainer,
   JobMainContent,
@@ -41,7 +39,7 @@ import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { formatSize } from "src/utils/format";
-import { styled, useTheme } from "styled-components";
+import { styled } from "styled-components";
 
 import { MAX_TIME_PRESETS } from "../job/submitJobCom/ResourceConfigSection";
 import { SaveAsTemplateModal } from "../job/submitJobCom/SaveAsTemplateModal";
@@ -203,7 +201,6 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
-  const theme = useTheme();
 
   const [baseForm] = Form.useForm<FormFields>();
   const [resourceForm] = Form.useForm<AppResourceFormValues>();
@@ -1173,45 +1170,22 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   return (
     <>
+      <JobPageHeader
+        title={t(p("create")) + appName}
+        backLabel={t(pCommon("return"))}
+        onBack={handleGoBack}
+        logo={appLogoPath ? (
+          <HeaderAvatar size={28} src={join(publicConfig.PUBLIC_PATH, appLogoPath)} />
+        ) : null}
+        action={<Button type="primary" onClick={() => setTemplateListOpen(true)}>
+          {t(p("templateButton"))}
+        </Button>}
+      />
       <JobPageLayout>
         <JobMainContent>
           <JobContainer direction="vertical" size={0}>
             <div style={{ position: "relative" }}>
-              <BackIcon
-                onClick={handleGoBack}
-                style={{
-                  position: "absolute",
-                  left: 21,
-                  top: 38,
-                  cursor: "pointer",
-                  fontSize: 20,
-                  zIndex: 1,
-                }}
-              />
-              <PaddedCard
-                styles={{ header: { borderBottom: "none" } }}
-                title={
-                  <HeaderRow
-                    align="center"
-                    size={16}
-                    style={{
-                      justifyContent: "space-between",
-                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
-                      paddingBottom: 24,
-                    }}
-                  >
-                    <HeaderRow align="center" size={16}>
-                      {appLogoPath ? (
-                        <HeaderAvatar size={32} src={join(publicConfig.PUBLIC_PATH, appLogoPath)} />
-                      ) : null}
-                      <HeaderTitle>{t(p("create")) + appName}</HeaderTitle>
-                    </HeaderRow>
-                    <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                      {t(p("templateButton"))}
-                    </Button>
-                  </HeaderRow>
-                }
-              >
+              <PaddedCard>
                 <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
                   <Form form={baseForm} colon={false} requiredMark={false}>
                     <FixedOrEditableFormItem

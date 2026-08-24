@@ -6,13 +6,9 @@ import type { CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import type { AppTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { JobPageHeader } from "@scow/lib-web/build/components/job/JobPageHeader";
 import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
-import {
-  BorderlessCard,
-  HeaderRow,
-  HeaderTitle,
-  PaddedCard,
-} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import { BorderlessCard, PaddedCard } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import {
   RoundedInput,
@@ -41,12 +37,12 @@ import Markdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { usePublicConfig } from "src/app/(auth)/context";
-import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
 import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
 import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
-import { HeaderAvatar, SidePanelGroupWrapper, StyledBackIcon } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { HeaderAvatar, SidePanelGroupWrapper } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
@@ -54,7 +50,7 @@ import { JobType } from "src/models/Job";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
-import { styled, useTheme } from "styled-components";
+import { styled } from "styled-components";
 
 import type {
   AppFormValues,
@@ -111,6 +107,7 @@ interface Props {
 }
 
 const p = prefix("app.jobs.launchAppForm.");
+const pJobDetails = prefix("app.jobs.jobDetails.");
 const pPublicOption = prefix("app.jobs.publicImageOption.");
 type LaunchAppFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchAppFormKey, `imageSourceTabs.${string}`>;
@@ -295,7 +292,6 @@ export const LaunchAppForm = ({
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
-  const theme = useTheme();
   const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
 
   // 配置文件中所有的AI集群
@@ -420,8 +416,9 @@ export const LaunchAppForm = ({
       return;
     }
 
-    const isAppAvailable = Object.values(appAvailableAccountsAndClusters.accountClusters)
-      .some((clusters) => clusters.includes(clusterId));
+    const isAppAvailable = Object.values(appAvailableAccountsAndClusters.accountClusters).some((clusters) =>
+      clusters.includes(clusterId),
+    );
     if (!isAppAvailable) {
       message.error({
         content: appUnauthorizedMessage,
@@ -458,7 +455,7 @@ export const LaunchAppForm = ({
   const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
     { accountName: selectedAccount! },
     {
-      enabled: Boolean(publicConfig.MIS_DEPLOYED && selectedAccount),
+      enabled: Boolean(selectedAccount),
       retry: false,
     },
   );
@@ -1331,7 +1328,6 @@ export const LaunchAppForm = ({
     }
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
-
 
   const displayedGpu = activeResourceTab === "gpu" ? (selectedGpuCount > 0 ? selectedGpuCount : "-") : "-";
 
@@ -2537,33 +2533,22 @@ export const LaunchAppForm = ({
   // ======================= 渲染 =======================
   return (
     <>
+      <JobPageHeader
+        title={t(p("createAppTitle"), [effectiveAppName ?? ""])}
+        backLabel={t(pJobDetails("return"))}
+        onBack={handleCancel}
+        logo={appLogoSrc ? <HeaderAvatar size={28} src={appLogoSrc} /> : null}
+        action={
+          <Button type="primary" onClick={() => setTemplateListOpen(true)}>
+            {t(p("templateButton"))}
+          </Button>
+        }
+      />
       <JobPageLayout>
         <JobMainContent>
           <JobContainer direction="vertical" size={0}>
             <div style={{ position: "relative" }}>
-              <StyledBackIcon onClick={handleCancel} />
-              <PaddedCard
-                styles={{ header: { borderBottom: "none" } }}
-                title={
-                  <HeaderRow
-                    align="center"
-                    size={16}
-                    style={{
-                      justifyContent: "space-between",
-                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
-                      paddingBottom: 24,
-                    }}
-                  >
-                    <span style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                      {appLogoSrc ? <HeaderAvatar size={32} src={appLogoSrc} /> : null}
-                      <HeaderTitle>{t(p("createAppTitle"), [effectiveAppName ?? ""])}</HeaderTitle>
-                    </span>
-                    <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                      {t(p("templateButton"))}
-                    </Button>
-                  </HeaderRow>
-                }
-              >
+              <PaddedCard>
                 <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
                   <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
                 </BorderlessCard>
@@ -2659,7 +2644,6 @@ export const LaunchAppForm = ({
                 hourlyPrice={formattedHourlyPrice}
                 showHourlyPriceUnit={jobOneHourPrice != null}
                 pricingStandardUrl={join(misPath, "/user/partitions")}
-                showAccountInfo={publicConfig.MIS_DEPLOYED}
                 accountInfo={accountInfo ?? null}
               />
             </SidePanelGroupWrapper>

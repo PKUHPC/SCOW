@@ -1,5 +1,6 @@
 export default {
   common: {
+    return: "Volver",
     finalError: "La solicitud falló, por favor inténtalo de nuevo más tarde",
     noSpaceError: "Espacio de almacenamiento insuficiente, limpia espacio o contacta al administrador",
     timeSubmit: "Hora de envío",

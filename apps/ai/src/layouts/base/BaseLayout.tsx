@@ -44,9 +44,9 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content)<{ $isDashboard: boolean; $isFullBleedPage: boolean }>`
-  margin: ${(props) => (props.$isFullBleedPage ? "0" : props.$isDashboard ? "8px 8px 0px" : "8px")};
-  padding: ${(props) => (props.$isFullBleedPage ? "0" : "16px")};
+const Content = styled(Layout.Content)<{ $isDashboard: boolean }>`
+  margin: ${(props) => (props.$isDashboard ? "8px 8px 0px" : "8px")};
+  padding: 16px;
   flex: 1;
   display: ${(props) => (props.$isDashboard ? "flex" : "block")};
   flex-direction: column;
@@ -80,11 +80,6 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   const [uiExtensionData, setUiExtensionData] = useState<UiExtensionStoreData | undefined>(undefined);
 
   const pathname = usePathname() ?? "";
-  const isFullBleedPage =
-    pathname.startsWith("/jobs/createApp/") ||
-    pathname === "/jobs/createTrain" ||
-    pathname === "/jobs/createInfer" ||
-    pathname === "/jobs/createDev";
 
   const { dark } = useDarkMode();
 
@@ -223,7 +218,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           <SideNav activeKeys={activeKeys} pathname={pathname} routes={sidebarRoutes} appRouter={router} />
         ) : undefined}
         <ContentPart>
-          <Content $isDashboard={pathname === "/dashboard"} $isFullBleedPage={isFullBleedPage}>
+          <Content $isDashboard={pathname === "/dashboard"}>
             {children}
             {pathname === "/dashboard" ? (
               <Footer text={footerText} versionTag={usePublicConfig()?.publicConfig?.VERSION_TAG} />

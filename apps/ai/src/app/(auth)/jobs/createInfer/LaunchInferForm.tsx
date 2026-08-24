@@ -5,13 +5,9 @@ import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shar
 import type { InferTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
 import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { JobPageHeader } from "@scow/lib-web/build/components/job/JobPageHeader";
 import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
-import {
-  BorderlessCard,
-  HeaderRow,
-  HeaderTitle,
-  PaddedCard,
-} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import { BorderlessCard, PaddedCard } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import {
   JobContainer,
@@ -39,7 +35,6 @@ import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
-import { useTheme } from "styled-components";
 
 import type {
   AppFormValues,
@@ -215,7 +210,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
-  const theme = useTheme();
   const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
@@ -316,11 +310,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const accountClusterMap = appAvailableAccountsAndClusters?.accountClusters ?? {};
   const accountDetails = appAvailableAccountsAndClusters?.accountDetails ?? [];
   // 账户下拉选项根据 cluster 关联关系动态生成
-  const accountOptions = useMemo(
-    () =>
-      buildAccountOptions(accountDetails, t),
-    [accountDetails, t],
-  );
+  const accountOptions = useMemo(() => buildAccountOptions(accountDetails, t), [accountDetails, t]);
   const availableAccountOptions = useMemo(() => accountOptions.filter(({ disabled }) => !disabled), [accountOptions]);
 
   // ----------- 表单字段监听 -----------
@@ -352,7 +342,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
     { accountName: selectedAccount! },
     {
-      enabled: Boolean(publicConfig.MIS_DEPLOYED && selectedAccount),
+      enabled: Boolean(selectedAccount),
       retry: false,
     },
   );
@@ -2005,29 +1995,19 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   // ======================= 渲染 =======================
   return (
     <>
+      <JobPageHeader
+        title={t(pInfer("createInferTitle"))}
+        action={
+          <Button type="primary" onClick={() => setTemplateListOpen(true)}>
+            {t(pInfer("templateButton"))}
+          </Button>
+        }
+      />
       <JobPageLayout>
         <JobMainContent>
           <JobContainer direction="vertical" size={0}>
             <div style={{ position: "relative" }}>
-              <PaddedCard
-                styles={{ header: { borderBottom: "none" } }}
-                title={
-                  <HeaderRow
-                    align="center"
-                    size={16}
-                    style={{
-                      justifyContent: "space-between",
-                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
-                      paddingBottom: 24,
-                    }}
-                  >
-                    <HeaderTitle>{t(pInfer("createInferTitle"))}</HeaderTitle>
-                    <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                      {t(pInfer("templateButton"))}
-                    </Button>
-                  </HeaderRow>
-                }
-              >
+              <PaddedCard>
                 <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
                   <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
                 </BorderlessCard>
@@ -2079,7 +2059,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
             />
           </JobContainer>
         </JobMainContent>
-
         <JobSidePanel>
           <JobSidePanelInner>
             <SidePanelGroupWrapper>
@@ -2106,7 +2085,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
                 hourlyPrice={formattedHourlyPrice}
                 showHourlyPriceUnit={jobOneHourPrice != null}
                 pricingStandardUrl={join(misPath, "/user/partitions")}
-                showAccountInfo={publicConfig.MIS_DEPLOYED}
                 accountInfo={accountInfo ?? null}
               />
             </SidePanelGroupWrapper>
