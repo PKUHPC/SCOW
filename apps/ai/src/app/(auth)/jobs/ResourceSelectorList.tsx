@@ -146,6 +146,18 @@ const CascaderWrapper = styled(CascaderContainer)`
     width: 200px !important;
   }
 
+  .ant-cascader-menus.ant-cascader-menu-empty .ant-cascader-menu {
+    width: 100% !important;
+    min-height: 80px;
+  }
+
+  .ant-cascader-menus.ant-cascader-menu-empty .ant-cascader-menu-item {
+    height: auto !important;
+    min-height: 70px;
+    justify-content: center;
+    line-height: normal !important;
+  }
+
   .ant-cascader-menu-item {
     padding: 0 10px !important;
     height: 36px !important;

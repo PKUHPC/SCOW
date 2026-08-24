@@ -3,7 +3,8 @@
 import type { ColumnsType } from "antd/es/table";
 import type { DevTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions } from "@scow/lib-web/build/components/job/Footer";
+import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
   HeaderRow,
@@ -11,7 +12,13 @@ import {
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
+import {
+  JobContainer,
+  JobMainContent,
+  JobPageLayout,
+  JobSidePanel,
+  JobSidePanelInner,
+} from "@scow/lib-web/build/layouts/base/JobContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Typography } from "antd";
 import dayjs from "dayjs";
@@ -22,6 +29,8 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
 import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
 import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
+import { SidePanelGroupWrapper, StyledBackIcon } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
 import { JobType } from "src/models/Job";
@@ -29,6 +38,7 @@ import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { useTheme } from "styled-components";
 
 import type {
   AppFormValues,
@@ -73,7 +83,6 @@ const pDev = prefix("app.jobs.launchDevForm.");
 type LaunchDevFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchDevFormKey, `imageSourceTabs.${string}`>;
 type ImagePlaceholderKey = Extract<LaunchDevFormKey, `imagePlaceholders.${string}`>;
-type QueueFooterLabelKey = Extract<LaunchDevFormKey, `queueFooterLabels.${string}`>;
 
 // 镜像来源配置（label & placeholder 的 key）
 const IMAGE_SOURCE_TAB_CONFIG: readonly {
@@ -91,23 +100,6 @@ const IMAGE_PLACEHOLDER_KEYS: Record<DevImageSourceKey, ImagePlaceholderKey> = {
   public: "imagePlaceholders.public",
   remote: "imagePlaceholders.remote",
 } as const;
-
-// 根据队列类型自定义底部统计栏的字段文案
-const QUEUE_LABEL_KEYS: Record<
-  QueueKind,
-  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
-> = {
-  gpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-  cpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-};
 
 type TranslateFn = ReturnType<typeof useI18nTranslateToString>;
 
@@ -206,6 +198,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
+  const theme = useTheme();
   // const i18n = useI18n();
   const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
@@ -335,6 +328,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const resubmitImageSignatureRef = useRef<string | undefined>(undefined);
   const resubmitMountEnvAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
+  const [selectedPresetUnit, setSelectedPresetUnit] = useState<MaxTimeUnit | undefined>("min");
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [templateListOpen, setTemplateListOpen] = useState(false);
   const [templateSnapshot, setTemplateSnapshot] = useState<DevTemplateFormData | null>(null);
@@ -354,6 +348,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const priority = Form.useWatch("priority", resourceForm) ?? "";
   const selectedGpuCount = Form.useWatch("gpuCores", resourceForm) ?? 0;
   const selectedCpuCount = Form.useWatch("cpuCores", resourceForm) ?? 0;
+  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
 
   const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
 
@@ -375,6 +370,14 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
     { clusterId: selectedCluster! },
     { enabled: !!selectedCluster },
+  );
+
+  const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
+    { accountName: selectedAccount! },
+    {
+      enabled: Boolean(publicConfig.MIS_DEPLOYED && selectedAccount),
+      retry: false,
+    },
   );
 
   const accountOptions = useMemo(
@@ -690,11 +693,6 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
 
-  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
-  const gpuLabel = t(p(gpuLabelKey));
-  const cpuLabel = t(p(cpuLabelKey));
-  const memoryLabel = t(p(memoryLabelKey));
-
   const displayedGpu = activeResourceTab === "gpu" ? (totalGpuUnits > 0 ? totalGpuUnits : "-") : "-";
 
   const displayedCpu = (() => {
@@ -840,6 +838,9 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
         value = minutes / 60;
       }
       setMaxTimeUnit(unit);
+      setSelectedPresetUnit(
+        MAX_TIME_PRESETS.find((preset) => preset.maxTime === value && preset.maxTimeUnit === unit)?.maxTimeUnit,
+      );
       maxTimeValue = value;
     }
 
@@ -909,8 +910,17 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     selectedCluster,
     setActiveResourceTab,
     setMaxTimeUnit,
+    setSelectedPresetUnit,
     setSelectedQueueKey,
   ]);
+
+  useEffect(() => {
+    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
+    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
+      resourceForm.setFieldValue("maxTime", 30);
+      setSelectedPresetUnit("min");
+    }
+  }, [resourceForm, selectedMaxTime]);
 
   // 单位或配置上限变化时触发校验，让用户看到最新提示
   useEffect(() => {
@@ -918,7 +928,7 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [maxTimeUnit, maxJobRunningTimeHours, resourceForm]);
+  }, [maxTimeUnit, maxJobRunningTimeHours, resourceForm, selectedPresetUnit]);
 
   // 将生成的作业名称与表单字段保持一致，便于 Form 校验
   useEffect(() => {
@@ -1226,7 +1236,10 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       gpuCount: selectedGpuCount > 0 ? selectedGpuCount : undefined,
       gpuType: gpuTypeValue ?? undefined,
       memory: memoryMb,
-      maxTimeMinutes: Math.max(1, Math.round(convertDurationToHours(resourceValues.maxTime, maxTimeUnit) * 60)),
+      maxTimeMinutes: Math.max(
+        1,
+        Math.round(convertDurationToHours(resourceValues.maxTime, selectedPresetUnit ?? maxTimeUnit) * 60),
+      ),
       isImagePrivate: selectedImageSource === "mine" ? true : selectedImageSource === "public" ? false : undefined,
       image:
         selectedImageSource === "mine" || selectedImageSource === "public"
@@ -1263,6 +1276,13 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
       }
     }
     setMaxTimeUnit(appliedMaxTimeUnit);
+    setSelectedPresetUnit(
+      maxTimeValue !== undefined
+        ? MAX_TIME_PRESETS.find(
+            (preset) => preset.maxTime === maxTimeValue && preset.maxTimeUnit === appliedMaxTimeUnit,
+          )?.maxTimeUnit
+        : undefined,
+    );
     resourceForm.setFieldsValue({
       priority: formData.qos as string | undefined,
       cpuCores: formData.coreCount as number | undefined,
@@ -1426,7 +1446,10 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
 
       const memoryMb = memoryPerUnitMb ? Math.max(0, Math.round(memoryPerUnitMb * unitCount)) : undefined;
 
-      const maxTimeMinutes = Math.max(1, Math.round(convertDurationToHours(maxTime, maxTimeUnit) * 60));
+      const maxTimeMinutes = Math.max(
+        1,
+        Math.round(convertDurationToHours(maxTime, selectedPresetUnit ?? maxTimeUnit) * 60),
+      );
 
       const mountPointsPayload = (appValues.mountPoints ?? [])
         .map((mount) => {
@@ -1539,59 +1562,110 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   // ======================= 渲染 =======================
   return (
     <>
-      <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
-        <PaddedCard
-          title={
-            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
-              <HeaderTitle>{t(pDev("createDevTitle"))}</HeaderTitle>
-              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                {t(pDev("templateButton"))}
-              </Button> */}
-            </HeaderRow>
-          }
-        >
-          <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
-          </BorderlessCard>
-        </PaddedCard>
+      <JobPageLayout>
+        <JobMainContent>
+          <JobContainer direction="vertical" size={0}>
+            <div style={{ position: "relative" }}>
+              <StyledBackIcon style={{ top: 34 }} onClick={handleCancel} />
+              <PaddedCard
+                styles={{ header: { borderBottom: "none" } }}
+                title={
+                  <HeaderRow
+                    align="center"
+                    size={16}
+                    style={{
+                      justifyContent: "space-between",
+                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
+                      paddingBottom: 24,
+                    }}
+                  >
+                    <HeaderTitle>{t(pDev("createDevTitle"))}</HeaderTitle>
+                    {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                      {t(pDev("templateButton"))}
+                    </Button> */}
+                  </HeaderRow>
+                }
+              >
+                <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
+                  <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
+                </BorderlessCard>
+              </PaddedCard>
+            </div>
 
-        <ResourceConfigSection
-          form={resourceForm}
-          accountOptions={accountOptions}
-          clusterOptions={clusterOptions}
-          selectedCluster={selectedCluster}
-          activeResourceTab={activeResourceTab}
-          onActiveResourceTabChange={handleActiveResourceTabChange}
-          gpuColumns={gpuColumns}
-          cpuColumns={cpuColumns}
-          gpuRows={gpuRows}
-          cpuRows={cpuRows}
-          queueLoading={getAvailablePartitionIsLoading}
-          selectedQueueKey={selectedQueueKey}
-          onQueueSelect={handleQueueSelect}
-          selectedQueueOption={selectedQueueOption}
-          qosOptions={qosOptions}
-          maxTimeUnit={maxTimeUnit}
-          onMaxTimeUnitChange={handleMaxTimeUnitChange}
-          maxJobRunningTimeHours={maxJobRunningTimeHours}
-          gpuUnitLimit={gpuUnitLimit}
-          isResubmit={Boolean(createDevParams)}
-        />
+            <ResourceConfigSection
+              form={resourceForm}
+              accountOptions={accountOptions}
+              clusterOptions={clusterOptions}
+              selectedCluster={selectedCluster}
+              activeResourceTab={activeResourceTab}
+              onActiveResourceTabChange={handleActiveResourceTabChange}
+              gpuColumns={gpuColumns}
+              cpuColumns={cpuColumns}
+              gpuRows={gpuRows}
+              cpuRows={cpuRows}
+              queueLoading={getAvailablePartitionIsLoading}
+              selectedQueueKey={selectedQueueKey}
+              onQueueSelect={handleQueueSelect}
+              selectedQueueOption={selectedQueueOption}
+              qosOptions={qosOptions}
+              maxTimeUnit={maxTimeUnit}
+              onMaxTimeUnitChange={handleMaxTimeUnitChange}
+              selectedPresetUnit={selectedPresetUnit}
+              onSelectedPresetUnitChange={setSelectedPresetUnit}
+              maxJobRunningTimeHours={maxJobRunningTimeHours}
+              gpuUnitLimit={gpuUnitLimit}
+              isResubmit={Boolean(createDevParams)}
+            />
 
-        <DevConfigSection
-          form={appForm}
-          imageSourceTabs={imageSourceTabs}
-          selectedImageSource={selectedImageSource}
-          onImageSourceChange={handleImageSourceChange}
-          imagePlaceholder={imagePlaceholder}
-          imageOptions={imageOptionsForSource}
-          isImagesLoading={isImagesLoading}
-          selectedImageOption={selectedImageOption}
-          usePrivateRemoteImage={usePrivateRemoteImage}
-          selectedCluster={selectedCluster}
-          homeDir={userHomeDir?.path}
-        />
-      </PageContainer>
+            <DevConfigSection
+              form={appForm}
+              imageSourceTabs={imageSourceTabs}
+              selectedImageSource={selectedImageSource}
+              onImageSourceChange={handleImageSourceChange}
+              imagePlaceholder={imagePlaceholder}
+              imageOptions={imageOptionsForSource}
+              isImagesLoading={isImagesLoading}
+              selectedImageOption={selectedImageOption}
+              usePrivateRemoteImage={usePrivateRemoteImage}
+              selectedCluster={selectedCluster}
+              homeDir={userHomeDir?.path}
+            />
+          </JobContainer>
+        </JobMainContent>
+
+        <JobSidePanel>
+          <JobSidePanelInner>
+            <SidePanelGroupWrapper>
+              <JobSideInfo
+                labels={{
+                  totalGpuCount: t(p("sideInfo.totalGpuCount")),
+                  totalCoreCount: t(p("sideInfo.totalCoreCount")),
+                  totalMemory: t(p("sideInfo.totalMemory")),
+                  costPerHour: t(p("hourlyCostLabel")),
+                  pricingStandard: t(p("chargeStandard")),
+                  yuan: t(p("yuan")),
+                  hours: t(p("hours")),
+                  accountNameLabel: t(p("sideInfo.accountNameLabel")),
+                  whitelistTag: t(p("sideInfo.whitelistTag")),
+                  accountOwner: t(p("sideInfo.accountOwner")),
+                  accountBalance: t(p("sideInfo.accountBalance")),
+                  accountBlockThreshold: t(p("sideInfo.accountBlockThreshold")),
+                  userUsedLimit: t(p("sideInfo.userUsedLimit")),
+                  userChargeNoLimit: t(p("sideInfo.userChargeNoLimit")),
+                }}
+                totalGpuCount={displayedGpu}
+                totalCpuCount={displayedCpu}
+                totalMemory={displayedMemory}
+                hourlyPrice={formattedHourlyPrice}
+                showHourlyPriceUnit={jobOneHourPrice != null}
+                pricingStandardUrl={join(misPath, "/user/partitions")}
+                showAccountInfo={publicConfig.MIS_DEPLOYED}
+                accountInfo={accountInfo ?? null}
+              />
+            </SidePanelGroupWrapper>
+          </JobSidePanelInner>
+        </JobSidePanel>
+      </JobPageLayout>
 
       <FixedFooter>
         {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
@@ -1612,28 +1686,6 @@ export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
             {t(p("saveAsTemplate"))}
           </FooterStatValue>
         </div> */}
-        <FooterStats>
-          <span>
-            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
-          </span>
-          <span>
-            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
-          </span>
-          <span>
-            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("hourlyCostLabel"))}
-            <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
-          </span>
-          <a
-            onClick={() => {
-              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
-            }}
-          >
-            <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
-          </a>
-        </FooterStats>
         <FooterActions>
           <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
           <Button type="primary" onClick={handleSubmit} loading={createDevJobMutation.isPending}>

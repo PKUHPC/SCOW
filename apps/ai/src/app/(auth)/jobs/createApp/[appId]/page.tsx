@@ -89,7 +89,7 @@ export default function Page({ params }: { params: Promise<{ appId: string }> })
     <LaunchAppForm
       publicPath={publicConfig.PUBLIC_PATH}
       misPath={publicConfig.MIS_URL ?? "/mis"}
-      appName={appName}
+      appName={appName || createAppParams?.appName}
       appId={appId}
       appLogoPath={appLogoPath}
       appComment={appComment}

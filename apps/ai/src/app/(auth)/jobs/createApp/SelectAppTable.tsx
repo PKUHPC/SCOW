@@ -55,8 +55,11 @@ export const SelectAppTable: React.FC<Props> = ({ publicPath, apps, selectedClus
   };
 
   const navigateToApp = (app: AppSchema) => {
-    const query = selectedCluster ? `?clusterId=${encodeURIComponent(selectedCluster)}` : "";
-    router.push(`/jobs/createApp/${app.id}${query}`);
+    const searchParams = new URLSearchParams({ appName: app.name });
+    if (selectedCluster) {
+      searchParams.set("clusterId", selectedCluster);
+    }
+    router.push(`/jobs/createApp/${app.id}?${searchParams.toString()}`);
   };
 
   return (

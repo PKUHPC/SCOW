@@ -4,7 +4,8 @@ import type { ColumnsType } from "antd/es/table";
 import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 import type { TemplateFormData, TrainTemplateFormData } from "src/server/trpc/route/jobs/templates";
 
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions } from "@scow/lib-web/build/components/job/Footer";
+import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
   HeaderRow,
@@ -12,7 +13,13 @@ import {
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
+import {
+  JobContainer,
+  JobMainContent,
+  JobPageLayout,
+  JobSidePanel,
+  JobSidePanelInner,
+} from "@scow/lib-web/build/layouts/base/JobContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Typography } from "antd";
 import dayjs from "dayjs";
@@ -23,6 +30,8 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
 import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
 import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
+import { SidePanelGroupWrapper } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
 import { JobType } from "src/models/Job";
@@ -30,6 +39,7 @@ import { type FrameworkType, TrainJobInput } from "src/server/trpc/route/jobs/jo
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { useTheme } from "styled-components";
 
 import type {
   BaseFormValues,
@@ -86,7 +96,6 @@ const pPublicOption = prefix("app.jobs.publicImageOption.");
 type LaunchTrainFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchTrainFormKey, `imageSourceTabs.${string}`>;
 type ImagePlaceholderKey = Extract<LaunchTrainFormKey, `imagePlaceholders.${string}`>;
-type QueueFooterLabelKey = Extract<LaunchTrainFormKey, `queueFooterLabels.${string}`>;
 
 // 镜像来源配置（label & placeholder 的 key）
 const IMAGE_SOURCE_TAB_CONFIG: readonly {
@@ -104,23 +113,6 @@ const IMAGE_PLACEHOLDER_KEYS: Record<TrainImageSourceKey, ImagePlaceholderKey> =
   public: "imagePlaceholders.public",
   remote: "imagePlaceholders.remote",
 } as const;
-
-// 根据队列类型自定义底部统计栏的字段文案
-const QUEUE_LABEL_KEYS: Record<
-  QueueKind,
-  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
-> = {
-  gpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-  cpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-};
 
 const DEFAULT_FRAMEWORKS: TrainFramework[] = ["single", "tensorflow", "pytorch", "mpi"];
 
@@ -221,6 +213,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
+  const theme = useTheme();
   const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
@@ -307,6 +300,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const resubmitMountEnvAppliedRef = useRef(false);
   const resubmitTensorBoardAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
+  const [selectedPresetUnit, setSelectedPresetUnit] = useState<MaxTimeUnit | undefined>("min");
 
   // createTrainParams is used directly by resubmit effects (no template merge)
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -344,6 +338,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const priority = Form.useWatch("priority", resourceForm) ?? "";
   const selectedGpuCount = Form.useWatch("gpuCores", resourceForm) ?? 0;
   const selectedCpuCount = Form.useWatch("cpuCores", resourceForm) ?? 0;
+  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
   const selectedFramework = Form.useWatch<TrainFramework>("framework", resourceForm) ?? "single";
   const nodeUnitCount = Form.useWatch<number>("nodeUnitCount", resourceForm);
   const psNodeCount = Form.useWatch<number>("psNodeCount", resourceForm);
@@ -365,7 +360,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       defaults.workerNodeCount = 1;
     }
     if (resourceForm.getFieldValue("distributedNodeCount") == null) {
-      defaults.distributedNodeCount = 2;
+      defaults.distributedNodeCount = 1;
     }
     if (Object.keys(defaults).length) {
       resourceForm.setFieldsValue(defaults);
@@ -375,6 +370,14 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
   const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
     { clusterId: selectedCluster! },
     { enabled: !!selectedCluster },
+  );
+
+  const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
+    { accountName: selectedAccount! },
+    {
+      enabled: Boolean(publicConfig.MIS_DEPLOYED && selectedAccount),
+      retry: false,
+    },
   );
 
   // ----------- 服务请求与变更提示 -----------
@@ -1110,12 +1113,12 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     const perNodeUnits = Math.max(1, Number(nodeUnitCount ?? 1));
     const psNodes = Math.max(0, Number(psNodeCount ?? 0));
     const workerNodes = Math.max(1, Number(workerNodeCount ?? 1));
-    const distributedNodes = Math.max(2, Number(distributedNodeCount ?? 2));
+    const distributedNodes = Math.max(1, Number(distributedNodeCount ?? 1));
 
     let nodeMultiplier = 1;
     if (selectedFramework === "tensorflow") {
       nodeMultiplier = Math.max(1, psNodes + workerNodes);
-    } else if (["pytorch", "mpi", "mindspore"].includes(selectedFramework)) {
+    } else if (["single", "pytorch", "mpi", "mindspore"].includes(selectedFramework)) {
       nodeMultiplier = distributedNodes;
     }
 
@@ -1168,11 +1171,6 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     }
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
-
-  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
-  const gpuLabel = t(p(gpuLabelKey));
-  const cpuLabel = t(p(cpuLabelKey));
-  const memoryLabel = t(p(memoryLabelKey));
 
   const displayedGpu = activeResourceTab === "gpu" ? (selectedGpuCount > 0 ? selectedGpuCount : "-") : "-";
 
@@ -1327,6 +1325,9 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
         value = minutes / 60;
       }
       setMaxTimeUnit(unit);
+      setSelectedPresetUnit(
+        MAX_TIME_PRESETS.find((preset) => preset.maxTime === value && preset.maxTimeUnit === unit)?.maxTimeUnit,
+      );
       maxTimeValue = value;
     }
 
@@ -1364,8 +1365,8 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       updates.psNodeCount = savedPsNodes;
       updates.workerNodeCount = savedWorkerNodes;
       derivedNodeMultiplier = Math.max(1, savedPsNodes + savedWorkerNodes);
-    } else if (["pytorch", "mpi", "mindspore"].includes(savedFramework)) {
-      const savedDistributedNodes = Math.max(2, normalizedNodeCount);
+    } else if (["single", "pytorch", "mpi", "mindspore"].includes(savedFramework)) {
+      const savedDistributedNodes = Math.max(1, normalizedNodeCount);
       updates.distributedNodeCount = savedDistributedNodes;
       derivedNodeMultiplier = savedDistributedNodes;
     } else {
@@ -1414,8 +1415,17 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     selectedCluster,
     setActiveResourceTab,
     setMaxTimeUnit,
+    setSelectedPresetUnit,
     setSelectedQueueKey,
   ]);
+
+  useEffect(() => {
+    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
+    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
+      resourceForm.setFieldValue("maxTime", 30);
+      setSelectedPresetUnit("min");
+    }
+  }, [resourceForm, selectedMaxTime]);
 
   // 单位或配置上限变化时触发校验，让用户看到最新提示
   useEffect(() => {
@@ -1423,7 +1433,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [maxTimeUnit, maxJobRunningTimeHours, resourceForm]);
+  }, [maxTimeUnit, maxJobRunningTimeHours, resourceForm, selectedPresetUnit]);
 
   // 将生成的作业名称与表单字段保持一致，便于 Form 校验
   useEffect(() => {
@@ -1745,8 +1755,8 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       if (resourceValues.framework === "tensorflow") {
         return (resourceValues.psNodeCount ?? 0) + (resourceValues.workerNodeCount ?? 1);
       }
-      if (resourceValues.framework && ["pytorch", "mpi", "mindspore"].includes(resourceValues.framework)) {
-        return resourceValues.distributedNodeCount ?? 2;
+      if (resourceValues.framework && ["single", "pytorch", "mpi", "mindspore"].includes(resourceValues.framework)) {
+        return resourceValues.distributedNodeCount ?? 1;
       }
       return 1;
     };
@@ -1761,7 +1771,7 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       gpuCount: selectedQueueOption?.type === "gpu" ? perNodeUnits : undefined,
       gpuType: gpuTypeValue ?? undefined,
       maxTime: resourceValues.maxTime ?? 60,
-      maxTimeUnit,
+      maxTimeUnit: selectedPresetUnit ?? maxTimeUnit,
       isImagePrivate: selectedImageSource === "mine" ? true : selectedImageSource === "public" ? false : undefined,
       image:
         selectedImageSource === "mine" || selectedImageSource === "public"
@@ -1866,12 +1876,12 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
       const normalizedPsNodes = Math.max(0, Number(psNodeCountValue ?? 0));
       const normalizedWorkerNodes = Math.max(1, Number(workerNodeCountValue ?? 1));
-      const normalizedDistributedNodes = Math.max(2, Number(distributedNodeCountValue ?? 2));
+      const normalizedDistributedNodes = Math.max(1, Number(distributedNodeCountValue ?? 1));
 
       let nodeCount = 1;
       if (frameworkValue === "tensorflow") {
         nodeCount = Math.max(1, normalizedPsNodes + normalizedWorkerNodes);
-      } else if (["pytorch", "mpi", "mindspore"].includes(frameworkValue)) {
+      } else if (["single", "pytorch", "mpi", "mindspore"].includes(frameworkValue)) {
         nodeCount = Math.max(1, normalizedDistributedNodes);
       }
 
@@ -1905,7 +1915,10 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
 
       const memoryMb = memoryPerUnitMb ? Math.max(0, Math.round(memoryPerUnitMb * unitCount)) : undefined;
 
-      const maxTimeMinutes = Math.max(1, Math.round(convertDurationToHours(maxTime, maxTimeUnit) * 60));
+      const maxTimeMinutes = Math.max(
+        1,
+        Math.round(convertDurationToHours(maxTime, selectedPresetUnit ?? maxTimeUnit) * 60),
+      );
 
       // 将级联选择值映射回后端所需的 {id, isPrivate} 列表
       const algorithmLookup = buildVersionLookup(
@@ -2044,6 +2057,12 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       if (tplMaxTimeUnit) {
         setMaxTimeUnit(tplMaxTimeUnit);
       }
+      setSelectedPresetUnit(
+        tplMaxTime != null && tplMaxTimeUnit
+          ? MAX_TIME_PRESETS.find((preset) => preset.maxTime === tplMaxTime && preset.maxTimeUnit === tplMaxTimeUnit)
+              ?.maxTimeUnit
+          : undefined,
+      );
 
       const tplPartition = cleanedFormData.partition as string | undefined;
       const tplCoreCount = cleanedFormData.coreCount as number | undefined;
@@ -2097,8 +2116,8 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
       if (tplFramework === "tensorflow") {
         frameworkUpdates.psNodeCount = Math.max(0, (cleanedFormData.psNodes as number) ?? 0);
         frameworkUpdates.workerNodeCount = Math.max(1, (cleanedFormData.workerNodes as number) ?? 1);
-      } else if (["pytorch", "mpi", "mindspore"].includes(tplFramework)) {
-        frameworkUpdates.distributedNodeCount = Math.max(2, tplNodeCount);
+      } else if (["single", "pytorch", "mpi", "mindspore"].includes(tplFramework)) {
+        frameworkUpdates.distributedNodeCount = Math.max(1, tplNodeCount);
       }
       resourceForm.setFieldsValue(frameworkUpdates);
 
@@ -2305,72 +2324,126 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
     }
   };
 
+  const handleCancel = () => {
+    router.push("/jobs/jobList");
+  };
+
   // ======================= 渲染 =======================
   return (
     <>
-      <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
-        <PaddedCard
-          title={
-            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
-              <HeaderTitle>{t(pTrain("createTrainTitle"))}</HeaderTitle>
-              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                {t(pTrain("templateButton"))}
-              </Button> */}
-            </HeaderRow>
-          }
-        >
-          <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
-          </BorderlessCard>
-        </PaddedCard>
+      <JobPageLayout>
+        <JobMainContent>
+          <JobContainer direction="vertical" size={0}>
+            <div style={{ position: "relative" }}>
+              <PaddedCard
+                styles={{ header: { borderBottom: "none" } }}
+                title={
+                  <HeaderRow
+                    align="center"
+                    size={16}
+                    style={{
+                      justifyContent: "space-between",
+                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
+                      paddingBottom: 24,
+                    }}
+                  >
+                    <HeaderTitle>{t(pTrain("createTrainTitle"))}</HeaderTitle>
+                    {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                      {t(pTrain("templateButton"))}
+                    </Button> */}
+                  </HeaderRow>
+                }
+              >
+                <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
+                  <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
+                </BorderlessCard>
+              </PaddedCard>
+            </div>
 
-        <ResourceConfigSection
-          form={resourceForm}
-          accountOptions={accountOptions}
-          clusterOptions={clusterOptions}
-          selectedCluster={selectedCluster}
-          activeResourceTab={activeResourceTab}
-          onActiveResourceTabChange={handleActiveResourceTabChange}
-          gpuColumns={gpuColumns}
-          cpuColumns={cpuColumns}
-          gpuRows={gpuRows}
-          cpuRows={cpuRows}
-          queueLoading={getAvailablePartitionIsLoading}
-          selectedQueueKey={selectedQueueKey}
-          onQueueSelect={handleQueueSelect}
-          selectedQueueOption={selectedQueueOption}
-          queueNodesInfo={queueNodesInfo}
-          qosOptions={qosOptions}
-          maxTimeUnit={maxTimeUnit}
-          onMaxTimeUnitChange={handleMaxTimeUnitChange}
-          maxJobRunningTimeHours={maxJobRunningTimeHours}
-          frameworkOptions={frameworkOptions}
-          gpuUnitLimit={gpuUnitLimit}
-          isResubmit={Boolean(createTrainParams)}
-        />
+            <ResourceConfigSection
+              form={resourceForm}
+              accountOptions={accountOptions}
+              clusterOptions={clusterOptions}
+              selectedCluster={selectedCluster}
+              activeResourceTab={activeResourceTab}
+              onActiveResourceTabChange={handleActiveResourceTabChange}
+              gpuColumns={gpuColumns}
+              cpuColumns={cpuColumns}
+              gpuRows={gpuRows}
+              cpuRows={cpuRows}
+              queueLoading={getAvailablePartitionIsLoading}
+              selectedQueueKey={selectedQueueKey}
+              onQueueSelect={handleQueueSelect}
+              selectedQueueOption={selectedQueueOption}
+              queueNodesInfo={queueNodesInfo}
+              qosOptions={qosOptions}
+              maxTimeUnit={maxTimeUnit}
+              onMaxTimeUnitChange={handleMaxTimeUnitChange}
+              selectedPresetUnit={selectedPresetUnit}
+              onSelectedPresetUnitChange={setSelectedPresetUnit}
+              maxJobRunningTimeHours={maxJobRunningTimeHours}
+              frameworkOptions={frameworkOptions}
+              gpuUnitLimit={gpuUnitLimit}
+              isResubmit={Boolean(createTrainParams)}
+            />
 
-        <TrainConfigSection
-          form={appForm}
-          imageSourceTabs={imageSourceTabs}
-          selectedImageSource={selectedImageSource}
-          onImageSourceChange={handleImageSourceChange}
-          imagePlaceholder={imagePlaceholder}
-          imageOptions={imageOptionsForSource}
-          isImagesLoading={isImagesLoading}
-          selectedImageOption={selectedImageOption}
-          usePrivateRemoteImage={usePrivateRemoteImage}
-          currentCommandDefault={currentCommandDefault}
-          datasetCategories={datasetCategories}
-          algorithmCategories={algorithmCategories}
-          modelCategories={modelCategories}
-          isDatasetsLoading={isDatasetsLoading}
-          isAlgorithmsLoading={isAlgorithmsLoading}
-          isModelsLoading={isModelsLoading}
-          selectedCluster={selectedCluster}
-          displayRender={renderCascaderLabels}
-          homeDir={userHomeDir?.path}
-        />
-      </PageContainer>
+            <TrainConfigSection
+              form={appForm}
+              imageSourceTabs={imageSourceTabs}
+              selectedImageSource={selectedImageSource}
+              onImageSourceChange={handleImageSourceChange}
+              imagePlaceholder={imagePlaceholder}
+              imageOptions={imageOptionsForSource}
+              isImagesLoading={isImagesLoading}
+              selectedImageOption={selectedImageOption}
+              usePrivateRemoteImage={usePrivateRemoteImage}
+              currentCommandDefault={currentCommandDefault}
+              datasetCategories={datasetCategories}
+              algorithmCategories={algorithmCategories}
+              modelCategories={modelCategories}
+              isDatasetsLoading={isDatasetsLoading}
+              isAlgorithmsLoading={isAlgorithmsLoading}
+              isModelsLoading={isModelsLoading}
+              selectedCluster={selectedCluster}
+              displayRender={renderCascaderLabels}
+              homeDir={userHomeDir?.path}
+            />
+          </JobContainer>
+        </JobMainContent>
+
+        <JobSidePanel>
+          <JobSidePanelInner>
+            <SidePanelGroupWrapper>
+              <JobSideInfo
+                labels={{
+                  totalGpuCount: t(p("sideInfo.totalGpuCount")),
+                  totalCoreCount: t(p("sideInfo.totalCoreCount")),
+                  totalMemory: t(p("sideInfo.totalMemory")),
+                  costPerHour: t(p("hourlyCostLabel")),
+                  pricingStandard: t(p("chargeStandard")),
+                  yuan: t(p("yuan")),
+                  hours: t(p("hours")),
+                  accountNameLabel: t(p("sideInfo.accountNameLabel")),
+                  whitelistTag: t(p("sideInfo.whitelistTag")),
+                  accountOwner: t(p("sideInfo.accountOwner")),
+                  accountBalance: t(p("sideInfo.accountBalance")),
+                  accountBlockThreshold: t(p("sideInfo.accountBlockThreshold")),
+                  userUsedLimit: t(p("sideInfo.userUsedLimit")),
+                  userChargeNoLimit: t(p("sideInfo.userChargeNoLimit")),
+                }}
+                totalGpuCount={displayedGpu}
+                totalCpuCount={displayedCpu}
+                totalMemory={displayedMemory}
+                hourlyPrice={formattedHourlyPrice}
+                showHourlyPriceUnit={jobOneHourPrice != null}
+                pricingStandardUrl={join(misPath, "/user/partitions")}
+                showAccountInfo={publicConfig.MIS_DEPLOYED}
+                accountInfo={accountInfo ?? null}
+              />
+            </SidePanelGroupWrapper>
+          </JobSidePanelInner>
+        </JobSidePanel>
+      </JobPageLayout>
 
       <FixedFooter>
         {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
@@ -2391,29 +2464,8 @@ export const LaunchTrainForm = ({ createTrainParams, misPath }: Props) => {
             {t(p("saveAsTemplate"))}
           </FooterStatValue>
         </div> */}
-        <FooterStats>
-          <span>
-            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
-          </span>
-          <span>
-            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
-          </span>
-          <span>
-            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("hourlyCostLabel"))}
-            <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
-          </span>
-          <a
-            onClick={() => {
-              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
-            }}
-          >
-            <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
-          </a>
-        </FooterStats>
         <FooterActions>
+          <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
           <Button type="primary" onClick={handleSubmit} loading={createTrainJobMutation.isPending}>
             {t(p("submit"))}
           </Button>

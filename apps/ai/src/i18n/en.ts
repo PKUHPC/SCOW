@@ -720,7 +720,7 @@ export default {
           helpTip: "Choose the framework that matches your training task",
         },
         frameworkOptions: {
-          single: "Single Node",
+          single: "Custom",
           tensorflow: "TensorFlow",
           pytorch: "PyTorch",
           mpi: "MPI",
@@ -765,7 +765,7 @@ export default {
         maxRunTimeRequired: "Please enter the max run time",
         maxRunTimePositive: "Max run time must be greater than 0",
         maxRunTimeExceed: "Max run time cannot exceed {0} hours",
-        maxRunTimeHelp: "Turn on to submit jobs without a time limit",
+        maxRunTimeHelp: "Select No time limit to submit jobs without a time limit",
         maxRunTimeUnlimitedLabel: "No time limit",
         maxRunTimeLimitedLabel: "Time limit",
         maxRunTimeUnlimitedDisabledTooltip:

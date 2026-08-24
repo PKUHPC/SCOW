@@ -46,7 +46,7 @@ export const InlineAddonInputGroup = styled(Space.Compact)`
     align-items: center;
     height: 100%;
     flex: 0 0 160px;
-    padding: 0 14px;
+    padding: 0 12px;
     font-size: 14px;
     color: rgba(136, 143, 163, 1);
     background: ${({ theme }) => theme.token.colorBgContainer};

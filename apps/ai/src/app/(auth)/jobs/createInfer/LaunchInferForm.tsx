@@ -4,7 +4,8 @@ import type { ColumnsType } from "antd/es/table";
 import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 import type { InferTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import { FixedFooter, FooterActions } from "@scow/lib-web/build/components/job/Footer";
+import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
 import {
   BorderlessCard,
   HeaderRow,
@@ -12,7 +13,13 @@ import {
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
+import {
+  JobContainer,
+  JobMainContent,
+  JobPageLayout,
+  JobSidePanel,
+  JobSidePanelInner,
+} from "@scow/lib-web/build/layouts/base/JobContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Typography } from "antd";
 import dayjs from "dayjs";
@@ -23,6 +30,8 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
 import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
 import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
+import { SidePanelGroupWrapper } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
 import { JobType } from "src/models/Job";
@@ -30,6 +39,7 @@ import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { useTheme } from "styled-components";
 
 import type {
   AppFormValues,
@@ -89,7 +99,6 @@ const pPublicOption = prefix("app.jobs.publicImageOption.");
 type LaunchInferFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchInferFormKey, `imageSourceTabs.${string}`>;
 type ImagePlaceholderKey = Extract<LaunchInferFormKey, `imagePlaceholders.${string}`>;
-type QueueFooterLabelKey = Extract<LaunchInferFormKey, `queueFooterLabels.${string}`>;
 
 // 镜像来源配置（label & placeholder 的 key）
 const IMAGE_SOURCE_TAB_CONFIG: readonly {
@@ -108,23 +117,6 @@ const IMAGE_PLACEHOLDER_KEYS: Record<InferImageSourceKey, ImagePlaceholderKey> =
   remote: "imagePlaceholders.remote",
 } as const;
 export const DEFAULT_SERVICE_PORT = 8080;
-
-// 根据队列类型自定义底部统计栏的字段文案
-const QUEUE_LABEL_KEYS: Record<
-  QueueKind,
-  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
-> = {
-  gpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-  cpu: {
-    gpu: "queueFooterLabels.totalGpu",
-    cpu: "queueFooterLabels.totalCpu",
-    memory: "queueFooterLabels.totalMemory",
-  },
-};
 
 type TranslateFn = ReturnType<typeof useI18nTranslateToString>;
 
@@ -223,6 +215,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
+  const theme = useTheme();
   const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
@@ -315,6 +308,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const resubmitMountEnvAppliedRef = useRef(false);
   const resubmitServicePortAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
+  const [selectedPresetUnit, setSelectedPresetUnit] = useState<MaxTimeUnit | undefined>("min");
 
   // 账户集群关系
   const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
@@ -345,6 +339,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const selectedCpuCount = Form.useWatch("cpuCores", resourceForm) ?? 0;
   const selectedNodeCount = Form.useWatch("nodeCount", resourceForm) ?? 1;
   const isMaxTimeUnlimited = Form.useWatch("maxTimeUnlimited", resourceForm) ?? false;
+  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
 
   const maxJobRunningTimeHours = selectedCluster
     ? scowClusterConfigs[selectedCluster]?.ai?.infer?.maxRunningTimeHours
@@ -354,6 +349,14 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
     { clusterId: selectedCluster! },
     { enabled: !!selectedCluster },
+  );
+
+  const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
+    { accountName: selectedAccount! },
+    {
+      enabled: Boolean(publicConfig.MIS_DEPLOYED && selectedAccount),
+      retry: false,
+    },
   );
 
   // ----------- 服务请求与变更提示 -----------
@@ -921,11 +924,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
 
-  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
-  const gpuLabel = t(p(gpuLabelKey));
-  const cpuLabel = t(p(cpuLabelKey));
-  const memoryLabel = t(p(memoryLabelKey));
-
   const displayedGpu = activeResourceTab === "gpu" ? (totalGpuUnits > 0 ? totalGpuUnits : "-") : "-";
 
   const displayedCpu = (() => {
@@ -1081,6 +1079,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
         value = minutes / 60;
       }
       setMaxTimeUnit(unit);
+      setSelectedPresetUnit(
+        MAX_TIME_PRESETS.find((preset) => preset.maxTime === value && preset.maxTimeUnit === unit)?.maxTimeUnit,
+      );
       maxTimeValue = value;
     }
 
@@ -1158,8 +1159,17 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     selectedCluster,
     setActiveResourceTab,
     setMaxTimeUnit,
+    setSelectedPresetUnit,
     setSelectedQueueKey,
   ]);
+
+  useEffect(() => {
+    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
+    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
+      resourceForm.setFieldValue("maxTime", 30);
+      setSelectedPresetUnit("min");
+    }
+  }, [resourceForm, selectedMaxTime]);
 
   // 单位或配置上限变化时触发校验，让用户看到最新提示
   useEffect(() => {
@@ -1170,7 +1180,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [isMaxTimeUnlimited, maxJobRunningTimeHours, maxTimeUnit, resourceForm]);
+  }, [isMaxTimeUnlimited, maxJobRunningTimeHours, maxTimeUnit, resourceForm, selectedPresetUnit]);
 
   // 当前集群配置了推理最长运行时间时，不允许历史不限时配置继续停留在不限时状态。
   useEffect(() => {
@@ -1189,6 +1199,9 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       maxTime: nextMaxTime,
     });
     setMaxTimeUnit("hour");
+    setSelectedPresetUnit(
+      MAX_TIME_PRESETS.find((preset) => preset.maxTime === nextMaxTime && preset.maxTimeUnit === "hour")?.maxTimeUnit,
+    );
     resourceForm.validateFields(["maxTime"]).catch(() => undefined);
   }, [hasInferMaxTimeLimit, maxJobRunningTimeHours, resourceForm]);
 
@@ -1513,7 +1526,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       gpuCount: selectedGpuCount > 0 ? selectedGpuCount : undefined,
       gpuType: gpuTypeValue ?? undefined,
       maxTime: resourceValues.maxTime ?? 60,
-      maxTimeUnit,
+      maxTimeUnit: selectedPresetUnit ?? maxTimeUnit,
       maxTimeUnlimited: resourceValues.maxTimeUnlimited ?? false,
       isImagePrivate: selectedImageSource === "mine" ? true : selectedImageSource === "public" ? false : undefined,
       image:
@@ -1638,7 +1651,10 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           message.error(t(pResource("maxRunTimeRequired")));
           return;
         }
-        maxTimeMinutes = Math.max(1, Math.round(convertDurationToHours(maxTimeValue, maxTimeUnit) * 60));
+        maxTimeMinutes = Math.max(
+          1,
+          Math.round(convertDurationToHours(maxTimeValue, selectedPresetUnit ?? maxTimeUnit) * 60),
+        );
       }
 
       // 将级联选择值映射回后端所需的 {id, isPrivate} 列表
@@ -1767,6 +1783,12 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       if (tplMaxTimeUnit) {
         setMaxTimeUnit(tplMaxTimeUnit);
       }
+      setSelectedPresetUnit(
+        tplMaxTime != null && tplMaxTimeUnit
+          ? MAX_TIME_PRESETS.find((preset) => preset.maxTime === tplMaxTime && preset.maxTimeUnit === tplMaxTimeUnit)
+              ?.maxTimeUnit
+          : undefined,
+      );
 
       const tplPartition = cleanedFormData.partition as string | undefined;
       const tplCoreCount = cleanedFormData.coreCount as number | undefined;
@@ -1975,67 +1997,121 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     }
   };
 
+  const handleCancel = () => {
+    router.push("/jobs/jobList");
+  };
+
   // ======================= 渲染 =======================
   return (
     <>
-      <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
-        <PaddedCard
-          title={
-            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
-              <HeaderTitle>{t(pInfer("createInferTitle"))}</HeaderTitle>
-              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
-                {t(pInfer("templateButton"))}
-              </Button> */}
-            </HeaderRow>
-          }
-        >
-          <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
-          </BorderlessCard>
-        </PaddedCard>
+      <JobPageLayout>
+        <JobMainContent>
+          <JobContainer direction="vertical" size={0}>
+            <div style={{ position: "relative" }}>
+              <PaddedCard
+                styles={{ header: { borderBottom: "none" } }}
+                title={
+                  <HeaderRow
+                    align="center"
+                    size={16}
+                    style={{
+                      justifyContent: "space-between",
+                      borderBottom: `1px solid ${theme.palette.gray[4]}`,
+                      paddingBottom: 24,
+                    }}
+                  >
+                    <HeaderTitle>{t(pInfer("createInferTitle"))}</HeaderTitle>
+                    {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                      {t(pInfer("templateButton"))}
+                    </Button> */}
+                  </HeaderRow>
+                }
+              >
+                <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
+                  <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
+                </BorderlessCard>
+              </PaddedCard>
+            </div>
 
-        <ResourceConfigSection
-          form={resourceForm}
-          accountOptions={accountOptions}
-          clusterOptions={clusterOptions}
-          selectedCluster={selectedCluster}
-          activeResourceTab={activeResourceTab}
-          onActiveResourceTabChange={handleActiveResourceTabChange}
-          gpuColumns={gpuColumns}
-          cpuColumns={cpuColumns}
-          gpuRows={gpuRows}
-          cpuRows={cpuRows}
-          queueLoading={getAvailablePartitionIsLoading}
-          selectedQueueKey={selectedQueueKey}
-          onQueueSelect={handleQueueSelect}
-          selectedQueueOption={selectedQueueOption}
-          queueNodesInfo={queueNodesInfo}
-          qosOptions={qosOptions}
-          maxTimeUnit={maxTimeUnit}
-          onMaxTimeUnitChange={handleMaxTimeUnitChange}
-          maxJobRunningTimeHours={maxJobRunningTimeHours}
-          gpuUnitLimit={gpuUnitLimit}
-          isResubmit={Boolean(createInferParams)}
-        />
+            <ResourceConfigSection
+              form={resourceForm}
+              accountOptions={accountOptions}
+              clusterOptions={clusterOptions}
+              selectedCluster={selectedCluster}
+              activeResourceTab={activeResourceTab}
+              onActiveResourceTabChange={handleActiveResourceTabChange}
+              gpuColumns={gpuColumns}
+              cpuColumns={cpuColumns}
+              gpuRows={gpuRows}
+              cpuRows={cpuRows}
+              queueLoading={getAvailablePartitionIsLoading}
+              selectedQueueKey={selectedQueueKey}
+              onQueueSelect={handleQueueSelect}
+              selectedQueueOption={selectedQueueOption}
+              queueNodesInfo={queueNodesInfo}
+              qosOptions={qosOptions}
+              maxTimeUnit={maxTimeUnit}
+              onMaxTimeUnitChange={handleMaxTimeUnitChange}
+              selectedPresetUnit={selectedPresetUnit}
+              onSelectedPresetUnitChange={setSelectedPresetUnit}
+              maxJobRunningTimeHours={maxJobRunningTimeHours}
+              gpuUnitLimit={gpuUnitLimit}
+              isResubmit={Boolean(createInferParams)}
+            />
 
-        <InferConfigSection
-          form={appForm}
-          imageSourceTabs={imageSourceTabs}
-          selectedImageSource={selectedImageSource}
-          onImageSourceChange={handleImageSourceChange}
-          imagePlaceholder={imagePlaceholder}
-          imageOptions={imageOptionsForSource}
-          isImagesLoading={isImagesLoading}
-          selectedImageOption={selectedImageOption}
-          usePrivateRemoteImage={usePrivateRemoteImage}
-          currentCommandDefault={currentCommandDefault}
-          modelCategories={modelCategories}
-          isModelsLoading={isModelsLoading}
-          selectedCluster={selectedCluster}
-          displayRender={renderCascaderLabels}
-          homeDir={userHomeDir?.path}
-        />
-      </PageContainer>
+            <InferConfigSection
+              form={appForm}
+              imageSourceTabs={imageSourceTabs}
+              selectedImageSource={selectedImageSource}
+              onImageSourceChange={handleImageSourceChange}
+              imagePlaceholder={imagePlaceholder}
+              imageOptions={imageOptionsForSource}
+              isImagesLoading={isImagesLoading}
+              selectedImageOption={selectedImageOption}
+              usePrivateRemoteImage={usePrivateRemoteImage}
+              currentCommandDefault={currentCommandDefault}
+              modelCategories={modelCategories}
+              isModelsLoading={isModelsLoading}
+              selectedCluster={selectedCluster}
+              displayRender={renderCascaderLabels}
+              homeDir={userHomeDir?.path}
+            />
+          </JobContainer>
+        </JobMainContent>
+
+        <JobSidePanel>
+          <JobSidePanelInner>
+            <SidePanelGroupWrapper>
+              <JobSideInfo
+                labels={{
+                  totalGpuCount: t(p("sideInfo.totalGpuCount")),
+                  totalCoreCount: t(p("sideInfo.totalCoreCount")),
+                  totalMemory: t(p("sideInfo.totalMemory")),
+                  costPerHour: t(p("hourlyCostLabel")),
+                  pricingStandard: t(p("chargeStandard")),
+                  yuan: t(p("yuan")),
+                  hours: t(p("hours")),
+                  accountNameLabel: t(p("sideInfo.accountNameLabel")),
+                  whitelistTag: t(p("sideInfo.whitelistTag")),
+                  accountOwner: t(p("sideInfo.accountOwner")),
+                  accountBalance: t(p("sideInfo.accountBalance")),
+                  accountBlockThreshold: t(p("sideInfo.accountBlockThreshold")),
+                  userUsedLimit: t(p("sideInfo.userUsedLimit")),
+                  userChargeNoLimit: t(p("sideInfo.userChargeNoLimit")),
+                }}
+                totalGpuCount={displayedGpu}
+                totalCpuCount={displayedCpu}
+                totalMemory={displayedMemory}
+                hourlyPrice={formattedHourlyPrice}
+                showHourlyPriceUnit={jobOneHourPrice != null}
+                pricingStandardUrl={join(misPath, "/user/partitions")}
+                showAccountInfo={publicConfig.MIS_DEPLOYED}
+                accountInfo={accountInfo ?? null}
+              />
+            </SidePanelGroupWrapper>
+          </JobSidePanelInner>
+        </JobSidePanel>
+      </JobPageLayout>
 
       <FixedFooter>
         {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
@@ -2056,29 +2132,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
             {t(p("saveAsTemplate"))}
           </FooterStatValue>
         </div> */}
-        <FooterStats>
-          <span>
-            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
-          </span>
-          <span>
-            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
-          </span>
-          <span>
-            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
-          </span>
-          <span>
-            {t(p("hourlyCostLabel"))}
-            <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
-          </span>
-          <a
-            onClick={() => {
-              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
-            }}
-          >
-            <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
-          </a>
-        </FooterStats>
         <FooterActions>
+          <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
           <Button type="primary" onClick={handleSubmit} loading={createInferJobMutation.isPending}>
             {t(p("submit"))}
           </Button>

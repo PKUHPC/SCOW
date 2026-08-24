@@ -80,7 +80,11 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   const [uiExtensionData, setUiExtensionData] = useState<UiExtensionStoreData | undefined>(undefined);
 
   const pathname = usePathname() ?? "";
-  const isFullBleedPage = pathname.startsWith("/jobs/createApp/");
+  const isFullBleedPage =
+    pathname.startsWith("/jobs/createApp/") ||
+    pathname === "/jobs/createTrain" ||
+    pathname === "/jobs/createInfer" ||
+    pathname === "/jobs/createDev";
 
   const { dark } = useDarkMode();
 

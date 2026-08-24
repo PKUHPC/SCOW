@@ -1455,7 +1455,6 @@ export class ScowdJobDriver implements JobDriver {
         JSON.stringify(normalizedMountPoints),
         gpuType || "",
         // 如果是单机训练,则训练框架为空，表明为普通训练，华为的卡单机训练也要传框架
-        // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错
         nodeCount === 1 && !gpuType?.startsWith("huawei.com") ? "" : framework || "",
         getPublicMountPoints(clusterId).join(","),
       ],

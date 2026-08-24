@@ -717,7 +717,7 @@ export default {
           helpTip: "根据任务选择合适的训练框架",
         },
         frameworkOptions: {
-          single: "单机多卡",
+          single: "自定义",
           tensorflow: "TensorFlow",
           pytorch: "PyTorch",
           mpi: "MPI",
@@ -729,8 +729,8 @@ export default {
           nodeCount: "节点数",
           singleCpu: "CPU核数",
           singleGpu: "加速卡数",
-          nodeCpu: "单节点CPU核数",
-          nodeGpu: "单节点加速卡数",
+          nodeCpu: "单节点CPU核心数",
+          nodeGpu: "单节点加速卡卡数",
         },
         frameworkValidation: {
           minUnit: "请输入不小于1的数量",
@@ -762,7 +762,7 @@ export default {
         maxRunTimeRequired: "请输入最长运行时间",
         maxRunTimePositive: "时间需为正数",
         maxRunTimeExceed: "最长运行时间不能超过 {0} 小时",
-        maxRunTimeHelp: "开启后表示作业不限制运行时间",
+        maxRunTimeHelp: "选择不限时表示作业不限制运行时间",
         maxRunTimeLimitedLabel: "限时",
         maxRunTimeUnlimitedLabel: "不限时",
         maxRunTimeUnlimitedDisabledTooltip: "当前集群已设置了推理作业最长运行时间不超过 {0} 小时",

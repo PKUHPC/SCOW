@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Select } from "antd";
 
 import { AddonAfterSelect, RoundedInputNumberWithAddonAfter } from "../styledAntdCom/Input";
@@ -45,6 +47,12 @@ export interface MaxTimeSelectorProps<TUnit extends string | number> {
   };
   units: MaxTimeUnits<TUnit>;
   presets: MaxTimePreset<TUnit>[];
+  lastPresetReplacement?: {
+    key: string;
+    label: ReactNode;
+    selected: boolean;
+    onSelect: () => void;
+  };
 }
 
 export const MaxTimeSelector = <TUnit extends string | number>({
@@ -60,10 +68,13 @@ export const MaxTimeSelector = <TUnit extends string | number>({
   labels,
   units,
   presets,
+  lastPresetReplacement,
 }: MaxTimeSelectorProps<TUnit>) => {
-  const currentPreset = presets.find(
+  const visiblePresets = lastPresetReplacement ? presets.slice(0, -1) : presets;
+  const currentPreset = visiblePresets.find(
     (preset) => preset.maxTime === value && preset.maxTimeUnit === selectedPresetUnit,
   )?.key;
+  const selectedOption = lastPresetReplacement?.selected ? lastPresetReplacement.key : currentPreset;
 
   const getUnitLabel = (unit: TUnit) => {
     if (unit === units.minutes) return labels.minutes;
@@ -79,22 +90,31 @@ export const MaxTimeSelector = <TUnit extends string | number>({
     ? 0
     : maxRunningTimeHours === undefined
       ? undefined
-      : presets.findIndex((preset) => maxTimePresetToHours(preset) > maxRunningTimeHours);
+      : visiblePresets.findIndex((preset) => maxTimePresetToHours(preset) > maxRunningTimeHours);
   const normalizedDisabledFrom = disabledFrom === -1 ? undefined : disabledFrom;
 
   return (
     <SegmentedInputSelector
-      options={presets.map((preset) => ({
-        label: `${preset.maxTime}${getUnitLabel(preset.maxTimeUnit)}`,
-        value: preset.key,
-      }))}
-      value={currentPreset}
+      options={[
+        ...visiblePresets.map((preset) => ({
+          label: `${preset.maxTime}${getUnitLabel(preset.maxTimeUnit)}`,
+          value: preset.key,
+        })),
+        ...(lastPresetReplacement
+          ? [{ label: lastPresetReplacement.label, value: lastPresetReplacement.key }]
+          : []),
+      ]}
+      value={selectedOption}
       disabledFrom={normalizedDisabledFrom}
       disabledTooltip={disabledTooltip}
       // 为了让最大运行时间和单节点核心数的一排按钮的总宽度一致
       buttonItemPadding="0 19.7px"
       onPresetChange={(presetKey) => {
-        const preset = presets.find((item) => item.key === presetKey);
+        if (presetKey === lastPresetReplacement?.key) {
+          lastPresetReplacement.onSelect();
+          return;
+        }
+        const preset = visiblePresets.find((item) => item.key === presetKey);
         if (!preset) return;
         onChange?.(preset.maxTime);
         onSelectedPresetUnitChange(preset.maxTimeUnit);
