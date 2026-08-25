@@ -1,30 +1,34 @@
 import Icon from "@ant-design/icons";
-import React, { LegacyRef } from "react";
+import React, { LegacyRef, useId } from "react";
 
 // 定义图标组件的接口以接受样式属性
 
 // 文件夹的SVG
-const folderSVG = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M8 11V14C8 14.5523 8.44772 15 9 15H16.0223C16.5623 15 17 14.5623 17 14.0223C17 13.736 16.8745
+const folderSVG = () => {
+  const gradientId = useId();
+
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M8 11V14C8 14.5523 8.44772 15 9 15H16.0223C16.5623 15 17 14.5623 17 14.0223C17 13.736 16.8745
       13.4641 16.6567 13.2783L13.0924 10.2391C12.9114 10.0848 12.6814 10 12.4436 10H9C8.44772 10 8 10.4477
       8 11Z"
-      fill="#FFBF00"
-    />
-    <path
-      d="M8 20V14C8 12.8954 8.89543 12 10 12H22C23.1046 12 24 12.8954 24 14V20C24 21.1046 23.1046 22 22
+        fill="#FFBF00"
+      />
+      <path
+        d="M8 20V14C8 12.8954 8.89543 12 10 12H22C23.1046 12 24 12.8954 24 14V20C24 21.1046 23.1046 22 22
       22H10C8.89543 22 8 21.1046 8 20Z"
-      fill="url(#paint0_linear_18_925)"
-    />
-    <defs>
-      <linearGradient id="paint0_linear_18_925" x1="16" y1="12" x2="16" y2="22" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#FFE600" />
-        <stop offset="1" stopColor="#FFBF00" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
+        fill={`url(#${gradientId})`}
+      />
+      <defs>
+        <linearGradient id={gradientId} x1="16" y1="12" x2="16" y2="22" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFE600" />
+          <stop offset="1" stopColor="#FFBF00" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+};
 
 export const FolderIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
   (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={folderSVG} {...props} ref={ref} />,
