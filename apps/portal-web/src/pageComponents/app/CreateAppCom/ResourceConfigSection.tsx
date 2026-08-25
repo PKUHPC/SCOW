@@ -47,6 +47,7 @@ interface ResourceConfigSectionProps {
   accountOptions: AccountOption[];
   selectedAccount?: string;
   clusterName?: string;
+  clusterDisabled?: boolean;
   partitionRows: PartitionRow[];
   activePartitionTab: PartitionTabKey;
   onActivePartitionTabChange: (tab: PartitionTabKey) => void;
@@ -80,6 +81,7 @@ export const ResourceConfigSection = ({
   accountOptions,
   selectedAccount,
   clusterName,
+  clusterDisabled = false,
   partitionRows,
   activePartitionTab,
   onActivePartitionTabChange,
@@ -254,11 +256,20 @@ export const ResourceConfigSection = ({
           rules={[{ required: true, message: t(p("clusterRequired")) }]}
         >
           <Space wrap>
-            {clusterName && (
-              <RoundedButton size="large" type="primary" $selected>
-                {clusterName}
-              </RoundedButton>
-            )}
+            {clusterName &&
+              (clusterDisabled ? (
+                <Tooltip title={t(p("clusterUnauthorized"))} arrow={false} align={{ offset: [0, -12] }}>
+                  <span>
+                    <RoundedButton size="large" disabled>
+                      {clusterName}
+                    </RoundedButton>
+                  </span>
+                </Tooltip>
+              ) : (
+                <RoundedButton size="large" type="primary" $selected>
+                  {clusterName}
+                </RoundedButton>
+              ))}
           </Space>
         </InlineFormItem>
 

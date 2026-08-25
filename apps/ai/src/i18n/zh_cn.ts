@@ -713,7 +713,7 @@ export default {
         accountDebt: "账户余额不足",
         userQuotaExceeded: "用户限额已超出",
         clusterLabel: "集群",
-        clusterUnauthorizedTooltip: "当前账户未授权",
+        clusterUnauthorizedTooltip: "当前账户未授权该集群",
         queueLabel: "队列",
         priorityLabel: "优先级",
         priorityPlaceholder: "请选择优先级",

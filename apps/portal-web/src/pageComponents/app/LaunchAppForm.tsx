@@ -1085,6 +1085,15 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   const availableAccountOptions = useMemo(() => accountOptions.filter((o) => !o.disabled), [accountOptions]);
 
+  const hasAvailableAccount = useMemo(() => {
+    if (!fixedAccountList.length) return availableAccountOptions.length > 0;
+
+    const availableAccountNames = new Set(
+      appInfo?.accountAvailabilities?.filter((account) => account.available).map((account) => account.accountName),
+    );
+    return fixedAccountList.some((account) => availableAccountNames.has(account));
+  }, [appInfo?.accountAvailabilities, availableAccountOptions.length, fixedAccountList]);
+
   useEffect(() => {
     if (!accountOptions.length) return;
     if (selectedAccount && fixedAccountList.length) return;
@@ -1214,6 +1223,7 @@ export const LaunchAppForm: React.FC<Props> = ({
               accountOptions={accountOptions}
               selectedAccount={selectedAccount}
               clusterName={clusterName}
+              clusterDisabled={!hasAvailableAccount}
               partitionRows={partitionRows}
               activePartitionTab={activePartitionTab}
               onActivePartitionTabChange={setActivePartitionTab}
