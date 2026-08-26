@@ -1,5 +1,6 @@
 bind-port: 8972
 log-level: trace
+log-stdout: true
 tensorboardImage: "crpi-u0hdpwcobdb87rnx.cn-beijing.personal.cr.aliyuncs.com/qsx/tensorboard:latest"
 
 ssl:

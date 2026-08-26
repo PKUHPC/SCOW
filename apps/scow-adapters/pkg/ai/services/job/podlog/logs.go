@@ -49,7 +49,7 @@ func (pl *PodLog) GetPodLogEntry(accept func(io.ReadCloser)) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("GetPodLogEntry", pl.Args.Namespace, pl.Args.PodName)
+	log.Debugf("GetPodLogEntry: namespace=%s, pod=%s", pl.Args.Namespace, pl.Args.PodName)
 	readCloser, err := pl.Args.KubeClient.CoreV1().Pods(pl.Args.Namespace).GetLogs(pl.Args.PodName, &v1.PodLogOptions{
 		// Container:    p.container,
 		Follow:       pl.Args.Follow,

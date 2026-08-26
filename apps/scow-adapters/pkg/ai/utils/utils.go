@@ -75,7 +75,7 @@ func GetWebJobFileContent(filePath string) (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
-	logrus.Tracef("[GetWebJobFileContent] %s", string(fileContent))
+	logrus.Tracef("[GetWebJobFileContent] read bytes: %d", len(fileContent))
 	err = json.Unmarshal(fileContent, &serverSessionContent)
 	if err != nil {
 		return 0, "", err
@@ -455,7 +455,6 @@ func GetPartitionsInfo(k8sClient *k8sclient.Clientset, allPods []v1.Pod) ([]*pb.
 		mutex := &sync.Mutex{}
 		wg.Add(len(nodes))
 		for _, node := range nodes {
-			logrus.Tracef("GetPartitionsInfo: queue name: %v, node: %v", queue, node.Name)
 			nodeTmp := node
 			go func() {
 				defer wg.Done()
@@ -642,7 +641,7 @@ func SetMountPoints(mountPoints map[bool][]string, workDir string, in *pb.Submit
 	}
 
 	suffix := 1
-	logrus.Tracef("[SetMountPoints] mountsPoint: %v", mountPoints)
+	logrus.Tracef("[SetMountPoints] mount points: %v", mountPoints)
 	if len(mountPoints) != 0 {
 		for flag, path := range mountPoints {
 			logrus.Tracef("[SetMountPoints]path string: %s", strings.Join(path, ""))
@@ -664,7 +663,7 @@ func SetMountPoints(mountPoints map[bool][]string, workDir string, in *pb.Submit
 					})
 				}
 			} else {
-				logrus.Tracef("[SetMountPoints] data: %s", data)
+				logrus.Tracef("[SetMountPoints] data: %v", data)
 				for index, v := range data {
 					name := "extramount" + strconv.Itoa(suffix) + strconv.Itoa(index)
 					volume, err := buildVolume(name, v, uid, gid, mountMode)
@@ -816,7 +815,7 @@ func SetAscendVcjobMountPoints(mountPoints map[bool][]string, workDir string, in
 	}
 
 	suffix := 1
-	logrus.Tracef("[SetAscendVcjobMountPoints] mountsPoint: %v", mountPoints)
+	logrus.Tracef("[SetAscendVcjobMountPoints] mount points: %v", mountPoints)
 	if len(mountPoints) != 0 {
 		for flag, path := range mountPoints {
 			logrus.Tracef("[SetAscendVcjobMountPoints]path string: %s", strings.Join(path, ""))
@@ -839,7 +838,7 @@ func SetAscendVcjobMountPoints(mountPoints map[bool][]string, workDir string, in
 					})
 				}
 			} else {
-				logrus.Tracef("[SetAscendVcjobMountPoints] data: %s", data)
+				logrus.Tracef("[SetAscendVcjobMountPoints] data: %v", data)
 				for index, v := range data {
 					name := "extramount" + strconv.Itoa(suffix) + strconv.Itoa(index)
 					volume, err := buildVolume(name, v, uid, gid, mountMode)
@@ -1518,7 +1517,6 @@ func GetSummaryPartitionsInfo(k8sClient *k8sclient.Clientset, authorizedPartitio
 		mutex := &sync.Mutex{}
 		wg.Add(len(nodes))
 		for _, node := range nodes {
-			logrus.Tracef("GetPartitionsInfo: queue name: %v, node: %v", queue, node.Name)
 			nodeTmp := node
 			go func() {
 				defer wg.Done()
@@ -1574,7 +1572,7 @@ func GetSummaryPartitionsInfo(k8sClient *k8sclient.Clientset, authorizedPartitio
 			PartitionStatus: pb.SummaryPartitionInfo_AVAILABLE,
 		})
 	}
-	logrus.Tracef("GetPartitionsInfo, parts: %v", parts)
+	logrus.Tracef("GetSummaryPartitionsInfo, parts: %v", parts)
 	return parts, nil
 }
 

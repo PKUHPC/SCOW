@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "scow-adapters/gen/go"
+	"scow-adapters/pkg/common/accountsync"
 	ce "scow-adapters/pkg/common/error"
 	sau "scow-adapters/pkg/slurm/services/account/sync_account_user"
 	"scow-adapters/pkg/slurm/utils"
@@ -48,7 +49,7 @@ func (s *ServerAccount) ListAccounts(ctx context.Context, in *pb.ListAccountsReq
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
 
-	logrus.Tracef("List accounts success: %v", &pb.ListAccountsResponse{Accounts: acctList})
+	logrus.Tracef("ListAccounts finished, user: %s, accounts count: %d", in.UserId, len(acctList))
 	return &pb.ListAccountsResponse{Accounts: acctList}, nil
 }
 
@@ -240,6 +241,7 @@ func (s *ServerAccount) UnblockAccount(ctx context.Context, in *pb.UnblockAccoun
 			logrus.Errorf("UnblockAccount failed: %v, account is: %v", err, in.AccountName)
 			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 		}
+		logrus.Infof("UnblockAccount sucess! account is: %v", in.AccountName)
 		return &pb.UnblockAccountResponse{}, nil
 	}
 
@@ -254,7 +256,6 @@ func (s *ServerAccount) UnblockAccount(ctx context.Context, in *pb.UnblockAccoun
 	for _, p := range blockedPartitions {
 		err = utils.UnblockAccountUseAssociation(ctx, in.AccountName, p)
 		if err != nil {
-			logrus.Errorf("UnblockAccount failed: %v, account is: %v, partition is: %v", err, in.AccountName, p)
 			// 当前分区也需要补偿：UnblockAccountUseAssociation 可能已经恢复了 Slurm，
 			// 只是在删除恢复记录时失败。重新封锁是幂等操作，也能覆盖这种部分执行。
 			rollbackPartitions := make([]string, 0, len(successPartitions)+1)
@@ -269,11 +270,12 @@ func (s *ServerAccount) UnblockAccount(ctx context.Context, in *pb.UnblockAccoun
 				"block",
 				err,
 			)
+			logrus.Errorf("UnblockAccount failed, account is: %v, failed partition: %v, rollback partitions: %v, err: %v", in.AccountName, p, rollbackPartitions, err)
 			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 		}
 		successPartitions = append(successPartitions, p)
-		logrus.Infof("UnblockAccount sucess! account is: %v, partition is: %v", in.AccountName, p)
 	}
+	logrus.Infof("UnblockAccount success, account is: %v, partitions: %v", in.AccountName, successPartitions)
 
 	return &pb.UnblockAccountResponse{}, nil
 }
@@ -295,7 +297,7 @@ func (s *ServerAccount) GetAllAccountsWithUsers(ctx context.Context, in *pb.GetA
 		logrus.Errorf("GetAllAccountsWithUsers failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-	logrus.Tracef("GetAllAccountsWithUsers acctAndUsers: %v", acctAndUsersBlockInfo)
+	logrus.Tracef("GetAllAccountsWithUsers loaded account users, accounts count: %d", len(acctAndUsersBlockInfo))
 
 	// 3. 获取账户的授权分区
 	accountPartitionBlockInfo, err := utils.GetAccountAllowedPartitionByAssociation()
@@ -303,7 +305,7 @@ func (s *ServerAccount) GetAllAccountsWithUsers(ctx context.Context, in *pb.GetA
 		logrus.Errorf("GetAllAccountsWithUsers get account associate partition failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-	logrus.Tracef("GetAllAccountsWithUsers accountPartitionBlockInfo: %v", accountPartitionBlockInfo)
+	logrus.Tracef("GetAllAccountsWithUsers loaded partition block info, accounts count: %d", len(accountPartitionBlockInfo))
 
 	// 4. 获取每个账户及关联的用户的封锁信息
 	for _, v := range acctList {
@@ -321,9 +323,8 @@ func (s *ServerAccount) GetAllAccountsWithUsers(ctx context.Context, in *pb.GetA
 		}
 
 		// 4.1 获取每个账户关联的用户信息以及用户的block状态
-		logrus.Tracef("GetAllAccountsWithUsers account %v acctAndUsers: %v", v, usersBlockInfo)
+		logrus.Tracef("GetAllAccountsWithUsers processing account %s, users count: %d", v, len(usersBlockInfo))
 		for user, blocked := range usersBlockInfo {
-			logrus.Tracef("user: %v, blocked: %v", user, blocked)
 			userInfo = append(userInfo, &pb.ClusterAccountInfo_UserInAccount{
 				UserId:   user,
 				UserName: user,
@@ -355,7 +356,7 @@ func (s *ServerAccount) GetAllAccountsWithUsers(ctx context.Context, in *pb.GetA
 		}
 	}
 
-	logrus.Tracef("GetAllAccountsWithUsers: %v", acctInfo)
+	logrus.Tracef("GetAllAccountsWithUsers finished, accounts count: %d", len(acctInfo))
 	return &pb.GetAllAccountsWithUsersResponse{Accounts: acctInfo}, nil
 }
 
@@ -507,7 +508,6 @@ func (s *ServerAccount) BlockAccountWithPartitions(ctx context.Context, in *pb.B
 	for _, p := range in.BlockedPartitions {
 		err = utils.BlockAccountUseAssociation(ctx, in.AccountName, p)
 		if err != nil {
-			logrus.Errorf("BlockAccountWithPartitions failed: %v, account is: %v, partition is: %v", err, in.AccountName, p)
 			// 多分区封锁不是 Slurm 事务。这里对已经封锁成功的分区执行反向解封，
 			// 避免接口整体失败时 SCOW 侧认为没有封锁，但 Slurm 侧已经封锁了部分分区。
 			err = rollbackAccountPartitions(
@@ -519,11 +519,12 @@ func (s *ServerAccount) BlockAccountWithPartitions(ctx context.Context, in *pb.B
 				"unblock",
 				err,
 			)
+			logrus.Errorf("BlockAccountWithPartitions failed, account is: %v, failed partition: %v, rollback partitions: %v, err: %v", in.AccountName, p, successPartitions, err)
 			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 		}
 		successPartitions = append(successPartitions, p)
-		logrus.Infof("BlockAccountWithPartitions sucess! account is: %v, partition is: %v", in.AccountName, p)
 	}
+	logrus.Infof("BlockAccountWithPartitions success, account is: %v, partitions: %v", in.AccountName, successPartitions)
 
 	return &pb.BlockAccountWithPartitionsResponse{}, nil
 }
@@ -597,7 +598,6 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pb
 	for _, p := range in.UnblockedPartitions {
 		err = utils.UnblockAccountUseAssociation(ctx, in.AccountName, p)
 		if err != nil {
-			logrus.Errorf("UnblockAccountWithPartitions failed: %v, account is: %v, partition is: %v", err, in.AccountName, p)
 			err = rollbackWholeAccountAndPartitions(
 				ctx,
 				in.AccountName,
@@ -607,11 +607,12 @@ func (s *ServerAccount) UnblockAccountWithPartitions(ctx context.Context, in *pb
 				utils.BlockAccountUseAssociation,
 				err,
 			)
+			logrus.Errorf("UnblockAccountWithPartitions failed, account is: %v, failed partition: %v, rollback partitions: %v, err: %v", in.AccountName, p, successPartitions, err)
 			return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 		}
 		successPartitions = append(successPartitions, p)
-		logrus.Infof("UnblockAccountWithPartitions sucess! account is: %v, partition is: %v", in.AccountName, p)
 	}
+	logrus.Infof("UnblockAccountWithPartitions success, account is: %v, partitions: %v", in.AccountName, successPartitions)
 
 	return &pb.UnblockAccountWithPartitionsResponse{}, nil
 }
@@ -660,12 +661,8 @@ func rollbackAccountPartitions(
 	var rollbackErrors []string
 	for _, partition := range partitions {
 		if err := rollback(rollbackCtx, account, partition); err != nil {
-			logrus.Errorf("%s rollback %s failed: %v, account is: %v, partition is: %v", operation, rollbackAction, err, account, partition)
 			rollbackErrors = append(rollbackErrors, fmt.Sprintf("%s: %v", partition, err))
-			continue
 		}
-
-		logrus.Infof("%s rollback %s success, account is: %v, partition is: %v", operation, rollbackAction, account, partition)
 	}
 
 	if len(rollbackErrors) > 0 {
@@ -826,7 +823,7 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 		logrus.Errorf("GetAllAccountsWithUsers get account associate partition failed: %v", err)
 		return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 	}
-	logrus.Tracef("GetAllAccountsWithUsers accountPartitionBlockInfo: %v", accountPartitionBlockInfo)
+	logrus.Tracef("GetAllAccountsWithUsers loaded partition block info, accounts count: %d", len(accountPartitionBlockInfo))
 
 	// 6. 获取每个账户及关联的用户的封锁信息
 	for _, v := range acctList {
@@ -844,9 +841,8 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 		}
 
 		// 4.1 获取每个账户关联的用户信息以及用户的block状态
-		logrus.Tracef("GetAllAccountsWithUsers account %v acctAndUsers: %v", v, usersBlockInfo)
+		logrus.Tracef("GetAllAccountsWithUsers processing account %s, users count: %d", v, len(usersBlockInfo))
 		for user, blocked := range usersBlockInfo {
-			logrus.Tracef("user: %v, blocked: %v", user, blocked)
 			userInfo = append(userInfo, &pb.ClusterAccountInfoWithBlockedDetails_UserInAccount{
 				UserId:   user,
 				UserName: user,
@@ -899,43 +895,44 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 		)
 	}
 
-	logrus.Tracef("GetAllAccountsWithUsersAndBlockedDetails response: %v", acctInfo)
+	logrus.Tracef("GetAllAccountsWithUsersAndBlockedDetails finished, accounts count: %d", len(acctInfo))
 	return &pb.GetAllAccountsWithUsersAndBlockedDetailsResponse{Accounts: acctInfo}, nil
 }
 
 func (s *ServerAccount) SyncAccountUserInfo(ctx context.Context, in *pb.SyncAccountUserInfoRequest) (*pb.SyncAccountUserInfoResponse, error) {
 	var syncResults []*pb.SyncAccountUserInfoResponse_SyncOperationResult
 	start := time.Now()
-	logrus.Infof("Start SyncAccountUserInfo, SyncAccounts: %v", in.SyncAccounts)
-	logrus.Infof("Start SyncAccountUserInfo, Timeout Millisecond: %v", *in.TimeoutMilliseconds)
+	syncID := in.GetSessionId()
+	timeoutMs := in.GetTimeoutMilliseconds()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeoutMs)*time.Millisecond)
+	defer cancel()
+	ctx = accountsync.WithSyncID(ctx, syncID)
+	summary := accountsync.NewSummary(len(in.GetSyncAccounts()))
+	logrus.Infof("SyncAccountUserInfo started: syncId=%q accounts=%d timeoutMs=%d",
+		syncID, summary.AccountsRequested(), timeoutMs)
 
 	if in.SyncAccounts == nil || len(in.SyncAccounts) == 0 {
-		logrus.Infof("SyncAccountUserInfo SyncAccounts is nil, no synchronization is required")
+		logrus.Info(summary.LogMessage(syncID, true, "none", time.Since(start).Milliseconds(), timeoutMs))
 		return nil, nil
 	}
 
-	// 设置带超时的context
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithTimeout(ctx, time.Duration(*in.TimeoutMilliseconds)*time.Millisecond)
-	defer cancel()
-
 	isCompleted := true
+	incompleteReason := "none"
 
 outerLoop:
-	for i, syncAccount := range in.SyncAccounts {
+	for _, syncAccount := range in.SyncAccounts {
 		// 每次循环前检查超时
 		select {
 		case <-ctx.Done():
-			logrus.Warnf("Sync timeout，%d/%d accounts processed", i, len(in.SyncAccounts))
 			isCompleted = false
+			incompleteReason = ctx.Err().Error()
 			break outerLoop // 超时了，跳出循环不在执行，返回已处理的结果和未完成状态
 		default:
 		}
 
-		logrus.Tracef("SyncAccountUserInfo, snyc index: %v", i)
 		if *syncAccount.Deleted {
-			message := fmt.Sprintf("account %v is deleted, no sync required", syncAccount.AccountName)
-			logrus.Infof("[SyncAccountUser] %v", message)
+			summary.SkipAccount(syncAccount)
+			accountsync.Tracef(ctx, "account=%s expectedDeleted=true action=skip", syncAccount.AccountName)
 			continue
 		}
 
@@ -943,14 +940,18 @@ outerLoop:
 		// 共用账户级锁，保证读取原值、保存恢复记录、修改 Slurm 的完整流程不被打断。
 		unlock, err := utils.LockAccountAssociationMutation(ctx, syncAccount.AccountName)
 		if err != nil {
-			logrus.Warnf("SyncAccountUserInfo stopped while waiting for account lock: %v", err)
 			isCompleted = false
+			incompleteReason = fmt.Sprintf("wait for account lock: %v", err)
 			break outerLoop
 		}
+		var accountStats accountsync.Stats
 		results := func() []*pb.SyncAccountUserInfoResponse_SyncOperationResult {
 			defer unlock()
-			return sau.SyncAccountUser(ctx, syncAccount)
+			var results []*pb.SyncAccountUserInfoResponse_SyncOperationResult
+			results, accountStats = sau.SyncAccountUser(ctx, syncAccount)
+			return results
 		}()
+		summary.RecordAccount(results, accountStats)
 		for _, result := range results {
 			if result == nil {
 				continue
@@ -959,17 +960,12 @@ outerLoop:
 		}
 	}
 
-	// 等待结果收集完成或超时
+	elapsedMs := time.Since(start).Milliseconds()
+	message := summary.LogMessage(syncID, isCompleted, incompleteReason, elapsedMs, timeoutMs)
 	if isCompleted {
-		// 计算耗时（毫秒）
-		elapsed := time.Since(start).Milliseconds()
-		logrus.Infof("SyncAccountUserInfo completed, used time: %d, timelimit: %d", elapsed, *in.TimeoutMilliseconds)
-		logrus.Infof("SyncAccountUserInfo completed, results: %d", len(syncResults))
+		logrus.Info(message)
 	} else {
-		// 计算耗时（毫秒）
-		elapsed := time.Since(start).Milliseconds()
-		logrus.Infof("SyncAccountUserInfo timeout, used time: %d, timelimit: %d", elapsed, *in.TimeoutMilliseconds)
-		logrus.Warnf("SyncAccountUserInfo timeout, returning %d completed results", len(syncResults))
+		logrus.Warn(message)
 	}
 
 	return &pb.SyncAccountUserInfoResponse{SyncResults: syncResults, CompletelyExecuted: isCompleted}, nil

@@ -236,13 +236,13 @@ func CopyFromPod(jobId, stepId, uid uint32, srcPath, localPath, nodeName string)
 		})
 		if streamErr != nil {
 			if errors.Is(streamErr, context.Canceled) || strings.Contains(streamErr.Error(), context.Canceled.Error()) {
-				log.Debugf("goroutine StreamWithContext canceled after CopyFromPod finished, stderr: %s", stderr.String())
+				log.Debugf("goroutine StreamWithContext canceled after CopyFromPod finished, stderr bytes: %d, preview: %.1024s", stderr.Len(), stderr.String())
 				return
 			}
 			log.Errorf("goroutine StreamWithContext failed: %v, stderr: %s", streamErr, stderr.String())
 			_ = writer.CloseWithError(fmt.Errorf("stream failed: %v, stderr: %s", streamErr, stderr.String()))
 		} else {
-			log.Infof("goroutine StreamWithContext successful，stderr: %s", stderr.String())
+			log.Infof("goroutine StreamWithContext successful, stderr bytes: %d, preview: %.1024s", stderr.Len(), stderr.String())
 		}
 	}()
 
@@ -567,8 +567,7 @@ func convertStepInfoToPodInfo(partition string, uid uint32, username string, ste
 	podIPCache := make(map[string]string)
 	containerIDCache := make(map[string]string)
 
-	log.Infof("Converting StepInfo to PodInfo for partition %s, total steps: %d", partition, len(stepList))
-	log.Infof("StepInfo steps: %v", stepList)
+	log.Infof("Converting StepInfo to PodInfo, partition: %s, total steps: %d, supervisor events: %t", partition, len(stepList), withSupervisorEvents)
 
 	// 优先使用COMMON类型（多机训练的worker步骤），没有则退回PRIMARY（开发机等场景）
 	targetType := craneProtos.StepType_PRIMARY

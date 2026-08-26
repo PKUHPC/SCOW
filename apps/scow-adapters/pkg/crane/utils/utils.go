@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"os/exec"
@@ -88,12 +87,12 @@ var (
 func ParseConfig(configFilePath string) *CraneConfig {
 	confFile, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	config := &CraneConfig{}
 	err = yaml.Unmarshal(confFile, config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	return config
 }
@@ -878,7 +877,7 @@ func GetSummaryClusterNodesInfo(authorizedPartitions []string) (*ClusterNodesInf
 		return nil, err
 	}
 
-	logrus.Tracef("GetClusterNodesInfo nodeInfo%v", info.GetCranedInfoList())
+	logrus.Tracef("GetClusterNodesInfo received %d node records", len(info.GetCranedInfoList()))
 
 	// 聚合节点统计信息
 	for _, nodeInfo := range info.GetCranedInfoList() {
@@ -978,7 +977,7 @@ func GetSummaryClusterNodesInfo(authorizedPartitions []string) (*ClusterNodesInf
 		GpuUsage:              gpuUsage,
 	}
 
-	logrus.Tracef("GetClusterNodesInfo node Info: %v", result)
+	logrus.Tracef("GetClusterNodesInfo node info: %v", result)
 	return result, nil
 }
 
@@ -998,7 +997,7 @@ func GetSummaryPartitionsInfo(authorizedPartitions []string) ([]*protos.SummaryP
 			logrus.Errorf("GetPartitionsInfo failed: %v", err)
 			return nil, fmt.Errorf("get partition info failed: %v", err)
 		}
-		logrus.Tracef("GetClusterInfo partition info: %v", partitionInfo)
+		logrus.Tracef("GetSummaryPartitionsInfo partition info: %v", partitionInfo)
 
 		//// 获取正在运行作业的个数
 		//runningJob, err := GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Running})

@@ -171,7 +171,7 @@ func GetClusterNodesInfo(parts []*pb.PartitionInfo) (*ClusterNodesInfo, error) {
 		PendingJobCount:       pendingJobCount,
 	}
 
-	logrus.Tracef("GetClusterNodesInfo node Info: %v", result)
+	logrus.Tracef("GetClusterNodesInfo node info: %v", result)
 	return result, nil
 }
 
@@ -587,7 +587,7 @@ func GetSummaryClusterNodesInfo(parts []*pb.PartitionInfo, authorizedPartitionsN
 		GpuUsage:              gpuUsage,
 	}
 
-	logrus.Tracef("GetClusterNodesInfo node Info: %v", result)
+	logrus.Tracef("GetClusterNodesInfo node info: %v", result)
 	return result, nil
 }
 

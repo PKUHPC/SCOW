@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/api"
 	"github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	"github.com/sirupsen/logrus"
 
 	pb "scow-adapters/gen/go"
 	"scow-adapters/pkg/ai/utils"
@@ -34,6 +35,14 @@ type PromethuesInfo struct {
 	timeout     time.Duration
 	PodName     string
 	Address     string
+}
+
+func logMetricsQueryFailure(metric string, err error) {
+	if err != nil {
+		logrus.Errorf("Error querying %s: %v", metric, err)
+		return
+	}
+	logrus.Warnf("Prometheus query returned no data for metric %s", metric)
 }
 
 type Option func(info *PromethuesInfo)
@@ -80,8 +89,7 @@ func NewPromethuesInfo(options ...Option) (pi *PromethuesInfo) {
 		Address: pi.Address,
 	})
 	if err != nil {
-		//caller.Logger.Errorf("Error creating client: %v", err)
-		fmt.Printf("Error creating client: %v", err)
+		logrus.Errorf("Error creating Prometheus client: %v", err)
 		return nil
 	}
 	v1api := v1.NewAPI(client)
@@ -98,13 +106,11 @@ func (pi *PromethuesInfo) QueryWithTimeout(query string) (response []*pb.TimeSer
 func (pi *PromethuesInfo) Query(ctx context.Context, query string) (response []*pb.TimeSeriesData, err error) {
 	result, warnings, err := pi.Api.QueryRange(ctx, query, pi.Range)
 	if err != nil {
-		//caller.Logger.Errorf("Error querying Prometheus range: %v", err)
-		fmt.Printf("Error querying Prometheus range: %v", err)
+		logrus.Errorf("Error querying Prometheus range: %v", err)
 		return nil, err
 	}
 	if len(warnings) > 0 {
-		//caller.Logger.Infof("Warnings: %v", warnings)
-		fmt.Printf("Warnings: %v\n", warnings)
+		logrus.Warnf("Prometheus query warnings: %v", warnings)
 		return nil, err
 	}
 	matrix, ok := result.(model.Matrix)
@@ -134,7 +140,7 @@ func (pi *PromethuesInfo) GetCPUUtil() (response []*pb.TimeSeriesData, err error
 	query := pi.QueryString[pi.Accelerator][CPUUtil]
 	response, err = pi.QueryWithTimeout(query)
 	if err != nil || len(response) == 0 {
-		fmt.Printf("Error querying CPUUtils: %v\n", err)
+		logMetricsQueryFailure(CPUUtil, err)
 		return
 	}
 	response[0].Metrics["name"] = CPUUtil
@@ -144,7 +150,7 @@ func (pi *PromethuesInfo) GetMemUtil() (response []*pb.TimeSeriesData, err error
 	query := pi.QueryString[pi.Accelerator][MemUtil]
 	response, err = pi.QueryWithTimeout(query)
 	if err != nil || len(response) == 0 {
-		fmt.Printf("Error querying MemUtils: %v\n", err)
+		logMetricsQueryFailure(MemUtil, err)
 		return
 	}
 	response[0].Metrics["name"] = MemUtil
@@ -155,7 +161,7 @@ func (pi *PromethuesInfo) GetMemLimit() (response []*pb.TimeSeriesData, err erro
 	query := pi.QueryString[pi.Accelerator][MemLimit]
 	response, err = pi.QueryWithTimeout(query)
 	if err != nil || len(response) == 0 {
-		fmt.Printf("Error querying MemLimit: %v\n", err)
+		logMetricsQueryFailure(MemLimit, err)
 		return
 	}
 	response[0].Metrics["name"] = MemLimit
@@ -165,7 +171,7 @@ func (pi *PromethuesInfo) GetGPUUtil() (response []*pb.TimeSeriesData, err error
 	query := pi.QueryString[pi.Accelerator][GPUUtil]
 	response, err = pi.QueryWithTimeout(query)
 	if err != nil || len(response) == 0 {
-		fmt.Printf("Error querying GPUUtils: %v\n", err)
+		logMetricsQueryFailure(GPUUtil, err)
 		return
 	}
 	response[0].Metrics["name"] = GPUUtil
@@ -175,7 +181,7 @@ func (pi *PromethuesInfo) GetGPUMemUtil() (response []*pb.TimeSeriesData, err er
 	query := pi.QueryString[pi.Accelerator][GPUMemUtil]
 	response, err = pi.QueryWithTimeout(query)
 	if err != nil || len(response) == 0 {
-		fmt.Printf("Error querying GPUMemUtils: %v\n", err)
+		logMetricsQueryFailure(GPUMemUtil, err)
 		return
 	}
 	response[0].Metrics["name"] = GPUMemUtil
@@ -185,7 +191,7 @@ func (pi *PromethuesInfo) GetGPUPowerUsage() (response []*pb.TimeSeriesData, err
 	query := pi.QueryString[pi.Accelerator][GPUPowerUsage]
 	response, err = pi.QueryWithTimeout(query)
 	if err != nil || len(response) == 0 {
-		fmt.Printf("Error querying GPUPowerUsage: %v\n", err)
+		logMetricsQueryFailure(GPUPowerUsage, err)
 		return
 	}
 	response[0].Metrics["name"] = GPUPowerUsage
@@ -195,7 +201,7 @@ func (pi *PromethuesInfo) GetGPUTemp() (response []*pb.TimeSeriesData, err error
 	query := pi.QueryString[pi.Accelerator][GPUTemp]
 	response, err = pi.QueryWithTimeout(query)
 	if err != nil || len(response) == 0 {
-		fmt.Printf("Error querying GPUTemp: %v\n", err)
+		logMetricsQueryFailure(GPUTemp, err)
 		return
 	}
 	response[0].Metrics["name"] = GPUTemp
@@ -221,8 +227,7 @@ func (pi *PromethuesInfo) SetPodQueryString(podName string) {
 		QueryString[GPUMemUtil] = fmt.Sprintf(`avg (container_npu_utilization{pod_name="%s"}) by (pod_name)`, podName)
 	} else {
 		err := fmt.Errorf("not support accelerator %s", pi.Accelerator)
-		//caller.Logger.Errorf("%s", err.Error())
-		fmt.Printf("%s\n", err.Error())
+		logrus.Errorf("Set pod query string failed: %v", err)
 	}
 	Res[pi.Accelerator] = QueryString
 	pi.QueryString = Res

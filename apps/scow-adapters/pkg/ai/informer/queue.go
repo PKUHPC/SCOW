@@ -32,7 +32,6 @@ func (i *K8sInformer) IsQueue(name string) bool {
 }
 
 func (i *K8sInformer) handleQueueAdd(obj interface{}) {
-	logrus.Tracef("queue:%v", obj)
 	queue := obj.(*v1beta1.Queue)
 	if queue == nil || queue.Name == "default" || queue.Name == "root" {
 		return
@@ -40,7 +39,7 @@ func (i *K8sInformer) handleQueueAdd(obj interface{}) {
 	name := queue.Name
 	resourceCap := utils.GetResource(&queue.Spec.Capability)
 	resourceAlloc := utils.GetResource(&queue.Status.Allocated)
-	logrus.Infof("queue resource: %v, %v", resourceCap, resourceAlloc)
+	logrus.Infof("queue %s added, capacity: cpu=%d memory=%d gpu=%d, allocated: cpu=%d memory=%d gpu=%d", name, resourceCap.CPU, resourceCap.Mem, resourceCap.AcceleratorCount, resourceAlloc.CPU, resourceAlloc.Mem, resourceAlloc.AcceleratorCount)
 	memCap, memAlloc := resourceCap.Mem, resourceAlloc.Mem
 	modelPartition := &models.PartitionTable{
 		Name:        name,
@@ -89,7 +88,6 @@ func (i *K8sInformer) handleQueueAdd(obj interface{}) {
 }
 
 func (i *K8sInformer) handleQueueUpdate(obj interface{}) {
-	logrus.Tracef("queue:%v", obj)
 	queue := obj.(*v1beta1.Queue)
 	if queue == nil || queue.Name == "default" || queue.Name == "root" {
 		return
@@ -103,7 +101,7 @@ func (i *K8sInformer) handleQueueUpdate(obj interface{}) {
 	}
 	resourceCap := utils.GetResource(&queue.Spec.Capability)
 	resourceAlloc := utils.GetResource(&queue.Status.Allocated)
-	logrus.Infof("queue resource: %v, %v", resourceCap, resourceAlloc)
+	logrus.Tracef("queue %s updated, capacity: cpu=%d memory=%d gpu=%d, allocated: cpu=%d memory=%d gpu=%d", name, resourceCap.CPU, resourceCap.Mem, resourceCap.AcceleratorCount, resourceAlloc.CPU, resourceAlloc.Mem, resourceAlloc.AcceleratorCount)
 	memCap, memAlloc := resourceCap.Mem, resourceAlloc.Mem
 	modelPartition := models.PartitionTable{
 		Weight:      int64(queue.Spec.Weight),
@@ -142,7 +140,7 @@ func (i *K8sInformer) handleQueueUpdate(obj interface{}) {
 			}
 		}
 	}
-	logrus.Tracef("[handleQueueUpdate] modelPartition: %v", modelPartition)
+	logrus.Tracef("[handleQueueUpdate] queue %s partition model: %v", name, modelPartition)
 	if err := client.DB.Model(QueueTable).Updates(modelPartition).Error; err != nil {
 		logrus.Errorf("queue name %s DB update failed due to: %s", name, err)
 		return
@@ -152,7 +150,6 @@ func (i *K8sInformer) handleQueueUpdate(obj interface{}) {
 }
 
 func (i *K8sInformer) handleQueueDelete(obj interface{}) {
-	logrus.Tracef("queue:%v", obj)
 	queue := obj.(*v1beta1.Queue)
 	if queue == nil || queue.Name == "default" || queue.Name == "root" {
 		return

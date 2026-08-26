@@ -76,7 +76,8 @@ scp -r scow-slurm-adapter config  slurm_mn:/adapter
 # 在slurm管理节点的部署目录/adapter中修改config目录下配置文件config.yaml的配置项
 vim config/config.yaml
 log:
-  level: "info"                                           # 日志级别，支持info、debug、trace级别        
+  level: "info"                                           # 日志级别，支持info、debug、trace级别
+  enableStdout: true                                       # 是否同时输出到标准输出
 
 # slurm 数据库配置
 mysql:
@@ -140,8 +141,8 @@ ps aux | grep [s]cow-slurm-adapter # 如果有输出则Slurm适配器进程存�
 
 ### **3.2 查看日志信息**
 ```bash
-# 在部署目录中查看server.log文件,分析日志信息
-less /adapter/server.log
+# 默认日志文件位于部署目录的 logs/server.log，分析日志信息
+less /adapter/logs/server.log
 ```
 
 ## **4 更新Slurm适配器**
@@ -160,4 +161,3 @@ less /adapter/server.log
   ```bash
   [root@manage01]# systemctl start adapter
   ```
-

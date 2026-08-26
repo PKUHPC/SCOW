@@ -3,10 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
@@ -62,20 +62,20 @@ func InitClient() {
 	serverAddr := fmt.Sprintf("%s:%s", CConfig.ControlMachine, CConfig.CraneCtldListenPort)
 	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatal("Cannot connect to CraneCtld: " + err.Error())
+		logrus.Fatalf("Cannot connect to CraneCtld: %v", err)
 	}
 	CraneCtld = craneProtos.NewCraneCtldClient(conn)
 
 	// 加载配置
 	MongoDBConfig, err = loadDBConfig(DefaultMongoDBPath)
 	if err != nil {
-		log.Fatalf("Loading configuration failed: %v", err)
+		logrus.Fatalf("Loading configuration failed: %v", err)
 	}
 
 	// 创建 MongoDB 客户端
 	client, err := createMongoClient(MongoDBConfig)
 	if err != nil {
-		log.Fatalf("Failed to create MongoDB client: %v", err)
+		logrus.Fatalf("Failed to create MongoDB client: %v", err)
 	}
 
 	MongoDBClient = client
@@ -145,12 +145,12 @@ func loadDBConfig(configPath string) (*DatabaseConfig, error) {
 func parseConfig(configFilePath string) *CraneConfig {
 	confFile, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	config := &CraneConfig{}
 	err = yaml.Unmarshal(confFile, config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	return config
 }

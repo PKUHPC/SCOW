@@ -12,6 +12,7 @@ import (
 
 	craneProtos "scow-adapters/gen/crane-ai"
 	protos "scow-adapters/gen/go"
+	"scow-adapters/pkg/common/accountsync"
 	ce "scow-adapters/pkg/common/error"
 	"scow-adapters/pkg/crane-ai/client"
 	sau "scow-adapters/pkg/crane-ai/services/account/sync_account_user"
@@ -260,7 +261,7 @@ func (s *ServerAccount) DeleteAccount(ctx context.Context, in *protos.DeleteAcco
 		logrus.Errorf("DeleteAccount err: %v", err)
 		return nil, ce.RichError(codes.Internal, "CRANE_RUNCOMMAND_ERROR", err.Error())
 	}
-	logrus.Tracef("DeleteAccount job info: %v", jobInfo)
+	logrus.Tracef("DeleteAccount running job info for account %s: %v", in.AccountName, jobInfo)
 
 	runningJobs := len(jobInfo)
 	if runningJobs != 0 {
@@ -552,47 +553,49 @@ func (s *ServerAccount) GetAllAccountsWithUsersAndBlockedDetails(ctx context.Con
 		})
 	}
 
-	logrus.Tracef("GetAllAccountsWithUsersAndBlockedDetails response: %v", acctInfo)
+	logrus.Tracef("GetAllAccountsWithUsersAndBlockedDetails finished, accounts count: %d", len(acctInfo))
 	return &protos.GetAllAccountsWithUsersAndBlockedDetailsResponse{Accounts: acctInfo}, nil
 }
 
 func (s *ServerAccount) SyncAccountUserInfo(ctx context.Context, in *protos.SyncAccountUserInfoRequest) (*protos.SyncAccountUserInfoResponse, error) {
 	var syncResults []*protos.SyncAccountUserInfoResponse_SyncOperationResult
 	start := time.Now()
-	logrus.Infof("Start SyncAccountUserInfo, SyncAccounts: %v", in.SyncAccounts)
-	logrus.Infof("Start SyncAccountUserInfo, Timeout Millisecond: %v", *in.TimeoutMilliseconds)
+	syncID := in.GetSessionId()
+	timeoutMs := in.GetTimeoutMilliseconds()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeoutMs)*time.Millisecond)
+	defer cancel()
+	ctx = accountsync.WithSyncID(ctx, syncID)
+	summary := accountsync.NewSummary(len(in.GetSyncAccounts()))
+	logrus.Infof("SyncAccountUserInfo started: syncId=%q accounts=%d timeoutMs=%d",
+		syncID, summary.AccountsRequested(), timeoutMs)
 
 	if in.SyncAccounts == nil || len(in.SyncAccounts) == 0 {
-		logrus.Infof("SyncAccountUserInfo SyncAccounts is nil, no synchronization is required")
+		logrus.Info(summary.LogMessage(syncID, true, "none", time.Since(start).Milliseconds(), timeoutMs))
 		return nil, nil
 	}
 
-	// 设置带超时的context
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithTimeout(ctx, time.Duration(*in.TimeoutMilliseconds)*time.Millisecond)
-	defer cancel()
-
 	isCompleted := true
+	incompleteReason := "none"
 
 outerLoop:
-	for i, syncAccount := range in.SyncAccounts {
+	for _, syncAccount := range in.SyncAccounts {
 		// 每次循环前检查超时
 		select {
 		case <-ctx.Done():
-			logrus.Warnf("Sync timeout，%d/%d accounts processed", i, len(in.SyncAccounts))
 			isCompleted = false
+			incompleteReason = ctx.Err().Error()
 			break outerLoop // 超时了，跳出循环不在执行，返回已处理的结果和未完成状态
 		default:
 		}
 
-		logrus.Tracef("SyncAccountUserInfo, sync index: %v", i)
 		if *syncAccount.Deleted {
-			message := fmt.Sprintf("account %v is deleted, no sync required", syncAccount.AccountName)
-			logrus.Infof("[SyncAccountUser] %v", message)
+			summary.SkipAccount(syncAccount)
+			accountsync.Tracef(ctx, "account=%s expectedDeleted=true action=skip", syncAccount.AccountName)
 			continue
 		}
 
-		results := sau.SyncAccountUser(syncAccount)
+		results, stats := sau.SyncAccountUser(ctx, syncAccount)
+		summary.RecordAccount(results, stats)
 		for _, result := range results {
 			if result == nil {
 				continue
@@ -601,17 +604,12 @@ outerLoop:
 		}
 	}
 
-	// 等待结果收集完成或超时
+	elapsedMs := time.Since(start).Milliseconds()
+	message := summary.LogMessage(syncID, isCompleted, incompleteReason, elapsedMs, timeoutMs)
 	if isCompleted {
-		// 计算耗时（毫秒）
-		elapsed := time.Since(start).Milliseconds()
-		logrus.Infof("SyncAccountUserInfo completed, used time: %d, timelimit: %d", elapsed, *in.TimeoutMilliseconds)
-		logrus.Infof("SyncAccountUserInfo completed, results: %d", len(syncResults))
+		logrus.Info(message)
 	} else {
-		// 计算耗时（毫秒）
-		elapsed := time.Since(start).Milliseconds()
-		logrus.Infof("SyncAccountUserInfo timeout, used time: %d, timelimit: %d", elapsed, *in.TimeoutMilliseconds)
-		logrus.Warnf("SyncAccountUserInfo timeout, returning %d completed results", len(syncResults))
+		logrus.Warn(message)
 	}
 
 	return &protos.SyncAccountUserInfoResponse{SyncResults: syncResults, CompletelyExecuted: isCompleted}, nil

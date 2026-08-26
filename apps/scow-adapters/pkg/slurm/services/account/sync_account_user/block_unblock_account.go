@@ -6,9 +6,8 @@ import (
 	"strings"
 
 	pb "scow-adapters/gen/go"
+	"scow-adapters/pkg/common/accountsync"
 	"scow-adapters/pkg/slurm/utils"
-
-	"github.com/sirupsen/logrus"
 )
 
 // 同步账户的封锁情况
@@ -29,8 +28,8 @@ func syncAccountBlockStatus(ctx context.Context, syncData *pb.SyncAccountInfo) *
 func BlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
 	if syncData.WhitelistId != nil {
 		message := fmt.Sprintf("The account is in the whitelist and does not need to be blocked")
-		logrus.Infof("[SyncAccountUser], %v", message)
-		return BlockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Tracef(ctx, "operation=blockAccount account=%s whitelisted=true action=skip", syncData.AccountName)
+		return accountsync.BlockAccountFailedOperation(syncData.AccountName, message)
 	}
 
 	account := syncData.AccountName
@@ -40,31 +39,31 @@ func BlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncAcc
 	parentBlocked, _, parentFound, err := utils.GetAccountGroupBlockState(account)
 	if err != nil {
 		message := fmt.Sprintf("block account %s failed to get account association status: %v", account, err)
-		logrus.Errorf("[SyncAccountUser], %v", message)
-		return BlockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Errorf(ctx, "operation=blockAccount account=%s expectedBlocked=true error=%v", account, err)
+		return accountsync.BlockAccountFailedOperation(syncData.AccountName, message)
 	}
 	if !parentFound {
 		message := fmt.Sprintf("block account failed, account association not found: %s", account)
-		logrus.Errorf("[SyncAccountUser], %v", message)
-		return BlockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Errorf(ctx, "operation=blockAccount account=%s expectedBlocked=true associationFound=false error=%s", account, message)
+		return accountsync.BlockAccountFailedOperation(syncData.AccountName, message)
 	}
 	if parentBlocked {
 		// Slurm 实际状态已经与 SCOW 一致，本轮没有发生修改，不向 SCOW 重复上报“封锁成功”。
-		logrus.Infof("[SyncAccountUser], account %s is already blocked, no synchronization is required", account)
+		accountsync.Tracef(ctx, "operation=blockAccount account=%s expectedBlocked=true actualBlocked=true associationFound=true action=none", account)
 		return nil
 	}
 
 	// 把父 association 的 GrpJobs、GrpSubmitJobs 设为 0。父级限制会同时约束账户下
 	// 现有和以后新增的 association，因此无需逐分区执行封锁。
+	accountsync.Tracef(ctx, "operation=blockAccount account=%s expectedBlocked=true actualBlocked=false associationFound=true action=block", account)
 	if err := utils.BlockWholeAccountUseAssociation(ctx, account); err != nil {
 		message := fmt.Sprintf("block account %s failed: %v", account, err)
-		logrus.Errorf("[SyncAccountUser], %v", message)
-		return BlockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Errorf(ctx, "operation=blockAccount account=%s expectedBlocked=true actualBlocked=false error=%v", account, err)
+		return accountsync.BlockAccountFailedOperation(syncData.AccountName, message)
 	}
 
-	message := fmt.Sprintf("block account: %v success", syncData.AccountName)
-	logrus.Infof("[SyncAccountUser], %v", message)
-	return BlockAccountSuccessOperation(syncData.AccountName)
+	accountsync.Debugf(ctx, "operation=blockAccount account=%s action=block result=success", account)
+	return accountsync.BlockAccountSuccessOperation(syncData.AccountName)
 }
 
 func UnBlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
@@ -75,8 +74,8 @@ func UnBlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncA
 	changed, err := reconcileAccountPartitions(ctx, syncData)
 	if err != nil {
 		message := fmt.Sprintf("unblock account %s failed to reconcile partition permissions: %v", account, err)
-		logrus.Errorf("[SyncAccountUser], %v", message)
-		return UnblockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Errorf(ctx, "operation=unblockAccount account=%s expectedBlocked=false error=%v", account, err)
+		return accountsync.UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
 
 	// 恢复记录用于找回原值，但不能作为是否解封的唯一依据：旧版本可能已经把
@@ -84,32 +83,38 @@ func UnBlockAccount(ctx context.Context, syncData *pb.SyncAccountInfo) *pb.SyncA
 	wholeBlocked, err := utils.IsWholeAccountBlockRecorded(account)
 	if err != nil {
 		message = fmt.Sprintf("unblock account failed, get whole account status failed: %v", err)
-		return UnblockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Errorf(ctx, "operation=unblockAccount account=%s expectedBlocked=false error=%v", account, err)
+		return accountsync.UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
 	_, parentHasBlockLimit, parentFound, err := utils.GetAccountGroupBlockState(account)
 	if err != nil {
 		message = fmt.Sprintf("unblock account failed, get account association status failed: %v", err)
-		return UnblockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Errorf(ctx, "operation=unblockAccount account=%s expectedBlocked=false error=%v", account, err)
+		return accountsync.UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
 	if !parentFound {
 		message = fmt.Sprintf("unblock account failed, account association not found: %s", account)
-		return UnblockAccountFailedOperation(syncData.AccountName, message)
+		accountsync.Errorf(ctx, "operation=unblockAccount account=%s expectedBlocked=false associationFound=false error=%s", account, message)
+		return accountsync.UnblockAccountFailedOperation(syncData.AccountName, message)
 	}
 	if wholeBlocked || parentHasBlockLimit {
+		accountsync.Tracef(ctx, "operation=unblockAccount account=%s expectedBlocked=false actualBlocked=true recorded=%t action=unblock",
+			account, wholeBlocked)
 		if err := utils.UnblockWholeAccountUseAssociation(ctx, account); err != nil {
 			message = fmt.Sprintf("unblock account failed: %v", err)
-			return UnblockAccountFailedOperation(syncData.AccountName, message)
+			accountsync.Errorf(ctx, "operation=unblockAccount account=%s expectedBlocked=false actualBlocked=true error=%v", account, err)
+			return accountsync.UnblockAccountFailedOperation(syncData.AccountName, message)
 		}
 		changed = true
 	}
 
 	if !changed {
+		accountsync.Tracef(ctx, "operation=unblockAccount account=%s expectedBlocked=false actualBlocked=false action=none", account)
 		return nil
 	}
 
-	message = fmt.Sprintf("unblock account: %v success", syncData.AccountName)
-	logrus.Infof("[SyncAccountUser], %v", message)
-	return UnblockAccountSuccessOperation(syncData.AccountName)
+	accountsync.Debugf(ctx, "operation=unblockAccount account=%s action=unblock result=success", account)
+	return accountsync.UnblockAccountSuccessOperation(syncData.AccountName)
 }
 
 // needsPartitionReconciliation 比较 SCOW 的分区授权期望和 Slurm association 实际限制。
@@ -162,15 +167,25 @@ func reconcileAccountPartitions(ctx context.Context, syncData *pb.SyncAccountInf
 		_, shouldAllow := desiredAllowed[strings.ToLower(partition)]
 		actual := actualByLowerName[strings.ToLower(partition)]
 		if !needsPartitionReconciliation(shouldAllow, actual) {
+			accountsync.Tracef(ctx, "operation=reconcilePartition account=%s partition=%s expectedAllowed=%t actualAssociation=%t actualBlocked=%t actualHasBlockLimit=%t action=none",
+				account, partition, shouldAllow, actual.HasAssociations, actual.Blocked, actual.HasBlockLimit)
 			continue
 		}
 
 		if shouldAllow {
+			accountsync.Tracef(ctx, "operation=reconcilePartition account=%s partition=%s expectedAllowed=true actualAssociation=%t actualBlocked=%t actualHasBlockLimit=%t action=unblock",
+				account, partition, actual.HasAssociations, actual.Blocked, actual.HasBlockLimit)
 			if err := utils.UnblockAccountUseAssociation(ctx, account, partition); err != nil {
 				return changed, fmt.Errorf("unblock partition %s failed: %w", partition, err)
 			}
-		} else if err := utils.BlockAccountUseAssociation(ctx, account, partition); err != nil {
-			return changed, fmt.Errorf("block partition %s failed: %w", partition, err)
+			accountsync.Debugf(ctx, "operation=reconcilePartition account=%s partition=%s action=unblock result=success", account, partition)
+		} else {
+			accountsync.Tracef(ctx, "operation=reconcilePartition account=%s partition=%s expectedAllowed=false actualAssociation=%t actualBlocked=%t actualHasBlockLimit=%t action=block",
+				account, partition, actual.HasAssociations, actual.Blocked, actual.HasBlockLimit)
+			if err := utils.BlockAccountUseAssociation(ctx, account, partition); err != nil {
+				return changed, fmt.Errorf("block partition %s failed: %w", partition, err)
+			}
+			accountsync.Debugf(ctx, "operation=reconcilePartition account=%s partition=%s action=block result=success", account, partition)
 		}
 		changed = true
 	}

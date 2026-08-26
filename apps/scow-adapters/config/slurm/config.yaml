@@ -1,5 +1,6 @@
 log:
   level: "info"
+  enableStdout: true
 
 # slurm 数据库配置
 mysql:
@@ -18,7 +19,7 @@ service:
 # slurm 默认Qos设置
 slurm:
   defaultqos: normal
-  slurmpath: /usr       (比如slurm的bin路径为/usr/local/bin/sinfo，该值为/usr/local)
+  slurmpath: /usr       #(比如slurm的bin路径为/usr/local/bin/sinfo，该值为/usr/local)
 
 # 如果不填写partitions，则通过调度器获取分区信息，且没有分区描述信息
 # 如果partitions填写了，适配器返回已经填写的分区的信息，其他没有填写的分区，即使在调度器里有，也不返回

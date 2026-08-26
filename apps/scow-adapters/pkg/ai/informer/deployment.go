@@ -29,7 +29,8 @@ func (i *K8sInformer) handleDeploymentUpdate(obj interface{}) {
 		return
 	}
 	jobName := deploy.Name
-	logrus.Tracef("handle deployment: %v", deploy)
+	logrus.Tracef("handle deployment update: namespace=%s, name=%s, resourceVersion=%s",
+		deploy.Namespace, deploy.Name, deploy.ResourceVersion)
 	if job, err = utils.GetJobByName(jobName); err != nil {
 		logrus.Errorf("DB select jobName %s error: %v", jobName, err)
 		return

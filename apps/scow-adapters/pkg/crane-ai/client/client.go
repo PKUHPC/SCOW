@@ -5,12 +5,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
@@ -92,13 +92,13 @@ func InitClient() {
 		if CConfig.TLS.UserTlsCertPath == "" {
 			home, homeErr := os.UserHomeDir()
 			if homeErr != nil {
-				log.Fatal(homeErr)
+				logrus.Fatal(homeErr)
 			}
 			CConfig.TLS.UserTlsCertPath = filepath.Join(home, ".config/crane")
 		}
 		tlsConfig, tlsErr := readTLSConfig(CConfig)
 		if tlsErr != nil {
-			log.Fatalf("Failed to load user certificate: %v", tlsErr)
+			logrus.Fatalf("Failed to load user certificate: %v", tlsErr)
 		}
 		conn, err = grpc.NewClient(serverAddr,
 			grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
@@ -115,20 +115,20 @@ func InitClient() {
 		)
 	}
 	if err != nil {
-		log.Fatal("Cannot connect to CraneCtld: " + err.Error())
+		logrus.Fatalf("Cannot connect to CraneCtld: %v", err)
 	}
 	CraneCtld = craneProtos.NewCraneCtldClient(conn)
 
 	// 加载配置
 	MongoDBConfig, err = loadDBConfig(DefaultMongoDBPath)
 	if err != nil {
-		log.Fatalf("Loading configuration failed: %v", err)
+		logrus.Fatalf("Loading configuration failed: %v", err)
 	}
 
 	// 创建 MongoDB 客户端
 	client, err := createMongoClient(MongoDBConfig)
 	if err != nil {
-		log.Fatalf("Failed to create MongoDB client: %v", err)
+		logrus.Fatalf("Failed to create MongoDB client: %v", err)
 	}
 
 	MongoDBClient = client
@@ -228,12 +228,12 @@ func loadDBConfig(configPath string) (*DatabaseConfig, error) {
 func parseConfig(configFilePath string) *CraneConfig {
 	confFile, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	config := &CraneConfig{}
 	err = yaml.Unmarshal(confFile, config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	return config
 }

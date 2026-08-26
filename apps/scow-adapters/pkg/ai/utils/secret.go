@@ -15,6 +15,7 @@ import (
 
 // CreateImageRegistrySecret creates a docker-registry Secret
 func CreateImageRegistrySecret(namespace, secretName, registry, username, password string) error {
+	logrus.Infof("creating secret %s for user %s", secretName, username)
 	clientSet, err := GetK8sClient()
 	if err != nil {
 		logrus.Errorf("GetK8sClient err: %v", err)

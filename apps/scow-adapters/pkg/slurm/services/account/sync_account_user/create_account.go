@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
-
 	pb "scow-adapters/gen/go"
+	"scow-adapters/pkg/common/accountsync"
 	"scow-adapters/pkg/slurm/utils"
 )
 
@@ -15,25 +14,30 @@ func createAccount(ctx context.Context, syncData *pb.SyncAccountInfo) (*pb.SyncA
 	// 如果账户为空，直接返回
 	if syncData.AccountName == "" {
 		message := fmt.Sprintf("account %v is nil", syncData.AccountName)
-		logrus.Errorf("[SyncAccountUser] %v", message)
-		return CreateAccountFailedOperation(syncData.AccountName, message), fmt.Errorf("account %v is nil", syncData.AccountName)
+		accountsync.Errorf(ctx, "operation=createAccount account=%s error=%s", syncData.AccountName, message)
+		return accountsync.CreateAccountFailedOperation(syncData.AccountName, message), fmt.Errorf("account %v is nil", syncData.AccountName)
 	}
 
 	exist, err := utils.SelectAccountExists(syncData.AccountName)
 	if err != nil {
 		message := fmt.Sprintf("get account in database failed: %v", err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
-		return CreateAccountFailedOperation(syncData.AccountName, message), fmt.Errorf("get account in database failed %v", syncData.AccountName)
+		accountsync.Errorf(ctx, "operation=createAccount account=%s error=%s", syncData.AccountName, message)
+		return accountsync.CreateAccountFailedOperation(syncData.AccountName, message), fmt.Errorf("get account in database failed %v", syncData.AccountName)
 	}
+	action := "create"
+	if exist {
+		action = "none"
+	}
+	accountsync.Tracef(ctx, "operation=createAccount account=%s expectedExists=true actualExists=%t action=%s",
+		syncData.AccountName, exist, action)
 	if !exist {
 		if err = utils.CreateAccount(ctx, syncData.AccountName); err != nil {
 			message := fmt.Sprintf("create account %v failed: %v", syncData.AccountName, err)
-			logrus.Errorf("[SyncAccountUser] %v", message)
-			return CreateAccountFailedOperation(syncData.AccountName, message), err
+			accountsync.Errorf(ctx, "operation=createAccount account=%s expectedExists=true actualExists=false error=%v", syncData.AccountName, err)
+			return accountsync.CreateAccountFailedOperation(syncData.AccountName, message), err
 		}
-		message := fmt.Sprintf("create account %v success", syncData.AccountName)
-		logrus.Infof("[SyncAccountUser] %v", message)
-		result = CreateAccountSuccessOperation(syncData.AccountName)
+		accountsync.Debugf(ctx, "operation=createAccount account=%s action=create result=success", syncData.AccountName)
+		result = accountsync.CreateAccountSuccessOperation(syncData.AccountName)
 	}
 
 	return result, nil

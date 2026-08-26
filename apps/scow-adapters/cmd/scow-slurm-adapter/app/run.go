@@ -40,9 +40,11 @@ var (
 )
 
 func run() {
-	fmt.Printf("config: %v\n", config.SlurmValue)
 	// 初始化 日志及数据库和slurm命令
-	log.InitLogger(log.ParseLogLevel(config.SlurmValue.LogConfig.Level), config.SlurmValue.LogConfig.FilePath)
+	log.InitLogger(log.ParseLogLevel(config.SlurmValue.LogConfig.Level), config.SlurmValue.LogConfig.FilePath, config.SlurmValue.LogConfig.EnableStdout)
+	logrus.Infof("Slurm adapter configuration loaded: listen_addr=%s, monitor_port=%d, cluster=%s, tls_enabled=%t, log_level=%s, json_enabled=%t",
+		config.SlurmValue.Service.Addr, config.SlurmValue.Monitor.Port, config.SlurmValue.MySQLConfig.ClusterName,
+		config.SlurmValue.Ssl.Enabled, config.SlurmValue.LogConfig.Level, config.SlurmValue.Json.Enabled)
 	client.InitSlurmClient()
 	// 创建一个通道用于程序退出信号
 	shutdown := make(chan struct{})
@@ -96,19 +98,19 @@ func run() {
 		logrus.Tracef("caCertPath, adapterCertPath, adapterPrivateKeyPath: %s, %s, %s", caCertPath, adapterCertPath, adapterPrivateKeyPath)
 		pair, err := tls.LoadX509KeyPair(adapterCertPath, adapterPrivateKeyPath)
 		if err != nil {
-			fmt.Println("LoadX509KeyPair error", err)
+			logrus.Errorf("LoadX509KeyPair failed: %v", err)
 			return
 		}
 		// 创建一组根证书
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(caCertPath)
 		if err != nil {
-			fmt.Println("read ca pem error ", err)
+			logrus.Errorf("Read CA PEM failed: %v", err)
 			return
 		}
 		// 解析证书
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
-			fmt.Println("AppendCertsFromPEM error ")
+			logrus.Error("AppendCertsFromPEM failed")
 			return
 		}
 		cred := credentials.NewTLS(&tls.Config{

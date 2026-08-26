@@ -52,7 +52,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 		gpuType string
 		err     error
 	)
-	logrus.Infof("Received request SubmitJob: %v", in)
+	logrus.Infof("Received request SubmitJob, job: %s, user: %s, account: %s, partition: %s, nodes: %d", in.JobName, in.UserId, in.Account, in.Partition, in.NodeCount)
 	if len(in.ExtraOptions) == 0 || (in.ExtraOptions[0] != utils.APP && in.ExtraOptions[0] != utils.Train) {
 		return nil, ce.RichError(codes.Unimplemented, "HPC_JOBS_UNSUPPORTED", "AI adapter does not support HPC jobs.")
 	}
@@ -156,10 +156,14 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 	// 提交到k8s失败，需要删除数据库信息
 	if err != nil {
 		go func() {
-			err = client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
-			logrus.Infof("delete DB jobname %s, err: %v", jobTable.NewJobName, err)
+			deleteErr := client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
+			if deleteErr != nil {
+				logrus.Errorf("delete DB job %s after Kubernetes submission failed: %v", jobTable.NewJobName, deleteErr)
+			} else {
+				logrus.Debugf("deleted DB job %s after Kubernetes submission failed", jobTable.NewJobName)
+			}
 		}()
-		logrus.Infof("SubmitJob %s to k8s failed, err: %s", newJobName, err)
+		logrus.Errorf("SubmitJob %s to Kubernetes failed: %v", newJobName, err)
 		return nil, ce.RichError(codes.Internal, "SubmitJob_K8s_Failed", err.Error())
 	}
 	logrus.Infof("SubmitJob success, job: %v, job index: %v", in.JobName, jobTable.JobDBInx)
@@ -182,7 +186,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 		values          []interface{}
 		queryJobs       *gorm.DB
 	)
-	logrus.Infof("Received request GetJobs: %v", in)
+	logrus.Infof("Received request GetJobs, fields: %v, job types: %v, has filter: %t", in.Fields, in.JobTypes, in.Filter != nil)
 
 	if len(in.JobTypes) == 0 {
 		return nil, ce.RichError(codes.Unimplemented, "HPC_JOBS_UNSUPPORTED", "AI adapter does not support HPC jobs.")
@@ -274,7 +278,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 			}
 			totalNum := uint32(totalCount)
-			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			logrus.Tracef("GetJobs finished, jobs count: %d, total count: %d, fields: %v", len(jobDetail), totalNum, fields)
 			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
 		} else {
 			if err := queryJobs.Find(&jobs).Error; err != nil {
@@ -288,7 +292,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 			}
 			totalNum := uint32(totalCount)
-			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			logrus.Tracef("GetJobs finished, jobs count: %d, total count: %d, fields: %v", len(jobDetail), totalNum, fields)
 			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
 		}
 	} else {
@@ -317,7 +321,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 			}
 			totalNum := uint32(totalCount)
-			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			logrus.Tracef("GetJobs finished, jobs count: %d, total count: %d, fields: %v", len(jobDetail), totalNum, fields)
 			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
 		} else {
 			if err := queryJobs.Find(&jobs).Error; err != nil {
@@ -331,7 +335,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *pb.GetJobsRequest) (*pb.Get
 				return nil, ce.RichError(codes.Internal, "SQL_QUERY_FAILED", err.Error())
 			}
 			totalNum := uint32(totalCount)
-			logrus.Tracef("GetJobs Jobs: %v, total: %v", jobDetail, totalNum)
+			logrus.Tracef("GetJobs finished, jobs count: %d, total count: %d, fields: %v", len(jobDetail), totalNum, fields)
 			return &pb.GetJobsResponse{Jobs: jobDetail, TotalCount: &totalNum}, nil
 		}
 	}
@@ -433,7 +437,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 			TensorBoardInfo:  TensorBoardInfo,
 			UniqueJobName:    jobInfo.NewJobName,
 		}
-		logrus.Infof("GetJobById Response: %v", jobInfoDetail)
+		logrus.Infof("GetJobById finished, job: %s, pods: %d, events: %d", jobInfo.NewJobName, len(jobInfoDetail.Pods), len(jobInfoDetail.Events))
 		return &pb.GetJobByIdResponse{Job: jobInfoDetail}, nil
 	}
 
@@ -501,7 +505,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 			jobInfoDetail.UniqueJobName = jobInfo.NewJobName
 		}
 	}
-	logrus.Infof("GetJobById Response: %v", jobInfoDetail)
+	logrus.Infof("GetJobById finished, job: %s, pods: %d, events: %d", jobInfo.NewJobName, len(jobInfoDetail.Pods), len(jobInfoDetail.Events))
 	return &pb.GetJobByIdResponse{Job: jobInfoDetail}, nil
 }
 
@@ -905,8 +909,12 @@ func (s *ServerJob) SubmitInferJob(ctx context.Context, in *pb.SubmitInferJobReq
 	_, err = inference.SubmitInference(in, newJobName, workdir)
 	if err != nil {
 		go func() {
-			err = client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
-			logrus.Infof("delete DB jobname %s, err: %v", jobTable.NewJobName, err)
+			deleteErr := client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
+			if deleteErr != nil {
+				logrus.Errorf("delete DB job %s after inference submission failed: %v", jobTable.NewJobName, deleteErr)
+			} else {
+				logrus.Debugf("deleted DB job %s after inference submission failed", jobTable.NewJobName)
+			}
 		}()
 		logrus.Errorf("SubmitInferJob failed %v", err)
 		return nil, ce.RichError(codes.Internal, "SUBMIT_INFERENCE_JOB_FAILED", err.Error())
@@ -1050,7 +1058,7 @@ func (s *ServerJob) StreamJobShell(stream pb.JobService_StreamJobShellServer) er
 				break
 			}
 			if err := s.handleClientRequest(req, exec, stream); err != nil {
-				logrus.Infof("[StreamJobShell] handle client request failed: %v", err)
+				logrus.Errorf("[StreamJobShell] handle client request failed: %v", err)
 				return ce.RichError(codes.Internal, "STREAM_JOB_SHELL_FAILED", err.Error())
 			}
 
@@ -1064,7 +1072,7 @@ func (s *ServerJob) StreamJobShell(stream pb.JobService_StreamJobShellServer) er
 					Data: &pb.StreamJobShellResponse_DataOutput{Data: data},
 				},
 			}); err != nil {
-				logrus.Infof("[StreamJobShell] send out info to client failed: %v", err)
+				logrus.Errorf("[StreamJobShell] send output to client failed: %v", err)
 				return ce.RichError(codes.Internal, "STREAM_JOB_SHELL_FAILED", err.Error())
 			}
 
@@ -1078,12 +1086,12 @@ func (s *ServerJob) StreamJobShell(stream pb.JobService_StreamJobShellServer) er
 					Data: &pb.StreamJobShellResponse_DataOutput{Data: data},
 				},
 			}); err != nil {
-				logrus.Infof("[StreamJobShell] send error info to client failed: %v", err)
+				logrus.Errorf("[StreamJobShell] send error output to client failed: %v", err)
 				return ce.RichError(codes.Internal, "STREAM_JOB_SHELL_FAILED", err.Error())
 			}
 
 		case err := <-errChan:
-			logrus.Infof("[StreamJobShell] exec shell failed: %v", err)
+			logrus.Errorf("[StreamJobShell] execute shell failed: %v", err)
 			return ce.RichError(codes.Internal, "STREAM_JOB_SHELL_FAILED", err.Error())
 		}
 

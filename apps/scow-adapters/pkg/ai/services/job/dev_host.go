@@ -99,10 +99,14 @@ func (s *ServerJob) CreateDevHost(ctx context.Context, in *pb.CreateDevHostReque
 	err = DevHostVCJob(in, newJobName, in.WorkingDirectory)
 	if err != nil {
 		go func() {
-			err = client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
-			logrus.Infof("delete DB jobname %s, err: %v", jobTable.NewJobName, err)
+			deleteErr := client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
+			if deleteErr != nil {
+				logrus.Errorf("delete DB job %s after dev host submission failed: %v", jobTable.NewJobName, deleteErr)
+			} else {
+				logrus.Debugf("deleted DB job %s after dev host submission failed", jobTable.NewJobName)
+			}
 		}()
-		logrus.Infof("Submit devHost %s to k8s failed, err: %s", newJobName, err)
+		logrus.Errorf("Submit devHost %s to Kubernetes failed: %v", newJobName, err)
 		return nil, ce.RichError(codes.Internal, "Submit_DevHost_K8s_Failed", err.Error())
 	}
 	return &pb.CreateDevHostResponse{JobId: uint32(jobTable.JobDBInx)}, nil

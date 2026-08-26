@@ -77,6 +77,7 @@ configMap:
   config:
     log:
       level: "info"
+      enableStdout: true
       # filePath 由 hostPathMounts.containerLogFile 自动注入，无需在此配置
 
     dbconfig:

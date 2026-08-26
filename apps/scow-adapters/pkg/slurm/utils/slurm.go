@@ -236,7 +236,7 @@ func EnsureAccountUsersAssociationInPartition(ctx context.Context, account, part
 		return fmt.Errorf("get account associated users failed: %w", err)
 	}
 	if len(users) == 0 {
-		logrus.Infof("EnsureAccountUsersAssociationInPartition: no users found for account=%s, skip", account)
+		logrus.Tracef("EnsureAccountUsersAssociationInPartition: no users found for account=%s, skip", account)
 		return nil
 	}
 
@@ -262,9 +262,15 @@ func EnsureAccountUsersAssociationInPartition(ctx context.Context, account, part
 	}
 
 	if err := createUserAssociationsInAccountPartition(ctx, missingUsers, account, partition, partitionBlocked); err != nil {
-		return fmt.Errorf("create associations for users=%v account=%s partition=%s failed: %w", missingUsers, account, partition, err)
+		userSample := missingUsers
+		if len(userSample) > 5 {
+			userSample = userSample[:5]
+		}
+		return fmt.Errorf("create associations for users=%d sample=%v account=%s partition=%s failed: %w",
+			len(missingUsers), userSample, account, partition, err)
 	}
-	logrus.Infof("EnsureAccountUsersAssociationInPartition: created associations for users=%v account=%s partition=%s", missingUsers, account, partition)
+	logrus.Debugf("EnsureAccountUsersAssociationInPartition: created associations, users=%d account=%s partition=%s",
+		len(missingUsers), account, partition)
 	return nil
 }
 
@@ -1068,6 +1074,24 @@ func GetPartitionsInfoBySInfo() ([]*pb.PartitionInfo, error) {
 	}
 
 	var parts []*pb.PartitionInfo
+	var (
+		invalidPartitionElements int
+		invalidNodeInfos         int
+		invalidCoresInfos        int
+		invalidSinfoSamples      []string
+	)
+	const maxInvalidSinfoSamples = 5
+	addInvalidSinfoSample := func(partition, field, value string) {
+		if len(invalidSinfoSamples) >= maxInvalidSinfoSamples {
+			return
+		}
+		const maxSampleLength = 256
+		if len(value) > maxSampleLength {
+			value = value[:maxSampleLength] + "..."
+		}
+		invalidSinfoSamples = append(invalidSinfoSamples,
+			fmt.Sprintf("partition=%q field=%s value=%q", partition, field, value))
+	}
 
 	for _, partition := range partitions {
 		var (
@@ -1083,23 +1107,24 @@ func GetPartitionsInfoBySInfo() ([]*pb.PartitionInfo, error) {
 			return nil, fmt.Errorf("no sinfo result found for partition: %s", partition)
 		}
 
-		lines := strings.Split(stdout, "\n")
+		lines := strings.Split(strings.TrimSpace(stdout), "\n")
 		for _, line := range lines {
 			partitionElement := strings.TrimSpace(line)
 			if partitionElement == "" {
-				logrus.Warnf("Null partitionElement: %s", partitionElement)
 				continue
 			}
 			resultList := strings.Fields(partitionElement)
 			if len(resultList) != 7 {
-				logrus.Warnf("Invalid partitionElement: %s", partitionElement)
+				invalidPartitionElements++
+				addInvalidSinfoSample(partition, "partitionElement", partitionElement)
 				continue
 			}
 			partitionName = resultList[0]
 			state = resultList[4]
 			nodeInfo := strings.Split(resultList[6], "/")
 			if len(nodeInfo) != 4 {
-				logrus.Warnf("Invalid nodeInfo: %s", resultList[6])
+				invalidNodeInfos++
+				addInvalidSinfoSample(partition, "nodeInfo", resultList[6])
 				continue
 			}
 			runningNodesTmp, _ := strconv.Atoi(nodeInfo[0])
@@ -1113,7 +1138,8 @@ func GetPartitionsInfoBySInfo() ([]*pb.PartitionInfo, error) {
 			// cores
 			coresInfo := strings.Split(resultList[2], "/")
 			if len(coresInfo) != 4 {
-				logrus.Warnf("Invalid coresInfo: %s", resultList[2])
+				invalidCoresInfos++
+				addInvalidSinfoSample(partition, "coresInfo", resultList[2])
 				continue
 			}
 
@@ -1184,6 +1210,10 @@ func GetPartitionsInfoBySInfo() ([]*pb.PartitionInfo, error) {
 			UsageRatePercentage:   uint32(percentage),
 			PartitionStatus:       PartitionStatus,
 		})
+	}
+	if invalidPartitionElements+invalidNodeInfos+invalidCoresInfos > 0 {
+		logrus.Warnf("Ignored invalid sinfo output: partitionElements=%d nodeInfos=%d coresInfos=%d samples=%v",
+			invalidPartitionElements, invalidNodeInfos, invalidCoresInfos, invalidSinfoSamples)
 	}
 	return parts, nil
 }
@@ -1424,7 +1454,7 @@ func CheckNodeExists(nodeName string) (bool, error) {
 			pattern := regexp.MustCompile(`Node.*not found`)
 			matched := pattern.MatchString(stdout)
 			if matched { // Node node1 not found
-				logrus.Errorf("scontrol show node failed: %v, output: %s", err, stdout)
+				logrus.Warnf("scontrol show node reported node %s not found: %s", nodeName, strings.TrimSpace(stdout))
 				return false, nil
 			}
 			logrus.Errorf("show nodes failed (exit %d), stdout: %s, stderr: %s", exitCode, stdout, strings.TrimSpace(stderr))

@@ -88,7 +88,7 @@ func (pc *PriorityClass) Create() error {
 			exists = true
 		} else {
 			if err = k8sClientSet.SchedulingV1().PriorityClasses().Delete(context.TODO(), pc.Name, metav1.DeleteOptions{}); err != nil {
-				logrus.Infof("PriorityClass %s delete failed: %v", pc.Name, err)
+				logrus.Errorf("PriorityClass %s delete failed: %v", pc.Name, err)
 				return err
 			}
 			logrus.Infof("PriorityClass %s deleted successfully", pc.Name)
@@ -184,6 +184,6 @@ func IsK8sPreemptionEnabled() bool {
 		logrus.Errorf("yaml unmarshal error: %v", err)
 		return false
 	}
-	logrus.Infof("volcano actions: %v", schedulerConfig.Actions)
+	logrus.Infof("volcano scheduler actions: %v", schedulerConfig.Actions)
 	return strings.Contains(schedulerConfig.Actions, "preempt")
 }

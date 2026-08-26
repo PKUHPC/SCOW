@@ -83,7 +83,11 @@ func CreateJobWithGpuQuotaCheck(jobTable *models.JobTable, submitJobInfo *Submit
 	submitJobInfo.WorkDir = jobTable.WorkDir
 	if err := SaveJobSubmitInfoToFile(submitJobInfo); err != nil {
 		deleteErr := client.DB.Where("job_db_inx = ?", jobTable.JobDBInx).Delete(&models.JobTable{}).Error
-		logrus.Infof("delete DB jobname %s, err: %v", jobTable.NewJobName, deleteErr)
+		if deleteErr != nil {
+			logrus.Errorf("delete queued DB job %s after saving submit info failed: %v", jobTable.NewJobName, deleteErr)
+		} else {
+			logrus.Debugf("deleted queued DB job %s after saving submit info failed", jobTable.NewJobName)
+		}
 		return false, fmt.Errorf("save queued job submit info: %w", err)
 	}
 

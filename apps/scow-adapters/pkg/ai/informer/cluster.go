@@ -93,7 +93,7 @@ func (i *K8sInformer) clusterSync() {
 				resources[ResourceGPU]["request"] = 0
 				resources[ResourceGPU]["capacity"] = 0
 			}
-			logrus.Infof("resource: %v", resources)
+			logrus.Tracef("cluster resources collected: %v", resources)
 			time.Sleep(5 * time.Second)
 		}
 	}

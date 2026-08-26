@@ -384,17 +384,18 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 			jobInfo.SubmitTime = taskInfo.GetSubmitTime()
 		}
 	}
-	logrus.Tracef("[GetJobById] job info: %v", jobInfo)
+	logrus.Tracef("[GetJobById] finished, jobId: %d, name: %s, state: %s, fields: %v", jobInfo.JobId, jobInfo.Name, jobInfo.State, in.Fields)
 	return &protos.GetJobByIdResponse{Job: jobInfo}, nil
 }
 
 func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*protos.GetJobsResponse, error) {
 	var (
-		request  *craneProtos.QueryJobsInfoRequest
-		jobsInfo []*protos.JobInfo
-		totalNum uint32
+		request        *craneProtos.QueryJobsInfoRequest
+		jobsInfo       []*protos.JobInfo
+		totalNum       uint32
+		totalStepCount int
 	)
-	logrus.Tracef("Received request GetJobs: %v", in)
+	logrus.Tracef("Received request GetJobs, fields: %v, job types: %v, has filter: %t", in.Fields, in.JobTypes, in.Filter != nil)
 
 	if len(in.JobTypes) > 0 && hasUnsupportedJobTypes(in.JobTypes) {
 		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "Crane AI adapter does not support requested job types.")
@@ -412,8 +413,6 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 			OptionIncludeCompletedJobs: true,
 			NumLimit:                   99999999,
 		}
-
-		logrus.Tracef("request: %v", base)
 
 		if endTimeRange := in.Filter.EndTime; endTimeRange != nil {
 			interval := &craneProtos.TimeInterval{}
@@ -457,7 +456,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		}
 	}
 
-	logrus.Tracef("request: %v", request)
+	logrus.Tracef("GetJobs querying Crane: %v", request)
 	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
 	// logrus.Tracef("response: %v", response)
 
@@ -567,8 +566,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		timeLimitMinutes = getScowTimeLimitMinutes(job.GetTimeLimit())
 
 		if len(in.Fields) == 0 {
-			logrus.Tracef("GetJobs: job pod Info %v", job.GetPodMeta())
-			logrus.Tracef("GetJobs: job step Info %v", job.GetStepInfoList())
+			totalStepCount += len(job.GetStepInfoList())
 			pods := utils.ConvertStepInfoToPodInfo(job.Partition, job.Uid, job.GetUsername(), job.GetStepInfoList())
 			subJobInfo := &protos.JobInfo{}
 			subJobInfo = &protos.JobInfo{
@@ -594,7 +592,6 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				Pods:             pods,
 			}
 			jobsInfo = append(jobsInfo, subJobInfo)
-			logrus.Tracef("GetJobs: jobsInfo %v", subJobInfo)
 		} else {
 			subJobInfo := &protos.JobInfo{}
 			for _, field := range in.Fields {
@@ -644,18 +641,17 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				case "mem_req_mb":
 					subJobInfo.MemReqMb = memAllocMb
 				case "pods":
-					logrus.Tracef("GetJobs: job pod Info %v", job.GetPodMeta())
-					logrus.Tracef("GetJobs: job step Info %v", job.GetStepInfoList())
+					totalStepCount += len(job.GetStepInfoList())
 					pods := utils.ConvertStepInfoToPodInfo(job.Partition, job.Uid, job.GetUsername(), job.GetStepInfoList())
 					subJobInfo.Pods = pods
 				case "mem_alloc_mb":
 					subJobInfo.MemAllocMb = &memAllocMb
 				}
 			}
-			logrus.Tracef("GetJobs: jobsInfo %v", subJobInfo)
 			jobsInfo = append(jobsInfo, subJobInfo)
 		}
 	}
+	logrus.Tracef("GetJobs finished, jobs count: %d, total steps converted: %d, fields: %v", len(jobsInfo), totalStepCount, in.Fields)
 	if in.Sort != nil && len(jobsInfo) != 0 {
 		totalNum = uint32(len(jobsInfo))
 		var sortKey string
@@ -675,7 +671,6 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		return &protos.GetJobsResponse{Jobs: sortJobinfo, TotalCount: &totalNum}, nil
 	}
 	totalNum = uint32(len(jobsInfo))
-	logrus.Tracef("GetJobs jobs: %v", jobsInfo)
 	return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 }
 

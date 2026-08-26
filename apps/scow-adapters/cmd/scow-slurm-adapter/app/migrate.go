@@ -33,7 +33,7 @@ func init() {
 }
 
 func runMigrateBlockToAssociation() {
-	log.InitLogger(log.ParseLogLevel(config.SlurmValue.LogConfig.Level), config.SlurmValue.LogConfig.FilePath)
+	log.InitLogger(log.ParseLogLevel(config.SlurmValue.LogConfig.Level), config.SlurmValue.LogConfig.FilePath, config.SlurmValue.LogConfig.EnableStdout)
 
 	// 只初始化 DB 连接和 Slurm 路径，不触发 gormigrate（迁移 ID 已记录，无需重跑）
 	client.InitForMigrate()

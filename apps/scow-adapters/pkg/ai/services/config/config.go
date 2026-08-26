@@ -152,7 +152,7 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *pb.GetAva
 			CpuModel:                &queue.CPUModel,
 		})
 	}
-	logrus.Tracef("GetAvailablePartitions response: %v", parts)
+	logrus.Tracef("GetAvailablePartitions response for account %s: %v", in.AccountName, parts)
 	return &pb.GetAvailablePartitionsResponse{Partitions: parts}, nil
 }
 
@@ -186,7 +186,7 @@ func (s *ServerConfig) GetClusterNodesInfo(ctx context.Context, in *pb.GetCluste
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 	}
 
-	logrus.Debugf("GetClusterNodesInfo Response: %v", nodesInfo)
+	logrus.Debugf("GetClusterNodesInfo finished, nodes count: %d", len(nodesInfo))
 	return &pb.GetClusterNodesInfoResponse{Nodes: nodesInfo}, nil
 }
 

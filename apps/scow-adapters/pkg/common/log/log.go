@@ -47,7 +47,7 @@ func ParseLogLevel(level string) logrus.Level {
 	return lvl
 }
 
-func InitLogger(level logrus.Level, filePath string) {
+func InitLogger(level logrus.Level, filePath string, enableStdout bool) {
 	logrus.SetReportCaller(true)
 	// 设置日志输出格式为JSON
 	logrus.SetFormatter(&Formatter{})
@@ -55,7 +55,7 @@ func InitLogger(level logrus.Level, filePath string) {
 	logrus.SetLevel(level)
 
 	if filePath == "" {
-		filePath = "server.log"
+		filePath = filepath.Join("logs", "server.log")
 	}
 
 	// 创建一个 lumberjack.Logger，用于日志轮转配置
@@ -67,5 +67,9 @@ func InitLogger(level logrus.Level, filePath string) {
 		LocalTime:  true,     // 使用本地时间戳
 		Compress:   true,     // 是否压缩旧日志文件
 	}
-	logrus.SetOutput(io.MultiWriter(os.Stdout, logFile))
+	if enableStdout {
+		logrus.SetOutput(io.MultiWriter(os.Stdout, logFile))
+		return
+	}
+	logrus.SetOutput(logFile)
 }

@@ -23,7 +23,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		client.InitDB()
-		log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level), config.Value.LogConfig.FilePath)
+		log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level), config.Value.LogConfig.FilePath, config.Value.LogConfig.EnableStdout)
 
 		// 更新配额
 		if err := quota_cli.UpdateGpuQuota(accountName, quota); err != nil {

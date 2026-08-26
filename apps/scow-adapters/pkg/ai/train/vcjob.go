@@ -274,7 +274,7 @@ func (vj *VCJob) SetEnv(env []interface{}) {
 		"name":  "VC_GPU_NUM",
 		"value": strconv.Itoa(int(vj.In.GpuCount)),
 	})
-	logrus.Tracef("job %s env: %v", vj.JobName, vj.In.GetEnvVariables())
+	logrus.Tracef("job %s requested environment variables: %d", vj.JobName, len(vj.In.GetEnvVariables()))
 	if vj.In.GetEnvVariables() != nil {
 		for _, envMap := range vj.In.GetEnvVariables() {
 			env = append(env, map[string]string{
@@ -290,7 +290,7 @@ func (vj *VCJob) SetEnv(env []interface{}) {
 		})
 	}
 	vj.Env = env
-	logrus.Tracef("job %s env: %v", vj.JobName, env)
+	logrus.Tracef("job %s environment variables configured: %d", vj.JobName, len(env))
 }
 
 func (vj *VCJob) SetMetadataLabel() {
@@ -388,7 +388,6 @@ func (vj *VCJob) GetResource(gpu bool) (resources map[string]interface{}) {
 	logrus.Tracef("job %s gpu type: %s", vj.GetJobName(), vj.Accelerator)
 	resources["limits"].(map[string]interface{})[vj.Accelerator] = vj.In.GpuCount
 	resources["requests"].(map[string]interface{})[vj.Accelerator] = vj.In.GpuCount
-	logrus.Tracef("job %s gpu resource: %v", vj.GetJobName(), resources)
 	if config.Value.VGPU.Enabled && vj.Accelerator == utils.VGPUNum {
 		cores := config.Value.VGPU.Cores / config.Value.VGPU.Number
 		memory := config.Value.VGPU.Memory / config.Value.VGPU.Number
@@ -397,7 +396,7 @@ func (vj *VCJob) GetResource(gpu bool) (resources map[string]interface{}) {
 		resources["limits"].(map[string]interface{})[utils.VGPUMem] = memory
 		resources["requests"].(map[string]interface{})[utils.VGPUMem] = memory
 	}
-	logrus.Infof("gpu resource: %v", resources)
+	logrus.Infof("job %s GPU resources configured: %v", vj.GetJobName(), resources)
 	return resources
 }
 
@@ -584,9 +583,8 @@ func (vj *VCJob) GetUnstructured() (volcanoJob *unstructured.Unstructured, err e
 	vj.SetTmpLabel()
 	vj.SetNodeSelector()
 	logrus.Infof("vcjob %s train framework: %s", vj.GetJobName(), vj.JobType)
-	logrus.Infof(
-		"get vcjob info, volumesFinal: %v, volumeMountsFinal: %v, env: %v, metadatalable: %v, tmplable: %v",
-		vj.VolumesFinal, vj.VolumeMountsFinal, vj.Env, vj.MetaDataLabel, vj.TmpLabel)
+	logrus.Infof("vcjob %s configured, volumes: %v, mounts: %v, env count: %d, metadata labels: %v, task labels: %v",
+		vj.GetJobName(), vj.VolumesFinal, vj.VolumeMountsFinal, len(vj.Env), vj.MetaDataLabel, vj.TmpLabel)
 
 	// 获取不同任务类型的Unstructured
 	switch vj.JobType {
@@ -610,7 +608,7 @@ func (vj *VCJob) GetUnstructured() (volcanoJob *unstructured.Unstructured, err e
 	default:
 		volcanoJob = vj.GetMindSporeUnstructured()
 	}
-	logrus.Tracef("volcanoJob: %v", volcanoJob)
+	logrus.Tracef("vcjob %s Volcano job object built, framework: %s", vj.GetJobName(), vj.JobType)
 	return volcanoJob, nil
 }
 

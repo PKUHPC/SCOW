@@ -1,9 +1,9 @@
 package config
 
 import (
-	"log"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
 	cc "scow-adapters/pkg/common/config"
@@ -66,13 +66,13 @@ type SlurmConfCache struct {
 func ParseSlurmConfig(configFilePath string) *SlurmConfig {
 	confFile, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
-	config := &SlurmConfig{}
+	config := &SlurmConfig{LogConfig: cc.DefaultLogConfig()}
 
 	err = yaml.Unmarshal(confFile, config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	return config
 }

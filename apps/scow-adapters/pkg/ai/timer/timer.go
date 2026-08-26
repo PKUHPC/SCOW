@@ -49,7 +49,7 @@ func (tm *Timer) recoverTimersOnStartup() {
 	if err != nil {
 		logrus.Errorf("[RecoverTimers] Failed to get jobs info: %v", err)
 	}
-	logrus.Infof("Recover Timers For Jobs: %v On Startup", runningJobs)
+	logrus.Infof("Recover timers for running jobs on startup, jobs count: %d", len(runningJobs))
 	for _, job := range runningJobs {
 		// 长期运行的推理任务Timelimit是0，因此不需要启动定时器
 		if job.Timelimit == 0 {

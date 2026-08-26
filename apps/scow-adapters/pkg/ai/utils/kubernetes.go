@@ -155,7 +155,7 @@ func GetClusterNodesInfo(cli *k8sclient.Clientset, parts []*pb.PartitionInfo, al
 func AllActivePods(clientSet *k8sclient.Clientset) ([]corev1.Pod, error) {
 	podList, err := clientSet.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		logrus.Infof("failed to list pods: %s", err)
+		logrus.Errorf("failed to list pods: %s", err)
 		return nil, err
 	}
 	var activePods []corev1.Pod

@@ -47,10 +47,12 @@ var (
 )
 
 func runApp() {
-	fmt.Printf("config: %v\n", config.Value)
 	// 初始化 日志及数据库
 	aiclient.InitDB()
-	log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level), config.Value.LogConfig.FilePath)
+	log.InitLogger(log.ParseLogLevel(config.Value.LogConfig.Level), config.Value.LogConfig.FilePath, config.Value.LogConfig.EnableStdout)
+	logrus.Infof("AI adapter configuration loaded: grpc_port=%d, monitor_port=%d, cluster=%s, tls_enabled=%t, log_level=%s",
+		config.Value.AdapterPort, config.Value.Monitor.Port, config.Value.ClusterName, config.Value.Ssl.Enabled,
+		config.Value.LogConfig.Level)
 	// 创建一个通道用于程序退出信号
 	shutdown := make(chan struct{})
 	cleanupStop := make(chan struct{})
@@ -118,19 +120,19 @@ func runApp() {
 		logrus.Tracef("caCertPath, adapterCertPath, adapterPrivateKeyPath: %s, %s, %s", caCertPath, adapterCertPath, adapterPrivateKeyPath)
 		pair, err := tls.LoadX509KeyPair(adapterCertPath, adapterPrivateKeyPath)
 		if err != nil {
-			fmt.Println("LoadX509KeyPair error", err)
+			logrus.Errorf("LoadX509KeyPair failed: %v", err)
 			return
 		}
 		// 创建一组根证书
 		certPool := x509.NewCertPool()
 		ca, err := os.ReadFile(caCertPath)
 		if err != nil {
-			fmt.Println("read ca pem error ", err)
+			logrus.Errorf("Read CA PEM failed: %v", err)
 			return
 		}
 		// 解析证书
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
-			fmt.Println("AppendCertsFromPEM error ")
+			logrus.Error("AppendCertsFromPEM failed")
 			return
 		}
 		cred := credentials.NewTLS(&tls.Config{

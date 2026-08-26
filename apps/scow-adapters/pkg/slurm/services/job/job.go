@@ -251,7 +251,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 			ElapsedSeconds:   &elapsedSeconds,
 			GpusAlloc:        &gpusAlloc,
 		}
-		logrus.Infof("Get job by id success, job info: %v", jobInfo)
+		logrus.Infof("Get job by id success, jobId: %d, name: %s, state: %s", jobInfo.JobId, jobInfo.Name, jobInfo.State)
 		return &pb.GetJobByIdResponse{Job: jobInfo}, nil
 	} else {
 		jobInfo := &pb.JobInfo{}
@@ -309,7 +309,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *pb.GetJobByIdRequest) (*
 				jobInfo.EndTime = endTimeTimestamp
 			}
 		}
-		logrus.Infof("Get job by id success, job info: %v", jobInfo)
+		logrus.Infof("Get job by id success, jobId: %d, name: %s, state: %s", jobInfo.JobId, jobInfo.Name, jobInfo.State)
 		return &pb.GetJobByIdResponse{Job: jobInfo}, nil
 	}
 }

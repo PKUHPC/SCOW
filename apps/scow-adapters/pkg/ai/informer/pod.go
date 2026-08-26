@@ -102,7 +102,7 @@ func (i *K8sInformer) handlePodUpdate(obj interface{}) {
 	if startTime := GetPodStartTime(pod); startTime != 0 {
 		updates["start_time"] = startTime
 	}
-	logrus.Infof("[handlePodUpdate] pod updates: %v", updates)
+	logrus.Infof("[handlePodUpdate] pod %s updated, job: %s, status: %s, updates: %v", pod.Name, jobName, status, updates)
 	// 当一个pod Failed之后，同一个job下的其他pod 也需要Failed
 	go func() {
 		if status != string(v1.PodFailed) {
@@ -171,7 +171,7 @@ func (i *K8sInformer) handlePodDelete(obj interface{}) {
 	if podTable.Status != utils.TimeOutStatus {
 		updates["status"] = utils.CanceledStatus
 	}
-	logrus.Infof("[handlePodDelete] pod info: %v", updates)
+	logrus.Infof("[handlePodDelete] pod %s deleted, status: %s, updates: %v", pod.Name, podTable.Status, updates)
 	err = client.DB.Model(&podTable).Updates(updates).Error
 	if err != nil {
 		logrus.Errorf("[handlePodDelete] pod name %s DB update failed due to: %s", pod.Name, err)

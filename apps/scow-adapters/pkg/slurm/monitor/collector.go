@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -32,26 +33,21 @@ func NewCollector(sinfo, squeue string, db *sql.DB, clusterName string) *SlurmCo
 }
 
 func (c *SlurmCollector) Collect() (*monitor.ClusterSnapshot, error) {
-	logrus.Tracef("[SlurmCollector] Collect start, cluster=%s", c.clusterName)
+	start := time.Now()
 
 	c.collectDB()
 
 	// 一次 sinfo 同时得到集群级（去重节点）和分区级数据
-	clusterNodes, partitionNodes, err := c.collectNodeStats()
+	clusterNodes, partitionNodes, malformedNodeLines, err := c.collectNodeStats()
 	if err != nil {
 		return nil, fmt.Errorf("sinfo nodes: %w", err)
 	}
-	logrus.Tracef("[SlurmCollector] collectNodeStats done: nodeTotal=%d nodeRunning=%d nodeAvailable=%d nodeUnavailable=%d coreTotal=%d gpuTotal=%d partitions=%d",
-		clusterNodes.nodeTotal, clusterNodes.nodeRunning, clusterNodes.nodeAvailable, clusterNodes.nodeUnavailable,
-		clusterNodes.coreTotal, clusterNodes.gpuTotal, len(partitionNodes))
 
 	// 作业信息：按分区和用户统计
-	partitionJobs, clusterUsers, err := c.collectJobs()
+	partitionJobs, clusterUsers, malformedJobLines, err := c.collectJobs()
 	if err != nil {
 		return nil, fmt.Errorf("squeue jobs: %w", err)
 	}
-	logrus.Tracef("[SlurmCollector] collectJobs done: partitions=%d clusterUsers=%d",
-		len(partitionJobs), len(clusterUsers))
 
 	// 组装快照
 	snap := &monitor.ClusterSnapshot{
@@ -87,21 +83,16 @@ func (c *SlurmCollector) Collect() (*monitor.ClusterSnapshot, error) {
 	}
 	snap.JobRunningUsers = int64(len(clusterRunningUsers))
 	snap.JobPendingUsers = int64(len(clusterPendingUsers))
-	logrus.Tracef("[SlurmCollector] cluster jobs: total=%d running=%d pending=%d users=%d runningUsers=%d pendingUsers=%d",
-		snap.JobTotal, snap.JobRunning, snap.JobPending, snap.JobUserCount, snap.JobRunningUsers, snap.JobPendingUsers)
 
 	// 按分区快照
 	allPartitions := mergePartitionKeys(partitionNodes, partitionJobs)
-	logrus.Tracef("[SlurmCollector] mergePartitionKeys: %v", allPartitions)
 	for _, pname := range allPartitions {
 		pn := partitionNodes[pname]
 		if pn == nil {
-			logrus.Tracef("[SlurmCollector] partition %q has no node stats, using zero value", pname)
 			pn = &nodeStats{}
 		}
 		pj := partitionJobs[pname]
 		if pj == nil {
-			logrus.Tracef("[SlurmCollector] partition %q has no job stats, using zero value", pname)
 			pj = &partitionJobStats{}
 		}
 		users := pj.users
@@ -128,16 +119,12 @@ func (c *SlurmCollector) Collect() (*monitor.ClusterSnapshot, error) {
 			JobRunningUsers:        int64(len(pj.runningUsers)),
 			JobPendingUsers:        int64(len(pj.pendingUsers)),
 		}
-		logrus.Tracef("[SlurmCollector] partition %q: nodes(total=%d run=%d avail=%d unavail=%d) cores(total=%d run=%d avail=%d) gpus(total=%d run=%d avail=%d) jobs(total=%d run=%d pend=%d users=%d)",
-			pname,
-			psnap.NodeTotal, psnap.NodeRunning, psnap.NodeAvailable, psnap.NodeUnavailable,
-			psnap.CoreTotal, psnap.CoreRunning, psnap.CoreAvailable,
-			psnap.AcceleratorTotal, psnap.AcceleratorRunning, psnap.AcceleratorAvailable,
-			psnap.JobTotal, psnap.JobRunning, psnap.JobPending, psnap.JobUserCount)
 		snap.Partitions = append(snap.Partitions, psnap)
 	}
 
-	logrus.Tracef("[SlurmCollector] Collect done, partitions=%d", len(snap.Partitions))
+	logrus.Debugf("[SlurmCollector] collect completed: cluster=%s nodes=%d jobs=%d partitions=%d malformedLines=%d elapsedMs=%d",
+		c.clusterName, snap.NodeTotal, snap.JobTotal, len(snap.Partitions),
+		malformedNodeLines+malformedJobLines, time.Since(start).Milliseconds())
 	return snap, nil
 }
 
@@ -152,17 +139,14 @@ type nodeStats struct {
 // collectNodeStats 执行一次 sinfo -N --noheader -o "%n|%P|%t|%C|%G"
 // 格式：节点名|分区名|节点状态|cpu "allocated/idle/other/total"|gres
 // 同时返回集群级统计（按节点去重）和分区级统计（每行计入所属分区）。
-func (c *SlurmCollector) collectNodeStats() (*nodeStats, map[string]*nodeStats, error) {
+func (c *SlurmCollector) collectNodeStats() (*nodeStats, map[string]*nodeStats, int, error) {
 	args := []string{"-N", "--noheader", "-o", "%n|%P|%t|%C|%G"}
-	logrus.Tracef("[SlurmCollector] collectNodeStats: exec %s %v", c.sinfo, args)
 	out, err := exec.Command(c.sinfo, args...).Output()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
-	logrus.Tracef("[SlurmCollector] sinfo output: %d bytes", len(out))
 
-	gpuAllocPerNode := c.collectGPUAllocPerNode()
-	logrus.Tracef("[SlurmCollector] gpuAllocPerNode: %d nodes with GPU alloc", len(gpuAllocPerNode))
+	gpuAllocPerNode, malformedLines := c.collectGPUAllocPerNode()
 
 	// 集群级：以节点名去重，同一节点只计一次
 	type nodeEntry struct {
@@ -186,7 +170,7 @@ func (c *SlurmCollector) collectNodeStats() (*nodeStats, map[string]*nodeStats, 
 		}
 		parts := strings.Split(line, "|")
 		if len(parts) < 5 {
-			logrus.Tracef("[SlurmCollector] sinfo: skip malformed line %q", line)
+			malformedLines++
 			continue
 		}
 		nodeName := parts[0]
@@ -195,9 +179,6 @@ func (c *SlurmCollector) collectNodeStats() (*nodeStats, map[string]*nodeStats, 
 		cAlloc, cIdle, cOther, cTotal := parseCPUField(parts[3])
 		gpuTotal := parseGRES(parts[4])
 		gpuAlloc := gpuAllocPerNode[nodeName]
-
-		logrus.Tracef("[SlurmCollector] sinfo line: node=%s partition=%s state=%s cpu=%s(%d/%d/%d/%d) gres=%s(total=%d) gpuAlloc=%d",
-			nodeName, partition, state, parts[3], cAlloc, cIdle, cOther, cTotal, parts[4], gpuTotal, gpuAlloc)
 
 		// ---- 分区级（每行都累加）----
 		ps := partStats[partition]
@@ -241,15 +222,11 @@ func (c *SlurmCollector) collectNodeStats() (*nodeStats, map[string]*nodeStats, 
 				coreTotal: cTotal,
 				gpuTotal:  gpuTotal,
 			}
-		} else {
-			logrus.Tracef("[SlurmCollector] sinfo: node %s in multiple partitions, skipping duplicate for cluster stats", nodeName)
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, nil, err
+		return nil, nil, malformedLines, err
 	}
-
-	logrus.Tracef("[SlurmCollector] sinfo parsed: seenNodes=%d partitions=%d", len(seenNodes), len(partStats))
 
 	// 集群级汇总
 	cluster := &nodeStats{}
@@ -283,27 +260,26 @@ func (c *SlurmCollector) collectNodeStats() (*nodeStats, map[string]*nodeStats, 
 			cluster.nodeUnavailable++
 		}
 	}
-	return cluster, partStats, nil
+	return cluster, partStats, malformedLines, nil
 }
 
 // collectGPUAllocPerNode 通过 squeue 统计各节点正在使用的 GPU 数。
 // 格式：%N|%b  (分配给作业的节点列表 | gres/per-node)
 // %b 给出的是每节点 GRES 数，因此展开节点列表后每个节点各加 gpuCount。
 // 此查询在不支持 %b 的旧版 Slurm 上可能失败，失败时静默返回空 map。
-func (c *SlurmCollector) collectGPUAllocPerNode() map[string]int64 {
+func (c *SlurmCollector) collectGPUAllocPerNode() (map[string]int64, int) {
 	result := make(map[string]int64)
+	malformedLines := 0
 	args := []string{"--noheader", "--states=R", "-o", "%N|%b"}
-	logrus.Tracef("[SlurmCollector] collectGPUAllocPerNode: exec %s %v", c.squeue, args)
 	out, err := exec.Command(c.squeue, args...).Output()
 	if err != nil {
-		logrus.Tracef("[SlurmCollector] squeue %%b not supported (old Slurm?): %v", err)
-		return result // 旧版 Slurm 不支持 %b，忽略错误
+		return result, malformedLines // 旧版 Slurm 不支持 %b，忽略错误
 	}
-	logrus.Tracef("[SlurmCollector] squeue %%b output: %d bytes", len(out))
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
 		parts := strings.SplitN(strings.TrimSpace(scanner.Text()), "|", 2)
 		if len(parts) < 2 {
+			malformedLines++
 			continue
 		}
 		gpuCount := parseGRES(parts[1])
@@ -313,16 +289,17 @@ func (c *SlurmCollector) collectGPUAllocPerNode() map[string]int64 {
 		// 用 ParseHostList 将 "node[01-03,05]" 或 "node01,node02" 展开为具体节点名列表
 		nodes, ok := utils.ParseHostList(parts[0])
 		if !ok || len(nodes) == 0 {
-			logrus.Tracef("[SlurmCollector] ParseHostList failed or empty for %q, skip", parts[0])
+			malformedLines++
 			continue
 		}
-		logrus.Tracef("[SlurmCollector] gpuAlloc: hostlist=%q gpuCount=%d nodes=%v", parts[0], gpuCount, nodes)
 		for _, node := range nodes {
 			result[node] += gpuCount
 		}
 	}
-	logrus.Tracef("[SlurmCollector] collectGPUAllocPerNode result: %d nodes", len(result))
-	return result
+	if scanner.Err() != nil {
+		malformedLines++
+	}
+	return result, malformedLines
 }
 
 // -------- 作业结构 --------
@@ -338,30 +315,27 @@ type partitionJobStats struct {
 // 格式：%P|%u|%T 分区|用户|作业状态
 // 只查询 RUNNING 和 PENDING 两种状态，保证 total = running + pending 始终一致。
 // 其他过渡状态（COMPLETING、SUSPENDED 等）生命周期极短且不代表用户主动排队/运行意图，不计入。
-func (c *SlurmCollector) collectJobs() (map[string]*partitionJobStats, map[string]struct{}, error) {
+func (c *SlurmCollector) collectJobs() (map[string]*partitionJobStats, map[string]struct{}, int, error) {
 	args := []string{"--noheader", "--states=RUNNING,PENDING", "-o", "%P|%u|%T"}
-	logrus.Tracef("[SlurmCollector] collectJobs: exec %s %v", c.squeue, args)
 	out, err := exec.Command(c.squeue, args...).Output()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
-	logrus.Tracef("[SlurmCollector] squeue jobs output: %d bytes", len(out))
 
 	partJobs := make(map[string]*partitionJobStats)
 	clusterUsers := make(map[string]struct{})
+	malformedLines := 0
 
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
 		parts := strings.Split(strings.TrimSpace(scanner.Text()), "|")
 		if len(parts) < 3 {
-			logrus.Tracef("[SlurmCollector] squeue jobs: skip malformed line %q", scanner.Text())
+			malformedLines++
 			continue
 		}
 		partition := parts[0]
 		user := parts[1]
 		state := strings.ToUpper(parts[2])
-
-		logrus.Tracef("[SlurmCollector] squeue job: partition=%s user=%s state=%s", partition, user, state)
 
 		pj := partJobs[partition]
 		if pj == nil {
@@ -386,31 +360,25 @@ func (c *SlurmCollector) collectJobs() (map[string]*partitionJobStats, map[strin
 		}
 	}
 
-	for pname, pj := range partJobs {
-		logrus.Tracef("[SlurmCollector] partition %q jobs: total=%d running=%d pending=%d users=%d",
-			pname, pj.total, pj.running, pj.pending, len(pj.users))
+	if err := scanner.Err(); err != nil {
+		return nil, nil, malformedLines, err
 	}
-
-	return partJobs, clusterUsers, scanner.Err()
+	return partJobs, clusterUsers, malformedLines, nil
 }
 
 // -------- DB 指标 --------
 
 func (c *SlurmCollector) collectDB() {
 	if c.db == nil {
-		logrus.Tracef("[SlurmCollector] collectDB: db is nil, skip")
 		return
 	}
-	logrus.Tracef("[SlurmCollector] collectDB: querying active connections")
 	var count int64
 	if err := c.db.QueryRow(`SELECT COUNT(*) FROM information_schema.processlist WHERE command != 'Sleep'`).Scan(&count); err == nil {
-		logrus.Tracef("[SlurmCollector] collectDB: active connections=%d", count)
 		monitor.DatabaseConnections.WithLabelValues("slurm", "active").Set(float64(count))
 	} else {
 		logrus.Warnf("[SlurmCollector] db connections: %v", err)
 	}
 
-	logrus.Tracef("[SlurmCollector] collectDB: querying db sizes")
 	rows, err := c.db.Query(`
 		SELECT table_schema, ROUND(SUM(data_length + index_length)) AS size
 		FROM information_schema.tables
@@ -425,7 +393,6 @@ func (c *SlurmCollector) collectDB() {
 		var dbName string
 		var size float64
 		if err := rows.Scan(&dbName, &size); err == nil {
-			logrus.Tracef("[SlurmCollector] collectDB: db=%s size=%.0f bytes", dbName, size)
 			monitor.DatabaseSize.WithLabelValues(dbName).Set(size)
 		}
 	}

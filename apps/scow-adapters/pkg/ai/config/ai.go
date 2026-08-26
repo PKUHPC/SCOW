@@ -1,9 +1,9 @@
 package config
 
 import (
-	"log"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
 	cc "scow-adapters/pkg/common/config"
@@ -73,12 +73,12 @@ type RDMAQueueConfig struct {
 func ParseAIConfig(configFilePath string) *Config {
 	confFile, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
-	config := &Config{}
+	config := &Config{LogConfig: cc.DefaultLogConfig()}
 	err = yaml.Unmarshal(confFile, config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	return config
 }

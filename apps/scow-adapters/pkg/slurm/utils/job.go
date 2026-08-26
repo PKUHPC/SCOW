@@ -455,7 +455,7 @@ func GetUnfinishedJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 		sortJobInfo := SortJobInfo(sortKey, sortOrder, jobInfo)
 		return &pb.GetJobsResponse{Jobs: sortJobInfo}, nil
 	}
-	logrus.Tracef("GetJobs GetJobsResponse is: %v", &pb.GetJobsResponse{Jobs: jobInfo})
+	logrus.Tracef("GetUnfinishedJobs finished, jobs count: %d, fields: %v", len(jobInfo), in.Fields)
 	return &pb.GetJobsResponse{Jobs: jobInfo}, nil
 }
 
@@ -759,7 +759,6 @@ func GetJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 				GpusAlloc:        &gpusAlloc,
 				NodesAlloc:       &nodesAllocTemp,
 			})
-			logrus.Tracef("GetJobs jobInfo is: %v", jobInfo)
 		} else {
 			subJobInfo := &pb.JobInfo{}
 			for _, field := range in.Fields {
@@ -816,9 +815,7 @@ func GetJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 					subJobInfo.EndTime = endTimeTimestamp
 				}
 			}
-			logrus.Tracef("GetJobs jobInfo by fields: %v", in.Fields)
 			jobInfo = append(jobInfo, subJobInfo)
-			logrus.Tracef("GetJobs jobInfo is: %v", jobInfo)
 		}
 	}
 
@@ -826,10 +823,10 @@ func GetJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 	if jobSelectTotalSql != "" {
 		client.SlurmDB.QueryRow(jobSelectTotalSql, totalParams...).Scan(&count)
 		totalCount := uint32(count)
-		logrus.Tracef("GetFinishedJobs GetJobsResponse is: %v", &pb.GetJobsResponse{Jobs: jobInfo, TotalCount: &totalCount})
+		logrus.Tracef("GetFinishedJobs finished, jobs count: %d, total count: %d, fields: %v", len(jobInfo), totalCount, in.Fields)
 		return &pb.GetJobsResponse{Jobs: jobInfo, TotalCount: &totalCount}, nil
 	}
-	logrus.Tracef("GetFinishedJobs GetJobsResponse is: %v", &pb.GetJobsResponse{Jobs: jobInfo})
+	logrus.Tracef("GetFinishedJobs finished, jobs count: %d, fields: %v", len(jobInfo), in.Fields)
 	return &pb.GetJobsResponse{Jobs: jobInfo}, nil
 }
 

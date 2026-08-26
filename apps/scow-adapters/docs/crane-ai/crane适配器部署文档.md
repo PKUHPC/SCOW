@@ -45,7 +45,7 @@ git clone https://github.com/PKUHPC/scow-adapters.git  #克隆代码
 - Building scow-crane-adapter with ...
     - Binaries are in ./
 [root@crane01 scow-adapters]# ls
-Makefile  README.md  buf.gen.yaml  buf.genCrane.yaml  cmd  config.yaml  docs  gen  go.mod  go.sum  pkg  protos  scow-crane-ai-adapter  server.log  tests
+Makefile  README.md  buf.gen.yaml  buf.genCrane.yaml  cmd  config.yaml  docs  gen  go.mod  go.sum  pkg  protos  scow-crane-ai-adapter  logs  tests
 ```
 
 ## **3 部署Crane适配器（将服务器上生成的二进制文件拷贝至 Crane管理节点）**
@@ -65,4 +65,3 @@ systemctl start adapter
 
 systemctl enable adapter
 ```
-

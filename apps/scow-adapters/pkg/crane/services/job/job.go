@@ -271,7 +271,7 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 			jobInfo.SubmitTime = startTime
 		}
 	}
-	logrus.Tracef("GetJobById job: %v", jobInfo)
+	logrus.Tracef("GetJobById finished, jobId: %d, name: %s, state: %s, fields: %v", jobInfo.JobId, jobInfo.Name, jobInfo.State, in.Fields)
 	return &protos.GetJobByIdResponse{Job: jobInfo}, nil
 }
 
@@ -281,7 +281,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		jobsInfo []*protos.JobInfo
 		totalNum uint32
 	)
-	logrus.Infof("Received request GetJobs: %v", in)
+	logrus.Infof("Received request GetJobs, fields: %v, has_filter: %t", in.Fields, in.Filter != nil)
 
 	if len(in.JobTypes) > 0 {
 		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "Crane adapter does not support AI job types.")
@@ -448,7 +448,6 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				GpusAlloc:        &gpusAlloc,
 				MemAllocMb:       &memAllocMb,
 			})
-			logrus.Tracef("GetJobs: jobsInfo %v", jobsInfo)
 		} else {
 			subJobInfo := &protos.JobInfo{}
 			for _, field := range in.Fields {
@@ -501,7 +500,6 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 					subJobInfo.MemAllocMb = &memAllocMb
 				}
 			}
-			logrus.Tracef("GetJobs: jobsInfo %v", subJobInfo)
 			jobsInfo = append(jobsInfo, subJobInfo)
 		}
 	}
@@ -522,7 +520,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		sortJobinfo := utils.SortJobInfo(sortKey, sortOrder, jobsInfo)
 		return &protos.GetJobsResponse{Jobs: sortJobinfo, TotalCount: &totalNum}, nil
 	}
-	logrus.Tracef("GetJobs jobs: %v", jobsInfo)
+	logrus.Tracef("GetJobs finished, jobs count: %d, total count: %d, fields: %v", len(jobsInfo), totalNum, in.Fields)
 	return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 }
 

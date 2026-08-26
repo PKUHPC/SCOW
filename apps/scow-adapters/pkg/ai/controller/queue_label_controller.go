@@ -114,7 +114,7 @@ func (c *QueueLabelController) handleConfigMap(obj interface{}) {
 			logrus.Errorf("[queueLabelController] Failed to parse QueueSpec for %s: %v", key, err)
 			continue
 		}
-		logrus.Tracef("[handleConfigMap]data: %v", spec)
+		logrus.Tracef("[handleConfigMap] queue %s specification: %v", key, spec)
 		nodeList, ok := utils.ParseHostList(spec.Nodes)
 		if !ok {
 			logrus.Errorf("[queueLabelController] invalid node range format: %s", spec.Nodes)
@@ -164,7 +164,7 @@ func (c *QueueLabelController) handleUpdateConfigMap(oldObj, newObj interface{})
 }
 
 func (c *QueueLabelController) createOrUpdateVolcanoQueue(QueueInfo QueueSpec, name, cpu, memory string, cardResources map[string]string) error {
-	logrus.Tracef("[createOrUpdateVolcanoQueue]: %v", QueueInfo)
+	logrus.Tracef("[createOrUpdateVolcanoQueue] queue %s specification: %v", name, QueueInfo)
 	if err := c.ensureQueueNamespaceResources(name); err != nil {
 		return err
 	}

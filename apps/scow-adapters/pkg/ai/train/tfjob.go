@@ -13,7 +13,7 @@ func (vj *VCJob) GetTensorFlowUnstructured() (volcanoJob *unstructured.Unstructu
 		tmpTask []interface{}
 	)
 	resources := vj.GetResource(true)
-	logrus.Infof("resources: %v", resources)
+	logrus.Infof("building TensorFlow job resources: %v", resources)
 	nodeCount := vj.In.NodeCount
 	PsCount := int(*vj.In.PsNodeCount)
 	WorkerCount := int(*vj.In.WorkerNodeCount)
@@ -112,7 +112,7 @@ func (vj *VCJob) GetTensorFlowUnstructured() (volcanoJob *unstructured.Unstructu
 		tmpTask = append(volcanoJob.Object["spec"].(map[string]interface{})["tasks"].([]interface{}), psUnstructured)
 		volcanoJob.Object["spec"].(map[string]interface{})["tasks"] = tmpTask
 	}
-	logrus.Infof("ps volcanoJob: %v", volcanoJob)
+	logrus.Infof("TensorFlow job %s configured PS tasks: %d", vj.GetJobName(), PsCount)
 	if WorkerCount > 0 {
 		workerUnstructured = &unstructured.Unstructured{
 			Object: map[string]interface{}{
@@ -135,7 +135,7 @@ func (vj *VCJob) GetTensorFlowUnstructured() (volcanoJob *unstructured.Unstructu
 		}
 		tmpTask = append(volcanoJob.Object["spec"].(map[string]interface{})["tasks"].([]interface{}), workerUnstructured)
 		volcanoJob.Object["spec"].(map[string]interface{})["tasks"] = tmpTask
-		logrus.Infof("worker volcanoJob: %v", volcanoJob)
+		logrus.Infof("TensorFlow job %s configured worker tasks: %d", vj.GetJobName(), WorkerCount)
 	}
 	return volcanoJob
 }

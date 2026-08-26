@@ -81,6 +81,8 @@ scp -r scow-ai-adapter config ai_mn:/adapter
 vim config/config.yaml
 log:
   level: "info"                # 日志级别，支持info、debug、trace级别
+  enableStdout: true            # 是否同时输出到标准输出
+  # filePath: "/adapter/logs/server.log"  # 不填时默认使用部署目录下 logs/server.log
 
 dbconfig:
   host: 127.0.0.1              # 数据库服务器地址

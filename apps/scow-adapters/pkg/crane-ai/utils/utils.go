@@ -430,9 +430,7 @@ func GetNodeByPartition(partitionList []string) (uint32, uint32, uint32, uint32,
 		return idleNodeCount, allocNodeCount, mixNodeCount, downNodeCount, fmt.Errorf("get cluster info failed")
 	}
 
-	logrus.Tracef("GetNodeByPartition: cluster info: %v", response)
-	logrus.Tracef("GetNodeByPartition: cluster info: %v", response.Partitions)
-	logrus.Tracef("GetNodeByPartition: cluster info: %v", response.Partitions[0].GetCranedLists())
+	logrus.Tracef("GetNodeByPartition requested partitions: %v, returned partitions: %d", partitionList, len(response.GetPartitions()))
 	for _, partition := range response.Partitions {
 		for _, commonCranedStateList := range partition.CranedLists {
 			if commonCranedStateList.Count > 0 {
@@ -449,6 +447,8 @@ func GetNodeByPartition(partitionList []string) (uint32, uint32, uint32, uint32,
 			}
 		}
 	}
+	logrus.Tracef("GetNodeByPartition result, idle: %d, allocated: %d, mixed: %d, down: %d",
+		idleNodeCount, allocNodeCount, mixNodeCount, downNodeCount)
 
 	return idleNodeCount, allocNodeCount, mixNodeCount, downNodeCount, nil
 }
@@ -877,7 +877,7 @@ func GetSummaryClusterNodesInfo(authorizedPartitions []string) (*ClusterNodesInf
 		return nil, err
 	}
 
-	logrus.Tracef("GetClusterNodesInfo nodeInfo%v", info.GetCranedInfoList())
+	logrus.Tracef("GetClusterNodesInfo received %d node records", len(info.GetCranedInfoList()))
 
 	// 聚合节点统计信息
 	for _, nodeInfo := range info.GetCranedInfoList() {
@@ -985,8 +985,7 @@ func GetSummaryClusterNodesInfo(authorizedPartitions []string) (*ClusterNodesInf
 
 func GetSummaryPartitionsInfo(authorizedPartitions []string) ([]*protos.SummaryPartitionInfo, error) {
 	var partitions []*protos.SummaryPartitionInfo
-	logrus.Infof("GetSummaryPartitionsInfo CConfig: %v", client.CConfig)
-	logrus.Infof("GetSummaryPartitionsInfo partitions: %v", client.CConfig.Partitions)
+	logrus.Infof("GetSummaryPartitionsInfo configured partitions: %d", len(client.CConfig.Partitions))
 	for _, part := range client.CConfig.Partitions { // 遍历每个计算分区、分别获取信息  分区从接口获取
 		logrus.Infof("GetSummaryPartitionsInfo partition name: %v", part.Name)
 		if !slices.Contains(authorizedPartitions, part.Name) {
@@ -1001,7 +1000,7 @@ func GetSummaryPartitionsInfo(authorizedPartitions []string) ([]*protos.SummaryP
 			logrus.Errorf("GetPartitionsInfo failed: %v", err)
 			return nil, fmt.Errorf("get partition info failed: %v", err)
 		}
-		logrus.Tracef("GetClusterInfo partition info: %v", partitionInfo)
+		logrus.Tracef("GetSummaryPartitionsInfo partition info: %v", partitionInfo)
 
 		//// 获取正在运行作业的个数
 		//runningJob, err := GetTaskByPartitionAndStatus([]string{partitionName}, []craneProtos.TaskStatus{craneProtos.TaskStatus_Running})
@@ -1110,7 +1109,7 @@ func ParseGres(gres string) *craneProtos.GresMap {
 			gresType := parts[1]
 			count, err := strconv.ParseUint(parts[2], 10, 64)
 			if err != nil {
-				fmt.Printf("Error parsing count for %s: %v\n", name, err)
+				logrus.Warnf("Error parsing GRES count for %s: %v", name, err)
 				continue
 			}
 			if count == 0 {
@@ -1288,7 +1287,7 @@ func CheckAndAddExecPermission(dirPath string) error {
 			return fmt.Errorf("failed to add o+w permission to dir %s: %w", dirPath, err)
 		}
 
-		fmt.Printf("add o+w permission to dir (%s), old perm: %#o, new perm: %#o\n",
+		logrus.Infof("add o+w permission to dir (%s), old perm: %#o, new perm: %#o",
 			dirPath, dirPerm, newDirPerm)
 	}
 
@@ -1319,7 +1318,7 @@ func CheckAndAddExecPermission(dirPath string) error {
 	hasExecPermission := perm&0111 != 0
 
 	if hasExecPermission {
-		fmt.Printf("file (%s) already has executable permission, permission bit: %#o\n", entryPath, perm)
+		logrus.Debugf("file (%s) already has executable permission, permission bit: %#o", entryPath, perm)
 		return nil
 	}
 

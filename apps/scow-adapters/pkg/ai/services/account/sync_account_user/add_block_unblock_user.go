@@ -1,112 +1,117 @@
 package sync_account_user
 
 import (
+	"context"
 	"fmt"
-
-	"github.com/sirupsen/logrus"
 
 	pb "scow-adapters/gen/go"
 	"scow-adapters/pkg/ai/utils"
+	"scow-adapters/pkg/common/accountsync"
 )
 
 // AddAndBlockUserInAccount 同步创建用户，然后需要的话封锁用户
-func AddAndBlockUserInAccount(users []*pb.SyncAccountInfo_UserInAccount, accountName string) []*pb.SyncAccountUserInfoResponse_SyncOperationResult {
+func AddAndBlockUserInAccount(ctx context.Context, users []*pb.SyncAccountInfo_UserInAccount, accountName string) ([]*pb.SyncAccountUserInfoResponse_SyncOperationResult, int, int) {
 	var (
-		results []*pb.SyncAccountUserInfoResponse_SyncOperationResult
-		message string
+		results        []*pb.SyncAccountUserInfoResponse_SyncOperationResult
+		message        string
+		usersProcessed int
+		usersSkipped   int
 	)
 
 	userBlockedInfo, err := utils.GetAccountUserBlockedInfoInDatabase(accountName)
 	if err != nil {
 		message = fmt.Sprintf("add user in account, get associate info in database failed: %v", err)
-		logrus.Errorf("[SyncAccountUser] %v", message)
-		results = append(results, AddUserToAccountFailedOperation(accountName, "", message))
-		return results
+		accountsync.Errorf(ctx, "operation=addUser account=%s error=%v", accountName, err)
+		results = append(results, accountsync.AddUserToAccountFailedOperation(accountName, "", message))
+		return results, usersProcessed, usersSkipped
 	}
 
 	for _, user := range users {
 		if *user.Deleted {
-			message = fmt.Sprintf("user %v id deleted status", user.UserId)
-			logrus.Infof("BlockUser %v", message)
+			usersSkipped++
+			accountsync.Tracef(ctx, "account=%s user=%s expectedDeleted=true action=skip", accountName, user.UserId)
 			continue
 		}
+		usersProcessed++
 		blocked, exitAssociate := userBlockedInfo[user.UserId]
 		if exitAssociate {
 			// 存在关联关系，封锁或解封用户用户
-			if result := blockOrUnblockUser(user, accountName, blocked); result != nil {
+			if result := blockOrUnblockUser(ctx, user, accountName, blocked); result != nil {
 				results = append(results, result)
 			}
 		} else {
+			accountsync.Tracef(ctx, "operation=addUser account=%s user=%s expectedAssociation=true actualAssociation=false action=add",
+				accountName, user.UserId)
 			associate, err := utils.GetAssociateByAccountAndUser(accountName, user.UserId)
 			if err != nil {
 				message = fmt.Sprintf("get user %v account %v association failed: %v", user.UserId, accountName, err)
-				logrus.Errorf("[SyncAccountUser] %v", message)
-				results = append(results, AddUserToAccountFailedOperation(accountName, user.UserId, message))
+				accountsync.Errorf(ctx, "operation=addUser account=%s user=%s error=%v", accountName, user.UserId, err)
+				results = append(results, accountsync.AddUserToAccountFailedOperation(accountName, user.UserId, message))
 				continue
 			}
 			if associate != nil {
 				if err = utils.UpdateUserDeletedInAccount(accountName, user.UserId, 0); err != nil {
 					message = fmt.Sprintf("add user %v to account %v failed: %v", user.UserId, accountName, err)
-					logrus.Errorf("[SyncAccountUser] %v", message)
-					results = append(results, AddUserToAccountFailedOperation(accountName, user.UserId, message))
+					accountsync.Errorf(ctx, "operation=addUser account=%s user=%s restoreDeleted=true error=%v", accountName, user.UserId, err)
+					results = append(results, accountsync.AddUserToAccountFailedOperation(accountName, user.UserId, message))
 					continue
 				}
 			} else {
 				if err = utils.AddUserToAccount(accountName, user.UserId); err != nil {
 					message = fmt.Sprintf("add user %v to account %v failed: %v", user.UserId, accountName, err)
-					logrus.Errorf("[SyncAccountUser] %v", message)
-					results = append(results, AddUserToAccountFailedOperation(accountName, user.UserId, message))
+					accountsync.Errorf(ctx, "operation=addUser account=%s user=%s error=%v", accountName, user.UserId, err)
+					results = append(results, accountsync.AddUserToAccountFailedOperation(accountName, user.UserId, message))
 					continue
 				}
 			}
 
-			message = fmt.Sprintf("add user %v to account %v success", user.UserId, accountName)
-			logrus.Infof("[SyncAccountUser] %v", message)
-			results = append(results, AddUserToAccountSuccessOperation(accountName, user.UserId))
+			accountsync.Debugf(ctx, "operation=addUser account=%s user=%s action=add result=success", accountName, user.UserId)
+			results = append(results, accountsync.AddUserToAccountSuccessOperation(accountName, user.UserId))
 
 			// 封锁用户
 			if user.Blocked {
 				err = utils.BlockUserInAccount(user.UserId, accountName)
 				if err != nil {
 					message = fmt.Sprintf("add user success, but block user %v in account %v failed: %v", user.UserId, accountName, err)
-					logrus.Errorf("[SyncAccountUser]: %v", message)
-					results = append(results, BlockUserInAccountFailedOperation(accountName, user.UserId, message))
+					accountsync.Errorf(ctx, "operation=blockUser account=%s user=%s expectedBlocked=true actualBlocked=false error=%v",
+						accountName, user.UserId, err)
+					results = append(results, accountsync.BlockUserInAccountFailedOperation(accountName, user.UserId, message))
 					continue
 				}
-				message = fmt.Sprintf("add user success, and block user %v in account %v success", user.UserId, accountName)
-				logrus.Infof("[SyncAccountUser], %v", message)
-				results = append(results, BlockUserInAccountSuccessOperation(accountName, user.UserId))
+				accountsync.Debugf(ctx, "operation=blockUser account=%s user=%s action=block result=success", accountName, user.UserId)
+				results = append(results, accountsync.BlockUserInAccountSuccessOperation(accountName, user.UserId))
 			}
 		}
 	}
-	return results
+	return results, usersProcessed, usersSkipped
 }
 
-func blockOrUnblockUser(user *pb.SyncAccountInfo_UserInAccount, accountName string, blocked int) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
+func blockOrUnblockUser(ctx context.Context, user *pb.SyncAccountInfo_UserInAccount, accountName string, blocked int) *pb.SyncAccountUserInfoResponse_SyncOperationResult {
 	// 封锁用户
 	if user.Blocked && blocked == 0 {
+		accountsync.Tracef(ctx, "operation=blockUser account=%s user=%s expectedBlocked=true actualBlocked=false action=block", accountName, user.UserId)
 		if err := utils.BlockUserInAccount(user.UserId, accountName); err != nil {
 			message := fmt.Sprintf("block user %v in account %v failed: %v", user.UserId, accountName, err)
-			logrus.Errorf("[SyncAccountUser]: %v", message)
-			return BlockUserInAccountFailedOperation(accountName, user.UserId, message)
+			accountsync.Errorf(ctx, "operation=blockUser account=%s user=%s expectedBlocked=true actualBlocked=false error=%v", accountName, user.UserId, err)
+			return accountsync.BlockUserInAccountFailedOperation(accountName, user.UserId, message)
 		}
-		message := fmt.Sprintf("block user %v in account %v success", user.UserId, accountName)
-		logrus.Infof("[SyncAccountUser], %v", message)
-		return BlockUserInAccountSuccessOperation(accountName, user.UserId)
+		accountsync.Debugf(ctx, "operation=blockUser account=%s user=%s action=block result=success", accountName, user.UserId)
+		return accountsync.BlockUserInAccountSuccessOperation(accountName, user.UserId)
 	}
 
 	// 解封用户
 	if !user.Blocked && blocked == 1 {
+		accountsync.Tracef(ctx, "operation=unblockUser account=%s user=%s expectedBlocked=false actualBlocked=true action=unblock", accountName, user.UserId)
 		if err := utils.UnblockUserInAccount(user.UserId, accountName); err != nil {
 			message := fmt.Sprintf("unblock user %v in account %v failed: %v", user.UserId, accountName, err)
-			logrus.Errorf("[SyncAccountUser]: %v", message)
-			return UnblockUserInAccountFailedOperation(accountName, user.UserId, message)
+			accountsync.Errorf(ctx, "operation=unblockUser account=%s user=%s expectedBlocked=false actualBlocked=true error=%v", accountName, user.UserId, err)
+			return accountsync.UnblockUserInAccountFailedOperation(accountName, user.UserId, message)
 		}
-		message := fmt.Sprintf("unblock user %v in account %v success", user.UserId, accountName)
-		logrus.Infof("[SyncAccountUser], %v", message)
-		return UnblockUserInAccountSuccessOperation(accountName, user.UserId)
+		accountsync.Debugf(ctx, "operation=unblockUser account=%s user=%s action=unblock result=success", accountName, user.UserId)
+		return accountsync.UnblockUserInAccountSuccessOperation(accountName, user.UserId)
 	}
 
-	logrus.Infof("[SyncAccountUser], the user %v no need block or unblock", user.UserId)
+	accountsync.Tracef(ctx, "operation=syncUserBlock account=%s user=%s expectedBlocked=%t actualBlocked=%t action=none",
+		accountName, user.UserId, user.Blocked, blocked != 0)
 	return nil
 }

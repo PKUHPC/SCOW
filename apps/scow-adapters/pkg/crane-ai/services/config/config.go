@@ -35,7 +35,7 @@ func (s *ServerConfig) GetClusterConfig(ctx context.Context, in *protos.GetClust
 		return nil, err
 	}
 
-	logrus.Tracef("GetClusterConfig %v", partitions)
+	logrus.Tracef("GetClusterConfig partitions: %v", partitions)
 	return &protos.GetClusterConfigResponse{Partitions: partitions, SchedulerName: "Crane"}, nil
 }
 
@@ -50,8 +50,7 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *protos.Ge
 		return nil, ce.RichError(codes.Unavailable, "CRANE_INTERNAL_ERROR", err.Error())
 	}
 
-	logrus.Tracef("GetAvailablePartitions account info: %v", account)
-	logrus.Tracef("GetAvailablePartitions account users: %v", account.GetUsers())
+	logrus.Tracef("GetAvailablePartitions account: %s, users count: %d", account.GetName(), len(account.GetUsers()))
 
 	// 判断账户是否包含用户
 	if !utils.Contains(account.GetUsers(), in.UserId) {
@@ -75,7 +74,7 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *protos.Ge
 		return nil, err
 	}
 
-	logrus.Tracef("GetAvailablePartitions %v", partitions)
+	logrus.Tracef("GetAvailablePartitions for account %s: %v", in.AccountName, partitions)
 	return &protos.GetAvailablePartitionsResponse{Partitions: partitions}, nil
 }
 
@@ -90,15 +89,15 @@ func (s *ServerConfig) GetClusterNodesInfo(ctx context.Context, in *protos.GetCl
 		return nil, err
 	}
 
-	logrus.Tracef("GetClusterNodesInfo nodeInfo%v", info.GetCranedInfoList())
+	logrus.Tracef("GetClusterNodesInfo received %d node records", len(info.GetCranedInfoList()))
 
 	for _, cranedInfo := range info.GetCranedInfoList() {
 		nodeInfo := utils.ExtractNodeInfo(cranedInfo)
-		logrus.Tracef("GetClusterNodesInfo node: %v, Info: %v", cranedInfo.GetHostname(), info.GetCranedInfoList())
+		logrus.Tracef("GetClusterNodesInfo processing node: %s", cranedInfo.GetHostname())
 		nodesInfo = append(nodesInfo, nodeInfo)
 	}
 
-	logrus.Tracef("GetClusterNodesInfoResponse: %v", nodesInfo)
+	logrus.Tracef("GetClusterNodesInfo finished, nodes count: %d", len(nodesInfo))
 	return &protos.GetClusterNodesInfoResponse{Nodes: nodesInfo}, nil
 }
 
@@ -193,7 +192,7 @@ func (s *ServerConfig) GetClusterInfo(ctx context.Context, in *protos.GetCluster
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 	}
 
-	logrus.Tracef("GetClusterInfo Partitions info: %v", partitions)
+	logrus.Tracef("GetClusterInfo finished, partitions count: %d, nodes: %d", len(partitions), clusterInfo.NodeCount)
 	return &protos.GetClusterInfoResponse{
 		ClusterName:           client.CConfig.ClusterName,
 		Partitions:            partitions,

@@ -21,8 +21,13 @@ type MonitorConfig struct {
 }
 
 type LogConfig struct {
-	Level    string `yaml:"level"`
-	FilePath string `yaml:"filePath"`
+	Level        string `yaml:"level"`
+	FilePath     string `yaml:"filePath"`
+	EnableStdout bool   `yaml:"enableStdout"`
+}
+
+func DefaultLogConfig() LogConfig {
+	return LogConfig{EnableStdout: true}
 }
 
 func GetCertPath(sc SslConfig) (string, string, string) {

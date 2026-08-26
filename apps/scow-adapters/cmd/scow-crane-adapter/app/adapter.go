@@ -67,12 +67,14 @@ func NewAdapterCommand() *cobra.Command {
 		// Read and parse config file
 		viper.ReadInConfig()
 		// Initialize logger
-		log.InitLogger(log.ParseLogLevel(viper.GetString("log-level")), viper.GetString("log-file"))
+		log.InitLogger(log.ParseLogLevel(viper.GetString("log-level")), viper.GetString("log-file"), viper.GetBool("log-stdout"))
 		if err := unmarshalWithYamlTag(viper.AllSettings(), &config.CraneConfigValue); err != nil {
 			logrus.Fatalf("Error parsing config file: %s", err)
 		}
 
-		logrus.Debugf("Using config:\n%+v", config.CraneConfigValue)
+		logrus.Infof("Crane adapter configuration loaded: bind_port=%d, monitor_port=%d, tls_enabled=%t, log_level=%s",
+			config.CraneConfigValue.BindPort, config.CraneConfigValue.Monitor.Port, config.CraneConfigValue.Ssl.Enabled,
+			config.CraneConfigValue.LogLevel)
 	})
 
 	rootCmd.SetVersionTemplate(utils.VersionTemplate())
@@ -86,8 +88,11 @@ func NewAdapterCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringP("log-level", "l", "info", "Log level")
 	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 
-	rootCmd.PersistentFlags().StringP("log-file", "", "", "Log file path (default: server.log in working directory)")
+	rootCmd.PersistentFlags().StringP("log-file", "", "", "Log file path (default: logs/server.log in working directory)")
 	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
+
+	rootCmd.PersistentFlags().Bool("log-stdout", true, "Also write logs to stdout")
+	viper.BindPFlag("log-stdout", rootCmd.PersistentFlags().Lookup("log-stdout"))
 
 	return rootCmd
 }
@@ -133,19 +138,19 @@ func Run() {
 		logrus.Tracef("caCertPath, adapterCertPath, adapterPrivateKeyPath: %s, %s, %s", caCertPath, adapterCertPath, adapterPrivateKeyPath)
 		pair, err := tls.LoadX509KeyPair(adapterCertPath, adapterPrivateKeyPath)
 		if err != nil {
-			fmt.Println("LoadX509KeyPair error", err)
+			logrus.Errorf("LoadX509KeyPair failed: %v", err)
 			return
 		}
 		// 创建一组根证书
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(caCertPath)
 		if err != nil {
-			fmt.Println("read ca pem error ", err)
+			logrus.Errorf("Read CA PEM failed: %v", err)
 			return
 		}
 		// 解析证书
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
-			fmt.Println("AppendCertsFromPEM error ")
+			logrus.Error("AppendCertsFromPEM failed")
 			return
 		}
 

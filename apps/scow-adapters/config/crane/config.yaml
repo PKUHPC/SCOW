@@ -1,5 +1,6 @@
 bind-port: 8972
 log-level: trace
+log-stdout: true
 
 ssl:
   enabled: false # 是否启用 SSL，默认为 false

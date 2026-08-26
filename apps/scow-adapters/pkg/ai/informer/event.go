@@ -60,7 +60,8 @@ func (i *K8sInformer) handleEventChanged(obj interface{}) {
 		Created:            event.CreationTimestamp.Unix(),
 		Updated:            event.LastTimestamp.Unix(),
 	}
-	logrus.Infof("[handleEventChanged] name: %s, eventKind: %s, event: %v", name, event.InvolvedObject.Kind, eventDoc)
+	logrus.Infof("[handleEventChanged] name=%s, namespace=%s, kind=%s, type=%s, reason=%s, message=%s, count=%d",
+		name, event.Namespace, event.InvolvedObject.Kind, event.Type, event.Reason, event.Message, event.Count)
 	switch event.InvolvedObject.Kind {
 	case "Pod":
 		podUid := event.InvolvedObject.UID
@@ -75,8 +76,7 @@ func (i *K8sInformer) handleEventChanged(obj interface{}) {
 				return
 			}
 		}
-		logrus.Infof("[handleEventChanged] Message: %s, Reason: %s, Count: %d", event.Message, event.Reason, event.Count)
-		logrus.Infof("[handleEventChanged] DB select pod name: %s, status: %s", name, PodTable.Status)
+		logrus.Tracef("[handleEventChanged] pod name=%s, status=%s", name, PodTable.Status)
 
 		// 镜像拉取失败、pod持续重启、挂载失败，都需要取消资源占用
 		go func() {
@@ -87,7 +87,8 @@ func (i *K8sInformer) handleEventChanged(obj interface{}) {
 				i.DeleteResource(name, event.Namespace)
 				return
 			}
-			logrus.Infof("[handleEventChanged] message: %s, reason: %s, count: %d", event.Message, event.Reason, event.Count)
+			logrus.Tracef("[handleEventChanged] event does not require resource cleanup: name=%s, reason=%s, count=%d",
+				name, event.Reason, event.Count)
 		}()
 
 		// 写入pod reason
@@ -129,7 +130,8 @@ func (i *K8sInformer) handleEventChanged(obj interface{}) {
 		}()
 
 		if EventExists(eventDoc.Name, event.Message, utils.Pod, PodTable.Uid) {
-			logrus.Infof("[handleEventChanged] event record already exists, name: %s, eventKind: %s, event: %v", name, event.InvolvedObject.Kind, eventDoc)
+			logrus.Tracef("[handleEventChanged] event record already exists: name=%s, kind=%s, reason=%s, count=%d",
+				name, event.InvolvedObject.Kind, event.Reason, event.Count)
 			return
 		}
 		eventDoc.PodUid = PodTable.Uid
@@ -150,7 +152,8 @@ func (i *K8sInformer) handleEventChanged(obj interface{}) {
 			return
 		}
 		if EventExists(eventDoc.Name, event.Message, utils.Job, strconv.FormatUint(jobTable.JobDBInx, 10)) {
-			logrus.Infof("event record already exists, name: %s, eventKind: %s, event: %v", name, event.InvolvedObject.Kind, eventDoc)
+			logrus.Tracef("[handleEventChanged] event record already exists: name=%s, kind=%s, reason=%s, count=%d",
+				name, event.InvolvedObject.Kind, event.Reason, event.Count)
 			return
 		}
 		eventDoc.JobId = jobTable.JobDBInx

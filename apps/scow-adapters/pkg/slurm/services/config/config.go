@@ -98,7 +98,7 @@ func (s *ServerConfig) GetAvailablePartitions(ctx context.Context, in *pb.GetAva
 		return nil, ce.RichError(codes.Internal, "COMMAND_EXECUTE_FAILED", err.Error())
 	}
 
-	logrus.Tracef("GetAvailablePartitions: %v", &pb.GetAvailablePartitionsResponse{Partitions: parts})
+	logrus.Tracef("GetAvailablePartitions for account %s: %v", in.AccountName, &pb.GetAvailablePartitionsResponse{Partitions: parts})
 	return &pb.GetAvailablePartitionsResponse{Partitions: parts}, nil
 }
 
@@ -159,7 +159,7 @@ func (s *ServerConfig) GetClusterNodesInfo(ctx context.Context, in *pb.GetCluste
 		nodesInfo = utils.GetClusterNodeConcurrently(nodesResult)
 	}
 
-	logrus.Tracef("GetClusterNodesInfoResponse: %v", nodesInfo)
+	logrus.Tracef("GetClusterNodesInfo finished, nodes count: %d", len(nodesInfo))
 	return &pb.GetClusterNodesInfoResponse{Nodes: nodesInfo}, nil
 }
 
@@ -265,7 +265,7 @@ func (s *ServerConfig) GetSummaryClusterInfo(ctx context.Context, in *pb.GetSumm
 
 	summaryPartitions := utils.GetSummaryPartitionInfo(parts, authorizedPartitions)
 
-	logrus.Tracef("GetSummaryClusterInfoResponse nodes info %v, partitions info %v", scni, summaryPartitions)
+	logrus.Tracef("GetSummaryClusterInfo finished, nodes: %d, partitions: %d", scni.NodeCount, len(summaryPartitions))
 	return &pb.GetSummaryClusterInfoResponse{
 		ClusterName:           clusterName,
 		Partitions:            summaryPartitions,

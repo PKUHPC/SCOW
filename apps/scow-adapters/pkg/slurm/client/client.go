@@ -3,7 +3,6 @@ package client
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os/exec"
 
 	"github.com/go-gormigrate/gormigrate/v2"
@@ -128,6 +127,6 @@ func initSlurm() {
 	// 简单测试命令是否可用
 	err := exec.Command(SINFO).Run()
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
