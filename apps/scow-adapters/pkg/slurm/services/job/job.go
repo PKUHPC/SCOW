@@ -437,6 +437,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 	responseList := strings.Split(strings.TrimSpace(submitResponse), " ")
 	jobIdString := responseList[len(responseList)-1]
 	jobId, _ := strconv.Atoi(jobIdString)
+	utils.WaitForSubmittedJobVisible(ctx, uint32(jobId))
 	logrus.Infof("Submit job success, job id: %v", jobId)
 	return &pb.SubmitJobResponse{JobId: uint32(jobId), GeneratedScript: scriptString}, nil
 }
@@ -490,6 +491,7 @@ func (s *ServerJob) SubmitScriptAsJob(ctx context.Context, in *pb.SubmitScriptAs
 	responseList := strings.Split(strings.TrimSpace(string(submitResponse)), " ")
 	jobIdString := responseList[len(responseList)-1]
 	jobId, _ := strconv.Atoi(jobIdString)
+	utils.WaitForSubmittedJobVisible(ctx, uint32(jobId))
 	logrus.Infof("Submit script job success, job id: %v", jobId)
 	return &pb.SubmitScriptAsJobResponse{JobId: uint32(jobId)}, nil
 }

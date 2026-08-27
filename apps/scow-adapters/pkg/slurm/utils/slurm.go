@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -696,6 +699,60 @@ func LocalSubmitJob(scriptString string, username string) (string, error) {
 	}
 
 	return output.String(), nil
+}
+
+const (
+	submittedJobVisibilityCheckAttempts = 3
+	submittedJobVisibilityCheckInterval = 500 * time.Millisecond
+	submittedJobVisibilityCheckTimeout  = 1 * time.Second
+)
+
+// WaitForSubmittedJobVisible 确认刚提交的作业已写入 SlurmDB。
+// sbatch 已成功时，确认失败不表示提交失败；请求取消后立即停止确认。
+func WaitForSubmittedJobVisible(ctx context.Context, jobID uint32) {
+	clusterName := config.SlurmValue.MySQLConfig.ClusterName
+	query := fmt.Sprintf("SELECT 1 FROM %s_job_table WHERE id_job = ? LIMIT 1", clusterName)
+	for attempt := 1; attempt <= submittedJobVisibilityCheckAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
+			logrus.Debugf("Stop submitted job %d visibility check because request context is done: %v", jobID, err)
+			return
+		}
+
+		checkCtx, cancel := context.WithTimeout(ctx, submittedJobVisibilityCheckTimeout)
+		var exists int
+		err := client.SlurmDB.QueryRowContext(checkCtx, query, jobID).Scan(&exists)
+		cancel()
+		if ctx.Err() != nil {
+			logrus.Debugf("Stop submitted job %d visibility check because request context is done: %v", jobID, ctx.Err())
+			return
+		}
+		if err == nil {
+			logrus.Debugf("Submitted job %d is visible in SlurmDB after attempt %d", jobID, attempt)
+			return
+		}
+
+		if errors.Is(err, sql.ErrNoRows) {
+			logrus.Warnf(
+				"Submitted job %d is not yet visible in SlurmDB, attempt=%d/%d",
+				jobID, attempt, submittedJobVisibilityCheckAttempts,
+			)
+		} else {
+			logrus.Warnf(
+				"Submitted job %d visibility check in SlurmDB failed, attempt=%d/%d, err=%v",
+				jobID, attempt, submittedJobVisibilityCheckAttempts, err,
+			)
+		}
+
+		if attempt < submittedJobVisibilityCheckAttempts {
+			select {
+			case <-ctx.Done():
+				logrus.Debugf("Stop submitted job %d visibility check because request context is done: %v", jobID, ctx.Err())
+				return
+			case <-time.After(submittedJobVisibilityCheckInterval):
+			}
+		}
+	}
+	logrus.Warnf("Submitted job %d visibility check in SlurmDB exhausted; submission has already succeeded", jobID)
 }
 
 // GetPartitionsName 获取系统全部计算分区名
