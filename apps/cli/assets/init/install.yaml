@@ -14,3 +14,5 @@ resource: {}
 notification: {}
 gateway:
   proxyReadTimeout: 36000s
+metaServer:
+  enabled: true

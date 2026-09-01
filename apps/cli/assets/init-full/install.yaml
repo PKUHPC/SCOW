@@ -7,6 +7,11 @@
 # SCOW的镜像的tag。默认：master
 # imageTag: master
 
+# 元数据服务。默认开启
+# 关闭后不部署 meta-server，/meta 下的部署元信息、统一 OpenAPI 文档和 scowctl 均不可访问
+# metaServer:
+#   enabled: true
+
 # 门户相关配置。默认不部署
 # 如果不部署，请删除或者注释整个部分
 # portal:

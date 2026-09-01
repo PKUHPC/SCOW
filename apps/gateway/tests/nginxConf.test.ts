@@ -66,6 +66,12 @@ it("generates meta proxy location with custom base path", async () => {
   });
 });
 
+it("does not generate meta proxy location when meta-server is disabled", async () => {
+  const nginxConf = parseNginxConfig({ ...config, META_SERVER_ENABLED: false });
+
+  expect(nginxConf.server["location /meta"]).toBeUndefined();
+});
+
 it("does not expose unified web preview by default", () => {
   const nginxConf = getNginxConfig({ ...config, UNIFIED_WEB_ENABLED: false });
 

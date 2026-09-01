@@ -14,6 +14,7 @@ it("applies required subsystem defaults to minimal install config", async () => 
   expect(config.audit.mysqlImage).toBe("mysql:8");
   expect(config.resource.basePath).toBe("/resource");
   expect(config.notification.basePath).toBe("/notification");
+  expect(config.metaServer.enabled).toBe(true);
 });
 
 it("accepts but ignores removed install switches", async () => {
@@ -161,6 +162,17 @@ it("deploys meta-server with install config mounted", async () => {
   expect(composeSpec.services["meta-server"].environment).toContain("SCOW_LAUNCH_APP=meta-server");
   expect(composeSpec.services["meta-server"].environment).toContain("INSTALL_CONFIG_PATH=/etc/scow/install.yaml");
   expect(composeSpec.services["meta-server"].volumes).toContain("./install.yaml:/etc/scow/install.yaml");
+  expect(composeSpec.services.gateway.environment).toContain("META_SERVER_ENABLED=true");
+});
+
+it("does not deploy meta-server when disabled", async () => {
+  const config = getInstallConfig(configPath);
+  config.metaServer.enabled = false;
+
+  const composeSpec = createComposeSpec(config);
+
+  expect(composeSpec.services["meta-server"]).toBeUndefined();
+  expect(composeSpec.services.gateway.environment).toContain("META_SERVER_ENABLED=false");
 });
 
 describe("sets custom auth environment", () => {

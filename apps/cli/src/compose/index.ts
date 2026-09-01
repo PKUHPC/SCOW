@@ -209,6 +209,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       NOTIFICATION_PATH: NOTIFICATION_PATH,
       QUANTUM_ENABLED: String(config.quantum?.enabled ?? false),
       QUANTUM_PATH: QUANTUM_PATH,
+      META_SERVER_ENABLED: String(config.metaServer.enabled),
       VNC_ENABLED: String(vncEnabled),
       CLIENT_MAX_BODY_SIZE: config.gateway.uploadFileSizeLimit,
       PROXY_READ_TIMEOUT: config.gateway.proxyReadTimeout,
@@ -226,20 +227,22 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     },
   });
 
-  addService("meta-server", {
-    image: scowImage,
-    environment: {
-      SCOW_LAUNCH_APP: "meta-server",
-      INSTALL_CONFIG_PATH: "/etc/scow/install.yaml",
-      ...serviceLogEnv,
-      ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
-    },
-    ports: {},
-    volumes: {
-      "/etc/hosts": "/etc/hosts",
-      "./install.yaml": "/etc/scow/install.yaml",
-    },
-  });
+  if (config.metaServer.enabled) {
+    addService("meta-server", {
+      image: scowImage,
+      environment: {
+        SCOW_LAUNCH_APP: "meta-server",
+        INSTALL_CONFIG_PATH: "/etc/scow/install.yaml",
+        ...serviceLogEnv,
+        ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}),
+      },
+      ports: {},
+      volumes: {
+        "/etc/hosts": "/etc/hosts",
+        "./install.yaml": "/etc/scow/install.yaml",
+      },
+    });
+  }
 
   // AUTH
 

@@ -101,6 +101,7 @@ export const InstallConfigSchema = Type.Object({
         default: "60s",
       }),
 
+      // TODO：暂时unifiedWebEnabled开启 metaserver需要开启，因为调用了其中的接口，
       unifiedWebEnabled: Type.Boolean({
         description: "是否启用统一前端，页面迁移完成前默认为关闭",
         default: false,
@@ -118,6 +119,13 @@ export const InstallConfigSchema = Type.Object({
       }),
     },
     { default: {} },
+  ),
+
+  metaServer: Type.Object(
+    {
+      enabled: Type.Boolean({ description: "是否启用元数据服务", default: true }),
+    },
+    { description: "元数据服务配置", default: {} },
   ),
 
   portal: Type.Optional(

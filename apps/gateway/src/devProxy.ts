@@ -46,11 +46,14 @@ function getUpstreamUrl(requestUrl: string | undefined, proxyRoute: ProxyRoute) 
 function getRoutes(): ProxyRoute[] {
   const basePath = config.BASE_PATH;
   const routes = [
-    route(joinPath(basePath, "/meta"), config.META_SERVER_URL),
     route(joinPath(basePath, "/auth/public"), `${trimTrailingSlash(config.AUTH_URL)}/public`, { stripPrefix: true }),
     route(joinPath(basePath, config.NOTIFICATION_PATH), config.NOTIFICATION_PATH_INTERNAL_URL, { stripPrefix: true }),
     route(joinPath(basePath, config.RESOURCE_PATH), config.RESOURCE_PATH_INTERNAL_URL, { stripPrefix: true }),
   ];
+
+  if (config.META_SERVER_ENABLED) {
+    routes.unshift(route(joinPath(basePath, "/meta"), config.META_SERVER_URL));
+  }
 
   if (config.UNIFIED_WEB_ENABLED) {
     if (config.PORTAL_ENABLED) {

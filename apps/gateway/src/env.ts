@@ -49,6 +49,7 @@ export const config = envConfig({
 
   AUTH_URL: str({ desc: "认证服务地址", default: "http://auth:5000" }),
 
+  META_SERVER_ENABLED: bool({ desc: "是否启用元数据服务", default: true }),
   META_SERVER_URL: str({ desc: "元数据服务地址", default: "http://meta-server:3000" }),
 
   EXTRA: str({ desc: "更多nginx配置", default: "" }),

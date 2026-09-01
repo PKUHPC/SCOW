@@ -25,12 +25,14 @@ server {
 
   proxy_read_timeout {{ PROXY_READ_TIMEOUT }};
 
+  {{#if META_SERVER_ENABLED}}
   location {{ BASE_PATH }}/meta {
     set $meta_server {{ META_SERVER_URL }};
     proxy_pass $meta_server;
 
     include includes/headers;
   }
+  {{/if}}
 
   {{#if UNIFIED_WEB_ENABLED}}
   {{#if PORTAL_ENABLED}}
