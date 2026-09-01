@@ -10,6 +10,7 @@ import { getT, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole, UserRole } from "src/models/User";
+import { canAccessAccountFinance } from "src/server/account";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
@@ -41,6 +42,8 @@ export const exportUserBillSchema = typeboxRouteSchema({
   responses: {
     200: Type.Any(),
 
+    403: Type.Null(),
+
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
   },
 });
@@ -63,6 +66,10 @@ export default route(exportUserBillSchema, async (req, res) => {
 
   if (!user) {
     return;
+  }
+
+  if (!(await canAccessAccountFinance(user, accountName))) {
+    return { 403: null };
   }
 
   const logInfo = {
@@ -90,6 +97,7 @@ export default route(exportUserBillSchema, async (req, res) => {
 
   const stream = asyncReplyStreamCall(client, "exportUserBill", {
     accountBillIds: accountBillIds.map((i) => Number(i)),
+    accountName,
   });
 
   const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);

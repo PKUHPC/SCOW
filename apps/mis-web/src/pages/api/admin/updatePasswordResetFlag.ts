@@ -1,9 +1,12 @@
 import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { getCapabilities, updatePasswordResetFlag } from "@scow/lib-auth";
+import { UserServiceClient } from "@scow/protos/build/server/user";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { PlatformRole, TenantRole } from "src/models/User";
+import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { handlegRPCError } from "src/utils/server";
 
@@ -22,6 +25,9 @@ export const UpdatePasswordResetFlagSchema = typeboxRouteSchema({
 
     /** 用户未找到 */
     404: Type.Null(),
+
+    /** 无权修改其他租户用户 */
+    403: Type.Null(),
 
     /** 修改失败 */
     500: Type.Object({ message: Type.String() }),
@@ -49,6 +55,23 @@ export default /* #__PURE__*/ typeboxRoute(UpdatePasswordResetFlagSchema, async 
   }
 
   const { userId, forceFlag } = req.body;
+
+  if (!info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
+    const client = getClient(UserServiceClient);
+    const targetUser = await asyncClientCall(client, "getUserInfo", { userId }).catch(
+      handlegRPCError({
+        [Status.NOT_FOUND]: () => undefined,
+      }),
+    );
+
+    if (!targetUser) {
+      return { 404: null };
+    }
+
+    if (targetUser.tenantName !== info.tenant) {
+      return { 403: null };
+    }
+  }
 
   return await updatePasswordResetFlag(runtimeConfig.AUTH_INTERNAL_URL, { identityId: userId, forceFlag }, console)
     .then(async () => {

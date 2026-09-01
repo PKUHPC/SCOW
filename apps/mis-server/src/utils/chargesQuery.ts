@@ -81,20 +81,6 @@ export const getTenantAccountValidationInput = (
   }
 };
 
-// 有账户或者用户条件时可以省略租户
-export const getChargesTargetSearchParamForQuery = (
-  targetSearchParam: { tenantName?: string | { $ne: null }; accountName?: string | { $ne: null } | { $in: string[] } },
-  hasUserFilter: boolean,
-) => {
-  if (targetSearchParam.accountName !== undefined) {
-    return { accountName: targetSearchParam.accountName };
-  }
-  if (hasUserFilter) {
-    return {};
-  }
-  return targetSearchParam;
-};
-
 // 获得搜索用的type数组
 export const getTypesToSearch = () => {
   return [

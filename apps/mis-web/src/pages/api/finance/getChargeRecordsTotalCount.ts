@@ -8,7 +8,7 @@ import { ensureNotUndefined } from "src/utils/checkNull";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
-import { buildChargesRequestTarget, getTenantOfAccount, getUserInfoForCharges } from "./charges";
+import { buildAuthorizedChargesRequestTarget, getUserInfoForCharges } from "./charges";
 
 export const GetChargeRecordsTotalCountSchema = typeboxRouteSchema({
   method: "GET",
@@ -57,7 +57,7 @@ export default route(GetChargeRecordsTotalCountSchema, async (req, res) => {
   const info = await getUserInfoForCharges(accountNames, req, res);
   if (!info) return;
 
-  const tenantOfAccount = await getTenantOfAccount(accountNames, info);
+  const target = await buildAuthorizedChargesRequestTarget(accountNames, info, searchType, isPlatformRecords);
 
   const client = getClient(ChargingServiceClient);
 
@@ -66,7 +66,7 @@ export default route(GetChargeRecordsTotalCountSchema, async (req, res) => {
       startTime,
       endTime,
       types: types ?? [],
-      target: buildChargesRequestTarget(accountNames, tenantOfAccount, searchType, isPlatformRecords),
+      target,
       userIdsOrNames: userIdsOrNames ?? [],
       preferCache: preferCache ?? false,
     }),

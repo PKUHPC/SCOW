@@ -57,6 +57,7 @@
 
  message GetUserBillsRequest {
    repeated int64 account_bill_ids = 1;
+   optional string account_name = 2;
  }
 
  message GetUserBillsResponse {
@@ -76,5 +77,3 @@ message GetBillTypesResponse {
 
    rpc GetBillTypes(GetBillTypesRequest) returns (GetBillTypesResponse);
  }
-
-

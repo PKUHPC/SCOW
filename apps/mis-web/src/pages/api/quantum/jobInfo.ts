@@ -13,7 +13,7 @@ import { getTokenFromCookie } from "src/auth/cookie";
 import { authenticate } from "src/auth/server";
 import { JobSortOrder } from "src/models/job";
 import { JobSortBy } from "src/models/quantumJob";
-import { PlatformRole, TenantRole, UserRole } from "src/models/User";
+import { getAuthorizedJobQuery } from "src/server/jobQueryAuthorization";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
@@ -104,12 +104,7 @@ export const getQuantumJobInfo = async (request: GetQuantumJobsRequest) => {
 };
 
 export default /* #__PURE__*/ route(GetQuantumJobInfoSchema, async (req, res) => {
-  const auth = authenticate(
-    (u) =>
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-      u.accountAffiliations.length > 0,
-  );
+  const auth = authenticate(() => true);
 
   const info = await auth(req, res);
   const userToken = getTokenFromCookie({ req });
@@ -118,45 +113,21 @@ export default /* #__PURE__*/ route(GetQuantumJobInfoSchema, async (req, res) =>
     return;
   }
 
-  const {
-    page = 1,
-    accountName,
-    tenantName,
-    userId,
-    jobId,
-    pageSize,
-    sortBy,
-    sortOrder,
-    qubits,
-    shots,
-  } = req.query;
-  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
-  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
-  const isSelf = userId === info.identityId;
+  const { page = 1, accountName, tenantName, userId, jobId, pageSize, sortBy, sortOrder, qubits, shots } = req.query;
+  const authorizedQuery = getAuthorizedJobQuery(info, { accountName, tenantName, userId });
 
-  const filter: QuantumJobFilter = {
-    tenantName: tenantName ?? "",
-    accountName,
-    jobId,
-    qubits,
-    shots,
-    userId,
-  };
-
-  if (
-    isPlatformAdmin ||
-    (isTenantAdmin && tenantName === info.tenant) ||
-    (accountName &&
-      info.accountAffiliations.find(
-        (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
-      )) ||
-    isSelf
-  ) {
-    filter.userId = userId;
-    filter.accountName = accountName;
-  } else {
+  if (!authorizedQuery) {
     return { 403: null };
   }
+
+  const filter: QuantumJobFilter = {
+    tenantName: authorizedQuery.tenantName ?? "",
+    accountName: authorizedQuery.accountName,
+    jobId,
+    qubits,
+    shots,
+    userId: authorizedQuery.userId,
+  };
 
   try {
     const { totalCount, jobs } = await getQuantumJobInfo({

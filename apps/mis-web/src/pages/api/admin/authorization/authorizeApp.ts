@@ -8,6 +8,7 @@ import { authenticate } from "src/auth/server";
 import { AppAuthTargetType, AppScope, AuthorizeAction } from "src/models/app";
 import { OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole } from "src/models/User";
+import { accountBelongsToTenant } from "src/server/account";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { DEFAULT_INIT_USER_ID } from "src/utils/constants";
@@ -32,6 +33,7 @@ export const AuthorizeAppSchema = typeboxRouteSchema({
       executed: Type.Boolean(),
       reason: Type.Optional(Type.String()),
     }),
+    403: Type.Null(),
   },
 });
 
@@ -64,6 +66,10 @@ export default route(AuthorizeAppSchema, async (req, res) => {
     logInfo.operatorUserId = info.identityId;
   } else {
     return;
+  }
+
+  if (targetType === AppAuthTargetType.ACCOUNT && !(await accountBelongsToTenant(targetName, info.tenant))) {
+    return { 403: null };
   }
 
   const client = getClient(AppAuthorizationServiceClient);

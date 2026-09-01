@@ -1,9 +1,10 @@
-import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
+import { asyncClientCall, asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
 import { JobInfo as JobInfoProto } from "@scow/protos/build/common/ended_job";
 import { Account, Account_DisplayedAccountState as DisplayedAccountState } from "@scow/protos/build/server/account";
+import { BillServiceClient, UserBill as UserBillProto } from "@scow/protos/build/server/bill";
 import { ChargeRecord as ChargeRecordProto, PaymentRecord } from "@scow/protos/build/server/charging";
 import {
   ExportAccountResponse,
@@ -12,13 +13,16 @@ import {
   ExportJobRecordResponse,
   ExportPayRecordResponse,
   ExportServiceClient,
+  ExportUserBillResponse,
   ExportUserResponse,
 } from "@scow/protos/build/server/export";
 import { GetAllUsersRequest_UsersSortField, SortDirection, tenantRoleFromJSON } from "@scow/protos/build/server/user";
 import { createServer } from "src/app";
+import { AccountBill, BillType } from "src/entities/AccountBill";
 import { ChargeRecord } from "src/entities/ChargeRecord";
 import { JobInfo } from "src/entities/JobInfo";
 import { PayRecord } from "src/entities/PayRecord";
+import { UserBill } from "src/entities/UserBill";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
 import { createTestClient } from "tests/utils";
@@ -470,6 +474,72 @@ it("export pay Records", async () => {
       ipAddress: payRecord3.ipAddress,
     },
   ]);
+});
+
+it("filters user bill queries and exports by account", async () => {
+  const ownAccountBill = new AccountBill({
+    tenantName: data.tenant.name,
+    accountName: data.accountA.accountName,
+    term: "202401",
+    amount: new Decimal(10),
+    type: BillType.MONTHLY,
+  });
+  const otherAccountBill = new AccountBill({
+    tenantName: data.anotherTenant.name,
+    accountName: data.accountC.accountName,
+    term: "202401",
+    amount: new Decimal(20),
+    type: BillType.MONTHLY,
+  });
+  const ownUserBill = new UserBill({
+    tenantName: data.tenant.name,
+    accountName: data.accountA.accountName,
+    userId: data.userA.userId,
+    name: data.userA.name,
+    term: "202401",
+    amount: new Decimal(10),
+    type: BillType.MONTHLY,
+    accountBill: ownAccountBill,
+    details: { cpu: 1 },
+  });
+  const otherUserBill = new UserBill({
+    tenantName: data.anotherTenant.name,
+    accountName: data.accountC.accountName,
+    userId: data.userA.userId,
+    name: data.userA.name,
+    term: "202401",
+    amount: new Decimal(20),
+    type: BillType.MONTHLY,
+    accountBill: otherAccountBill,
+    details: { cpu: 2 },
+  });
+  await em.persistAndFlush([ownAccountBill, otherAccountBill, ownUserBill, otherUserBill]);
+
+  const accountBillIds = [ownAccountBill.id, otherAccountBill.id];
+  const billClient = new BillServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const reply = await asyncClientCall(billClient, "getUserBills", {
+    accountBillIds,
+    accountName: data.accountA.accountName,
+  });
+
+  expect(reply.userBills).toHaveLength(1);
+  expect(reply.userBills[0]).toMatchObject({
+    accountName: data.accountA.accountName,
+    amount: decimalToMoney(new Decimal(10)),
+  });
+
+  const exportClient = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const stream = asyncReplyStreamCall(exportClient, "exportUserBill", {
+    accountBillIds,
+    accountName: data.accountA.accountName,
+  });
+  const records = await collectData<ExportUserBillResponse, UserBillProto>(stream, (response) => response.userBills);
+
+  expect(records).toHaveLength(1);
+  expect(records[0]).toMatchObject({
+    accountName: data.accountA.accountName,
+    amount: decimalToMoney(new Decimal(10)),
+  });
 });
 
 it("export job Records", async () => {

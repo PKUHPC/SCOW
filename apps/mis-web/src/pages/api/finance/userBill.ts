@@ -5,6 +5,7 @@ import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
+import { canAccessAccountFinance } from "src/server/account";
 import { ensureNotUndefined } from "src/utils/checkNull";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
@@ -40,6 +41,7 @@ export const GetUserBillsSchema = typeboxRouteSchema({
     200: Type.Object({
       userBills: Type.Array(UserBillInfo),
     }),
+    403: Type.Null(),
   },
 });
 
@@ -62,10 +64,15 @@ export default route(GetUserBillsSchema, async (req, res) => {
     return;
   }
 
+  if (!(await canAccessAccountFinance(user, accountName))) {
+    return { 403: null };
+  }
+
   const client = getClient(BillServiceClient);
 
   const reply = await asyncClientCall(client, "getUserBills", {
     accountBillIds,
+    accountName,
   });
 
   return {

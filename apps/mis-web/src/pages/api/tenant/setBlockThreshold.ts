@@ -8,6 +8,7 @@ import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole } from "src/models/User";
+import { accountBelongsToTenant } from "src/server/account";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
@@ -40,6 +41,17 @@ export default /* #__PURE__*/ route(SetBlockThresholdSchema, async (req, res) =>
 
   if (!info) {
     return;
+  }
+
+  if (!info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
+    if (!(await accountBelongsToTenant(accountName, info.tenant))) {
+      return {
+        200: {
+          executed: false,
+          reason: `Account ${accountName} is not found`,
+        },
+      };
+    }
   }
 
   const client = getClient(AccountServiceClient);

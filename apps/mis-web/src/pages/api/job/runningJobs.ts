@@ -3,8 +3,8 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { GetRunningJobsRequest, JobServiceClient } from "@scow/protos/build/server/job";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
+import { getAuthorizedJobQuery } from "src/server/jobQueryAuthorization";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
@@ -100,12 +100,7 @@ export const getRunningJobs = async (request: GetRunningJobsRequest) => {
 };
 
 export default /* #__PURE__*/ route(GetRunningJobsSchema, async (req, res) => {
-  const auth = authenticate(
-    (u) =>
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-      u.accountAffiliations.length > 0,
-  );
+  const auth = authenticate(() => true);
 
   const info = await auth(req, res);
 
@@ -114,33 +109,21 @@ export default /* #__PURE__*/ route(GetRunningJobsSchema, async (req, res) => {
   }
 
   const { cluster, userId, userIdOrName, ownerIdOrName, accountName, tenantName } = req.query;
-  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
-  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
-  const isSelf = userId === info.identityId;
+  const authorizedQuery = getAuthorizedJobQuery(info, { accountName, tenantName, userId });
+
+  if (!authorizedQuery) {
+    return { 403: null };
+  }
 
   const filter: GetRunningJobsRequest = {
     cluster,
     jobIdList: [],
     userIdOrName,
     ownerIdOrName,
+    tenantName: authorizedQuery.tenantName,
+    userId: authorizedQuery.userId,
+    accountName: authorizedQuery.accountName,
   };
-
-  if (
-    isPlatformAdmin ||
-    (isTenantAdmin && tenantName === info.tenant) ||
-    (accountName &&
-      info.accountAffiliations.find(
-        (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
-      )) ||
-    isSelf
-  ) {
-    filter.tenantName = tenantName;
-    filter.userId = userId;
-    filter.accountName = accountName;
-  } else {
-    return { 403: null };
-  }
-
   const results = await getRunningJobs(filter);
 
   return {

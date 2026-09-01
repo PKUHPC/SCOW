@@ -10,9 +10,10 @@ import { getT, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { SearchType } from "src/models/job";
 import { OperationResult } from "src/models/operationLog";
-import { PlatformRole, TenantRole, UserRole } from "src/models/User";
+import { PlatformRole, TenantRole } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { buildJobsRequestTarget } from "src/pages/api/job/jobInfo";
+import { getAuthorizedJobQuery } from "src/server/jobQueryAuthorization";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { getClusterName } from "src/utils/cluster";
@@ -63,12 +64,7 @@ export const ExportJobRecordSchema = typeboxRouteSchema({
 
 export default route(ExportJobRecordSchema, async (req, res) => {
   // 和getJobInfo的auth保持一致
-  const auth = authenticate(
-    (u) =>
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-      u.accountAffiliations.length > 0,
-  );
+  const auth = authenticate(() => true);
 
   const info = await auth(req, res);
 
@@ -99,31 +95,26 @@ export default route(ExportJobRecordSchema, async (req, res) => {
   let { clusters } = query;
 
   const trimmedIds = parseJobIds(jobIds);
-  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
-  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
-  const isSelf = userId === info.identityId;
+  const canExportTenantJobIds =
+    info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
 
-  if (
-    !isPlatformAdmin &&
-    !(
-      (isTenantAdmin && tenantName === info.tenant) ||
-      (accountName &&
-        info.accountAffiliations.find(
-          (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
-        )) ||
-      isSelf
-    )
-  ) {
+  if (trimmedIds.length > 0 && !canExportTenantJobIds) {
+    return { 403: null };
+  }
+
+  const authorizedQuery = getAuthorizedJobQuery(info, { accountName, tenantName, userId });
+
+  if (!authorizedQuery) {
     return { 403: null };
   }
 
   clusters = clusters ?? [];
   clusters = clusters.filter((i) => i !== "");
   const target = buildJobsRequestTarget(
-    tenantName ?? "",
+    authorizedQuery.tenantName ?? "",
     jobId,
-    accountName,
-    userId,
+    authorizedQuery.accountName,
+    authorizedQuery.userId,
     trimmedIds,
   );
 

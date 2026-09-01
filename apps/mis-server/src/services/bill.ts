@@ -96,11 +96,11 @@ export const billServiceServer = plugin((server) => {
     },
 
     getUserBills: async ({ request, em }) => {
-      const { accountBillIds } = request;
+      const { accountBillIds, accountName } = request;
 
       const items = await em.find(
         UserBill,
-        { accountBill: { $in: accountBillIds } },
+        { accountBill: { $in: accountBillIds }, ...(accountName ? { accountName } : {}) },
         {
           orderBy: { userId: "asc" },
         },

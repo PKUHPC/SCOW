@@ -32,7 +32,7 @@ export default /* #__PURE__*/ route(SetDefaultAccountBlockThresholdSchema, async
   const { tenantName, blockThresholdAmount } = req.body;
 
   const auth = authenticate((u) => {
-    return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return u.tenantRoles.includes(TenantRole.TENANT_ADMIN) && u.tenant === tenantName;
   });
 
   const info = await auth(req, res);

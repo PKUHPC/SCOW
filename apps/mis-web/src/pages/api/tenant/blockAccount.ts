@@ -33,7 +33,10 @@ export default /* #__PURE__*/ route(BlockAccountSchema, async (req, res) => {
   const { tenantName, accountName } = req.body;
 
   const auth = authenticate((u) => {
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (u.tenantRoles.includes(TenantRole.TENANT_ADMIN) && u.tenant === tenantName)
+    );
   });
 
   const info = await auth(req, res);

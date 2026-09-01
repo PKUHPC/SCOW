@@ -146,7 +146,11 @@ export async function authorizeAccountApp(
   foundOperator: Loaded<User, never, "*", never>,
   logger: Logger,
 ): Promise<void> {
-  const foundAccount = await em.findOne(Account, { accountName: accountName }, { populate: ["tenant"] });
+  const foundAccount = await em.findOne(
+    Account,
+    { accountName: accountName, tenant: foundOperator.tenant },
+    { populate: ["tenant"] },
+  );
   // 检查当前appId是否不在租户禁用app列表之中
   if (!foundAccount || foundAccount?.state === AccountState.DELETED) {
     const details = `Account ${accountName} is not found or has been deleted.`;

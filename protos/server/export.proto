@@ -133,6 +133,7 @@ message ExportBillResponse {
 
 message ExportUserBillRequest {
   repeated int64 account_bill_ids = 1;
+  optional string account_name = 2;
 }
 
 message ExportUserBillResponse {

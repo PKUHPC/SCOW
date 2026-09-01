@@ -141,7 +141,15 @@ export async function getUserInfoForCharges(
   }
 }
 
+export const hasPlatformFinanceAccess = (info: UserInfo): boolean =>
+  info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+  info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE);
+
 export async function getTenantOfAccount(accountNames: string[] | undefined, info: UserInfo): Promise<string> {
+  if (!hasPlatformFinanceAccess(info)) {
+    return info.tenant;
+  }
+
   if (accountNames?.length === 1) {
     const client = getClient(AccountServiceClient);
 
@@ -156,7 +164,7 @@ export async function getTenantOfAccount(accountNames: string[] | undefined, inf
   return info.tenant;
 }
 
-export const buildChargesRequestTarget = (
+const buildChargesRequestTarget = (
   accountNames: string[] | undefined,
   tenantName: string,
   searchType: SearchType | undefined,
@@ -201,6 +209,18 @@ export const buildChargesRequestTarget = (
   }
 };
 
+export async function buildAuthorizedChargesRequestTarget(
+  accountNames: string[] | undefined,
+  info: UserInfo,
+  searchType: SearchType | undefined,
+  isPlatformRecords: boolean | undefined,
+) {
+  const tenantName = await getTenantOfAccount(accountNames, info);
+  const canAccessPlatformRecords = hasPlatformFinanceAccess(info) && isPlatformRecords;
+
+  return buildChargesRequestTarget(accountNames, tenantName, searchType, canAccessPlatformRecords);
+}
+
 export default route(GetChargesSchema, async (req, res) => {
   const {
     endTime,
@@ -220,7 +240,7 @@ export default route(GetChargesSchema, async (req, res) => {
   const info = await getUserInfoForCharges(accountNames, req, res);
   if (!info) return;
 
-  const tenantOfAccount = await getTenantOfAccount(accountNames, info);
+  const target = await buildAuthorizedChargesRequestTarget(accountNames, info, searchType, isPlatformRecords);
 
   const client = getClient(ChargingServiceClient);
 
@@ -234,7 +254,7 @@ export default route(GetChargesSchema, async (req, res) => {
       endTime,
       types: types ?? [],
       userIds: userIds ?? [],
-      target: buildChargesRequestTarget(accountNames, tenantOfAccount, searchType, isPlatformRecords),
+      target,
       page,
       pageSize,
       sortBy: mapChargesSortBy,

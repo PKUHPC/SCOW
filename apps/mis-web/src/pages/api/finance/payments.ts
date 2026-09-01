@@ -6,13 +6,13 @@ import { ChargingServiceClient, GetPaymentRecordsRequest_SortBy as SortBy } from
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { PaymentSortBy } from "src/models/payment";
-import { ChargesSortOrder, TenantRole, UserInfo, UserRole } from "src/models/User";
+import { ChargesSortOrder, PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/User";
 import { SearchType } from "src/pageComponents/common/PaymentTable";
 import { ensureNotUndefined } from "src/utils/checkNull";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
-import { getTenantOfAccount } from "./charges";
+import { getTenantOfAccount, hasPlatformFinanceAccess } from "./charges";
 
 export const mapChargesSortByType = {
   accountName: SortBy.ACCOUNT_NAME,
@@ -94,6 +94,9 @@ export const getPaymentRecordTarget = (
 ) => {
   switch (searchType) {
     case SearchType.tenant:
+      if (!hasPlatformFinanceAccess(user)) {
+        return { $case: "tenant" as const, tenant: { tenantName: user.tenant } };
+      }
       return targetNames
         ? { $case: "tenant" as const, tenant: { tenantName: targetNames[0] } }
         : { $case: "allTenants" as const, allTenants: {} };
@@ -140,8 +143,17 @@ export default route(GetPaymentsSchema, async (req, res) => {
 
   let user: UserInfo | undefined;
 
-  // check whether the user can access the account
-  if (accountNames && accountNames.length > 0) {
+  if (searchType === SearchType.tenant) {
+    user = await authenticate(
+      (i) =>
+        i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+        i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE),
+    )(req, res);
+  } else if (searchType === SearchType.selfTenant) {
+    user = await authenticate(
+      (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    )(req, res);
+  } else if (accountNames && accountNames.length > 0) {
     user = await authenticate(
       (i) =>
         i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
@@ -150,16 +162,14 @@ export default route(GetPaymentsSchema, async (req, res) => {
         (accountNames.length === 1 &&
           i.accountAffiliations.some((x) => x.accountName === accountNames[0] && x.role !== UserRole.USER)),
     )(req, res);
-    if (!user) {
-      return;
-    }
   } else {
     user = await authenticate(
       (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
     )(req, res);
-    if (!user) {
-      return;
-    }
+  }
+
+  if (!user) {
+    return;
   }
 
   const tenantOfAccount = await getTenantOfAccount(accountNames, user);
@@ -185,7 +195,9 @@ export default route(GetPaymentsSchema, async (req, res) => {
   );
 
   const returnAuditInfo =
-    user.tenantRoles.includes(TenantRole.TENANT_FINANCE) || user.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    hasPlatformFinanceAccess(user) ||
+    user.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
+    user.tenantRoles.includes(TenantRole.TENANT_ADMIN);
 
   const records = reply.results.map((x) => {
     const obj = ensureNotUndefined(x, ["time", "amount"]);

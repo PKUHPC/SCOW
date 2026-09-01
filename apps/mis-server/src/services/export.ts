@@ -34,7 +34,6 @@ import {
   getChargesSearchType,
   getChargesSearchTypes,
   getChargesTargetSearchParam,
-  getChargesTargetSearchParamForQuery,
   getPaymentsSearchType,
   getPaymentsTargetSearchParam,
 } from "src/utils/chargesQuery";
@@ -324,7 +323,6 @@ export const exportServiceServer = plugin((server) => {
 
       const trimmedUserIds = userIds.map((x) => x.trim()).filter((x) => x.length > 0);
       const hasUserFilter = trimmedUserIdsOrNames.length > 0 || trimmedUserIds.length > 0;
-      const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
       const tenantNameForMatchedUsers =
         typeof targetSearchParam.tenantName === "string" ? targetSearchParam.tenantName : undefined;
@@ -367,7 +365,7 @@ export const exportServiceServer = plugin((server) => {
       const query = {
         time: { $gte: startTime, $lte: endTime },
         ...searchType,
-        ...searchParam,
+        ...targetSearchParam,
         ...(hasUserFilter ? { userId: { $in: matchedUserIds } } : {}),
       };
 
@@ -647,7 +645,7 @@ export const exportServiceServer = plugin((server) => {
 
     exportUserBill: async (call) => {
       const { request, em } = call;
-      const { accountBillIds } = request;
+      const { accountBillIds, accountName } = request;
 
       const { writeAsync } = createWriterExtensions(call);
 
@@ -655,7 +653,7 @@ export const exportServiceServer = plugin((server) => {
 
       const items = await em.find(
         UserBill,
-        { accountBill: { $in: accountBillIds } },
+        { accountBill: { $in: accountBillIds }, ...(accountName ? { accountName } : {}) },
         {
           orderBy: { createTime: "desc" },
         },

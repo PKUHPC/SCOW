@@ -249,7 +249,7 @@ export const storageServiceServer = plugin((server) => {
     // 设置租户下用户的配额
     // 如果使用默认值则将当前条目配额改为 undefined
     setTenantUserQuota: async ({ request, em }) => {
-      const { cluster, path, userId, userQuotaBytes, useTenantDefaultUserQuota } = request;
+      const { cluster, path, userId, tenantName, userQuotaBytes, useTenantDefaultUserQuota } = request;
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
@@ -263,9 +263,12 @@ export const storageServiceServer = plugin((server) => {
       await em.transactional(async (em) => {
         try {
           // 文件系统中成功，修改 scow 数据库
-          const user = await em.findOne(User, { userId });
+          const user = await em.findOne(User, { userId, tenant: { name: tenantName } });
           if (!user) {
-            throw { code: status.NOT_FOUND, message: `User ${userId} is not found.` } as ServiceError;
+            throw {
+              code: status.NOT_FOUND,
+              message: `User ${userId} is not found in tenant ${tenantName}.`,
+            } as ServiceError;
           }
 
           logger.debug("Querying tenant user quota with PESSIMISTIC_WRITE lock", {

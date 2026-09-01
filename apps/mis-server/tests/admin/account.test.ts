@@ -66,6 +66,33 @@ it("cannot create a account if the name exists", async () => {
   expect(reply.code).toBe(Status.ALREADY_EXISTS);
 });
 
+it("cannot block or unblock an account through another tenant", async () => {
+  const em = server.ext.orm.em.fork();
+  const anotherTenant = new Tenant({ name: "anotherTenant" });
+  const account = new Account({
+    accountName: "crossTenantAccount",
+    tenant,
+    blockedInCluster: false,
+    comment: "test",
+  });
+  await em.persistAndFlush([anotherTenant, account]);
+
+  const blockReply = await asyncClientCall(client, "blockAccount", {
+    accountName: account.accountName,
+    tenantName: anotherTenant.name,
+  }).catch((e) => e);
+  expect(blockReply.code).toBe(Status.NOT_FOUND);
+
+  account.blockedInCluster = true;
+  await em.flush();
+
+  const unblockReply = await asyncClientCall(client, "unblockAccount", {
+    accountName: account.accountName,
+    tenantName: anotherTenant.name,
+  }).catch((e) => e);
+  expect(unblockReply.code).toBe(Status.NOT_FOUND);
+});
+
 it("delete account", async () => {
   const em = server.ext.orm.em.fork();
 

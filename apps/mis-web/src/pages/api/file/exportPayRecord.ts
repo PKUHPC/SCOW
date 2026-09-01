@@ -9,7 +9,7 @@ import { authenticate } from "src/auth/server";
 import { getT, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { OperationResult } from "src/models/operationLog";
-import { PlatformRole, TenantRole, UserRole } from "src/models/User";
+import { PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/User";
 import { SearchType } from "src/pageComponents/common/PaymentTable";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";
@@ -70,36 +70,37 @@ export default route(ExportPayRecordSchema, async (req, res) => {
     return;
   }
 
-  let user;
+  let user: UserInfo | undefined;
   if (searchType === SearchType.tenant) {
     user = await authenticate(
       (i) =>
         i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
         i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
     )(req, res);
+  } else if (searchType === SearchType.selfTenant) {
+    user = await authenticate(
+      (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    )(req, res);
+  } else if (targetNames && targetNames.length > 0) {
+    user = await authenticate(
+      (i) =>
+        i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
+        i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+        // 排除掉前面的租户财务员和管理员，只剩下账户管理员
+        (targetNames.length === 1 &&
+          i.accountAffiliations.some((x) => x.accountName === targetNames[0] && x.role !== UserRole.USER)),
+    )(req, res);
   } else {
-    if (targetNames && targetNames.length > 0) {
-      user = await authenticate(
-        (i) =>
-          i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-          i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-          // 排除掉前面的租户财务员和管理员，只剩下账户管理员
-          (targetNames.length === 1 &&
-            i.accountAffiliations.some((x) => x.accountName === targetNames[0] && x.role !== UserRole.USER)),
-      )(req, res);
-    } else {
-      user = await authenticate(
-        (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
-      )(req, res);
-    }
+    user = await authenticate(
+      (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    )(req, res);
   }
 
   if (!user) {
     return;
   }
 
-  const tenantOfAccount =
-    searchType === SearchType.account ? await getTenantOfAccount(targetNames, user) : user.tenantId;
+  const tenantOfAccount = searchType === SearchType.account ? await getTenantOfAccount(targetNames, user) : user.tenant;
 
   const target = getPaymentRecordTarget(searchType, user, tenantOfAccount, targetNames);
 

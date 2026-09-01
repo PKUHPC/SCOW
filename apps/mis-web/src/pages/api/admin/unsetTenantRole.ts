@@ -25,6 +25,8 @@ export const UnsetTenantRoleSchema = typeboxRouteSchema({
   responses: {
     // 如果用户已经不是这个角色，那么executed为false
     200: Type.Object({ executed: Type.Boolean() }),
+    // 目标用户不属于当前租户
+    403: Type.Null(),
     // 用户不存在
     404: Type.Null(),
   },
@@ -32,6 +34,7 @@ export const UnsetTenantRoleSchema = typeboxRouteSchema({
 
 export default route(UnsetTenantRoleSchema, async (req, res) => {
   const { userId, roleType } = req.body;
+  let operatorTenant = DEFAULT_TENANT_NAME;
 
   const logInfo = {
     operatorUserId: DEFAULT_INIT_USER_ID,
@@ -54,12 +57,26 @@ export default route(UnsetTenantRoleSchema, async (req, res) => {
     if (info) {
       logInfo.operatorUserId = info.identityId;
       logInfo.operationTypePayload.tenantName = info.tenant;
+      operatorTenant = info.tenant;
     } else {
       return;
     }
   }
 
   const client = getClient(UserServiceClient);
+  const targetUser = await asyncClientCall(client, "getUserInfo", { userId }).catch(
+    handlegRPCError({
+      [Status.NOT_FOUND]: () => undefined,
+    }),
+  );
+
+  if (!targetUser) {
+    return { 404: null };
+  }
+
+  if (targetUser.tenantName !== operatorTenant) {
+    return { 403: null };
+  }
 
   return await asyncClientCall(client, "unsetTenantRole", {
     userId,

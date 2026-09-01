@@ -690,11 +690,10 @@ it("returns charge records with query of allTenants", async () => {
 });
 
 it("returns charge records with query of accountsOfTenant", async () => {
-  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
   const tenant2 = new Tenant({ name: "test2" });
   const account2 = new Account({
     accountName: "1234",
-    tenant,
+    tenant: tenant2,
     blockedInCluster: false,
     comment: "test",
   });
@@ -757,7 +756,7 @@ it("returns charge records with query of accountsOfTenant", async () => {
     userIdsOrNames: [],
   });
 
-  expect(reply.results).toHaveLength(2);
+  expect(reply.results).toHaveLength(1);
 
   expect(reply.results).toMatchObject([
     {
@@ -766,13 +765,6 @@ it("returns charge records with query of accountsOfTenant", async () => {
       comment: request1.comment,
       amount: request1.amount,
       type: request1.type,
-    },
-    {
-      accountName: request2.accountName,
-      tenantName: account.tenant.getProperty("name"),
-      comment: request2.comment,
-      amount: request2.amount,
-      type: request2.type,
     },
   ] as Partial<ChargeRecord>);
 

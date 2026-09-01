@@ -47,6 +47,7 @@ message SetTenantUserQuotaRequest {
   string user_id = 3;
   optional uint64 user_quota_bytes = 4;
   optional bool use_tenant_default_user_quota = 5;
+  string tenant_name = 6;
 }
 
 

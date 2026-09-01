@@ -52,14 +52,18 @@ export default /* #__PURE__*/ route(SetTenantUserQuotaSchema, async (req, res) =
 
   const info = await auth(req, res);
 
+  if (!info) {
+    return;
+  }
+
   const userClient = getClient(UserServiceClient);
   const userInfo: GetUserInfoResponse = await asyncClientCall(userClient, "getUserInfo", { userId });
   if (!userInfo) {
     return { 404: null };
   }
 
-  if (!info) {
-    return;
+  if (userInfo.tenantName !== info.tenant) {
+    return { 403: null };
   }
 
   if (info.tenant) {
@@ -102,6 +106,7 @@ export default /* #__PURE__*/ route(SetTenantUserQuotaSchema, async (req, res) =
     cluster,
     path,
     userId,
+    tenantName: info.tenant,
     userQuotaBytes,
     useTenantDefaultUserQuota,
   })

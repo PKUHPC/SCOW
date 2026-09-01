@@ -10,7 +10,7 @@ import { Encoding } from "src/models/exportFile";
 import { OperationResult } from "src/models/operationLog";
 import { SearchType } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
-import { buildChargesRequestTarget, getTenantOfAccount, getUserInfoForCharges } from "src/pages/api/finance/charges";
+import { buildAuthorizedChargesRequestTarget, getUserInfoForCharges } from "src/pages/api/finance/charges";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
@@ -66,9 +66,7 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
     return;
   }
 
-  const tenantOfAccount = await getTenantOfAccount(accountNames, info);
-
-  const target = buildChargesRequestTarget(accountNames, tenantOfAccount, searchType, isPlatformRecords);
+  const target = await buildAuthorizedChargesRequestTarget(accountNames, info, searchType, isPlatformRecords);
 
   const logInfo = {
     operatorUserId: info.identityId,

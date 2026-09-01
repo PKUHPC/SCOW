@@ -18,8 +18,8 @@ import {
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { JobSortBy, JobSortOrder } from "src/models/job";
-import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
+import { getAuthorizedJobQuery } from "src/server/jobQueryAuthorization";
 import { getClient } from "src/utils/client";
 import { safeGetStringProperty } from "src/utils/format";
 import { parseJobIds } from "src/utils/jobIds";
@@ -154,12 +154,7 @@ export const getJobInfo = async (request: GetJobsRequest) => {
 };
 
 export default /* #__PURE__*/ route(GetJobInfoSchema, async (req, res) => {
-  const auth = authenticate(
-    (u) =>
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-      u.accountAffiliations.length > 0,
-  );
+  const auth = authenticate(() => true);
 
   const info = await auth(req, res);
 
@@ -185,13 +180,15 @@ export default /* #__PURE__*/ route(GetJobInfoSchema, async (req, res) => {
   } = req.query;
 
   const trimmedIds = parseJobIds(jobIds);
-  const isPlatformAdmin = info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN);
-  const isTenantAdmin = info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
-  const isSelf = userId === info.identityId;
+  const authorizedQuery = getAuthorizedJobQuery(info, { accountName, tenantName, userId });
+
+  if (!authorizedQuery) {
+    return { 403: null };
+  }
 
   const filter: JobFilter = {
-    tenantName: tenantName ?? "",
-    accountName,
+    tenantName: authorizedQuery.tenantName ?? "",
+    accountName: authorizedQuery.accountName,
     jobEndTimeEnd,
     jobEndTimeStart,
     jobId: trimmedIds.length > 0 ? undefined : jobId, // 如果已有jobIds，则jobId不生效
@@ -200,22 +197,9 @@ export default /* #__PURE__*/ route(GetJobInfoSchema, async (req, res) => {
     clusters: clusters ?? [],
   };
 
-  if (
-    isPlatformAdmin ||
-    (isTenantAdmin && tenantName === info.tenant) ||
-    (accountName &&
-      info.accountAffiliations.find(
-        (x) => x.accountName === accountName && (x.role === UserRole.ADMIN || x.role === UserRole.OWNER),
-      )) ||
-    isSelf
-  ) {
-    filter.userId = userId;
-    filter.userIdOrName = userIdOrName?.trim() || undefined;
-    filter.accountName = accountName;
-    filter.ownerIdOrName = ownerIdOrName?.trim() || undefined;
-  } else {
-    return { 403: null };
-  }
+  filter.userId = authorizedQuery.userId;
+  filter.userIdOrName = userIdOrName?.trim() || undefined;
+  filter.ownerIdOrName = ownerIdOrName?.trim() || undefined;
 
   // 默认按照作业结束时间的降序排列
   const mapJobSortBy = sortBy ? mapJobSortByType[sortBy] : mapJobSortByType.timeEnd;

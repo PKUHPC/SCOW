@@ -53,7 +53,7 @@ function ensureAccountNotDeleted(account: Account) {
 export const accountServiceServer = plugin((server) => {
   server.addService<AccountServiceServer>(AccountServiceService, {
     blockAccount: async ({ request, em, logger }) => {
-      const { accountName } = request;
+      const { accountName, tenantName } = request;
       logger.info("Received blockAccount request for account %s", accountName);
 
       // 检查当前是否有正在执行的同步用户账户操作
@@ -64,6 +64,7 @@ export const accountServiceServer = plugin((server) => {
           Account,
           {
             accountName,
+            tenant: { name: tenantName },
           },
           { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] },
         );
@@ -165,7 +166,7 @@ export const accountServiceServer = plugin((server) => {
     },
 
     unblockAccount: async ({ request, em, logger }) => {
-      const { accountName } = request;
+      const { accountName, tenantName } = request;
       logger.info("Received unblockAccount request for account %s", accountName);
 
       // 检查当前是否有正在执行的同步用户账户操作
@@ -176,6 +177,7 @@ export const accountServiceServer = plugin((server) => {
           Account,
           {
             accountName,
+            tenant: { name: tenantName },
           },
           { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] },
         );

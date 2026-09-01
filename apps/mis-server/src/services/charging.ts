@@ -21,7 +21,6 @@ import {
   getChargesSearchType,
   getChargesSearchTypes,
   getChargesTargetSearchParam,
-  getChargesTargetSearchParamForQuery,
   getPaymentsSearchType,
   getPaymentsTargetSearchParam,
   getTypesToSearch,
@@ -619,8 +618,6 @@ export const chargingServiceServer = plugin((server) => {
       await ensureTargetAccountsBelongToTenant(em, target);
 
       const targetSearchParam = getChargesTargetSearchParam(target);
-      const hasUserFilter = !!(userIdsOrNames && userIdsOrNames.length > 0);
-      const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
       const tenantNameForMatchedUsers =
         typeof targetSearchParam.tenantName === "string" ? targetSearchParam.tenantName : undefined;
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
@@ -630,7 +627,7 @@ export const chargingServiceServer = plugin((server) => {
         .select("*")
         .where({
           time: { $gte: startTime, $lte: endTime },
-          ...searchParam,
+          ...targetSearchParam,
           ...searchType,
         })
         .offset(((page ?? 1) - 1) * (pageSize ?? DEFAULT_PAGE_SIZE))
@@ -714,8 +711,6 @@ export const chargingServiceServer = plugin((server) => {
       await ensureTargetAccountsBelongToTenant(em, target);
 
       const targetSearchParam = getChargesTargetSearchParam(target);
-      const hasUserFilter = !!(userIdsOrNames && userIdsOrNames.length > 0);
-      const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
       const tenantNameForMatchedUsers =
         typeof targetSearchParam.tenantName === "string" ? targetSearchParam.tenantName : undefined;
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
@@ -727,7 +722,7 @@ export const chargingServiceServer = plugin((server) => {
         .where({
           time: { $gte: startTime, $lte: endTime },
           ...searchType,
-          ...searchParam,
+          ...targetSearchParam,
         });
 
       let result;
