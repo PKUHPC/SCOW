@@ -516,7 +516,7 @@ it("filters user bill queries and exports by account", async () => {
   await em.persistAndFlush([ownAccountBill, otherAccountBill, ownUserBill, otherUserBill]);
 
   const accountBillIds = [ownAccountBill.id, otherAccountBill.id];
-  const billClient = new BillServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const billClient = createTestClient(server.serverAddress, BillServiceClient);
   const reply = await asyncClientCall(billClient, "getUserBills", {
     accountBillIds,
     accountName: data.accountA.accountName,
@@ -528,7 +528,7 @@ it("filters user bill queries and exports by account", async () => {
     amount: decimalToMoney(new Decimal(10)),
   });
 
-  const exportClient = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  const exportClient = createTestClient(server.serverAddress, ExportServiceClient);
   const stream = asyncReplyStreamCall(exportClient, "exportUserBill", {
     accountBillIds,
     accountName: data.accountA.accountName,
