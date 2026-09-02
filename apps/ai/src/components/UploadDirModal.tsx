@@ -1,4 +1,5 @@
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
+import { calculateUploadedBytes } from "@scow/lib-web/build/utils/fileUpload/uploadCalculation";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
 import { isFileEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile, UploadProps } from "antd";
@@ -364,17 +365,15 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       const uploadedChunkIndices = new Set(uploadedIndices);
 
       const totalCount = Math.ceil(file.size / chunkSizeByte);
-      let uploadedCount = uploadedChunkIndices.size;
+      let loadedBytes = calculateUploadedBytes(file.size, chunkSizeByte, uploadedChunkIndices);
 
-      const alreadyUploadedBytes = uploadedCount * chunkSizeByte;
-      speedTracker.initFileSpeed(uploadFile.uid, alreadyUploadedBytes);
+      speedTracker.initFileSpeed(uploadFile.uid, loadedBytes);
 
-      const updateProgress = (count: number) => {
-        uploadedCount += count;
-        const percentage = Number(((uploadedCount / totalCount) * 100).toFixed(2));
+      const updateProgress = (chunkSize: number) => {
+        loadedBytes = Math.min(file.size, loadedBytes + chunkSize);
+        const percentage = file.size === 0 ? 100 : Number(((loadedBytes / file.size) * 100).toFixed(2));
 
-        const currentTotalLoaded = uploadedCount * chunkSizeByte;
-        speedTracker.updateFileBytes(uploadFile.uid, currentTotalLoaded);
+        speedTracker.updateFileBytes(uploadFile.uid, loadedBytes);
 
         setUploadFileList((prevList) => {
           return prevList.map((uploadFile) => {
@@ -418,7 +417,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           throw new Error(response.statusText);
         }
 
-        updateProgress(1);
+        updateProgress(chunk.size);
       };
 
       const chunkLimit = pLimit(2);

@@ -1,4 +1,5 @@
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
+import { calculateUploadedBytes } from "@scow/lib-web/build/utils/fileUpload/uploadCalculation";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
 import { isDirectoryEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
@@ -117,15 +118,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
 
-    // 计算已上传字节数
-    let loadedBytes = 0;
-    uploadedChunkIndices.forEach((index) => {
-      if (index === totalCount) {
-        loadedBytes += file.size - (totalCount - 1) * chunkSizeByte;
-      } else {
-        loadedBytes += chunkSizeByte;
-      }
-    });
+    let loadedBytes = calculateUploadedBytes(file.size, chunkSizeByte, uploadedChunkIndices);
 
     const uploadFile = uploadFileListRef.current.find((uploadFile) => uploadFile.name === file.name);
     if (!uploadFile) {
@@ -136,8 +129,8 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     speedTracker.initFileSpeed(uploadFile.uid, loadedBytes);
 
     const updateProgress = (chunkSize: number) => {
-      loadedBytes += chunkSize;
-      const percentage = Number(((loadedBytes / file.size) * 100).toFixed(2));
+      loadedBytes = Math.min(file.size, loadedBytes + chunkSize);
+      const percentage = file.size === 0 ? 100 : Number(((loadedBytes / file.size) * 100).toFixed(2));
 
       // 更新速度
       speedTracker.updateFileBytes(uploadFile.uid, loadedBytes);

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { UploadSpeedSample } from "./uploadCalculation";
+
+import { calculateUploadSpeed } from "./uploadCalculation";
 import { formatSpeed } from "./uploadUtils";
 
-export interface SpeedSample {
-  bytes: number;
-  time: number;
-}
+export type SpeedSample = UploadSpeedSample;
 
 export interface FileSpeedInfo {
   speedText: string;
@@ -34,6 +34,7 @@ export const useUploadSpeedTracker = (
 ): UseUploadSpeedTrackerResponse => {
   const [speedInfoMap, setSpeedInfoMap] = useState<Map<string, FileSpeedInfo>>(new Map());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const latestProgressRef = useRef(new Map<string, { bytes: number; time: number }>());
 
   // 启动定时器
   const startTimer = useCallback(() => {
@@ -46,32 +47,24 @@ export const useUploadSpeedTracker = (
         const newMap = new Map(prevMap);
         const now = Date.now();
 
-        // 更新每个文件的速度信息
         newMap.forEach((info, fileUid) => {
-          const samples = info.samples;
+          const latestProgress = latestProgressRef.current.get(fileUid) ?? {
+            bytes: info.sessionStartBytes,
+            time: info.sessionStartTime,
+          };
+          const { bytesPerSecond, samples } = calculateUploadSpeed(
+            info.samples,
+            latestProgress.bytes,
+            now,
+            latestProgress.time,
+          );
 
-          if (samples.length >= 2) {
-            // 保留最近10秒的采样点
-            const tenSecondsAgo = now - 10000;
-            const recentSamples = samples.filter((sample) => sample.time >= tenSecondsAgo);
-
-            if (recentSamples.length >= 2) {
-              const firstSample = recentSamples[0];
-              const lastSample = recentSamples[recentSamples.length - 1];
-
-              const bytesDiff = lastSample.bytes - firstSample.bytes;
-              const timeDiff = (lastSample.time - firstSample.time) / 1000;
-
-              const speed = timeDiff > 0 ? bytesDiff / timeDiff : 0;
-
-              newMap.set(fileUid, {
-                ...info,
-                samples: recentSamples,
-                speedText: formatSpeed(speed),
-                bytesPerSecond: speed,
-              });
-            }
-          }
+          newMap.set(fileUid, {
+            ...info,
+            samples,
+            speedText: formatSpeed(bytesPerSecond),
+            bytesPerSecond,
+          });
         });
 
         return newMap;
@@ -91,6 +84,7 @@ export const useUploadSpeedTracker = (
   const initFileSpeed = useCallback(
     (fileUid: string, initialBytes = 0) => {
       const now = Date.now();
+      latestProgressRef.current.set(fileUid, { bytes: initialBytes, time: now });
 
       setSpeedInfoMap((prev) => {
         const newMap = new Map(prev);
@@ -112,18 +106,22 @@ export const useUploadSpeedTracker = (
 
   // 更新文件的已上传字节数
   const updateFileBytes = useCallback((fileUid: string, uploadedBytes: number) => {
+    const latestProgress = latestProgressRef.current.get(fileUid);
+    if (!latestProgress) return;
+
     const now = Date.now();
+    const nextBytes = Math.max(latestProgress.bytes, uploadedBytes);
+    const lastProgressTime = nextBytes > latestProgress.bytes ? now : latestProgress.time;
+    latestProgressRef.current.set(fileUid, { bytes: nextBytes, time: lastProgressTime });
 
     setSpeedInfoMap((prev) => {
       const info = prev.get(fileUid);
       if (!info) return prev;
 
-      const newSamples = [...info.samples, { bytes: uploadedBytes, time: now }];
-
       const newMap = new Map(prev);
       newMap.set(fileUid, {
         ...info,
-        samples: newSamples,
+        samples: [...info.samples, { bytes: nextBytes, time: now }],
       });
       return newMap;
     });
@@ -140,6 +138,7 @@ export const useUploadSpeedTracker = (
   // 清理单个文件
   const cleanupFile = useCallback(
     (fileUid: string) => {
+      latestProgressRef.current.delete(fileUid);
       setSpeedInfoMap((prev) => {
         const newMap = new Map(prev);
         newMap.delete(fileUid);
@@ -157,6 +156,7 @@ export const useUploadSpeedTracker = (
 
   // 清理所有文件
   const cleanupAll = useCallback(() => {
+    latestProgressRef.current.clear();
     setSpeedInfoMap(new Map());
     stopTimer();
   }, [stopTimer]);

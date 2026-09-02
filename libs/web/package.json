@@ -15,7 +15,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\"",
-    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json"
+    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "test": "jest"
   },
   "dependencies": {
     "@codemirror/language": "6.10.8",

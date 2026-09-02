@@ -1,6 +1,7 @@
 "use client";
 
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
+import { calculateUploadedBytes } from "@scow/lib-web/build/utils/fileUpload/uploadCalculation";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
 import { isDirectoryEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
@@ -125,7 +126,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     const uploadedChunkIndices = new Set(uploadedIndices);
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
-    let uploadedCount = uploadedChunkIndices.size;
+    let loadedBytes = calculateUploadedBytes(file.size, chunkSizeByte, uploadedChunkIndices);
 
     const uploadFile = uploadFileList.find((uploadFile) => uploadFile.name === file.name);
     if (!uploadFile) {
@@ -133,17 +134,14 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       return;
     }
 
-    // 计算已上传字节数
-    const alreadyUploadedBytes = uploadedCount * chunkSizeByte;
-    speedTracker.initFileSpeed(uploadFile.uid, alreadyUploadedBytes);
+    speedTracker.initFileSpeed(uploadFile.uid, loadedBytes);
 
-    const updateProgress = (count: number) => {
-      uploadedCount += count;
-      const percentage = Number(((uploadedCount / totalCount) * 100).toFixed(2));
+    const updateProgress = (chunkSize: number) => {
+      loadedBytes = Math.min(file.size, loadedBytes + chunkSize);
+      const percentage = file.size === 0 ? 100 : Number(((loadedBytes / file.size) * 100).toFixed(2));
 
       // 更新速度
-      const currentTotalLoaded = uploadedCount * chunkSizeByte;
-      speedTracker.updateFileBytes(uploadFile.uid, currentTotalLoaded);
+      speedTracker.updateFileBytes(uploadFile.uid, loadedBytes);
 
       // 手动更新 fileList 中的percent
       setUploadFileList((prevList) => {
@@ -192,7 +190,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         throw new Error(response.statusText);
       }
 
-      updateProgress(1);
+      updateProgress(chunk.size);
     };
 
     try {
