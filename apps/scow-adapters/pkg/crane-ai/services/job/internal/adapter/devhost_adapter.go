@@ -8,11 +8,12 @@ import (
 
 // DevHostJobAdapter CreateDevHostRequest 的适配器
 type DevHostJobAdapter struct {
-	req *protos.CreateDevHostRequest
+	req              *protos.CreateDevHostRequest
+	jupyterProxyPort int
 }
 
-func NewDevHostJobAdapter(req *protos.CreateDevHostRequest) *DevHostJobAdapter {
-	return &DevHostJobAdapter{req: req}
+func NewDevHostJobAdapter(req *protos.CreateDevHostRequest, jupyterProxyPort int) *DevHostJobAdapter {
+	return &DevHostJobAdapter{req: req, jupyterProxyPort: jupyterProxyPort}
 }
 
 func (a *DevHostJobAdapter) GetJobType() types.ContainerJobType {
@@ -175,6 +176,7 @@ func (a *DevHostJobAdapter) GetJupyterLabInfo() *types.JupyterLabInfo {
 	}
 	return &types.JupyterLabInfo{
 		ProxyBasePath: a.req.JupyterLabInfo.ProxyBasePath,
+		ProxyPort:     a.jupyterProxyPort,
 	}
 }
 

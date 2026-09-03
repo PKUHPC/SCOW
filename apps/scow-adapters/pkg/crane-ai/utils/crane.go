@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -13,6 +14,8 @@ import (
 	craneProtos "scow-adapters/gen/crane-ai"
 	"scow-adapters/pkg/crane-ai/client"
 )
+
+var ErrAccountAlreadyExists = errors.New("account already exists")
 
 type jobCount struct {
 	JobCount        uint32
@@ -185,6 +188,9 @@ func CreateAccount(accountName string, partitions ...[]string) error {
 		return err
 	}
 	if !response.GetOk() {
+		if response.GetCode() == craneProtos.ErrCode_ERR_ACCOUNT_ALREADY_EXISTS {
+			return fmt.Errorf("%w: %s", ErrAccountAlreadyExists, accountName)
+		}
 		return fmt.Errorf("create account error: %v", strconv.FormatInt(int64(response.GetCode()), 10))
 	}
 	if len(partitions) > 0 && len(partitions[0]) == 0 {

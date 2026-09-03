@@ -99,7 +99,9 @@ func ValidateContainerJob(task *craneProtos.JobToCtld) error {
 func SubmitContainerJob(task *craneProtos.JobToCtld) (*craneProtos.SubmitBatchJobReply, error) {
 	req := &craneProtos.SubmitBatchJobRequest{Job: task}
 
-	reply, err := client.CraneCtld.SubmitBatchJob(context.Background(), req)
+	reply, err := client.CallCraneCtldForUID(task.GetUid(), func(ctldClient craneProtos.CraneCtldClient) (*craneProtos.SubmitBatchJobReply, error) {
+		return ctldClient.SubmitBatchJob(context.Background(), req)
+	})
 	if err != nil {
 		return reply, fmt.Errorf("failed to submit the container task: %v", err)
 	}
@@ -472,7 +474,9 @@ func CreateContainerExecStream(jobID, stepID, uid uint32, nodeName, cmd string) 
 	log.Debugf("Calling ExecInContainerStep RPC for container %d.%d on node %q",
 		jobID, stepID, nodeName)
 
-	reply, err := client.CraneCtld.ExecInContainerStep(context.Background(), execReq)
+	reply, err := client.CallCraneCtldForUID(uid, func(ctldClient craneProtos.CraneCtldClient) (*craneProtos.ExecInContainerStepReply, error) {
+		return ctldClient.ExecInContainerStep(context.Background(), execReq)
+	})
 	if err != nil {
 		return "", fmt.Errorf("failed to exec into container task: %v", err)
 	}

@@ -24,7 +24,7 @@ func (f *RequestAdapterFactory) CreateAdapter(req interface{}) (types.ContainerJ
 	case *protos.SubmitInferJobRequest:
 		return adapters.NewInferenceJobAdapter(r), nil
 	case *protos.CreateDevHostRequest:
-		return adapters.NewDevHostJobAdapter(r), nil
+		return adapters.NewDevHostJobAdapter(r, 0), nil
 	default:
 		return nil, fmt.Errorf("不支持的请求类型: %T", req)
 	}

@@ -132,6 +132,36 @@ func (f *FilePersistence) DeleteByJobId(jobId uint32) error {
 	return nil
 }
 
+// DeleteByJobIdAndPort 删除指定作业指定容器端口的代理元信息。
+func (f *FilePersistence) DeleteByJobIdAndPort(jobId uint32, containerPort int32) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	metas, err := f.LoadAll()
+	if err != nil {
+		return fmt.Errorf("failed to load existing metadata: %w", err)
+	}
+
+	newMetas := make([]*ProxyMeta, 0, len(metas))
+	for _, meta := range metas {
+		if meta.JobId == jobId && meta.ContainerPort == containerPort {
+			continue
+		}
+		newMetas = append(newMetas, meta)
+	}
+
+	data, err := json.MarshalIndent(newMetas, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to serialize metadata: %w", err)
+	}
+	if err := ioutil.WriteFile(f.filename, data, 0644); err != nil {
+		return fmt.Errorf("fail to write to file: %w", err)
+	}
+
+	logrus.Tracef("[job %d port %d] proxy metadata has been removed from persistent file", jobId, containerPort)
+	return nil
+}
+
 // LoadAll 加载所有代理元信息
 func (f *FilePersistence) LoadAll() ([]*ProxyMeta, error) {
 	data, err := ioutil.ReadFile(f.filename)
@@ -606,6 +636,33 @@ func (m *ProxyManager) StopAndRemoveProxy(jobId uint32) error {
 		logrus.Errorf("[job %d] failed to delete persistent metadata: %v", jobId, err)
 	}
 
+	return nil
+}
+
+// StopAndRemoveProxyByPort 停止并移除指定作业指定容器端口的代理。
+// 作业取消等场景仍应使用 StopAndRemoveProxy 清理该作业的全部代理。
+func (m *ProxyManager) StopAndRemoveProxyByPort(jobId uint32, containerPort int32) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	prefix := strconv.Itoa(int(jobId)) + "-"
+	for name, proxy := range m.proxyMap {
+		if !strings.HasPrefix(name, prefix) {
+			continue
+		}
+		_, port, err := ParseTargetAddr(proxy.targetAddr)
+		if err != nil || int32(port) != containerPort {
+			continue
+		}
+		if err := proxy.Stop(); err != nil {
+			logrus.Errorf("[job %d port %d] stop proxy %s failed: %v", jobId, containerPort, name, err)
+		}
+		delete(m.proxyMap, name)
+	}
+
+	if err := m.persistence.DeleteByJobIdAndPort(jobId, containerPort); err != nil {
+		return fmt.Errorf("failed to delete proxy metadata for job %d port %d: %w", jobId, containerPort, err)
+	}
 	return nil
 }
 

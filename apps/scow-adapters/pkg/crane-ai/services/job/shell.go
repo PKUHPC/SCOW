@@ -165,7 +165,9 @@ func (s *ServerJob) createContainerExecStream(jobID, stepID, uid uint32, nodeNam
 	log.Debugf("Calling ExecInContainerStep RPC for container %d.%d on node %q",
 		jobID, stepID, nodeName)
 
-	reply, err := client.CraneCtld.ExecInContainerStep(context.Background(), execReq)
+	reply, err := client.CallCraneCtldForUID(uid, func(ctldClient craneProtos.CraneCtldClient) (*craneProtos.ExecInContainerStepReply, error) {
+		return ctldClient.ExecInContainerStep(context.Background(), execReq)
+	})
 	if err != nil {
 		return "", fmt.Errorf("failed to exec into container task: %v", err)
 	}

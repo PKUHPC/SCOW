@@ -115,7 +115,7 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 	}
 	if proxyInfo != nil && !utils.GlobalProxyManager.IsProxyRunning(proxyInfo) {
 		logrus.Warnf("[GetAppConnectionInfo] proxy metadata exists but service is not running for job %d port %d, rebuild it", jobID, containerPort)
-		if err := utils.GlobalProxyManager.StopAndRemoveProxy(jobID); err != nil {
+		if err := utils.GlobalProxyManager.StopAndRemoveProxyByPort(jobID, containerPort); err != nil {
 			logrus.Warnf("[GetAppConnectionInfo] remove stale proxy metadata failed for job %d: %v", jobID, err)
 		}
 		proxyInfo = nil
@@ -156,8 +156,13 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 		logrus.Errorf("[GetAppConnectionInfo] no forward info found for job %v", jobID)
 		return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", "no forward nodes found")
 	}
-	submitJobProxyInfo.ForwardInfo = forwardInfo
-	nodeName := forwardInfo[0].ExecutionNode
+	requestedForwardInfo := forwardInfoForPort(forwardInfo, containerPort)
+	if requestedForwardInfo == nil {
+		logrus.Errorf("[GetAppConnectionInfo] no forward info found for job %v container port %v", jobID, containerPort)
+		return nil, ce.RichError(codes.Internal, "BUILD_PROXY_FAILED", "requested container port not found")
+	}
+	submitJobProxyInfo.ForwardInfo = []*utils.JobForwardInfo{requestedForwardInfo}
+	nodeName := requestedForwardInfo.ExecutionNode
 
 	if proxyInfo == nil {
 		// 双重检查锁：先乐观判断，拿锁后再次验证，防止并发请求重复创建同一代理。
@@ -177,28 +182,28 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 			}
 			if meta != nil {
 				logrus.Warnf("[GetAppConnectionInfo] proxy metadata exists but service is not running for job %d port %d, rebuild it", jobID, containerPort)
-				if err := utils.GlobalProxyManager.StopAndRemoveProxy(jobID); err != nil {
+				if err := utils.GlobalProxyManager.StopAndRemoveProxyByPort(jobID, containerPort); err != nil {
 					return nil, err
 				}
 			}
 
-			// 为相同容器（同一 StepId）只查询一次 IP，避免重复调用
-			ipCache := make(map[uint32]string)
-			for _, fn := range forwardInfo {
-				if ip, ok := ipCache[fn.StepId]; ok {
-					fn.ContainerIP = ip
-					continue
-				}
-				containerIP, err := utils.GetContainerIPByExec(taskInfo.JobId, fn.StepId, taskInfo.Uid, fn.ExecutionNode)
-				if err != nil {
-					logrus.Errorf("Failed to get container IP for job %v step %v: %v", jobID, fn.StepId, err)
+			containerIP, err := utils.GetContainerIPByExec(
+				taskInfo.JobId, requestedForwardInfo.StepId, taskInfo.Uid, requestedForwardInfo.ExecutionNode,
+			)
+			if err != nil {
+				logrus.Errorf("Failed to get container IP for job %v step %v: %v", jobID, requestedForwardInfo.StepId, err)
+				return nil, err
+			}
+			requestedForwardInfo.ContainerIP = containerIP
+
+			if containerPort == utils.JupyterPort && jobInfo.JupyterLabProxyPort > 0 {
+				if err := utils.GlobalProxyManager.CreateAndStartProxyWithPort(
+					jobName, jobID, requestedForwardInfo.ContainerIP, containerPort, jobInfo.JupyterLabProxyPort,
+				); err != nil {
+					logrus.Errorf("Failed to create JupyterLab proxy for app job %v: %v", jobName, err)
 					return nil, err
 				}
-				ipCache[fn.StepId] = containerIP
-				fn.ContainerIP = containerIP
-			}
-
-			if err := utils.GlobalProxyManager.CreateAndStartProxy(submitJobProxyInfo); err != nil {
+			} else if err := utils.GlobalProxyManager.CreateAndStartProxy(submitJobProxyInfo); err != nil {
 				logrus.Errorf("Failed to create proxy for app job %v: %v", jobName, err)
 				return nil, err
 			}
@@ -271,6 +276,15 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 	err = fmt.Errorf("not support")
 	logrus.Errorf("GetAppConnectionInfo failed: %v", err)
 	return nil, ce.RichError(codes.Internal, "NOT_SUPPORT", err.Error())
+}
+
+func forwardInfoForPort(forwardInfo []*utils.JobForwardInfo, containerPort int32) *utils.JobForwardInfo {
+	for _, info := range forwardInfo {
+		if info.ContainerPort == containerPort {
+			return info
+		}
+	}
+	return nil
 }
 
 func readSessionPassword(taskInfo *craneProtos.JobInfo, jobInfo *utils.SubmitJobInfo, sessionInfo string, step *craneProtos.StepInfo, nodeName string) (string, error) {

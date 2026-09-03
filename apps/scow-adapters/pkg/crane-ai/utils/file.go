@@ -16,14 +16,15 @@ import (
 var ErrJobInfoNotFound = errors.New("job info not found")
 
 type SubmitJobInfo struct {
-	JobName            string  `json:"new_job_name"`
-	JobId              uint32  `json:"job_id"`
-	JobType            string  `json:"job_type,omitempty"`
-	ScriptDir          string  `json:"script_dir,omitempty"`
-	ContainerPorts     []int32 `json:"container_ports"`
-	TensorBoardLogPath string  `json:"tensorboard_log_path,omitempty"`
-	TensorBoardPort    int     `json:"tensorboard_port,omitempty"`
-	TensorBoardStatus  string  `json:"tensorboard_status,omitempty"`
+	JobName             string  `json:"new_job_name"`
+	JobId               uint32  `json:"job_id"`
+	JobType             string  `json:"job_type,omitempty"`
+	ScriptDir           string  `json:"script_dir,omitempty"`
+	ContainerPorts      []int32 `json:"container_ports"`
+	TensorBoardLogPath  string  `json:"tensorboard_log_path,omitempty"`
+	TensorBoardPort     int     `json:"tensorboard_port,omitempty"`
+	TensorBoardStatus   string  `json:"tensorboard_status,omitempty"`
+	JupyterLabProxyPort int     `json:"jupyterlab_proxy_port,omitempty"`
 }
 
 // ServerSessionContent web json file

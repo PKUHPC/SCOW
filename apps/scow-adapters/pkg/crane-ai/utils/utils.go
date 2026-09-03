@@ -454,24 +454,48 @@ func GetNodeByPartition(partitionList []string) (uint32, uint32, uint32, uint32,
 }
 
 func GetCraneStatesList(stateList []string) []craneProtos.JobStatus {
-	var statesList []craneProtos.JobStatus
+	statesSet := make(map[craneProtos.JobStatus]struct{})
+	appendState := func(states ...craneProtos.JobStatus) {
+		for _, state := range states {
+			statesSet[state] = struct{}{}
+		}
+	}
+
 	for _, value := range stateList {
-		if value == "PENDING" || value == "PENDDING" {
-			statesList = append(statesList, craneProtos.JobStatus_Pending)
-		} else if value == "RUNNING" {
-			statesList = append(statesList, craneProtos.JobStatus_Running)
-		} else if value == "CANCELED" {
-			statesList = append(statesList, craneProtos.JobStatus_Cancelled)
-		} else if value == "COMPLETED" {
-			statesList = append(statesList, craneProtos.JobStatus_Completed)
-		} else if value == "FAILED" || value == "NODE_FAIL" {
-			statesList = append(statesList, craneProtos.JobStatus_Failed)
-		} else if value == "TIMEOUT" {
-			statesList = append(statesList, craneProtos.JobStatus_ExceedTimeLimit)
-		} else if value == "SUSPENDED" {
-			statesList = append(statesList, craneProtos.JobStatus_Suspended)
-		} else {
-			statesList = append(statesList, craneProtos.JobStatus_Invalid)
+		switch value {
+		case "PENDING", "PENDDING":
+			appendState(craneProtos.JobStatus_Pending, craneProtos.JobStatus_Configuring, craneProtos.JobStatus_Starting)
+		case "RUNNING":
+			appendState(craneProtos.JobStatus_Running, craneProtos.JobStatus_Completing, craneProtos.JobStatus_Suspended)
+		case "CONFIGURING":
+			appendState(craneProtos.JobStatus_Configuring)
+		case "STARTING":
+			appendState(craneProtos.JobStatus_Starting)
+		case "COMPLETING":
+			appendState(craneProtos.JobStatus_Completing)
+		case "CANCELED", "CANCELLED":
+			appendState(craneProtos.JobStatus_Cancelled)
+		case "COMPLETED":
+			appendState(craneProtos.JobStatus_Completed)
+		case "FAILED", "NODE_FAIL":
+			appendState(craneProtos.JobStatus_Failed)
+		case "TIMEOUT":
+			appendState(craneProtos.JobStatus_ExceedTimeLimit)
+		case "OUT_OF_MEMORY":
+			appendState(craneProtos.JobStatus_OutOfMemory)
+		case "DEADLINE":
+			appendState(craneProtos.JobStatus_Deadline)
+		case "SUSPENDED":
+			appendState(craneProtos.JobStatus_Suspended)
+		case "QUEUED":
+			// QUEUED is managed by SCOW AI before the job is submitted to Crane.
+		}
+	}
+
+	statesList := make([]craneProtos.JobStatus, 0, len(statesSet))
+	for state := craneProtos.JobStatus_Pending; state <= craneProtos.JobStatus_Deadline; state++ {
+		if _, ok := statesSet[state]; ok {
+			statesList = append(statesList, state)
 		}
 	}
 	return statesList

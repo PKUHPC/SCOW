@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -27,7 +28,12 @@ import (
 	"scow-adapters/pkg/crane-ai/utils"
 )
 
-const maxUint = 4294967295
+const (
+	maxUint = 4294967295
+	// GetJobs 尚未实现分页，显式使用大上限，避免被 Crane 默认的 1000 条限制截断。
+	getJobsQueryLimit   = 99999999
+	getJobsQueryTimeout = 10 * time.Second
+)
 
 // isFinishedJobStatus 判断 Crane AI 作业是否已经进入确定的终态。
 // Pending、Running、Configuring、Starting、Completing 和 Suspended 等状态即使带有
@@ -44,6 +50,89 @@ func isFinishedJobStatus(status craneProtos.JobStatus) bool {
 	default:
 		return false
 	}
+}
+
+func shouldIncludeCompletedJobs(filter *protos.GetJobsRequest_Filter) bool {
+	if filter == nil || len(filter.States) == 0 || filter.EndTime != nil {
+		return true
+	}
+
+	for _, state := range filter.States {
+		switch state {
+		case "PENDING", "PENDDING", "RUNNING", "QUEUED", "SUSPENDED", "CONFIGURING", "STARTING", "COMPLETING":
+			continue
+		default:
+			return true
+		}
+	}
+	return false
+}
+
+func setCraneTimeInterval(target **craneProtos.TimeInterval, timeRange *protos.TimeRange) {
+	if timeRange == nil {
+		return
+	}
+
+	interval := &craneProtos.TimeInterval{}
+	if seconds := timeRange.GetStartTime().GetSeconds(); seconds != 0 {
+		interval.LowerBound = timestamppb.New(time.Unix(seconds, 0))
+	}
+	if seconds := timeRange.GetEndTime().GetSeconds(); seconds != 0 {
+		interval.UpperBound = timestamppb.New(time.Unix(seconds, 0))
+	}
+	*target = interval
+}
+
+func getScowJobState(status craneProtos.JobStatus, pendingReason string) (state, reason string, ended bool) {
+	switch status {
+	case craneProtos.JobStatus_Completed:
+		return "COMPLETED", "ENDED", true
+	case craneProtos.JobStatus_Failed:
+		return "FAILED", "ENDED", true
+	case craneProtos.JobStatus_Cancelled:
+		return "CANCELED", "ENDED", true
+	case craneProtos.JobStatus_ExceedTimeLimit:
+		return "TIMEOUT", "Timeout", true
+	case craneProtos.JobStatus_OutOfMemory:
+		return "OUT_OF_MEMORY", "OutOfMemory", true
+	case craneProtos.JobStatus_Deadline:
+		return "DEADLINE", "Deadline", true
+	case craneProtos.JobStatus_Running, craneProtos.JobStatus_Completing:
+		return "RUNNING", status.String(), false
+	case craneProtos.JobStatus_Pending, craneProtos.JobStatus_Configuring, craneProtos.JobStatus_Starting:
+		if pendingReason == "" {
+			pendingReason = status.String()
+		}
+		return "PENDING", pendingReason, false
+	case craneProtos.JobStatus_Suspended:
+		return "SUSPENDED", "Suspended", false
+	default:
+		return "INVALID", status.String(), false
+	}
+}
+
+func buildCraneGetJobsRequest(in *protos.GetJobsRequest) *craneProtos.QueryJobsInfoRequest {
+	request := &craneProtos.QueryJobsInfoRequest{
+		FilterJobTypes:             getCraneJobTypesForGetJobs(in.JobTypes),
+		NumLimit:                   getJobsQueryLimit,
+		OptionIncludeCompletedJobs: shouldIncludeCompletedJobs(in.Filter),
+	}
+	if in.Filter == nil {
+		return request
+	}
+
+	request.FilterStates = utils.GetCraneStatesList(in.Filter.States)
+	request.FilterUsers = in.Filter.Users
+	request.FilterAccounts = in.Filter.Accounts
+	setCraneTimeInterval(&request.FilterSubmitTimeInterval, in.Filter.SubmitTime)
+	setCraneTimeInterval(&request.FilterEndTimeInterval, in.Filter.EndTime)
+	if in.Filter.JobId != nil {
+		request.FilterJobIds = []*craneProtos.JobIdSelector{{JobId: *in.Filter.JobId}}
+	}
+	if in.Filter.JobName != nil {
+		request.FilterJobNames = []string{*in.Filter.JobName}
+	}
+	return request
 }
 
 func getScowTimeLimitMinutes(timeLimit *durationpb.Duration) int64 {
@@ -85,30 +174,63 @@ func jobInfoFieldRequested(fields []string, field string) bool {
 	return false
 }
 
+func validateCancelJobReply(jobID uint32, reply *craneProtos.CancelJobReply) error {
+	if reply == nil {
+		return fmt.Errorf("Crane returned an empty cancellation result for job %d", jobID)
+	}
+
+	for _, cancelled := range reply.GetCancelled() {
+		if cancelled.GetJobId() == jobID {
+			return nil
+		}
+	}
+
+	for _, notCancelled := range reply.GetNotCancelled() {
+		if notCancelled.GetJobId() != jobID {
+			continue
+		}
+		reason := notCancelled.GetReason()
+		if reason == "" {
+			reason = "unknown reason"
+		}
+		return fmt.Errorf("Crane did not cancel job %d: %s", jobID, reason)
+	}
+
+	return fmt.Errorf("Crane did not report a cancellation result for job %d", jobID)
+}
+
 func (s *ServerJob) CancelJob(ctx context.Context, in *protos.CancelJobRequest) (*protos.CancelJobResponse, error) {
 	logrus.Infof("Received request CancelJob: %v", in)
 
-	defer func() {
-		if err := utils.GlobalProxyManager.StopAndRemoveProxy(in.JobId); err != nil {
-			logrus.Warnf("[CancelJob] delete job proxy file failed: %v", err)
-		}
-	}()
-
+	uid, err := utils.GetUidByUserName(in.UserId)
+	if err != nil {
+		logrus.Errorf("[CancelJob] get UID for user %q failed: %v", in.UserId, err)
+		return nil, ce.RichError(codes.InvalidArgument, "INVALID_USER", fmt.Sprintf("User %q does not exist.", in.UserId))
+	}
 	stepIds, err := utils.ParseStepIdList(strconv.Itoa(int(in.JobId)), ",")
 	if err != nil {
 		logrus.Errorf("[CancelJob] get job step ids failed: %v", err)
 		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", "Crane service call failed.")
 	}
 	request := &craneProtos.CancelJobRequest{
-		OperatorUid:    0,
+		OperatorUid:    uint32(uid),
 		FilterJobIds:   stepIds,
 		FilterUsername: in.UserId,
 		FilterState:    craneProtos.JobStatus_Invalid,
 	}
-	_, err = client.CraneCtld.CancelJob(context.Background(), request)
+	reply, err := client.CallCraneCtldForUID(uint32(uid), func(ctldClient craneProtos.CraneCtldClient) (*craneProtos.CancelJobReply, error) {
+		return ctldClient.CancelJob(ctx, request)
+	})
 	if err != nil {
 		logrus.Errorf("[CancelJob] cancel job failed: %v", err)
-		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", "Crane service call failed.")
+		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
+	}
+	if err := validateCancelJobReply(in.JobId, reply); err != nil {
+		logrus.Errorf("[CancelJob] cancel job failed: %v, reply: %v", err, reply)
+		return nil, ce.RichError(codes.FailedPrecondition, "CANCEL_JOB_FAILED", err.Error())
+	}
+	if err := utils.GlobalProxyManager.StopAndRemoveProxy(in.JobId); err != nil {
+		logrus.Warnf("[CancelJob] delete job proxy file failed: %v", err)
 	}
 	logrus.Infof("[CancelJob] cancel job: %v success", in.JobId)
 	return &protos.CancelJobResponse{}, nil
@@ -214,16 +336,29 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", err.Error())
 	}
 
+	jobStartTime := taskInfo.GetStartTime()
+	jobEndTime := taskInfo.GetEndTime()
 	if taskInfo.GetStatus() == craneProtos.JobStatus_Running {
-		startTime = taskInfo.GetStartTime()
-		elapsedSeconds = time.Now().Unix() - taskInfo.GetStartTime().Seconds
+		if jobStartTime != nil {
+			startTime = jobStartTime
+			elapsedSeconds = time.Now().Unix() - jobStartTime.GetSeconds()
+		} else {
+			logrus.Warnf("[GetJobById] job %d is running but start time is missing", jobId)
+		}
 	} else if taskInfo.GetStatus() == craneProtos.JobStatus_Pending {
 		elapsedSeconds = 0
 	} else {
-		if taskInfo.GetNodeNum() != 0 {
-			startTime = taskInfo.GetStartTime()
+		if taskInfo.GetNodeNum() != 0 && jobStartTime != nil {
+			startTime = jobStartTime
 		}
-		elapsedSeconds = taskInfo.GetEndTime().Seconds - taskInfo.GetStartTime().Seconds
+		if jobStartTime != nil && jobEndTime != nil {
+			elapsedSeconds = jobEndTime.GetSeconds() - jobStartTime.GetSeconds()
+		} else {
+			logrus.Warnf(
+				"[GetJobById] job %d has incomplete time information: start_time_set=%t, end_time_set=%t, status=%s",
+				jobId, jobStartTime != nil, jobEndTime != nil, taskInfo.GetStatus().String(),
+			)
+		}
 	}
 
 	// 获取cpu核分配数
@@ -384,18 +519,16 @@ func (s *ServerJob) GetJobById(ctx context.Context, in *protos.GetJobByIdRequest
 			jobInfo.SubmitTime = taskInfo.GetSubmitTime()
 		}
 	}
-	logrus.Tracef("[GetJobById] finished, jobId: %d, name: %s, state: %s, fields: %v", jobInfo.JobId, jobInfo.Name, jobInfo.State, in.Fields)
+	logrus.Tracef("[GetJobById] job info: %v", jobInfo)
 	return &protos.GetJobByIdResponse{Job: jobInfo}, nil
 }
 
 func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*protos.GetJobsResponse, error) {
 	var (
-		request        *craneProtos.QueryJobsInfoRequest
-		jobsInfo       []*protos.JobInfo
-		totalNum       uint32
-		totalStepCount int
+		jobsInfo []*protos.JobInfo
+		totalNum uint32
 	)
-	logrus.Tracef("Received request GetJobs, fields: %v, job types: %v, has filter: %t", in.Fields, in.JobTypes, in.Filter != nil)
+	logrus.Tracef("Received request GetJobs: %v", in)
 
 	if len(in.JobTypes) > 0 && hasUnsupportedJobTypes(in.JobTypes) {
 		return nil, ce.RichError(codes.Unimplemented, "AI_JOB_TYPES_UNSUPPORTED", "Crane AI adapter does not support requested job types.")
@@ -404,69 +537,43 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		return nil, ce.RichError(codes.Internal, "JOB_MANAGER_NOT_INITIALIZED", "Job manager is not initialized.")
 	}
 
-	if in.Filter != nil {
-		base := &craneProtos.QueryJobsInfoRequest{
-			FilterJobTypes:             getCraneJobTypesForGetJobs(in.JobTypes),
-			FilterStates:               utils.GetCraneStatesList(in.Filter.States),
-			FilterUsers:                in.Filter.Users,
-			FilterAccounts:             in.Filter.Accounts,
-			OptionIncludeCompletedJobs: true,
-			NumLimit:                   99999999,
-		}
-
-		if endTimeRange := in.Filter.EndTime; endTimeRange != nil {
-			interval := &craneProtos.TimeInterval{}
-			if startTime := endTimeRange.StartTime.GetSeconds(); startTime != 0 {
-				interval.LowerBound = timestamppb.New(time.Unix(startTime, 0))
-			}
-			if endTime := endTimeRange.EndTime.GetSeconds(); endTime != 0 {
-				interval.UpperBound = timestamppb.New(time.Unix(endTime, 0))
-			}
-			if interval.LowerBound != nil || interval.UpperBound != nil {
-				base.FilterEndTimeInterval = interval
-			}
-		}
-
-		if submitTimeRange := in.Filter.SubmitTime; submitTimeRange != nil {
-			interval := &craneProtos.TimeInterval{}
-			if startTime := submitTimeRange.StartTime.GetSeconds(); startTime != 0 {
-				interval.LowerBound = timestamppb.New(time.Unix(startTime, 0))
-			}
-			if endTime := submitTimeRange.EndTime.GetSeconds(); endTime != 0 {
-				interval.UpperBound = timestamppb.New(time.Unix(endTime, 0))
-			}
-			if interval.LowerBound != nil || interval.UpperBound != nil {
-				base.FilterSubmitTimeInterval = interval
-			}
-		}
-
-		if in.Filter.JobName != nil {
-			base.FilterJobNames = []string{*in.Filter.JobName}
-		}
-		if in.Filter.JobId != nil {
-			base.FilterJobIds = []*craneProtos.JobIdSelector{{JobId: *in.Filter.JobId}}
-		}
-		request = base
-	} else {
-		// 没有筛选条件的请求体
-		request = &craneProtos.QueryJobsInfoRequest{
-			FilterJobTypes:             getCraneJobTypesForGetJobs(in.JobTypes),
-			OptionIncludeCompletedJobs: true,
-			NumLimit:                   99999999,
-		}
+	request := buildCraneGetJobsRequest(in)
+	if in.Filter != nil && len(in.Filter.States) > 0 && len(request.FilterStates) == 0 {
+		// QUEUED jobs have not been submitted to Crane. An empty Crane state filter
+		// means "all states", so return no Crane jobs instead of broadening the query.
+		return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 	}
 
-	logrus.Tracef("GetJobs querying Crane: %v", request)
-	response, err := client.CraneCtld.QueryJobsInfo(context.Background(), request)
+	logrus.Tracef("request: %v", request)
+	queryCtx := ctx
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		queryCtx, cancel = context.WithTimeout(ctx, getJobsQueryTimeout)
+		defer cancel()
+	}
+	response, err := client.CraneCtld.QueryJobsInfo(queryCtx, request)
 	// logrus.Tracef("response: %v", response)
 
 	if err != nil {
-		logrus.Errorf("GetJobs failed: %v", fmt.Errorf("CRANE_CALL_FAILED"))
-		return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
+		logrus.Errorf("GetJobs failed: %v", err)
+		switch status.Code(err) {
+		case codes.DeadlineExceeded:
+			return nil, ce.RichError(codes.DeadlineExceeded, "CRANE_QUERY_TIMEOUT", "Crane job query timed out. Narrow the query scope with filters.")
+		case codes.ResourceExhausted:
+			return nil, ce.RichError(codes.ResourceExhausted, "CRANE_RESPONSE_TOO_LARGE", "Crane job query response is too large. Narrow the query scope with filters.")
+		case codes.Canceled:
+			return nil, ce.RichError(codes.Canceled, "CRANE_QUERY_CANCELED", err.Error())
+		default:
+			return nil, ce.RichError(codes.Unavailable, "CRANE_CALL_FAILED", err.Error())
+		}
 	}
 	if !response.GetOk() {
 		logrus.Errorf("GetJobs failed: %v", fmt.Errorf("CRANE_INTERNAL_ERROR"))
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", "Crane service internal error.")
+	}
+	if response.GetHasMore() {
+		logrus.Warnf("GetJobs query exceeded Crane result limit, returned=%d", len(response.GetJobInfoList()))
+		return nil, ce.RichError(codes.ResourceExhausted, "CRANE_QUERY_LIMIT_EXCEEDED", "More matching jobs exist than Crane returned. Narrow the query scope with filters.")
 	}
 	if len(response.GetJobInfoList()) == 0 {
 		logrus.Infof("GetJobs: no Task found")
@@ -499,60 +606,35 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				return nil, ce.RichError(codes.Internal, "JOB_METADATA_ERROR", "Job metadata is unavailable.")
 			}
 		}
-		var elapsedSeconds, timeLimitMinutes int64
-		var state string
-		var reason = "no reason"
-		var nodeNum int32
+		var timeLimitMinutes int64
 		var endTime, startTime *timestamppb.Timestamp
-		if job.GetStatus() == craneProtos.JobStatus_Running {
-			startTime = job.GetStartTime()
-			elapsedSeconds = time.Now().Unix() - job.GetStartTime().Seconds
-		} else if job.GetStatus() == craneProtos.JobStatus_Pending {
+		elapsedSeconds := job.GetElapsedTime().GetSeconds()
+		if job.GetStatus() == craneProtos.JobStatus_Pending {
 			elapsedSeconds = 0
-		} else {
-			if job.GetNodeNum() != 0 {
-				startTime = job.GetStartTime()
-			}
-			elapsedSeconds = job.GetEndTime().Seconds - job.GetStartTime().Seconds
+		} else if job.GetStartTime().GetSeconds() != 0 {
+			startTime = job.GetStartTime()
 		}
+		cpusReq := int32(job.GetReqTotalResView().GetCpuCount())
 		cpusAlloc := job.GetAllocatedResView().GetCpuCount()
 		cpusAllocInt32 := int32(cpusAlloc)
 
+		jobMemReqMb := job.GetReqTotalResView().GetMemoryBytes()
+		memReqMb := int64(jobMemReqMb / (1024 * 1024))
 		jobMemAllocMb := job.GetAllocatedResView().GetMemoryBytes()
 		memAllocMb := int64(jobMemAllocMb / (1024 * 1024))
 
+		jobGpusReq := job.GetReqTotalResView().GetGresMap()
+		gpusReq := utils.GetGpuNumsFromJob(jobGpusReq)
 		jobGpusAlloc := job.GetAllocatedResView().GetGresMap()
 		gpusAlloc := utils.GetGpuNumsFromJob(jobGpusAlloc)
 
 		nodeList := job.GetCranedList()
-
-		if job.GetStatus().String() == "Completed" {
-			state = "COMPLETED"
-			reason = "ENDED"
+		state, reason, ended := getScowJobState(job.GetStatus(), job.GetPendingReason())
+		if ended {
 			endTime = job.GetEndTime()
-		} else if job.GetStatus().String() == "Failed" {
-			state = "FAILED"
-			reason = "ENDED"
-			endTime = job.GetEndTime()
-		} else if job.GetStatus().String() == "Cancelled" { // crane的取消用的是Cancelled，scow用的是Canceled
-			state = "CANCELED"
-			reason = "ENDED"
-			endTime = job.GetEndTime()
-		} else if job.GetStatus().String() == "Running" {
-			state = "RUNNING"
-			reason = "Running"
-		} else if job.GetStatus().String() == "Pending" {
-			state = "PENDING"
-			reason = "Pending"
-		} else if job.GetStatus().String() == "ExceedTimeLimit" {
-			state = "TIMEOUT"
-			reason = "Timeout"
-			endTime = job.GetEndTime()
-		} else {
-			state = "INVALID"
-			reason = "Invalid"
 		}
-		nodeNum = int32(job.GetNodeNum())
+		nodesReq := int32(job.GetNodeNum())
+		nodesAlloc := int32(len(job.GetExecutionNode()))
 
 		// pending 作业直接被 cancel 时，鹤思不会设置 startTime，导致 startTime 为 epoch(1970)。
 		// 此时将 startTime 置为 endTime，elapsedSeconds 置为 0，避免前端展示异常。
@@ -566,7 +648,8 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		timeLimitMinutes = getScowTimeLimitMinutes(job.GetTimeLimit())
 
 		if len(in.Fields) == 0 {
-			totalStepCount += len(job.GetStepInfoList())
+			logrus.Tracef("GetJobs: job pod Info %v", job.GetPodMeta())
+			logrus.Tracef("GetJobs: job step Info %v", job.GetStepInfoList())
 			pods := utils.ConvertStepInfoToPodInfo(job.Partition, job.Uid, job.GetUsername(), job.GetStepInfoList())
 			subJobInfo := &protos.JobInfo{}
 			subJobInfo = &protos.JobInfo{
@@ -577,21 +660,26 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				Partition:        job.GetPartition(),
 				StartTime:        startTime,
 				EndTime:          endTime,
-				NodesAlloc:       &nodeNum,
+				NodesReq:         nodesReq,
+				NodesAlloc:       &nodesAlloc,
 				TimeLimitMinutes: timeLimitMinutes,
 				WorkingDirectory: job.GetCwd(),
 				State:            state,
 				NodeList:         &nodeList,
+				CpusReq:          cpusReq,
 				CpusAlloc:        &cpusAllocInt32,
 				ElapsedSeconds:   &elapsedSeconds,
 				Qos:              job.GetQos(),
 				Reason:           &reason,
 				SubmitTime:       job.GetSubmitTime(),
+				GpusReq:          gpusReq,
 				GpusAlloc:        &gpusAlloc,
+				MemReqMb:         memReqMb,
 				MemAllocMb:       &memAllocMb,
 				Pods:             pods,
 			}
 			jobsInfo = append(jobsInfo, subJobInfo)
+			logrus.Tracef("GetJobs: jobsInfo %v", subJobInfo)
 		} else {
 			subJobInfo := &protos.JobInfo{}
 			for _, field := range in.Fields {
@@ -617,7 +705,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				case "working_directory":
 					subJobInfo.WorkingDirectory = job.GetCwd()
 				case "cpus_req":
-					subJobInfo.CpusReq = cpusAllocInt32
+					subJobInfo.CpusReq = cpusReq
 				case "cpus_alloc":
 					subJobInfo.CpusAlloc = &cpusAllocInt32
 				case "state":
@@ -631,27 +719,28 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 				case "reason":
 					subJobInfo.Reason = &reason
 				case "nodes_req":
-					subJobInfo.NodesReq = nodeNum
+					subJobInfo.NodesReq = nodesReq
 				case "nodes_alloc":
-					subJobInfo.NodesAlloc = &nodeNum
+					subJobInfo.NodesAlloc = &nodesAlloc
 				case "gpus_req":
-					subJobInfo.GpusReq = gpusAlloc
+					subJobInfo.GpusReq = gpusReq
 				case "gpus_alloc":
 					subJobInfo.GpusAlloc = &gpusAlloc
 				case "mem_req_mb":
-					subJobInfo.MemReqMb = memAllocMb
+					subJobInfo.MemReqMb = memReqMb
 				case "pods":
-					totalStepCount += len(job.GetStepInfoList())
+					logrus.Tracef("GetJobs: job pod Info %v", job.GetPodMeta())
+					logrus.Tracef("GetJobs: job step Info %v", job.GetStepInfoList())
 					pods := utils.ConvertStepInfoToPodInfo(job.Partition, job.Uid, job.GetUsername(), job.GetStepInfoList())
 					subJobInfo.Pods = pods
 				case "mem_alloc_mb":
 					subJobInfo.MemAllocMb = &memAllocMb
 				}
 			}
+			logrus.Tracef("GetJobs: jobsInfo %v", subJobInfo)
 			jobsInfo = append(jobsInfo, subJobInfo)
 		}
 	}
-	logrus.Tracef("GetJobs finished, jobs count: %d, total steps converted: %d, fields: %v", len(jobsInfo), totalStepCount, in.Fields)
 	if in.Sort != nil && len(jobsInfo) != 0 {
 		totalNum = uint32(len(jobsInfo))
 		var sortKey string
@@ -671,6 +760,7 @@ func (s *ServerJob) GetJobs(ctx context.Context, in *protos.GetJobsRequest) (*pr
 		return &protos.GetJobsResponse{Jobs: sortJobinfo, TotalCount: &totalNum}, nil
 	}
 	totalNum = uint32(len(jobsInfo))
+	logrus.Tracef("GetJobs jobs: %v", jobsInfo)
 	return &protos.GetJobsResponse{Jobs: jobsInfo, TotalCount: &totalNum}, nil
 }
 
@@ -1039,6 +1129,62 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 	}, nil
 }
 
+func (s *ServerJob) SubmitScriptAsJob(ctx context.Context, in *protos.SubmitScriptAsJobRequest) (*protos.SubmitScriptAsJobResponse, error) {
+	logrus.Tracef("Received request SubmitScriptAsJob: %v", in)
+	// 具体的提交逻辑
+	updateScript := "#!/bin/bash\n"
+	trimmedScript := strings.TrimLeft(in.Script, "\n")
+	// 通过换行符 "\n" 分割字符串
+	checkBool1 := strings.Contains(trimmedScript, "--chdir")
+	checkBool2 := strings.Contains(trimmedScript, " -D ")
+	if !checkBool1 && !checkBool2 {
+		chdirString := fmt.Sprintf("#SBATCH --chdir=%s\n", *in.ScriptFileFullPath)
+		updateScript = updateScript + chdirString
+		for _, value := range strings.Split(trimmedScript, "\n")[1:] {
+			updateScript = updateScript + value + "\n"
+		}
+		in.Script = updateScript
+	}
+	checkJobName1 := strings.Contains(in.Script, "--job-name")
+	checkJobName2 := strings.Contains(in.Script, " -J ")
+	if !checkJobName1 && !checkJobName2 {
+		lines := strings.SplitN(in.Script, "\n", 2)
+		if len(lines) == 2 {
+			in.Script = lines[0] + "\n#SBATCH --job-name=cbatch\n" + lines[1]
+		}
+	}
+	// 将这个保存成一个脚本文件，通过脚本文件进行提交
+	// 生成一个随机的文件名
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, 10)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	filePath := "/tmp" + "/" + string(b) + ".sh" // 生成的脚本存放路径
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0777)
+	if err != nil {
+		logrus.Errorf("SubmitScriptAsJob failed: %v", fmt.Errorf("CREATE_SCRIPT_FAILED"))
+		return nil, ce.RichError(codes.Aborted, "CREATE_SCRIPT_FAILED", "Create submit script failed.")
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+	writer.WriteString(in.Script)
+	writer.Flush()
+
+	submitResult, err := utils.LocalSubmitJob(filePath, in.UserId)
+	os.Remove(filePath) // 删除生成的提交脚本
+	if err != nil {
+		logrus.Errorf("SubmitScriptAsJob failed: %v", err)
+		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", submitResult)
+	}
+	responseList := strings.Split(strings.TrimSpace(string(submitResult)), " ")
+	jobIdString := responseList[len(responseList)-1]
+
+	jobId1, _ := strconv.Atoi(jobIdString[:len(jobIdString)-1])
+
+	return &protos.SubmitScriptAsJobResponse{JobId: uint32(jobId1)}, nil
+}
+
 func (s *ServerJob) SubmitInferJob(ctx context.Context, in *protos.SubmitInferJobRequest) (*protos.SubmitInferJobResponse, error) {
 	logrus.Tracef("[SubmitInferJob] Received request: %v", in)
 
@@ -1112,9 +1258,29 @@ func (s *ServerJob) CreateDevHost(ctx context.Context, in *protos.CreateDevHostR
 	if err != nil {
 		return nil, ce.RichError(codes.Internal, "CREATE_DEV_HOST_FAILED", err.Error())
 	}
+	var (
+		jupyterProxyPort        int
+		releaseJupyterProxyPort bool
+	)
+	if in.JupyterLabInfo != nil {
+		jupyterProxyPort, err = utils.ReserveAvailableProxyPort()
+		if err != nil {
+			logrus.Errorf("[CreateDevHost] reserve JupyterLab proxy port failed: %v", err)
+			return nil, ce.RichError(codes.Aborted, "BUILD_DEV_HOST_FAILED", "Reserve JupyterLab proxy port failed.")
+		}
+		releaseJupyterProxyPort = true
+		defer func() {
+			if !releaseJupyterProxyPort {
+				return
+			}
+			if releaseErr := utils.GlobalProxyManager.ReleaseReservedProxyPort(jupyterProxyPort); releaseErr != nil {
+				logrus.Warnf("[CreateDevHost] release JupyterLab proxy port %d failed: %v", jupyterProxyPort, releaseErr)
+			}
+		}()
+	}
 	// 构建容器作业
 	coordinator := builder.NewJobBuilderCoordinator()
-	task, err := coordinator.BuildDevHostJob(in)
+	task, err := coordinator.BuildDevHostJob(in, jupyterProxyPort)
 	if err != nil {
 		logrus.Errorf("[CreateDevHost] build job err: %v", err)
 		return nil, ce.RichError(codes.Internal, "BUILD_DEV_HOST_FAILED", err.Error())
@@ -1129,42 +1295,43 @@ func (s *ServerJob) CreateDevHost(ctx context.Context, in *protos.CreateDevHostR
 	}
 
 	logrus.Infof("[CreateDevHost] submit job sucess: %v", jobID)
+	if jupyterProxyPort > 0 {
+		utils.GlobalProxyManager.BindReservedProxyPort(jupyterProxyPort, jobID)
+	}
 
 	var containerPorts []int32
 	for _, port := range task.PodMeta.Ports {
 		containerPorts = append(containerPorts, port.ContainerPort)
 	}
 	submitJobInfo := &utils.SubmitJobInfo{
-		JobName:        in.JobName,
-		JobType:        utils.DevHost,
-		JobId:          jobID,
-		ContainerPorts: containerPorts,
+		JobName:             in.JobName,
+		JobType:             utils.DevHost,
+		JobId:               jobID,
+		ContainerPorts:      containerPorts,
+		JupyterLabProxyPort: jupyterProxyPort,
 	}
 
 	if err = s.JM.SaveJobInfo(submitJobInfo); err != nil {
-		logrus.Warnf("save job submit info failed: %v", err)
+		logrus.Errorf("[CreateDevHost] save job submit info failed: %v", err)
+		// 补偿取消不能依赖客户端请求上下文；客户端断开或网关超时后，
+		// 仍需尽力撤销已经提交的作业，避免作业和端口残留。
+		cancelCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		_, cancelErr := s.CancelJob(cancelCtx, &protos.CancelJobRequest{JobId: jobID, UserId: in.UserId})
+		cancel()
+		if cancelErr != nil {
+			logrus.Errorf("[CreateDevHost] compensate job %d failed after saving job info failed: %v", jobID, cancelErr)
+			// 取消失败时不能释放端口：作业可能仍在运行并使用该端口。
+			// 保留端口与 jobID 的绑定，由周期清理在作业终止后释放。
+			releaseJupyterProxyPort = false
+			return nil, ce.RichError(codes.Internal, "CREATE_DEV_HOST_FAILED",
+				fmt.Sprintf("Save dev host information failed: %v; cancel submitted job failed: %v", err, cancelErr))
+		}
+		// CancelJob 已负责释放预留端口，避免 defer 重复处理。
+		releaseJupyterProxyPort = false
+		return nil, ce.RichError(codes.Internal, "CREATE_DEV_HOST_FAILED",
+			fmt.Sprintf("Save dev host information failed: %v; submitted job %d has been cancelled", err, jobID))
 	}
-
-	//go func() {
-	//	submitJobInfo := &utils.SubmitJobInfo{
-	//		JobName: in.JobName,
-	//		JobType: utils.DevHost,
-	//	}
-	//	jobInfo, err := getJobInfoWithRetry(jobID, 30, 2)
-	//	if err != nil {
-	//		logrus.Errorf("[SubmitJob] get job info err: %v", err)
-	//	}
-	//	forwardInfo, err := utils.BuildJobForwardInfo(jobInfo.PodMeta, jobInfo.StepInfoList)
-	//	if err != nil {
-	//		logrus.Warn("build job forward info failed: %v", err)
-	//	}
-	//	submitJobInfo.ForwardInfo = forwardInfo
-	//
-	//	err = utils.GlobalProxyManager.CreateAndStartProxy(submitJobInfo)
-	//	if err != nil {
-	//		logrus.Warn("Failed to create proxy for app job %v: %v", in.JobName, err)
-	//	}
-	//}()
+	releaseJupyterProxyPort = false
 
 	return &protos.CreateDevHostResponse{
 		JobId: jobID,

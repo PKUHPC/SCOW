@@ -5,6 +5,7 @@ import (
 
 	craneProtos "scow-adapters/gen/crane-ai"
 	protos "scow-adapters/gen/go"
+	adapters "scow-adapters/pkg/crane-ai/services/job/internal/adapter"
 	"scow-adapters/pkg/crane-ai/services/job/internal/types"
 )
 
@@ -75,6 +76,10 @@ func (c *JobBuilderCoordinator) BuildInferenceJob(req *protos.SubmitInferJobRequ
 	return c.BuildContainerJob(req)
 }
 
-func (c *JobBuilderCoordinator) BuildDevHostJob(req *protos.CreateDevHostRequest) (*craneProtos.JobToCtld, error) {
-	return c.BuildContainerJob(req)
+func (c *JobBuilderCoordinator) BuildDevHostJob(req *protos.CreateDevHostRequest, jupyterProxyPort int) (*craneProtos.JobToCtld, error) {
+	adapter := adapters.NewDevHostJobAdapter(req, jupyterProxyPort)
+	if err := c.validateRequest(adapter); err != nil {
+		return nil, fmt.Errorf("request verification failed: %v", err)
+	}
+	return c.builder.Build(adapter)
 }

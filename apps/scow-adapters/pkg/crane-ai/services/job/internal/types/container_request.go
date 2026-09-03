@@ -94,4 +94,5 @@ type VSCodeInfo struct {
 
 type JupyterLabInfo struct {
 	ProxyBasePath string
+	ProxyPort     int
 }

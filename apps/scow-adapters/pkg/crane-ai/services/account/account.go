@@ -45,6 +45,18 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *protos.CreateAcco
 		return nil, ce.RichError(codes.Internal, "ACCOUNT_ILLEGAL", err.Error())
 	}
 
+	// 先检查账户是否已存在，使行为与 Slurm 适配器一致。AddAccount 仍需处理并发创建的兜底情况。
+	exists, err := utils.SelectAccountExists(in.AccountName)
+	if err != nil {
+		logrus.Errorf("CreateAccount query account %v failed: %v", in.AccountName, err)
+		return nil, ce.RichError(codes.Internal, "CRANE_CALL_FAILED", err.Error())
+	}
+	if exists {
+		err := fmt.Errorf("account %s already exists", in.AccountName)
+		logrus.Infof("CreateAccount skipped: %v", err)
+		return nil, ce.RichError(codes.AlreadyExists, "ACCOUNT_ALREADY_EXISTS", err.Error())
+	}
+
 	var partitions []string
 	useAuthorizedPartitions := false
 	switch partitionStrategy := in.PartitionStrategy.(type) {
@@ -62,11 +74,15 @@ func (s *ServerAccount) CreateAccount(ctx context.Context, in *protos.CreateAcco
 	}
 
 	if useAuthorizedPartitions {
-		if err := utils.CreateAccount(in.AccountName, partitions); err != nil {
-			logrus.Errorf("create account %v failed: %v", in.AccountName, err)
-			return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", err.Error())
-		}
-	} else if err := utils.CreateAccount(in.AccountName); err != nil {
+		err = utils.CreateAccount(in.AccountName, partitions)
+	} else {
+		err = utils.CreateAccount(in.AccountName)
+	}
+	if errors.Is(err, utils.ErrAccountAlreadyExists) {
+		logrus.Infof("CreateAccount skipped: %v", err)
+		return nil, ce.RichError(codes.AlreadyExists, "ACCOUNT_ALREADY_EXISTS", err.Error())
+	}
+	if err != nil {
 		logrus.Errorf("create account %v failed: %v", in.AccountName, err)
 		return nil, ce.RichError(codes.Internal, "CRANE_INTERNAL_ERROR", err.Error())
 	}

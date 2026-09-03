@@ -264,11 +264,12 @@ func (b *ContainerJobBuilder) setArgs(adapter types.ContainerJobRequest) []strin
 	if proxyBasePath != "" && vscodeBinPath != "" {
 		vscodePort := utils.VscodePort
 		jupyterPort := utils.JupyterPort
+		jupyterServicePort := adapter.GetJupyterLabInfo().ProxyPort
 		hostname, _ := os.Hostname()
 
 		host := fmt.Sprintf("--host=%s", hostname)
 		jupyterPortStr := fmt.Sprintf("--jupyter-port=%d", jupyterPort)
-		jupyterSvcPort := fmt.Sprintf("--jupyter-svcport=%d", jupyterPort)
+		jupyterSvcPort := fmt.Sprintf("--jupyter-svcport=%d", jupyterServicePort)
 		jupyterProxy := fmt.Sprintf("--jupyter-proxy=%s", proxyBasePath)
 		vscodePortStr := fmt.Sprintf("--vscode-port=%d", vscodePort)
 		vscodeSvcPort := fmt.Sprintf("--vscode-svcport=%d", vscodePort)
@@ -288,10 +289,11 @@ func (b *ContainerJobBuilder) setArgs(adapter types.ContainerJobRequest) []strin
 		args = append(args, "--mode=vscode", host, vscodePortStr, vscodeSvcPort, vscodeBin)
 	} else if proxyBasePath != "" {
 		appPort := firstContainerPort(adapter)
+		jupyterServicePort := adapter.GetJupyterLabInfo().ProxyPort
 		hostname, _ := os.Hostname()
 		host := fmt.Sprintf("--host=%s", hostname)
 		jupyterPortStr := fmt.Sprintf("--jupyter-port=%d", appPort)
-		jupyterSvcPort := fmt.Sprintf("--jupyter-svcport=%d", appPort)
+		jupyterSvcPort := fmt.Sprintf("--jupyter-svcport=%d", jupyterServicePort)
 		jupyterProxy := fmt.Sprintf("--jupyter-proxy=%s", proxyBasePath)
 
 		args = append(args, "--mode=jupyterlab", host, jupyterPortStr,

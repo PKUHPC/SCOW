@@ -103,6 +103,11 @@ func NewAdapterCommand() *cobra.Command {
 func Run() {
 	// 初始化客户端
 	client.InitClient()
+	defer func() {
+		if err := client.CloseCraneCtldClients(); err != nil {
+			logrus.Warnf("Failed to close CraneCtld clients: %v", err)
+		}
+	}()
 	// 创建一个通道用于程序退出信号
 	shutdown := make(chan struct{})
 
