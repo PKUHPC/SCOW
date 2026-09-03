@@ -1,6 +1,5 @@
 export default {
   common: {
-    return: "돌아가기",
     finalError: "요청이 실패했습니다. 나중에 다시 시도하세요",
     noSpaceError: "저장 공간이 부족합니다. 공간을 정리하거나 관리자에게 문의하세요",
     timeSubmit: "제출 시간",

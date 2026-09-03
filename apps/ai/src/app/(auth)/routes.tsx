@@ -107,7 +107,6 @@ export const userRoutes: (
                       Icon: ViewDevHostIcon,
                       text: t("routes.job.devHost"),
                       path: "/jobs/devList",
-                      match: (spec: string, path: string) => spec === path || path === "/jobs/createDev",
                     },
                   ]
                 : []),

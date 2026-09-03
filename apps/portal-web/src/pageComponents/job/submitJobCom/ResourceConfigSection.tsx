@@ -1,20 +1,20 @@
 import type { ColumnsType } from "antd/es/table";
 
-import {
-  createMaxTimePresets,
-  MaxTimeSelector,
-  type MaxTimeUnits,
-} from "@scow/lib-web/build/components/job/MaxTimeSelector";
 import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import { PresetNumberSelector } from "@scow/lib-web/build/components/styledAntdCom/SegmentedButtons";
+import { RoundedInputNumberWithAddonAfter } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AddonAfterSelect } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import {
+  PresetNumberSelector,
+  SegmentedInputSelector,
+} from "@scow/lib-web/build/components/styledAntdCom/SegmentedButtons";
 import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Tooltip } from "@scow/lib-web/build/components/styledAntdCom/Tooltip";
 import { validateConfigMaxJobRunningHours } from "@scow/lib-web/build/utils/form";
-import { Form, type FormInstance, Space } from "antd";
+import { Form, type FormInstance, Select, Space } from "antd";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { TimeUnit } from "src/models/job";
@@ -78,13 +78,123 @@ interface ResourceConfigSectionProps {
 const p = prefix("pageComp.submitJobCom.ResourceConfigSection.");
 const PARTITION_TABLE_SELECTION_WIDTH = 48;
 
-const MAX_TIME_UNITS: MaxTimeUnits<TimeUnit> = {
-  minutes: TimeUnit.MINUTES,
-  hours: TimeUnit.HOURS,
-  days: TimeUnit.DAYS,
-};
+export type MaxTimePresetKey = "30m" | "1h" | "12h" | "1d" | "2d";
 
-export const MAX_TIME_PRESETS = createMaxTimePresets(MAX_TIME_UNITS);
+export const MAX_TIME_PRESETS: { key: MaxTimePresetKey; maxTime: number; maxTimeUnit: TimeUnit }[] = [
+  { key: "30m", maxTime: 30, maxTimeUnit: TimeUnit.MINUTES },
+  { key: "1h", maxTime: 1, maxTimeUnit: TimeUnit.HOURS },
+  { key: "12h", maxTime: 12, maxTimeUnit: TimeUnit.HOURS },
+  { key: "1d", maxTime: 1, maxTimeUnit: TimeUnit.DAYS },
+  { key: "2d", maxTime: 2, maxTimeUnit: TimeUnit.DAYS },
+];
+
+export interface MaxTimeSelectorProps {
+  value?: number;
+  onChange?: (value?: number) => void;
+  disabled?: boolean;
+  maxRunningTimeHours?: number;
+  disabledTooltip?: string;
+  maxTimeUnit: TimeUnit;
+  onMaxTimeUnitChange: (unit: TimeUnit) => void;
+  selectedPresetUnit?: TimeUnit;
+  onSelectedPresetUnitChange: (unit: TimeUnit | undefined) => void;
+  labels: {
+    minutes: string;
+    hours: string;
+    days: string;
+    otherValue: string;
+  };
+}
+
+export const MaxTimeSelector = ({
+  value,
+  onChange,
+  disabled,
+  maxRunningTimeHours,
+  disabledTooltip,
+  maxTimeUnit,
+  onMaxTimeUnitChange,
+  selectedPresetUnit,
+  onSelectedPresetUnitChange,
+  labels,
+}: MaxTimeSelectorProps) => {
+  const currentPreset = MAX_TIME_PRESETS.find(
+    (preset) => preset.maxTime === value && preset.maxTimeUnit === selectedPresetUnit,
+  )?.key;
+
+  const labelByUnit = {
+    [TimeUnit.MINUTES]: labels.minutes,
+    [TimeUnit.HOURS]: labels.hours,
+    [TimeUnit.DAYS]: labels.days,
+  };
+  const maxTimePresetToHours = (preset: (typeof MAX_TIME_PRESETS)[number]) => {
+    switch (preset.maxTimeUnit) {
+      case TimeUnit.MINUTES:
+        return preset.maxTime / 60;
+      case TimeUnit.HOURS:
+        return preset.maxTime;
+      case TimeUnit.DAYS:
+        return preset.maxTime * 24;
+    }
+  };
+  const disabledFrom = disabled
+    ? 0
+    : maxRunningTimeHours === undefined
+      ? undefined
+      : MAX_TIME_PRESETS.findIndex((preset) => maxTimePresetToHours(preset) > maxRunningTimeHours);
+  const normalizedDisabledFrom = disabledFrom === -1 ? undefined : disabledFrom;
+
+  return (
+    <SegmentedInputSelector
+      options={MAX_TIME_PRESETS.map((preset) => ({
+        label: `${preset.maxTime}${labelByUnit[preset.maxTimeUnit]}`,
+        value: preset.key,
+      }))}
+      value={currentPreset}
+      disabledFrom={normalizedDisabledFrom}
+      disabledTooltip={disabledTooltip}
+      // 为了让最大运行时间和单节点核心数的一排按钮的总宽度一致
+      buttonItemPadding="0 19.7px"
+      onPresetChange={(presetKey) => {
+        const preset = MAX_TIME_PRESETS.find((item) => item.key === presetKey);
+        if (!preset) {
+          return;
+        }
+        onChange?.(preset.maxTime);
+        onSelectedPresetUnitChange(preset.maxTimeUnit);
+      }}
+      renderInput={({ selectedPreset, clearSelectedPreset }) => (
+        <RoundedInputNumberWithAddonAfter
+          min={1}
+          step={1}
+          precision={0}
+          style={{ width: 120 }}
+          disabled={disabled}
+          placeholder={labels.otherValue}
+          value={selectedPreset !== undefined ? undefined : value}
+          onChange={(nextValue) => {
+            clearSelectedPreset();
+            onSelectedPresetUnitChange(undefined);
+            onChange?.(typeof nextValue === "number" ? nextValue : undefined);
+          }}
+          addonAfter={
+            <AddonAfterSelect
+              style={{ minWidth: "72px" }}
+              value={maxTimeUnit}
+              onChange={(nextUnit) => {
+                onMaxTimeUnitChange(nextUnit as TimeUnit);
+              }}
+            >
+              <Select.Option value={TimeUnit.MINUTES}>{labels.minutes}</Select.Option>
+              <Select.Option value={TimeUnit.HOURS}>{labels.hours}</Select.Option>
+              <Select.Option value={TimeUnit.DAYS}>{labels.days}</Select.Option>
+            </AddonAfterSelect>
+          }
+        />
+      )}
+    />
+  );
+};
 
 export const ResourceConfigSection = ({
   form,
@@ -517,8 +627,6 @@ export const ResourceConfigSection = ({
               days: t(p("days")),
               otherValue: t(p("nodeCountOtherPlaceholder")),
             }}
-            units={MAX_TIME_UNITS}
-            presets={MAX_TIME_PRESETS}
           />
         </InlineFormItem>
       </Form>

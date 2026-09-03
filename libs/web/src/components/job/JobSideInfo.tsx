@@ -15,7 +15,7 @@ export interface JobSideInfoAccountInfo {
 }
 
 export interface JobSideInfoLabels {
-  totalNodeCount?: string;
+  totalNodeCount: string;
   totalGpuCount: string;
   totalCoreCount: string;
   totalMemory: string;
@@ -92,12 +92,10 @@ export const JobSideInfo: React.FC<JobSideInfoProps> = ({
 
   return (
     <JobSidePanelInfoBox>
-      {labels.totalNodeCount !== undefined && (
-        <SidePanelRow>
-          <SidePanelLabel>{labels.totalNodeCount}</SidePanelLabel>
-          <SidePanelValue>{nodeCount ?? "-"}</SidePanelValue>
-        </SidePanelRow>
-      )}
+      <SidePanelRow>
+        <SidePanelLabel>{labels.totalNodeCount}</SidePanelLabel>
+        <SidePanelValue>{nodeCount ?? "-"}</SidePanelValue>
+      </SidePanelRow>
       <SidePanelRow>
         <SidePanelLabel>{labels.totalGpuCount}</SidePanelLabel>
         <SidePanelValue>{totalGpuCount}</SidePanelValue>

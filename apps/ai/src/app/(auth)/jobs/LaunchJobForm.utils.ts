@@ -13,8 +13,7 @@ import {
   RESERVED_ENV_KEYS,
   shouldOmitEnvFromPayload,
 } from "src/models/envVars";
-import type { TemplateFormData } from "src/server/trpc/route/jobs/templates";
-import type { TransType } from "src/i18n";
+import { TemplateFormData } from "src/server/trpc/route/jobs/templates";
 import { formatSize } from "src/utils/format";
 
 import type {
@@ -33,50 +32,6 @@ import type {
   VersionGroup,
   VersionLookupEntry,
 } from "./LaunchJobForm.types";
-
-export interface AccountOption {
-  label: string;
-  value: string;
-  disabled: boolean;
-  disabledReason?: string;
-}
-
-export interface AccountDetail {
-  accountName: string;
-  clusters: string[];
-  available: boolean;
-  unavailableReasons: number[];
-}
-
-const accountUnavailableReasonTextIds: Record<number, Parameters<TransType>[0]> = {
-  1: "app.jobs.resourceConfigSection.accountUserBlocked",
-  2: "app.jobs.resourceConfigSection.accountFrozen",
-  3: "app.jobs.resourceConfigSection.accountBlocked",
-  4: "app.jobs.resourceConfigSection.accountDebt",
-  5: "app.jobs.resourceConfigSection.userQuotaExceeded",
-};
-
-export const buildAccountOptions = (
-  accountDetails: AccountDetail[],
-  t: TransType,
-): AccountOption[] =>
-  [...accountDetails]
-    .sort((a, b) => {
-      if (a.available !== b.available) return a.available ? -1 : 1;
-      return a.accountName.localeCompare(b.accountName);
-    })
-    .map((account) => ({
-      label: account.accountName,
-      value: account.accountName,
-      disabled: !account.available,
-      disabledReason: account.available
-        ? undefined
-        : account.unavailableReasons
-            .map((reason) => accountUnavailableReasonTextIds[reason]
-              ? t(accountUnavailableReasonTextIds[reason])
-              : String(reason))
-            .join("；"),
-    }));
 
 export const createSelectionLookupKey = (id: number, isPrivate: boolean) => `${id}:${isPrivate ? "1" : "0"}`;
 

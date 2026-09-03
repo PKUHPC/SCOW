@@ -1,21 +1,12 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AppType } from "@scow/config/build/appForAi";
 import { getCommonConfig } from "@scow/config/src/common";
-import { moneyToNumber } from "@scow/lib-decimal";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import {
-  AppScope,
-  getClientFn,
-  libGetUserAvailableApps,
-  libGetUserAvailableClusterApps,
-  libGetUserInfo,
-} from "@scow/lib-server";
+import { AppScope, libGetUserAvailableApps, libGetUserAvailableClusterApps } from "@scow/lib-server";
 import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { getI18nTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
-import { AccountUnavailableReason } from "@scow/protos/build/portal/config";
 import { GetUserAvailableClusterAppsResponse_App } from "@scow/protos/build/server/app_authorization";
-import { AccountState, AccountStatus, UserServiceClient, UserStatus } from "@scow/protos/build/server/user";
 import { jobInfo_PodStatusToJSON } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
@@ -78,36 +69,6 @@ const ImageSchema = z.object({
 export type Image = z.infer<typeof ImageSchema>;
 
 const JobTypeSchema = z.enum(JobType);
-
-const getAccountUnavailableReasons = (accountStatus: AccountStatus | undefined) => {
-  if (!accountStatus) return [];
-
-  const reasons: AccountUnavailableReason[] = [];
-  if (accountStatus.userStatus === UserStatus.BLOCKED) {
-    reasons.push(AccountUnavailableReason.USER_BLOCKED);
-  }
-
-  const jobChargeLimit = accountStatus.jobChargeLimit ? moneyToNumber(accountStatus.jobChargeLimit) : undefined;
-  const usedJobCharge = accountStatus.usedJobCharge ? moneyToNumber(accountStatus.usedJobCharge) : undefined;
-  if (jobChargeLimit !== undefined && usedJobCharge !== undefined && usedJobCharge >= jobChargeLimit) {
-    reasons.push(AccountUnavailableReason.USER_QUOTA_EXCEEDED);
-  }
-
-  if (!accountStatus.isInWhitelist) {
-    if (accountStatus.accountState === AccountState.ACCOUNT_BLOCKED_BY_ADMIN) {
-      reasons.push(AccountUnavailableReason.ACCOUNT_BLOCKED);
-    }
-    const balance = accountStatus.balance ? moneyToNumber(accountStatus.balance) : undefined;
-    const blockThresholdAmount = accountStatus.blockThresholdAmount
-      ? moneyToNumber(accountStatus.blockThresholdAmount)
-      : undefined;
-    if (balance !== undefined && blockThresholdAmount !== undefined && balance <= blockThresholdAmount) {
-      reasons.push(AccountUnavailableReason.ACCOUNT_DEBT);
-    }
-  }
-
-  return reasons;
-};
 
 const AppSessionSchema = z.object({
   sessionId: z.string(),
@@ -370,19 +331,7 @@ export const listAppAvailableAccountsAndClusters = procedure
       appId: z.optional(z.string()),
     }),
   )
-  .output(
-    z.object({
-      accountClusters: z.record(z.string(), z.array(z.string())),
-      accountDetails: z.array(
-        z.object({
-          accountName: z.string(),
-          clusters: z.array(z.string()),
-          available: z.boolean(),
-          unavailableReasons: z.array(z.nativeEnum(AccountUnavailableReason)),
-        }),
-      ),
-    }),
-  )
+  .output(z.object({ accountClusters: z.record(z.string(), z.array(z.string())) }))
   .query(async ({ input, ctx: { user } }) => {
     const commonConfig = getCommonConfig();
     const { appId } = input;
@@ -392,7 +341,7 @@ export const listAppAvailableAccountsAndClusters = procedure
     );
 
     if (currentAiClusterIds.length === 0) {
-      return { accountClusters: {}, accountDetails: [] };
+      return { accountClusters: {} };
     }
 
     const buildAccountClusters = async (
@@ -433,50 +382,8 @@ export const listAppAvailableAccountsAndClusters = procedure
       ) as Record<string, string[]>;
     };
 
-    const userInfo = await libGetUserInfo(
-      logger,
-      user.identityId,
-      config.MIS_SERVER_URL,
-      commonConfig.scowApi?.auth?.token,
-    );
-    const accountNames = userInfo
-      ? (userInfo.affiliations ?? [])
-          .filter((affiliation) => affiliation.accountState !== AccountState.ACCOUNT_DELETED)
-          .map((affiliation) => affiliation.accountName)
-      : undefined;
-
-    if (accountNames?.length === 0) {
-      return { accountClusters: {}, accountDetails: [] };
-    }
-
-    const accountStatuses =
-      userInfo?.tenantName && accountNames
-        ? (
-            await asyncClientCall(
-              getClientFn(config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)(UserServiceClient),
-              "getUserStatus",
-              { userId: user.identityId, tenantName: userInfo.tenantName, accountNames },
-            )
-          ).accountStatuses
-        : {};
-
-    const buildResult = (accountClusters: Record<string, string[]>) => ({
-      accountClusters,
-      accountDetails: (accountNames ?? Object.keys(accountClusters))
-        .filter((accountName) => (accountClusters[accountName]?.length ?? 0) > 0)
-        .map((accountName) => {
-          const unavailableReasons = getAccountUnavailableReasons(accountStatuses[accountName]);
-          return {
-            accountName,
-            clusters: accountClusters[accountName],
-            available: unavailableReasons.length === 0,
-            unavailableReasons,
-          };
-        }),
-    });
-
     const assignedResourceDetails =
-      (await getUserAssignedResourceDetails(user.identityId, AccountStatusFilter.ALL)) ?? [];
+      (await getUserAssignedResourceDetails(user.identityId, AccountStatusFilter.UNBLOCKED_ONLY)) ?? [];
 
     const currentClusterSet = new Set(currentAiClusterIds);
     const clusterAccountMap = new Map<string, Set<string>>();
@@ -498,7 +405,7 @@ export const listAppAvailableAccountsAndClusters = procedure
       return Array.from(clusterAccountMap.get(clusterId) ?? []);
     });
 
-    return buildResult(accountClusters);
+    return { accountClusters };
   });
 export const getAppMetadata = procedure
   .meta({
@@ -719,13 +626,13 @@ export const createAppSession = procedure
     const app = checkAppExist(apps, appId);
 
     await validateSubmitAiJobInfoUnderMis({
-      userId,
-      accountName: account,
-      clusterId,
-      logger,
-      partitionName: partition,
-      checkAccountApp: true,
-      appId,
+        userId,
+        accountName: account,
+        clusterId,
+        logger,
+        partitionName: partition,
+        checkAccountApp: true,
+        appId,
     });
 
     const proxyBasePath = join(BASE_PATH, "/api/proxy", clusterId);

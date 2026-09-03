@@ -308,7 +308,6 @@ export default {
       createApps: {
         create: "Создать",
         title: "Создать приложение",
-        cluster: "Кластер",
         searchPlaceholder: "Введите имя приложения",
         noSearchResult: "Не найдено интерактивных приложений, связанных с '{}'",
         appNotFoundMessage: "Нет интерактивных приложений, доступных для создания.",

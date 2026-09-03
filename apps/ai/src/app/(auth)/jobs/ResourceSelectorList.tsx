@@ -146,18 +146,6 @@ const CascaderWrapper = styled(CascaderContainer)`
     width: 200px !important;
   }
 
-  .ant-cascader-menus.ant-cascader-menu-empty .ant-cascader-menu {
-    width: 100% !important;
-    min-height: 80px;
-  }
-
-  .ant-cascader-menus.ant-cascader-menu-empty .ant-cascader-menu-item {
-    height: auto !important;
-    min-height: 70px;
-    justify-content: center;
-    line-height: normal !important;
-  }
-
   .ant-cascader-menu-item {
     padding: 0 10px !important;
     height: 36px !important;
@@ -385,11 +373,7 @@ interface ResourceSelectorFieldValue {
   __targetTouched?: boolean;
 }
 
-const RowRemoveButton = styled(RemoveButton)``;
-
-const RowActions = styled.div`
-  display: flex;
-  gap: 8px;
+const RowRemoveButton = styled(RemoveButton)`
   margin-top: 10px;
 `;
 
@@ -652,29 +636,20 @@ export const ResourceSelectorList = ({
                   />
                 </Form.Item>
 
-                <RowActions>
-                  <RowRemoveButton
-                    icon={<MinusOutlined />}
-                    onClick={() => remove(field.name)}
-                    aria-label={removeAriaLabel}
-                  />
-                  <RowRemoveButton
-                    icon={<PlusOutlined />}
-                    onClick={() => add(undefined, field.name + 1)}
-                    aria-label={addButtonText}
-                  />
-                </RowActions>
+                <RowRemoveButton
+                  icon={<MinusOutlined />}
+                  onClick={() => remove(field.name)}
+                  aria-label={removeAriaLabel}
+                />
               </Row>
             ))}
 
-            {fields.length === 0 ? (
-              <AddButton
-                icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />}
-                onClick={() => add(undefined)}
-              >
-                {addButtonText}
-              </AddButton>
-            ) : null}
+            <AddButton
+              icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />}
+              onClick={() => add(undefined)}
+            >
+              {addButtonText}
+            </AddButton>
 
             <ErrorList errors={errors} />
           </ListContainer>

@@ -1,6 +1,5 @@
 export default {
   common: {
-    return: "Back",
     finalError: "Request failed, please try again later",
     invalidParameter: "Invalid parameter, please contact the administrator",
     noSpaceError: "Insufficient storage space, please clean up the space or contact the administrator",

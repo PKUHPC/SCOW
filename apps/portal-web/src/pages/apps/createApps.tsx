@@ -13,12 +13,6 @@ import { CreateAppsTable } from "src/pageComponents/app/CreateAppsTable";
 import { LaunchAppForm } from "src/pageComponents/app/LaunchAppForm";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Head } from "src/utils/head";
-import { styled } from "styled-components";
-
-const JobFormPageContainer = styled.div`
-  margin: 8px;
-  padding: 16px;
-`;
 
 interface AccountAvailabilityInfo {
   accountName: string;
@@ -167,15 +161,13 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
     <>
       <Head title={t("pages.apps.createApps.title")} />
       {selectedAppInfo ? (
-        <JobFormPageContainer>
-          <LaunchAppForm
-            appInfo={selectedAppInfo}
-            setSelectedAppInfo={setSelectedAppInfo}
-            preSelectedCluster={selectedCluster}
-            setSelectedCluster={setSelectedCluster}
-            accountAppClusterMap={accountAppClusterMap}
-          />
-        </JobFormPageContainer>
+        <LaunchAppForm
+          appInfo={selectedAppInfo}
+          setSelectedAppInfo={setSelectedAppInfo}
+          preSelectedCluster={selectedCluster}
+          setSelectedCluster={setSelectedCluster}
+          accountAppClusterMap={accountAppClusterMap}
+        />
       ) : (
         <>
           {/* 去掉了BaseLayout中的padding和margin */}

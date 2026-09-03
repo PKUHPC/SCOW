@@ -1,25 +1,8 @@
-import { BackIcon } from "@scow/lib-web/build/icons/commonIcons";
 import { Avatar, Segmented, Typography } from "antd";
 import styled from "styled-components";
 
 export const HeaderAvatar = styled(Avatar)`
   background-color: rgba(240, 240, 240, 1) !important;
-`;
-
-export const StyledBackIcon = styled(BackIcon)`
-  position: absolute;
-  left: 21px;
-  top: 38px;
-  cursor: pointer;
-  font-size: 20px;
-  z-index: 1;
-`;
-
-export const SidePanelGroupWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
 `;
 
 export const StyledPublicImageOption = styled.div`
@@ -43,27 +26,6 @@ export const ImageSelectorWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
-`;
-
-export const RemoteImageAddressRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-
-  .ant-form-item {
-    flex: 1;
-  }
-`;
-
-export const RemoteCredentialsRow = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  width: 100%;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
 `;
 
 export const ImageSegmentedControl = styled(Segmented)`

@@ -307,7 +307,6 @@ export default {
       createApps: {
         create: "생성",
         title: "응용 프로그램 생성",
-        cluster: "클러스터",
         searchPlaceholder: "응용 프로그램 이름 입력",
         noSearchResult: "'{}' 관련 인터랙티브 응용 프로그램을 찾을 수 없습니다",
         appNotFoundMessage: "생성 가능한 인터랙티브 응용 프로그램이 없습니다.",

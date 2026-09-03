@@ -186,7 +186,7 @@ export const QuickEntry: React.FC = () => {
 
   const { data: quickEntriesData, isLoading: getQuickEntriesLoading } = trpc.dashboard.getQuickEntries.useQuery();
 
-  const { data: appsResponse, isLoading: listAvailableAppsLoading } = trpc.jobs.listAvailableApps.useQuery(
+  const { data: appsResponse } = trpc.jobs.listAvailableApps.useQuery(
     { clusterIds: currentClusters.map((cluster) => cluster.id) },
     { enabled: currentClusters && currentClusters.length !== 0 },
   );
@@ -246,7 +246,7 @@ export const QuickEntry: React.FC = () => {
 
   return (
     <LibQuickEntry
-      isLoading={getQuickEntriesLoading || listAvailableAppsLoading}
+      isLoading={getQuickEntriesLoading}
       quickEntryType="ai"
       currentClusters={currentAvailableClusters}
       publicConfigClusters={currentAvailableClusters}

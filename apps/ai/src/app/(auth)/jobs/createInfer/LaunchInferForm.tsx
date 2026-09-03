@@ -4,18 +4,15 @@ import type { ColumnsType } from "antd/es/table";
 import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelector.shared";
 import type { InferTemplateFormData, TemplateFormData } from "src/server/trpc/route/jobs/templates";
 
-import { FixedFooter, FooterActions, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
-import { JobPageHeader } from "@scow/lib-web/build/components/job/JobPageHeader";
-import { JobSideInfo } from "@scow/lib-web/build/components/job/JobSideInfo";
-import { BorderlessCard, PaddedCard } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
-import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import {
-  JobContainer,
-  JobMainContent,
-  JobPageLayout,
-  JobSidePanel,
-  JobSidePanelInner,
-} from "@scow/lib-web/build/layouts/base/JobContainer";
+  BorderlessCard,
+  HeaderRow,
+  HeaderTitle,
+  PaddedCard,
+} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Typography } from "antd";
 import dayjs from "dayjs";
@@ -26,8 +23,6 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { SaveAsTemplateModal } from "src/app/(auth)/jobs/components/SaveAsTemplateModal";
 import { TemplateListModal } from "src/app/(auth)/jobs/components/TemplateListModal";
 import { UnavailableParam, UnavailableParamsModal } from "src/app/(auth)/jobs/components/UnavailableParamsModal";
-import { SidePanelGroupWrapper } from "src/app/(auth)/jobs/LaunchJobForm.styles";
-import { MAX_TIME_PRESETS } from "src/app/(auth)/jobs/maxTime";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
 import { JobType } from "src/models/Job";
@@ -41,6 +36,7 @@ import type {
   BaseFormValues,
   CommandCacheEntry,
   CPUQueueRow,
+  EnvVariableField,
   GPUQueueRow,
   ImageOption,
   ImageSourceDraft,
@@ -55,7 +51,6 @@ import type {
 
 import {
   buildEnvPayload,
-  buildAccountOptions,
   buildResubmitResourceSelections,
   buildSelectionPathLookup,
   buildUnavailableParams,
@@ -94,6 +89,7 @@ const pPublicOption = prefix("app.jobs.publicImageOption.");
 type LaunchInferFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchInferFormKey, `imageSourceTabs.${string}`>;
 type ImagePlaceholderKey = Extract<LaunchInferFormKey, `imagePlaceholders.${string}`>;
+type QueueFooterLabelKey = Extract<LaunchInferFormKey, `queueFooterLabels.${string}`>;
 
 // 镜像来源配置（label & placeholder 的 key）
 const IMAGE_SOURCE_TAB_CONFIG: readonly {
@@ -112,6 +108,23 @@ const IMAGE_PLACEHOLDER_KEYS: Record<InferImageSourceKey, ImagePlaceholderKey> =
   remote: "imagePlaceholders.remote",
 } as const;
 export const DEFAULT_SERVICE_PORT = 8080;
+
+// 根据队列类型自定义底部统计栏的字段文案
+const QUEUE_LABEL_KEYS: Record<
+  QueueKind,
+  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
+> = {
+  gpu: {
+    gpu: "queueFooterLabels.totalGpu",
+    cpu: "queueFooterLabels.totalCpu",
+    memory: "queueFooterLabels.totalMemory",
+  },
+  cpu: {
+    gpu: "queueFooterLabels.totalGpu",
+    cpu: "queueFooterLabels.totalCpu",
+    memory: "queueFooterLabels.totalMemory",
+  },
+};
 
 type TranslateFn = ReturnType<typeof useI18nTranslateToString>;
 
@@ -302,16 +315,21 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const resubmitMountEnvAppliedRef = useRef(false);
   const resubmitServicePortAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
-  const [selectedPresetUnit, setSelectedPresetUnit] = useState<MaxTimeUnit | undefined>("min");
 
   // 账户集群关系
   const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
 
   const accountClusterMap = appAvailableAccountsAndClusters?.accountClusters ?? {};
-  const accountDetails = appAvailableAccountsAndClusters?.accountDetails ?? [];
+
   // 账户下拉选项根据 cluster 关联关系动态生成
-  const accountOptions = useMemo(() => buildAccountOptions(accountDetails, t), [accountDetails, t]);
-  const availableAccountOptions = useMemo(() => accountOptions.filter(({ disabled }) => !disabled), [accountOptions]);
+  const accountOptions = useMemo(
+    () =>
+      Object.keys(accountClusterMap).map((account) => ({
+        label: account,
+        value: account,
+      })),
+    [accountClusterMap],
+  );
 
   // ----------- 表单字段监听 -----------
   // 通过 Form.useWatch 实时感知三个分表单中的关键字段，后续计算和副作用均依赖这些最新值
@@ -327,7 +345,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const selectedCpuCount = Form.useWatch("cpuCores", resourceForm) ?? 0;
   const selectedNodeCount = Form.useWatch("nodeCount", resourceForm) ?? 1;
   const isMaxTimeUnlimited = Form.useWatch("maxTimeUnlimited", resourceForm) ?? false;
-  const selectedMaxTime = Form.useWatch<number | undefined>("maxTime", resourceForm);
 
   const maxJobRunningTimeHours = selectedCluster
     ? scowClusterConfigs[selectedCluster]?.ai?.infer?.maxRunningTimeHours
@@ -337,14 +354,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { data: userHomeDir } = trpc.file.getHomeDir.useQuery(
     { clusterId: selectedCluster! },
     { enabled: !!selectedCluster },
-  );
-
-  const { data: accountInfo } = trpc.account.getAccountInfo.useQuery(
-    { accountName: selectedAccount! },
-    {
-      enabled: Boolean(selectedAccount),
-      retry: false,
-    },
   );
 
   // ----------- 服务请求与变更提示 -----------
@@ -912,6 +921,11 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
 
+  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
+  const gpuLabel = t(p(gpuLabelKey));
+  const cpuLabel = t(p(cpuLabelKey));
+  const memoryLabel = t(p(memoryLabelKey));
+
   const displayedGpu = activeResourceTab === "gpu" ? (totalGpuUnits > 0 ? totalGpuUnits : "-") : "-";
 
   const displayedCpu = (() => {
@@ -991,20 +1005,17 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (resubmitResourceAppliedRef.current) {
       return;
     }
-    if (!appAvailableAccountsAndClusters) {
-      return;
-    }
 
     const targetAccount = createInferParams.account;
     const targetCluster = createInferParams.clusterId;
 
-    const accountAvailable = targetAccount
-      ? availableAccountOptions.some((option) => option.value === targetAccount)
-      : false;
+    const accountAvailable = targetAccount ? accountOptions.some((option) => option.value === targetAccount) : false;
 
-    const clusterExists = Boolean(
-      targetAccount && targetCluster && accountAvailable && accountClusterMap[targetAccount]?.includes(targetCluster),
-    );
+    const targetClusterOption = targetCluster
+      ? clusterOptions.find((option) => option.id === targetCluster && !option.disabled)
+      : undefined;
+
+    const clusterExists = Boolean(targetClusterOption);
 
     const nextValues: Partial<ResourceFormValues> = {};
 
@@ -1020,8 +1031,10 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       resourceForm.setFieldsValue(nextValues);
     }
 
-    resubmitResourceAppliedRef.current = true;
-  }, [accountClusterMap, appAvailableAccountsAndClusters, availableAccountOptions, createInferParams, resourceForm]);
+    if ((targetAccount ? accountAvailable : true) && (targetCluster ? clusterExists : true)) {
+      resubmitResourceAppliedRef.current = true;
+    }
+  }, [accountOptions, clusterOptions, createInferParams, resourceForm]);
 
   useEffect(() => {
     // 再次提交时回填队列、优先级与核心/加速卡数以及运行时长
@@ -1068,9 +1081,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
         value = minutes / 60;
       }
       setMaxTimeUnit(unit);
-      setSelectedPresetUnit(
-        MAX_TIME_PRESETS.find((preset) => preset.maxTime === value && preset.maxTimeUnit === unit)?.maxTimeUnit,
-      );
       maxTimeValue = value;
     }
 
@@ -1148,17 +1158,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     selectedCluster,
     setActiveResourceTab,
     setMaxTimeUnit,
-    setSelectedPresetUnit,
     setSelectedQueueKey,
   ]);
-
-  useEffect(() => {
-    const maxTimeNotSet = selectedMaxTime === undefined || selectedMaxTime === null;
-    if (maxTimeNotSet && !resourceForm.isFieldTouched("maxTime")) {
-      resourceForm.setFieldValue("maxTime", 30);
-      setSelectedPresetUnit("min");
-    }
-  }, [resourceForm, selectedMaxTime]);
 
   // 单位或配置上限变化时触发校验，让用户看到最新提示
   useEffect(() => {
@@ -1169,7 +1170,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (currentValue !== undefined && currentValue !== null) {
       resourceForm.validateFields(["maxTime"]);
     }
-  }, [isMaxTimeUnlimited, maxJobRunningTimeHours, maxTimeUnit, resourceForm, selectedPresetUnit]);
+  }, [isMaxTimeUnlimited, maxJobRunningTimeHours, maxTimeUnit, resourceForm]);
 
   // 当前集群配置了推理最长运行时间时，不允许历史不限时配置继续停留在不限时状态。
   useEffect(() => {
@@ -1188,9 +1189,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       maxTime: nextMaxTime,
     });
     setMaxTimeUnit("hour");
-    setSelectedPresetUnit(
-      MAX_TIME_PRESETS.find((preset) => preset.maxTime === nextMaxTime && preset.maxTimeUnit === "hour")?.maxTimeUnit,
-    );
     resourceForm.validateFields(["maxTime"]).catch(() => undefined);
   }, [hasInferMaxTimeLimit, maxJobRunningTimeHours, resourceForm]);
 
@@ -1242,17 +1240,17 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     if (createInferParams && !resubmitResourceAppliedRef.current) {
       return;
     }
-    if (!availableAccountOptions.length) {
+    if (!accountOptions.length) {
       resourceForm.setFieldValue("account", undefined);
       return;
     }
 
     const currentAccount = selectedAccount ?? resourceForm.getFieldValue("account");
 
-    if (!currentAccount || !availableAccountOptions.some((option) => option.value === currentAccount)) {
-      resourceForm.setFieldValue("account", availableAccountOptions[0].value);
+    if (!currentAccount || !accountOptions.some((option) => option.value === currentAccount)) {
+      resourceForm.setFieldValue("account", accountOptions[0].value);
     }
-  }, [availableAccountOptions, createInferParams, resourceForm, selectedAccount]);
+  }, [accountOptions, createInferParams, resourceForm, selectedAccount]);
 
   // 选中账户发生变化时，若当前集群不可用则自动切换到第一个可用集群
   useEffect(() => {
@@ -1515,7 +1513,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       gpuCount: selectedGpuCount > 0 ? selectedGpuCount : undefined,
       gpuType: gpuTypeValue ?? undefined,
       maxTime: resourceValues.maxTime ?? 60,
-      maxTimeUnit: selectedPresetUnit ?? maxTimeUnit,
+      maxTimeUnit,
       maxTimeUnlimited: resourceValues.maxTimeUnlimited ?? false,
       isImagePrivate: selectedImageSource === "mine" ? true : selectedImageSource === "public" ? false : undefined,
       image:
@@ -1541,7 +1539,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       mountPoints: (appValues.mountPoints ?? [])
         .filter((m: MountPointField | undefined) => m?.source && m?.target)
         .map((m: MountPointField) => ({ path: m.source, target: m.target })),
-      envVariables: buildEnvPayload(appValues.envVariables),
+      envVariables: (appValues.envVariables ?? []).filter((e: EnvVariableField | undefined) => e?.key),
       command: appValues.command ?? "",
       containerServicePort: appValues.containerServicePort ?? 8080,
     };
@@ -1640,10 +1638,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           message.error(t(pResource("maxRunTimeRequired")));
           return;
         }
-        maxTimeMinutes = Math.max(
-          1,
-          Math.round(convertDurationToHours(maxTimeValue, selectedPresetUnit ?? maxTimeUnit) * 60),
-        );
+        maxTimeMinutes = Math.max(1, Math.round(convertDurationToHours(maxTimeValue, maxTimeUnit) * 60));
       }
 
       // 将级联选择值映射回后端所需的 {id, isPrivate} 列表
@@ -1742,8 +1737,8 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     } = await buildUnavailableParams({
       fd,
       templateCluster,
-      isAccountAvailable: (acc) => availableAccountOptions.some((o) => o.value === acc),
-      getAvailableAccounts: () => availableAccountOptions.map((o) => o.value),
+      isAccountAvailable: (acc) => accountOptions.some((o) => o.value === acc),
+      getAvailableAccounts: () => accountOptions.map((o) => o.value),
       getClustersForAccount: (acc) => accountClusterMap[acc] ?? [],
       selectedAccount,
       selectedCluster,
@@ -1772,12 +1767,6 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
       if (tplMaxTimeUnit) {
         setMaxTimeUnit(tplMaxTimeUnit);
       }
-      setSelectedPresetUnit(
-        tplMaxTime != null && tplMaxTimeUnit
-          ? MAX_TIME_PRESETS.find((preset) => preset.maxTime === tplMaxTime && preset.maxTimeUnit === tplMaxTimeUnit)
-              ?.maxTimeUnit
-          : undefined,
-      );
 
       const tplPartition = cleanedFormData.partition as string | undefined;
       const tplCoreCount = cleanedFormData.coreCount as number | undefined;
@@ -1863,9 +1852,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
 
       appForm.setFieldsValue({
         mountPoints: normalizeMountPoints(cleanedFormData.mountPoints as unknown[] | undefined),
-        envVariables: mergeResubmitEnvVariables(
-          normalizeEnvVariables(cleanedFormData.envVariables as unknown[] | undefined),
-        ),
+        envVariables: normalizeEnvVariables(cleanedFormData.envVariables as unknown[] | undefined),
       });
 
       const clusterChanged = templateCluster !== finalCluster;
@@ -1988,112 +1975,70 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
     }
   };
 
-  const handleCancel = () => {
-    router.push("/jobs/jobList");
-  };
-
   // ======================= 渲染 =======================
   return (
     <>
-      <JobPageHeader
-        title={t(pInfer("createInferTitle"))}
-        action={
-          <Button type="primary" onClick={() => setTemplateListOpen(true)}>
-            {t(pInfer("templateButton"))}
-          </Button>
-        }
-      />
-      <JobPageLayout>
-        <JobMainContent>
-          <JobContainer direction="vertical" size={0}>
-            <div style={{ position: "relative" }}>
-              <PaddedCard>
-                <BorderlessCard $showDivider title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-                  <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
-                </BorderlessCard>
-              </PaddedCard>
-            </div>
+      <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
+        <PaddedCard
+          title={
+            <HeaderRow align="center" size={16} style={{ justifyContent: "space-between" }}>
+              <HeaderTitle>{t(pInfer("createInferTitle"))}</HeaderTitle>
+              {/* <Button type="link" style={{ padding: 0, fontSize: 16 }} onClick={() => setTemplateListOpen(true)}>
+                {t(pInfer("templateButton"))}
+              </Button> */}
+            </HeaderRow>
+          }
+        >
+          <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
+            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
+          </BorderlessCard>
+        </PaddedCard>
 
-            <ResourceConfigSection
-              form={resourceForm}
-              accountOptions={accountOptions}
-              clusterOptions={clusterOptions}
-              selectedCluster={selectedCluster}
-              activeResourceTab={activeResourceTab}
-              onActiveResourceTabChange={handleActiveResourceTabChange}
-              gpuColumns={gpuColumns}
-              cpuColumns={cpuColumns}
-              gpuRows={gpuRows}
-              cpuRows={cpuRows}
-              queueLoading={getAvailablePartitionIsLoading}
-              selectedQueueKey={selectedQueueKey}
-              onQueueSelect={handleQueueSelect}
-              selectedQueueOption={selectedQueueOption}
-              queueNodesInfo={queueNodesInfo}
-              qosOptions={qosOptions}
-              maxTimeUnit={maxTimeUnit}
-              onMaxTimeUnitChange={handleMaxTimeUnitChange}
-              selectedPresetUnit={selectedPresetUnit}
-              onSelectedPresetUnitChange={setSelectedPresetUnit}
-              maxJobRunningTimeHours={maxJobRunningTimeHours}
-              gpuUnitLimit={gpuUnitLimit}
-              isResubmit={Boolean(createInferParams)}
-            />
+        <ResourceConfigSection
+          form={resourceForm}
+          accountOptions={accountOptions}
+          clusterOptions={clusterOptions}
+          selectedCluster={selectedCluster}
+          activeResourceTab={activeResourceTab}
+          onActiveResourceTabChange={handleActiveResourceTabChange}
+          gpuColumns={gpuColumns}
+          cpuColumns={cpuColumns}
+          gpuRows={gpuRows}
+          cpuRows={cpuRows}
+          queueLoading={getAvailablePartitionIsLoading}
+          selectedQueueKey={selectedQueueKey}
+          onQueueSelect={handleQueueSelect}
+          selectedQueueOption={selectedQueueOption}
+          queueNodesInfo={queueNodesInfo}
+          qosOptions={qosOptions}
+          maxTimeUnit={maxTimeUnit}
+          onMaxTimeUnitChange={handleMaxTimeUnitChange}
+          maxJobRunningTimeHours={maxJobRunningTimeHours}
+          gpuUnitLimit={gpuUnitLimit}
+          isResubmit={Boolean(createInferParams)}
+        />
 
-            <InferConfigSection
-              form={appForm}
-              imageSourceTabs={imageSourceTabs}
-              selectedImageSource={selectedImageSource}
-              onImageSourceChange={handleImageSourceChange}
-              imagePlaceholder={imagePlaceholder}
-              imageOptions={imageOptionsForSource}
-              isImagesLoading={isImagesLoading}
-              selectedImageOption={selectedImageOption}
-              usePrivateRemoteImage={usePrivateRemoteImage}
-              currentCommandDefault={currentCommandDefault}
-              modelCategories={modelCategories}
-              isModelsLoading={isModelsLoading}
-              selectedCluster={selectedCluster}
-              displayRender={renderCascaderLabels}
-              homeDir={userHomeDir?.path}
-            />
-          </JobContainer>
-        </JobMainContent>
-        <JobSidePanel>
-          <JobSidePanelInner>
-            <SidePanelGroupWrapper>
-              <JobSideInfo
-                labels={{
-                  totalGpuCount: t(p("sideInfo.totalGpuCount")),
-                  totalCoreCount: t(p("sideInfo.totalCoreCount")),
-                  totalMemory: t(p("sideInfo.totalMemory")),
-                  costPerHour: t(p("hourlyCostLabel")),
-                  pricingStandard: t(p("chargeStandard")),
-                  yuan: t(p("yuan")),
-                  hours: t(p("hours")),
-                  accountNameLabel: t(p("sideInfo.accountNameLabel")),
-                  whitelistTag: t(p("sideInfo.whitelistTag")),
-                  accountOwner: t(p("sideInfo.accountOwner")),
-                  accountBalance: t(p("sideInfo.accountBalance")),
-                  accountBlockThreshold: t(p("sideInfo.accountBlockThreshold")),
-                  userUsedLimit: t(p("sideInfo.userUsedLimit")),
-                  userChargeNoLimit: t(p("sideInfo.userChargeNoLimit")),
-                }}
-                totalGpuCount={displayedGpu}
-                totalCpuCount={displayedCpu}
-                totalMemory={displayedMemory}
-                hourlyPrice={formattedHourlyPrice}
-                showHourlyPriceUnit={jobOneHourPrice != null}
-                pricingStandardUrl={join(misPath, "/user/partitions")}
-                accountInfo={accountInfo ?? null}
-              />
-            </SidePanelGroupWrapper>
-          </JobSidePanelInner>
-        </JobSidePanel>
-      </JobPageLayout>
+        <InferConfigSection
+          form={appForm}
+          imageSourceTabs={imageSourceTabs}
+          selectedImageSource={selectedImageSource}
+          onImageSourceChange={handleImageSourceChange}
+          imagePlaceholder={imagePlaceholder}
+          imageOptions={imageOptionsForSource}
+          isImagesLoading={isImagesLoading}
+          selectedImageOption={selectedImageOption}
+          usePrivateRemoteImage={usePrivateRemoteImage}
+          currentCommandDefault={currentCommandDefault}
+          modelCategories={modelCategories}
+          isModelsLoading={isModelsLoading}
+          selectedCluster={selectedCluster}
+          displayRender={renderCascaderLabels}
+          homeDir={userHomeDir?.path}
+        />
+      </PageContainer>
 
       <FixedFooter>
-        <div style={{ marginLeft: 208, marginRight: "auto" }}>
+        {/* <div style={{ marginLeft: 208, marginRight: "auto" }}>
           <FooterStatValue
             $isPrimaryColor
             style={{ cursor: "pointer", userSelect: "none", textDecoration: "none" }}
@@ -2110,9 +2055,30 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
           >
             {t(p("saveAsTemplate"))}
           </FooterStatValue>
-        </div>
+        </div> */}
+        <FooterStats>
+          <span>
+            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
+          </span>
+          <span>
+            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
+          </span>
+          <span>
+            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("hourlyCostLabel"))}
+            <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
+          </span>
+          <a
+            onClick={() => {
+              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
+            }}
+          >
+            <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
+          </a>
+        </FooterStats>
         <FooterActions>
-          <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
           <Button type="primary" onClick={handleSubmit} loading={createInferJobMutation.isPending}>
             {t(p("submit"))}
           </Button>

@@ -22,8 +22,8 @@ import {
   getEntryIcon,
   getEntryLogoPath,
 } from "src/utils/dashboard";
-import { joinUrlPath } from "src/utils/joinUrlPath";
 import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
+import { joinUrlPath } from "src/utils/joinUrlPath";
 import { styled } from "styled-components";
 
 import { AppWithCluster, Entry } from ".";
@@ -175,13 +175,9 @@ export const Sortable: FC<Props> = ({
           case "app": {
             const savedAppClusterId = item.entry.app.clusterId;
             if (quickEntryType === "ai") {
-              const searchParams = new URLSearchParams({ clusterId: savedAppClusterId });
-              const appName = apps[item.entry.app.appId]?.app.name;
-              if (appName) {
-                searchParams.set("appName", appName);
-              }
               window.open(
-                `${joinUrlPath(basePath, "/jobs/createApp", item.entry.app.appId)}?${searchParams}`,
+                `${joinUrlPath(basePath, "/jobs/createApp", item.entry.app.appId)}` +
+                  `?clusterId=${encodeURIComponent(savedAppClusterId)}`,
                 "_blank",
               );
             } else {
@@ -215,7 +211,7 @@ export const Sortable: FC<Props> = ({
         }
       }
     },
-    [apps, basePath, currentClusters, isEditable, quickEntryType],
+    [isEditable],
   );
 
   useEffect(() => {

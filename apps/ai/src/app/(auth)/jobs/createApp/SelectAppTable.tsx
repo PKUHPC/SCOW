@@ -38,12 +38,11 @@ const NameContainer = styled.div`
 interface Props {
   publicPath: string;
   apps: AppSchema[];
-  selectedCluster?: string;
 }
 
 type ImageErrorMap = Record<string, boolean>;
 
-export const SelectAppTable: React.FC<Props> = ({ publicPath, apps, selectedCluster }) => {
+export const SelectAppTable: React.FC<Props> = ({ publicPath, apps }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.selectAppTable.");
 
@@ -55,11 +54,7 @@ export const SelectAppTable: React.FC<Props> = ({ publicPath, apps, selectedClus
   };
 
   const navigateToApp = (app: AppSchema) => {
-    const searchParams = new URLSearchParams({ appName: app.name });
-    if (selectedCluster) {
-      searchParams.set("clusterId", selectedCluster);
-    }
-    router.push(`/jobs/createApp/${app.id}?${searchParams.toString()}`);
+    router.push(`/jobs/createApp/${app.id}`);
   };
 
   return (

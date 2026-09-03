@@ -1,6 +1,5 @@
 export default {
   common: {
-    return: "Retour",
     finalError: "Échec de la requête, veuillez réessayer plus tard",
     noSpaceError: "Espace de stockage insuffisant, veuillez libérer de l'espace ou contacter l'administrateur",
     timeSubmit: "Heure de soumission",

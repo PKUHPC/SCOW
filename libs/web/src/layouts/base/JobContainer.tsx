@@ -23,7 +23,6 @@ export const JobMainContent = styled.div`
 export const JobSidePanel = styled.div`
   width: 25%;
   min-width: 320px;
-  margin-bottom: 30px;
   font-size: 13px;
   flex-shrink: 0;
   background: ${({ theme }) => theme.token.colorBgContainer};

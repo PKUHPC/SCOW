@@ -1,6 +1,5 @@
 export default {
   common: {
-    return: "返回",
     finalError: "请求失败，请稍后重试",
     invalidParameter: "参数错误，请联系管理员",
     noSpaceError: "存储空间不足，请清理空间或联系管理员",

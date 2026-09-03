@@ -8,8 +8,11 @@ import {
   RoundedPasswordInput,
 } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
-import { SectionCard, SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
-import { Form, type FormInstance } from "antd";
+import {
+  SectionTitle,
+  TitledSectionCard as SectionCard,
+} from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { Form, type FormInstance, Space } from "antd";
 import { type ReactNode, useEffect, useRef } from "react";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
 import {
@@ -21,8 +24,6 @@ import {
   ImageDescriptionBox,
   ImageSegmentedControl,
   ImageSelectorWrapper,
-  RemoteCredentialsRow,
-  RemoteImageAddressRow,
 } from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
@@ -131,7 +132,7 @@ export const InferConfigSection = ({
   }, [autoFillImageKey, form, selectedImageOption?.servicePort]);
 
   return (
-    <SectionCard bordered={false} title={<SectionTitle>{t(pAppConfig("inferTitle"))}</SectionTitle>}>
+    <SectionCard title={<SectionTitle>{t(pAppConfig("inferTitle"))}</SectionTitle>}>
       <Form form={form} colon={false} requiredMark={false}>
         <InlineFormItem label={<Label>{t(pAppConfig("imageField.label"))}</Label>}>
           <ImageSelectorWrapper>
@@ -145,27 +146,25 @@ export const InferConfigSection = ({
 
             {selectedImageSource === "remote" ? (
               <>
-                <RemoteImageAddressRow>
-                  <Form.Item
-                    name="image"
-                    rules={[
-                      { required: true, message: t(pAppConfig("imageField.remoteAddressRequired")) },
-                      createImageAddressValidator(t(pAppConfig("imageField.remoteAddressInvalid"))),
-                    ]}
-                    style={{ marginBottom: 0 }}
-                  >
-                    <RoundedInput
-                      size="large"
-                      placeholder={t(pAppConfig("imageField.remotePlaceholder"))}
-                      onBlur={() => form.validateFields(["image"])}
-                    />
-                  </Form.Item>
-                  <Form.Item name="usePrivateImage" valuePropName="checked" noStyle>
-                    <Checkbox>{t(pAppConfig("imageField.usePrivateImage"))}</Checkbox>
-                  </Form.Item>
-                </RemoteImageAddressRow>
+                <Form.Item
+                  name="image"
+                  rules={[
+                    { required: true, message: t(pAppConfig("imageField.remoteAddressRequired")) },
+                    createImageAddressValidator(t(pAppConfig("imageField.remoteAddressInvalid"))),
+                  ]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <RoundedInput
+                    size="large"
+                    placeholder={t(pAppConfig("imageField.remotePlaceholder"))}
+                    onBlur={() => form.validateFields(["image"])}
+                  />
+                </Form.Item>
+                <Form.Item name="usePrivateImage" valuePropName="checked" noStyle>
+                  <Checkbox>{t(pAppConfig("imageField.usePrivateImage"))}</Checkbox>
+                </Form.Item>
                 {usePrivateRemoteImage ? (
-                  <RemoteCredentialsRow>
+                  <Space direction="vertical" size={8} style={{ width: "100%", marginTop: 8 }}>
                     <Form.Item
                       name="remoteUsername"
                       noStyle
@@ -184,7 +183,7 @@ export const InferConfigSection = ({
                         visibilityToggle
                       />
                     </Form.Item>
-                  </RemoteCredentialsRow>
+                  </Space>
                 ) : null}
               </>
             ) : (
