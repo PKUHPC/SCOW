@@ -46,6 +46,7 @@ const specs = {
   NOVNC_CLIENT_URL: str({ desc: "novnc客户端的URL。如果和本系统域名相同，可以只写完整路径", default: "/vnc" }),
 
   ADAPTER_SSL_ENABLED: bool({ desc: "到适配器的连接是否启动SSL", default: false }),
+  ADAPTER_TIMEOUT_SECONDS: num({ desc: "调用调度器适配器的默认超时时间，单位秒", default: 60 }),
   ADAPTER_SSL_CA_CERT_PATH: str({ desc: "适配器 CA根证书路径", default: "./adapter/certs/ca.crt" }),
   ADAPTER_SSL_SCOW_CERT_PATH: str({ desc: "适配器 CA签名的 SCOW 证书路径", default: "./adapter/certs/scow.crt" }),
   ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: str({

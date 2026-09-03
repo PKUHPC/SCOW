@@ -45,6 +45,11 @@ export const InstallConfigSchema = Type.Object({
   adapter: Type.Optional(
     Type.Object(
       {
+        timeoutSeconds: Type.Integer({
+          description: "调用调度器适配器的默认超时时间，单位秒",
+          minimum: 1,
+          default: 60,
+        }),
         ssl: Type.Optional(
           Type.Object(
             {

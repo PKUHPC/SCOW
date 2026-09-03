@@ -7,6 +7,11 @@
 # SCOW的镜像的tag。默认：master
 # imageTag: master
 
+# 调度器适配器相关配置（可选）
+# adapter:
+#   # 适配器 unary gRPC 调用的默认超时时间，单位秒，默认60秒
+#   # timeoutSeconds: 60
+
 # 元数据服务。默认开启
 # 关闭后不部署 meta-server，/meta 下的部署元信息、统一 OpenAPI 文档和 scowctl 均不可访问
 # metaServer:

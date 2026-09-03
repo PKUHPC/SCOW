@@ -1,0 +1,8 @@
+{
+  "label": "调度器适配器",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "关于调度器适配器连接和调用超时的配置文档"
+  }
+}

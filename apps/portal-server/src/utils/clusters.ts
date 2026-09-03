@@ -27,7 +27,9 @@ export const certificates = createAdapterCertificates(config);
 const clusters = configClusters;
 const adapterClientForClusters = Object.entries(clusters).reduce(
   (prev, [cluster, c]) => {
-    const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+    const client = getSchedulerAdapterClient(c.adapterUrl, certificates, {
+      timeoutMs: config.ADAPTER_TIMEOUT_SECONDS * 1000,
+    });
     prev[cluster] = client;
     return prev;
   },

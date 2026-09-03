@@ -44,7 +44,9 @@ export async function getClusterUtils() {
   // adapterClient of all config clusters
   const adapterClientForClusters = Object.entries(configClusters.clusterConfigs).reduce(
     (prev, [_, c]) => {
-      const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+      const client = getSchedulerAdapterClient(c.adapterUrl, certificates, {
+        timeoutMs: config.ADAPTER_TIMEOUT_SECONDS * 1000,
+      });
 
       prev[c.clusterId] = client;
 
@@ -57,7 +59,9 @@ export async function getClusterUtils() {
   const getAdapterClientForActivatedClusters = (clustersParam: Record<string, ClusterConfigSchema>) => {
     return Object.entries(clustersParam).reduce(
       (prev, [cluster, c]) => {
-        const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+        const client = getSchedulerAdapterClient(c.adapterUrl, certificates, {
+          timeoutMs: config.ADAPTER_TIMEOUT_SECONDS * 1000,
+        });
         prev[cluster] = client;
         return prev;
       },

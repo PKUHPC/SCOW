@@ -99,6 +99,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     : "";
 
   // 适配器证书相关配置
+  const adapterTimeoutSeconds = config.adapter?.timeoutSeconds ?? 60;
   const adapterSslCaCertPath = config.adapter?.ssl?.caCertPath ? join("/etc/scow", config.adapter.ssl.caCertPath) : "";
   const adapterSslScowCertPath = config.adapter?.ssl?.scowCertPath
     ? join("/etc/scow", config.adapter.ssl.scowCertPath)
@@ -364,6 +365,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         SCOWD_SSL_SCOW_PRIVATE_KEY_PATH: scowdSslScowPrivateKeyPath,
 
         ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+        ADAPTER_TIMEOUT_SECONDS: String(adapterTimeoutSeconds),
         ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
         ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
         ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
@@ -424,6 +426,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       SCOWD_SSL_SCOW_PRIVATE_KEY_PATH: scowdSslScowPrivateKeyPath,
 
       ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+      ADAPTER_TIMEOUT_SECONDS: String(adapterTimeoutSeconds),
       ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
       ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
       ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
@@ -525,6 +528,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         NOVNC_CLIENT_URL: join(BASE_PATH, "/vnc"),
 
         ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+        ADAPTER_TIMEOUT_SECONDS: String(adapterTimeoutSeconds),
         ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
         ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
         ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
@@ -583,6 +587,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         AUTH_INTERNAL_URL: authUrl || "http://auth:5000",
 
         ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+        ADAPTER_TIMEOUT_SECONDS: String(adapterTimeoutSeconds),
         ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
         ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
         ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
@@ -665,6 +670,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       PROTOCOL: config.gateway.protocol,
 
       ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+      ADAPTER_TIMEOUT_SECONDS: String(adapterTimeoutSeconds),
       ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
       ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
       ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,

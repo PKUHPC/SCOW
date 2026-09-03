@@ -92,7 +92,9 @@ export const clustersPlugin = plugin(async (f) => {
   // adapterClient of all config clusters
   const adapterClientForClusters = Object.entries(configClusters).reduce(
     (prev, [cluster, c]) => {
-      const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+      const client = getSchedulerAdapterClient(c.adapterUrl, certificates, {
+        timeoutMs: config.ADAPTER_TIMEOUT_SECONDS * 1000,
+      });
 
       prev[cluster] = client;
 
@@ -105,7 +107,9 @@ export const clustersPlugin = plugin(async (f) => {
   const getAdapterClientForActivatedClusters = (clustersParam: Record<string, ClusterConfigSchema>) => {
     return Object.entries(clustersParam).reduce(
       (prev, [cluster, c]) => {
-        const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+        const client = getSchedulerAdapterClient(c.adapterUrl, certificates, {
+          timeoutMs: config.ADAPTER_TIMEOUT_SECONDS * 1000,
+        });
         prev[cluster] = client;
         return prev;
       },

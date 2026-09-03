@@ -1,4 +1,4 @@
-import { bool, envConfig, str } from "@scow/lib-config";
+import { bool, envConfig, num, str } from "@scow/lib-config";
 
 export const config = envConfig({
   DB_PASSWORD: str({ desc: "数据库密码，如果非空会覆盖配置文件", default: "" }),
@@ -31,6 +31,7 @@ export const config = envConfig({
   PROTOCOL: str({ desc: "scow 的访问协议，将影响 callbackUrl 的 protocol", default: "http" }),
 
   ADAPTER_SSL_ENABLED: bool({ desc: "到适配器的连接是否启动SSL", default: false }),
+  ADAPTER_TIMEOUT_SECONDS: num({ desc: "调用调度器适配器的默认超时时间，单位秒", default: 60 }),
   ADAPTER_SSL_CA_CERT_PATH: str({ desc: "适配器 CA根证书路径", default: "./adapter/certs/ca.crt" }),
   ADAPTER_SSL_SCOW_CERT_PATH: str({ desc: "适配器 CA签名的 SCOW 证书路径", default: "./adapter/certs/scow.crt" }),
   ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: str({

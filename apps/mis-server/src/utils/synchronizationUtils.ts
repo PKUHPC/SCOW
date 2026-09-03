@@ -623,7 +623,9 @@ export async function getActivatedClusterSchedulerClients(
   const failedExecutedClusterIds: string[] = [];
 
   for (const [clusterId, cluster] of Object.entries(currentActivatedClusters)) {
-    const client = getSchedulerAdapterClient(cluster.adapterUrl, certificates);
+    const client = getSchedulerAdapterClient(cluster.adapterUrl, certificates, {
+      timeoutMs: config.ADAPTER_TIMEOUT_SECONDS * 1000,
+    });
 
     if (!client) {
       // 如果创建客户端失败，记录失败的集群 ID，在此次同步操作中跳过该集群操作

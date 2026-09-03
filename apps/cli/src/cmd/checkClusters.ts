@@ -174,7 +174,9 @@ export const checkClusters = async ({ configPath, scowConfigPath, continueOnErro
 
       // 检查适配器连接
       try {
-        const adapterClient = getSchedulerAdapterClient(clusterConfig.adapterUrl, adapterCertificates);
+        const adapterClient = getSchedulerAdapterClient(clusterConfig.adapterUrl, adapterCertificates, {
+          timeoutMs: (installConfig.adapter?.timeoutSeconds ?? 60) * 1000,
+        });
 
         // 尝试获取版本信息来验证连接
         const version = await asyncClientCall(adapterClient.version, "getVersion", {});

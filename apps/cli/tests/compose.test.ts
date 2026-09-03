@@ -17,6 +17,37 @@ it("applies required subsystem defaults to minimal install config", async () => 
   expect(config.metaServer.enabled).toBe(true);
 });
 
+it("uses the default scheduler adapter timeout", async () => {
+  const configPath = await createInstallYaml({ adapter: {} });
+  const config = getInstallConfig(configPath);
+  const composeConfig = createComposeSpec(config);
+
+  expect(config.adapter?.timeoutSeconds).toBe(60);
+  expect(composeConfig.services["mis-server"].environment).toContain("ADAPTER_TIMEOUT_SECONDS=60");
+  expect(composeConfig.services.resource.environment).toContain("ADAPTER_TIMEOUT_SECONDS=60");
+});
+
+it("uses the configured scheduler adapter timeout", async () => {
+  const configPath = await createInstallYaml({
+    adapter: { timeoutSeconds: 180 },
+  });
+  const config = getInstallConfig(configPath);
+  const composeConfig = createComposeSpec(config);
+
+  expect(composeConfig.services["mis-server"].environment).toContain("ADAPTER_TIMEOUT_SECONDS=180");
+  expect(composeConfig.services.resource.environment).toContain("ADAPTER_TIMEOUT_SECONDS=180");
+});
+
+it.each([
+  ["zero", 0],
+  ["a negative number", -1],
+  ["a decimal", 1.5],
+])("rejects %s as an adapter timeout", async (_, timeoutSeconds) => {
+  const configPath = await createInstallYaml({ adapter: { timeoutSeconds } });
+
+  expect(() => getInstallConfig(configPath)).toThrow();
+});
+
 it("accepts but ignores removed install switches", async () => {
   const legacyConfigPath = await createInstallYaml({ mis: { enabled: false } });
   const config = getInstallConfig(legacyConfigPath);
