@@ -1,9 +1,33 @@
 import { TRPCError } from "@trpc/server";
 import { Logger } from "ts-log";
+import { isImageAddressFromRegistry, isValidImageAddress } from "src/utils/imageAddress";
 
 import { getHarborConfig, HarborClient, harborUrl } from "./harbor";
 
 export { isValidImageAddress } from "src/utils/imageAddress";
+
+export const isHarborImageAddress = (imageAddress: string): boolean =>
+  isImageAddressFromRegistry(imageAddress, harborUrl);
+
+export interface ImageAddressValidationResult {
+  isValidAddress: boolean;
+  isHarborAddress: boolean;
+  validationReasons: string[];
+}
+
+export const getImageAddressValidationResult = (imageAddress: string): ImageAddressValidationResult => {
+  const isValidAddress = isValidImageAddress(imageAddress);
+  const isHarborAddress = isHarborImageAddress(imageAddress);
+
+  return {
+    isValidAddress,
+    isHarborAddress,
+    validationReasons: [
+      ...(!isValidAddress ? ["invalid_image_address_format"] : []),
+      ...(isHarborAddress ? ["harbor_registry_not_allowed"] : []),
+    ],
+  };
+};
 
 const LOADED_IMAGE_REGEX = "Loaded image: ([\\w./-]+(?::[\\w.-]+)?)";
 

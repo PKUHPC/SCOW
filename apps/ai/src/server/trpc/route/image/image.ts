@@ -14,7 +14,12 @@ import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
 import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { getHarborConfig, HarborClient } from "src/server/utils/harbor";
-import { bytesToGB, createHarborImageUrl, getUserHarborProjectName, isValidImageAddress } from "src/server/utils/image";
+import {
+  bytesToGB,
+  createHarborImageUrl,
+  getImageAddressValidationResult,
+  getUserHarborProjectName,
+} from "src/server/utils/image";
 import { imageCreationAbortOperation } from "src/server/utils/imageCreationAbortController";
 import { CreationOperation, getCurrentImageCreationLog } from "src/server/utils/imageCreationManager";
 import { logger } from "src/server/utils/logger";
@@ -46,8 +51,6 @@ export const ImageListSchema = z.object({
   source: z.enum(Source),
   tag: z.string(),
   description: z.string().optional(),
-  path: z.string().optional(),
-  sourcePath: z.string().optional(),
   status: z.enum(Status),
   isShared: z.boolean(),
   clusterId: z.string().optional(),
@@ -287,11 +290,26 @@ export const createImage = procedure
     const em = await forkEntityManager();
     const { name, tag, source, sourcePath, userName, password, isPlatformOwned = false } = input;
 
-    if (source === Source.EXTERNAL && !isValidImageAddress(sourcePath)) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `SourcePath ${sourcePath} is not valid.`,
-      });
+    if (source === Source.EXTERNAL) {
+      const { isValidAddress, isHarborAddress, validationReasons } = getImageAddressValidationResult(sourcePath);
+      if (!isValidAddress || isHarborAddress) {
+        logger.warn(
+          {
+            source,
+            sourcePath,
+            isValidAddress,
+            isHarborAddress,
+            validationReasons,
+            clusterId: input.clusterId,
+            userId: user.identityId,
+          },
+          "Rejected external image address during image creation",
+        );
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `SourcePath ${sourcePath} is not valid.`,
+        });
+      }
     }
 
     // tag的唯一标识符

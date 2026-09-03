@@ -67,9 +67,11 @@ export const createImageAddressValidator =
       if (!value || !shouldValidate) {
         return Promise.resolve();
       }
+
       if (!isValidImageAddress(value)) {
         return Promise.reject(new Error(message ?? "镜像地址不合法"));
       }
+
       return Promise.resolve();
     },
   });

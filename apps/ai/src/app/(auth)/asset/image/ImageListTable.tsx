@@ -335,18 +335,6 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                       </span>
                     </Tooltip>
                   )}
-                  {/* { r.source === Source.INTERNAL && (
-                    <Space split={<Divider type="vertical" />}>
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          router.push(`/files/${r.clusterId}${r.sourcePath}`);
-                        }}
-                      >
-                  查看文件
-                      </Button>
-                    </Space>
-                  )} */}
                   <Tooltip title={t("button.deleteButton")}>
                     <DeleteIcon
                       onClick={() => {

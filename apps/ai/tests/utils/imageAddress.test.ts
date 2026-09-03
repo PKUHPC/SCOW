@@ -1,4 +1,24 @@
-import { isValidImageAddress } from "../../src/utils/imageAddress";
+import { isImageAddressFromRegistry, isValidImageAddress } from "../../src/utils/imageAddress";
+
+describe("isImageAddressFromRegistry", () => {
+  test.each([
+    ["harbor.example.com/project/image:latest", "harbor.example.com"],
+    ["harbor.example.com:5000/project/image:latest", "https://harbor.example.com:5000/"],
+    ["[2001:db8::1]:5000/project/image:latest", "http://[2001:db8::1]:5000"],
+    ["HARBOR.EXAMPLE.COM/project/image:latest", "harbor.example.com"],
+  ])("identifies an image from the configured registry: %s", (imageAddress, registryAddress) => {
+    expect(isImageAddressFromRegistry(imageAddress, registryAddress)).toBe(true);
+  });
+
+  test.each([
+    ["other.example.com/project/image:latest", "harbor.example.com"],
+    ["harbor.example.com:5001/project/image:latest", "harbor.example.com:5000"],
+    ["harbor.example.com/project/image:latest", "harbor.example.com.cn"],
+    ["invalid-image-address", "harbor.example.com"],
+  ])("rejects an image from a different registry: %s", (imageAddress, registryAddress) => {
+    expect(isImageAddressFromRegistry(imageAddress, registryAddress)).toBe(false);
+  });
+});
 
 describe("isValidImageAddress", () => {
   test.each([

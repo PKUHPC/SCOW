@@ -22,7 +22,8 @@ import { InferenceJobInput } from "../trpc/route/jobs/infer";
 import { TrainJobInput } from "../trpc/route/jobs/jobs";
 import { wrap } from "../trpc/scowd/scowd";
 import { DetailedTRPCError } from "./detailedError";
-import { isValidImageAddress } from "./image";
+import { getImageAddressValidationResult } from "./image";
+import { logger } from "./logger";
 
 export const getClusterAppConfigs = (cluster: string) => {
   const commonApps = getAiAppConfigs();
@@ -481,7 +482,17 @@ export const validateRemoteImageUrl = (remoteImageUrl: string | undefined) => {
     return;
   }
 
-  if (!isValidImageAddress(remoteImageUrl)) {
+  const { isValidAddress, isHarborAddress, validationReasons } = getImageAddressValidationResult(remoteImageUrl);
+  if (!isValidAddress || isHarborAddress) {
+    logger.warn(
+      {
+        remoteImageUrl,
+        isValidAddress,
+        isHarborAddress,
+        validationReasons,
+      },
+      "Rejected remote image address during job submission",
+    );
     const message = `Remote image address ${remoteImageUrl} is not valid.`;
     throw new DetailedTRPCError({
       code: "BAD_REQUEST",

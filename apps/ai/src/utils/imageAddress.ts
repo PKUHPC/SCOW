@@ -22,6 +22,20 @@ const REGISTERED_DIGEST_ENCODED_PATTERNS = new Map<string, RegExp>([
 
 export const IMAGE_ADDRESS_REGEX = new RegExp(`^${REGISTRY}\\/${REPOSITORY}(?::${TAG})?(?:@${DIGEST})?$`);
 
+const normalizeRegistryAddress = (address: string): string => {
+  const addressWithoutProtocol = address.trim().replace(/^[a-z][a-z\d+.-]*:\/\//i, "");
+  const pathStart = addressWithoutProtocol.indexOf("/");
+  return (pathStart === -1 ? addressWithoutProtocol : addressWithoutProtocol.slice(0, pathStart)).toLowerCase();
+};
+
+export const isImageAddressFromRegistry = (imageAddress: string, registryAddress: string): boolean => {
+  const repositoryStart = imageAddress.indexOf("/");
+  return (
+    repositoryStart !== -1 &&
+    imageAddress.slice(0, repositoryStart).toLowerCase() === normalizeRegistryAddress(registryAddress)
+  );
+};
+
 export const isValidImageAddress = (imageAddress: string): boolean => {
   if (!IMAGE_ADDRESS_REGEX.test(imageAddress)) {
     return false;

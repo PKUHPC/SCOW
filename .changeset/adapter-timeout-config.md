@@ -1,3 +1,4 @@
+---
 "@scow/config": minor
 "@scow/cli": patch
 "@scow/portal-server": patch
