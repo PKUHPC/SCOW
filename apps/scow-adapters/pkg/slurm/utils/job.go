@@ -654,9 +654,6 @@ func GetJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 				reason = pendingReason
 			} else if batchReason, ok := reasonMap[jobData.jobId]; ok {
 				reason = batchReason
-				if reason == "" {
-					continue // 一般是数据库中有的作业但是squeue中查不到的作业
-				}
 				// 使用预编译的正则表达式
 				if match := accountPermissionRegex.FindString(reason); match != "" {
 					reason = match
@@ -668,12 +665,15 @@ func GetJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 					logrus.Errorf("get job: %v reason info failed, error: %v", jobData.jobId, err)
 					return nil, fmt.Errorf("get job reason failed: %v", err)
 				}
-				if reason == "" {
-					continue
-				}
 				if match := accountPermissionRegex.FindString(reason); match != "" {
 					reason = match
 				}
+			}
+			// SlurmDB 中已有记录时，即使 squeue 暂时没有返回 reason，也保留该作业。
+			// 这类短暂不一致通常发生在作业刚提交或状态正在同步时。
+			if reason == "" {
+				reason = ChangeState(jobData.state)
+				logrus.Debugf("Job %d is present in SlurmDB but has no reason from squeue; use fallback reason %q", jobData.jobId, reason)
 			}
 
 			if jobData.state == 0 {
@@ -693,21 +693,8 @@ func GetJobs(in *pb.GetJobsRequest) (*pb.GetJobsResponse, error) {
 			}
 		} else if jobData.state == 1 {
 			// 运行中的作业
-			if batchReason, ok := reasonMap[jobData.jobId]; ok {
-				if batchReason == "" {
-					continue
-				}
-			} else {
-				// 回退到单独查询
-				reason, err = GetJobsReasonById(jobData.jobId)
-				if err != nil {
-					logrus.Errorf("get job: %v reason info failed, error: %v", jobData.jobId, err)
-					return nil, fmt.Errorf("get job reason failed: %v", err)
-				}
-				if reason == "" {
-					continue
-				}
-			}
+			// 运行中作业的 reason 对外统一为 Running，不应因为 squeue 暂时查不到
+			// reason 而丢弃 SlurmDB 中已经存在的作业记录。
 			reason = "Running"
 			cpusAlloc = int32(GetResInfoNumFromTresInfo(jobData.tresAlloc, cpuTresId))
 			memAllocMb = int64(GetResInfoNumFromTresInfo(jobData.tresAlloc, memTresId))

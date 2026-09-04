@@ -702,16 +702,21 @@ func LocalSubmitJob(scriptString string, username string) (string, error) {
 }
 
 const (
-	submittedJobVisibilityCheckAttempts = 3
+	submittedJobVisibilityCheckAttempts = 5
 	submittedJobVisibilityCheckInterval = 500 * time.Millisecond
 	submittedJobVisibilityCheckTimeout  = 1 * time.Second
 )
 
 // WaitForSubmittedJobVisible 确认刚提交的作业已写入 SlurmDB。
 // sbatch 已成功时，确认失败不表示提交失败；请求取消后立即停止确认。
-func WaitForSubmittedJobVisible(ctx context.Context, jobID uint32) {
+func WaitForSubmittedJobVisible(ctx context.Context, jobID uint32, expectedUserID int) {
 	clusterName := config.SlurmValue.MySQLConfig.ClusterName
-	query := fmt.Sprintf("SELECT 1 FROM %s_job_table WHERE id_job = ? LIMIT 1", clusterName)
+	// id_job 可能被重复使用，按 job_db_inx 取最新记录，并记录 GetJobs 依赖的关键字段，
+	// 便于判断可见性检查命中的是否为本次提交的作业。
+	query := fmt.Sprintf(
+		"SELECT job_db_inx, id_user, time_submit, state FROM %s_job_table WHERE id_job = ? ORDER BY job_db_inx DESC LIMIT 1",
+		clusterName,
+	)
 	for attempt := 1; attempt <= submittedJobVisibilityCheckAttempts; attempt++ {
 		if err := ctx.Err(); err != nil {
 			logrus.Debugf("Stop submitted job %d visibility check because request context is done: %v", jobID, err)
@@ -719,21 +724,34 @@ func WaitForSubmittedJobVisible(ctx context.Context, jobID uint32) {
 		}
 
 		checkCtx, cancel := context.WithTimeout(ctx, submittedJobVisibilityCheckTimeout)
-		var exists int
-		err := client.SlurmDB.QueryRowContext(checkCtx, query, jobID).Scan(&exists)
+		var (
+			jobDBIndex uint64
+			userID     int
+			timeSubmit int64
+			state      int
+		)
+		err := client.SlurmDB.QueryRowContext(checkCtx, query, jobID).Scan(&jobDBIndex, &userID, &timeSubmit, &state)
 		cancel()
 		if ctx.Err() != nil {
 			logrus.Debugf("Stop submitted job %d visibility check because request context is done: %v", jobID, ctx.Err())
 			return
 		}
-		if err == nil {
-			logrus.Debugf("Submitted job %d is visible in SlurmDB after attempt %d", jobID, attempt)
+		if err == nil && timeSubmit > 0 && userID == expectedUserID {
+			logrus.Debugf(
+				"Submitted job %d is visible in SlurmDB after attempt %d: job_db_inx=%d, id_user=%d, time_submit=%d (%s), state=%d",
+				jobID, attempt, jobDBIndex, userID, timeSubmit, time.Unix(timeSubmit, 0).Format(time.RFC3339), state,
+			)
 			return
 		}
 
-		if errors.Is(err, sql.ErrNoRows) {
+		if err == nil {
 			logrus.Warnf(
-				"Submitted job %d is not yet visible in SlurmDB, attempt=%d/%d",
+				"Submitted job %d latest SlurmDB row is not ready, attempt=%d/%d: job_db_inx=%d, id_user=%d, expected_id_user=%d, time_submit=%d, state=%d",
+				jobID, attempt, submittedJobVisibilityCheckAttempts, jobDBIndex, userID, expectedUserID, timeSubmit, state,
+			)
+		} else if errors.Is(err, sql.ErrNoRows) {
+			logrus.Warnf(
+				"Submitted job %d has no row in SlurmDB yet, attempt=%d/%d",
 				jobID, attempt, submittedJobVisibilityCheckAttempts,
 			)
 		} else {

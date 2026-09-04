@@ -375,6 +375,11 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 		logrus.Errorf("SubmitJob failed: %v", err)
 		return nil, ce.RichError(codes.NotFound, "USER_NOT_FOUND", err.Error())
 	}
+	userID, _, err := utils.GetUserUidGid(in.UserId)
+	if err != nil {
+		logrus.Errorf("SubmitJob failed to get uid for user %s: %v", in.UserId, err)
+		return nil, ce.RichError(codes.NotFound, "USER_NOT_FOUND", err.Error())
+	}
 
 	// 拼接提交作业的batch脚本
 	scriptString += "#SBATCH " + "-A " + in.Account + "\n"
@@ -437,7 +442,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *pb.SubmitJobRequest) (*pb
 	responseList := strings.Split(strings.TrimSpace(submitResponse), " ")
 	jobIdString := responseList[len(responseList)-1]
 	jobId, _ := strconv.Atoi(jobIdString)
-	utils.WaitForSubmittedJobVisible(ctx, uint32(jobId))
+	utils.WaitForSubmittedJobVisible(ctx, uint32(jobId), userID)
 	logrus.Infof("Submit job success, job id: %v", jobId)
 	return &pb.SubmitJobResponse{JobId: uint32(jobId), GeneratedScript: scriptString}, nil
 }
@@ -458,6 +463,11 @@ func (s *ServerJob) SubmitScriptAsJob(ctx context.Context, in *pb.SubmitScriptAs
 	if !exist {
 		err = fmt.Errorf("user %s not found", in.UserId)
 		logrus.Errorf("SubmitScriptAsJob failed: %v", err)
+		return nil, ce.RichError(codes.NotFound, "USER_NOT_FOUND", err.Error())
+	}
+	userID, _, err := utils.GetUserUidGid(in.UserId)
+	if err != nil {
+		logrus.Errorf("SubmitScriptAsJob failed to get uid for user %s: %v", in.UserId, err)
 		return nil, ce.RichError(codes.NotFound, "USER_NOT_FOUND", err.Error())
 	}
 
@@ -491,7 +501,7 @@ func (s *ServerJob) SubmitScriptAsJob(ctx context.Context, in *pb.SubmitScriptAs
 	responseList := strings.Split(strings.TrimSpace(string(submitResponse)), " ")
 	jobIdString := responseList[len(responseList)-1]
 	jobId, _ := strconv.Atoi(jobIdString)
-	utils.WaitForSubmittedJobVisible(ctx, uint32(jobId))
+	utils.WaitForSubmittedJobVisible(ctx, uint32(jobId), userID)
 	logrus.Infof("Submit script job success, job id: %v", jobId)
 	return &pb.SubmitScriptAsJobResponse{JobId: uint32(jobId)}, nil
 }
