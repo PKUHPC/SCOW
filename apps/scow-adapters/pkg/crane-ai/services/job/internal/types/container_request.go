@@ -51,6 +51,7 @@ type ContainerJobRequest interface {
 	GetScript() string
 	GetWorkingDirectory() string
 	GetContainerPort() []uint32
+	GetAppProxyPort() int
 
 	// 挂载配置
 	GetMounts() (map[string]string, error)

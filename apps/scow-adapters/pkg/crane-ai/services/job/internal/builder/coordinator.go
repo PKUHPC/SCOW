@@ -69,7 +69,17 @@ func (c *JobBuilderCoordinator) validateRequest(adapter types.ContainerJobReques
 }
 
 func (c *JobBuilderCoordinator) BuildJob(req *protos.SubmitJobRequest) (*craneProtos.JobToCtld, error) {
-	return c.BuildContainerJob(req)
+	return c.BuildJobWithAppProxyPort(req, 0)
+}
+
+func (c *JobBuilderCoordinator) BuildJobWithAppProxyPort(
+	req *protos.SubmitJobRequest, appProxyPort int,
+) (*craneProtos.JobToCtld, error) {
+	adapter := adapters.NewJobAdapterWithAppProxyPort(req, appProxyPort)
+	if err := c.validateRequest(adapter); err != nil {
+		return nil, fmt.Errorf("request verification failed: %v", err)
+	}
+	return c.builder.Build(adapter)
 }
 
 func (c *JobBuilderCoordinator) BuildInferenceJob(req *protos.SubmitInferJobRequest) (*craneProtos.JobToCtld, error) {

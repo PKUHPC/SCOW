@@ -196,11 +196,17 @@ func (s *ServerApp) GetAppConnectionInfo(ctx context.Context, in *protos.GetAppC
 			}
 			requestedForwardInfo.ContainerIP = containerIP
 
-			if containerPort == utils.JupyterPort && jobInfo.JupyterLabProxyPort > 0 {
+			fixedProxyPort := 0
+			if jobType == utils.APP {
+				fixedProxyPort = jobInfo.AppProxyPort
+			} else if containerPort == utils.JupyterPort {
+				fixedProxyPort = jobInfo.JupyterLabProxyPort
+			}
+			if fixedProxyPort > 0 {
 				if err := utils.GlobalProxyManager.CreateAndStartProxyWithPort(
-					jobName, jobID, requestedForwardInfo.ContainerIP, containerPort, jobInfo.JupyterLabProxyPort,
+					jobName, jobID, requestedForwardInfo.ContainerIP, containerPort, fixedProxyPort,
 				); err != nil {
-					logrus.Errorf("Failed to create JupyterLab proxy for app job %v: %v", jobName, err)
+					logrus.Errorf("Failed to create fixed-port proxy for app job %v: %v", jobName, err)
 					return nil, err
 				}
 			} else if err := utils.GlobalProxyManager.CreateAndStartProxy(submitJobProxyInfo); err != nil {

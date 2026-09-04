@@ -250,6 +250,16 @@ func (b *ContainerJobBuilder) setArgs(adapter types.ContainerJobRequest) []strin
 		if len(ports) == 0 {
 			return args
 		}
+		extraOptions := adapter.GetExtraOptions()
+		if len(extraOptions) > 1 && extraOptions[1] == utils.AppTypeWeb && adapter.GetAppProxyPort() > 0 {
+			hostname, _ := os.Hostname()
+			return []string{
+				utils.ContainerEntryScript,
+				strconv.Itoa(int(ports[0])),
+				hostname,
+				strconv.Itoa(adapter.GetAppProxyPort()),
+			}
+		}
 		return []string{utils.ContainerEntryScript, strconv.Itoa(int(ports[0]))}
 	}
 

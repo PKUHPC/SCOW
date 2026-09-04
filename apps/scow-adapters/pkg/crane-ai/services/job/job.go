@@ -922,6 +922,27 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		return nil, ce.RichError(codes.InvalidArgument, "INVALID_EXTRA_OPTIONS", err.Error())
 	}
 
+	var (
+		appProxyPort        int
+		releaseAppProxyPort bool
+	)
+	if in.ExtraOptions[0] == utils.APP && in.ExtraOptions[1] == utils.AppTypeWeb {
+		appProxyPort, err = utils.ReserveAvailableProxyPort()
+		if err != nil {
+			logrus.Errorf("[SubmitJob] reserve app proxy port failed: %v", err)
+			return nil, ce.RichError(codes.Aborted, "BUILD_JOB_FAILED", "Reserve app proxy port failed.")
+		}
+		releaseAppProxyPort = true
+		defer func() {
+			if !releaseAppProxyPort {
+				return
+			}
+			if releaseErr := utils.GlobalProxyManager.ReleaseReservedProxyPort(appProxyPort); releaseErr != nil {
+				logrus.Warnf("[SubmitJob] release app proxy port %d failed: %v", appProxyPort, releaseErr)
+			}
+		}()
+	}
+
 	// 多机训练或需要 TensorBoard 的训练使用脚本在同一个 Crane 作业内启动容器 step。
 	if in.ExtraOptions[0] == utils.Train && (in.NodeCount >= 2 || tensorBoardEnabled(in)) {
 		framework, err := getTrainingFramework(in)
@@ -1088,7 +1109,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 
 	// 构建容器作业
 	coordinator := builder.NewJobBuilderCoordinator()
-	task, err := coordinator.BuildJob(in)
+	task, err := coordinator.BuildJobWithAppProxyPort(in, appProxyPort)
 	if err != nil {
 		logrus.Errorf("[SubmitJob] build job err: %v", err)
 		return nil, ce.RichError(codes.Internal, "BUILD_JOB_FAILED", err.Error())
@@ -1103,6 +1124,9 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 	}
 
 	logrus.Infof("[SubmitJob] submit job sucess: %v", jobID)
+	if appProxyPort > 0 {
+		utils.GlobalProxyManager.BindReservedProxyPort(appProxyPort, jobID)
+	}
 
 	var containerPorts []int32
 	for _, port := range task.PodMeta.Ports {
@@ -1119,9 +1143,30 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		ScriptDir:          scriptDir,
 		ContainerPorts:     containerPorts,
 		TensorBoardLogPath: in.GetTensorBoardDataPath(),
+		AppProxyPort:       appProxyPort,
 	}
 	if err = s.JM.SaveJobInfo(submitJobInfo); err != nil {
-		logrus.Warnf("save job submit info failed: %v", err)
+		if appProxyPort == 0 {
+			logrus.Warnf("save job submit info failed: %v", err)
+		} else {
+			logrus.Errorf("[SubmitJob] save app job submit info failed: %v", err)
+			cancelCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_, cancelErr := s.CancelJob(cancelCtx, &protos.CancelJobRequest{JobId: jobID, UserId: in.UserId})
+			cancel()
+			// 无论取消是否成功，都不再由 defer 释放端口。取消成功时 CancelJob 已完成释放；
+			// 取消失败时作业可能仍在运行，需要保留与 jobID 的绑定供周期清理。
+			releaseAppProxyPort = false
+			if cancelErr != nil {
+				logrus.Errorf("[SubmitJob] compensate app job %d failed after saving job info failed: %v", jobID, cancelErr)
+				return nil, ce.RichError(codes.Internal, "SUBMIT_JOB_FAILED",
+					fmt.Sprintf("Save app job information failed: %v; cancel submitted job failed: %v", err, cancelErr))
+			}
+			return nil, ce.RichError(codes.Internal, "SUBMIT_JOB_FAILED",
+				fmt.Sprintf("Save app job information failed: %v; submitted job %d has been cancelled", err, jobID))
+		}
+	}
+	if appProxyPort > 0 {
+		releaseAppProxyPort = false
 	}
 
 	return &protos.SubmitJobResponse{

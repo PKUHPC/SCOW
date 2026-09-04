@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"os"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -8,6 +10,41 @@ import (
 	adapters "scow-adapters/pkg/crane-ai/services/job/internal/adapter"
 	"scow-adapters/pkg/crane-ai/utils"
 )
+
+func TestSetArgsUsesReservedAppProxyPort(t *testing.T) {
+	const proxyPort = 30001
+	hostname, err := os.Hostname()
+	if err != nil {
+		t.Fatalf("get hostname: %v", err)
+	}
+	req := &protos.SubmitJobRequest{
+		ExtraOptions: []string{utils.APP, utils.AppTypeWeb},
+	}
+
+	args := NewContainerJobBuilder().setArgs(adapters.NewJobAdapterWithAppProxyPort(req, proxyPort))
+	want := []string{
+		utils.ContainerEntryScript,
+		strconv.Itoa(utils.AppWebContainerPort),
+		hostname,
+		strconv.Itoa(proxyPort),
+	}
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("setArgs() = %v, want %v", args, want)
+	}
+}
+
+func TestSetArgsKeepsVNCAppArgumentsUnchanged(t *testing.T) {
+	const unusedProxyPort = 30001
+	req := &protos.SubmitJobRequest{
+		ExtraOptions: []string{utils.APP, utils.AppTypeVNC},
+	}
+
+	args := NewContainerJobBuilder().setArgs(adapters.NewJobAdapterWithAppProxyPort(req, unusedProxyPort))
+	want := []string{utils.ContainerEntryScript, strconv.Itoa(utils.AppVNCContainerPort)}
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("setArgs() = %v, want %v", args, want)
+	}
+}
 
 func TestSetArgsUsesReservedJupyterProxyPort(t *testing.T) {
 	const proxyPort = 30001

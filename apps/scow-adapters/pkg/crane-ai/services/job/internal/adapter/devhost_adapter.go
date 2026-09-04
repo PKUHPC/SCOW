@@ -88,6 +88,10 @@ func (a *DevHostJobAdapter) GetContainerPort() []uint32 {
 	return ports
 }
 
+func (a *DevHostJobAdapter) GetAppProxyPort() int {
+	return 0
+}
+
 func (a *DevHostJobAdapter) GetMounts() (map[string]string, error) {
 	mounts := make(map[string]string)
 	for _, mount := range a.req.Mounts {

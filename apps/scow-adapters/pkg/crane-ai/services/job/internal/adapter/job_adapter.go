@@ -12,11 +12,16 @@ import (
 
 // JobAdapter SubmitJobRequest 的适配器
 type JobAdapter struct {
-	req *protos.SubmitJobRequest
+	req          *protos.SubmitJobRequest
+	appProxyPort int
 }
 
 func NewJobAdapter(req *protos.SubmitJobRequest) *JobAdapter {
 	return &JobAdapter{req: req}
+}
+
+func NewJobAdapterWithAppProxyPort(req *protos.SubmitJobRequest, appProxyPort int) *JobAdapter {
+	return &JobAdapter{req: req, appProxyPort: appProxyPort}
 }
 
 func (a *JobAdapter) GetJobType() types.ContainerJobType {
@@ -102,6 +107,10 @@ func (a *JobAdapter) GetContainerPort() []uint32 {
 	}
 
 	return []uint32{} // 训练作业无固定端口
+}
+
+func (a *JobAdapter) GetAppProxyPort() int {
+	return a.appProxyPort
 }
 
 func (a *JobAdapter) GetMounts() (map[string]string, error) {

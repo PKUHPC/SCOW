@@ -83,6 +83,10 @@ func (a *InferenceJobAdapter) GetContainerPort() []uint32 {
 	return []uint32{port}
 }
 
+func (a *InferenceJobAdapter) GetAppProxyPort() int {
+	return 0
+}
+
 func (a *InferenceJobAdapter) GetMounts() (map[string]string, error) {
 	if len(a.req.ExtraOptions) < 5 {
 		return nil, nil

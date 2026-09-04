@@ -25,6 +25,7 @@ type SubmitJobInfo struct {
 	TensorBoardPort     int     `json:"tensorboard_port,omitempty"`
 	TensorBoardStatus   string  `json:"tensorboard_status,omitempty"`
 	JupyterLabProxyPort int     `json:"jupyterlab_proxy_port,omitempty"`
+	AppProxyPort        int     `json:"app_proxy_port,omitempty"`
 }
 
 // ServerSessionContent web json file
