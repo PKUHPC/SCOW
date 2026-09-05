@@ -1,5 +1,32 @@
 # @scow/quantum
 
+## 0.1.21
+
+### Patch Changes
+
+- 025d6b1: 新增全局 `adapter.timeoutSeconds` 配置，用于调整调度器适配器调用的默认超时时间，未配置时默认为 60 秒。
+- 9bc9514: 将管理、审计、资源管理和消息系统调整为始终启用的基础系统，系统级启停字段不再生效，删除相关运行时开关；移除 `allowAppAuthorization` 配置项，应用授权功能调整为始终启用；并要求配置至少 32 个字符的 SCOW API token。`scow-cli init` 现在会自动生成安全随机的 API token，并在覆盖初始化时安全保留符合长度要求的已有 token。
+- Updated dependencies [025d6b1]
+- Updated dependencies [74cfa9d]
+- Updated dependencies [7e0b13e]
+- Updated dependencies [3cbaa69]
+- Updated dependencies [9bc9514]
+- Updated dependencies [9bc9514]
+- Updated dependencies [f4619a7]
+- Updated dependencies [d3b7488]
+- Updated dependencies [47ecb9d]
+- Updated dependencies [3cbaa69]
+  - @scow/config@2.0.0
+  - @scow/lib-web@2.0.0
+  - @scow/lib-scow-resource@1.0.0
+  - @scow/lib-server@2.0.0
+  - @scow/protos@2.0.0
+  - @scow/lib-scowd@2.0.0
+  - @scow/utils@1.1.6
+  - @scow/lib-operation-log@2.2.20
+  - @scow/rich-error-model@2.0.4
+  - @scow/lib-scheduler-adapter@1.1.43
+
 ## 0.1.20
 
 ### Patch Changes

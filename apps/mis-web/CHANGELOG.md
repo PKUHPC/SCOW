@@ -1,5 +1,33 @@
 # @scow/mis-web
 
+## 1.11.7
+
+### Patch Changes
+
+- 7e0b13e: 增加统一前端基础架构
+- 9bc9514: 将管理、审计、资源管理和消息系统调整为始终启用的基础系统，系统级启停字段不再生效，删除相关运行时开关；移除 `allowAppAuthorization` 配置项，应用授权功能调整为始终启用；并要求配置至少 32 个字符的 SCOW API token。`scow-cli init` 现在会自动生成安全随机的 API token，并在覆盖初始化时安全保留符合长度要求的已有 token。
+- 9bc9514: 将 scowd 调整为所有集群必需的基础服务，移除集群级启停状态，要求每个集群至少配置一个登录节点，并要求为每个登录节点配置有效的 scowd 端口。
+- f4619a7: 收紧 MIS 作业查询、作业导出、财务记录和存储配额跨租户访问权限
+- d3b7488: 优化 HPC 作业管理页面，支持按账户、状态、作业 ID、作业名及提交/结束时间筛选，并统一未结束作业与历史作业入口。新增通用日期时间范围选择组件，并替换 MIS 和 Portal 中的时间筛选框组件。
+- Updated dependencies [025d6b1]
+- Updated dependencies [74cfa9d]
+- Updated dependencies [7e0b13e]
+- Updated dependencies [3cbaa69]
+- Updated dependencies [9bc9514]
+- Updated dependencies [9bc9514]
+- Updated dependencies [f4619a7]
+- Updated dependencies [d3b7488]
+- Updated dependencies [47ecb9d]
+- Updated dependencies [3cbaa69]
+  - @scow/config@2.0.0
+  - @scow/lib-web@2.0.0
+  - @scow/lib-notification@2.0.0
+  - @scow/lib-scow-resource@1.0.0
+  - @scow/protos@2.0.0
+  - @scow/utils@1.1.6
+  - @scow/lib-operation-log@2.2.20
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.6
 
 ### Patch Changes

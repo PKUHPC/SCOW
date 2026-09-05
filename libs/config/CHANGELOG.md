@@ -1,5 +1,25 @@
 # @scow/config
 
+## 2.0.0
+
+### Major Changes
+
+- 9bc9514: 将管理、审计、资源管理和消息系统调整为始终启用的基础系统，系统级启停字段不再生效，删除相关运行时开关；移除 `allowAppAuthorization` 配置项，应用授权功能调整为始终启用；并要求配置至少 32 个字符的 SCOW API token。`scow-cli init` 现在会自动生成安全随机的 API token，并在覆盖初始化时安全保留符合长度要求的已有 token。
+- 9bc9514: 将 scowd 调整为所有集群必需的基础服务，移除集群级启停状态，要求每个集群至少配置一个登录节点，并要求为每个登录节点配置有效的 scowd 端口。
+
+### Minor Changes
+
+- 025d6b1: 新增全局 `adapter.timeoutSeconds` 配置，用于调整调度器适配器调用的默认超时时间，未配置时默认为 60 秒。
+- 3cbaa69: HPC 交互式应用表单输入为文件时，可选增加 FileInputConfig 属性，docs/docs/deploy/config/portal/apps/configure-attributes.md。
+
+### Patch Changes
+
+- 7e0b13e: 增加统一前端基础架构
+- 3cbaa69: 支持为 Portal 交互式应用文件路径属性配置仅文件或仅目录，并可按完整文件扩展名过滤和校验文件
+- Updated dependencies [d3b7488]
+- Updated dependencies [3cbaa69]
+  - @scow/utils@1.1.6
+
 ## 1.16.2
 
 ### Patch Changes

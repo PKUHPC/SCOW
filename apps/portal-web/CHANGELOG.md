@@ -1,5 +1,37 @@
 # @scow/portal-web
 
+## 1.11.7
+
+### Patch Changes
+
+- 74cfa9d: 修复 Portal 和 AI 文件上传速率、续传字节数及非整分片进度计算。
+- 7e0b13e: 增加统一前端基础架构
+- d7c14bf: hpc 创建应用没有可用账户时集群不可选择
+- 60887b4: 修复 hpc 某一个集群未配置交互式应用时，所有集群的交互式应用都不可用的问题
+- 856053d: 优化 Portal 和 AI 文件管理中重命名、上传、新建、移动及复制时的同名文件与文件夹冲突提示和处理逻辑。
+- 9bc9514: 将管理、审计、资源管理和消息系统调整为始终启用的基础系统，系统级启停字段不再生效，删除相关运行时开关；移除 `allowAppAuthorization` 配置项，应用授权功能调整为始终启用；并要求配置至少 32 个字符的 SCOW API token。`scow-cli init` 现在会自动生成安全随机的 API token，并在覆盖初始化时安全保留符合长度要求的已有 token。
+- 9bc9514: 将 scowd 调整为所有集群必需的基础服务，移除集群级启停状态，要求每个集群至少配置一个登录节点，并要求为每个登录节点配置有效的 scowd 端口。
+- d3b7488: 优化 HPC 作业管理页面，支持按账户、状态、作业 ID、作业名及提交/结束时间筛选，并统一未结束作业与历史作业入口。新增通用日期时间范围选择组件，并替换 MIS 和 Portal 中的时间筛选框组件。
+- 3cbaa69: 支持为 Portal 交互式应用文件路径属性配置仅文件或仅目录，并可按完整文件扩展名过滤和校验文件
+- Updated dependencies [025d6b1]
+- Updated dependencies [74cfa9d]
+- Updated dependencies [7e0b13e]
+- Updated dependencies [3cbaa69]
+- Updated dependencies [9bc9514]
+- Updated dependencies [9bc9514]
+- Updated dependencies [f4619a7]
+- Updated dependencies [d3b7488]
+- Updated dependencies [47ecb9d]
+- Updated dependencies [3cbaa69]
+  - @scow/config@2.0.0
+  - @scow/lib-web@2.0.0
+  - @scow/lib-notification@2.0.0
+  - @scow/lib-scow-resource@1.0.0
+  - @scow/protos@2.0.0
+  - @scow/utils@1.1.6
+  - @scow/lib-operation-log@2.2.20
+  - @scow/rich-error-model@2.0.4
+
 ## 1.11.6
 
 ### Patch Changes

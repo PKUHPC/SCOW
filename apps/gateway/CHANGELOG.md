@@ -1,5 +1,15 @@
 # @scow/gateway
 
+## 1.11.7
+
+### Patch Changes
+
+- 7e0b13e: 增加统一前端基础架构
+- 0a4e40f: 支持通过 `install.yaml` 中的 `metaServer.enabled` 配置关闭元数据服务及其 gateway 路由。
+- Updated dependencies [d3b7488]
+- Updated dependencies [3cbaa69]
+  - @scow/utils@1.1.6
+
 ## 1.11.6
 
 ### Patch Changes

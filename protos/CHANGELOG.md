@@ -1,5 +1,17 @@
 # @scow/grpc-api
 
+## 2.0.0
+
+### Major Changes
+
+- 9bc9514: 将 scowd 调整为所有集群必需的基础服务，移除集群级启停状态，要求每个集群至少配置一个登录节点，并要求为每个登录节点配置有效的 scowd 端口。
+
+### Minor Changes
+
+- f4619a7: 收紧 MIS 作业查询、作业导出、财务记录和存储配额跨租户访问权限
+- 3cbaa69: HPC 交互式应用表单输入为文件时，可选增加 FileInputConfig 属性。
+- d3b7488: HPC 的 ListAllJobs 接口请求参数增加提交时间、结束时间，账户、状态、作业 ID、作业名搜索字段
+
 ## 1.36.0
 
 ### Minor Changes

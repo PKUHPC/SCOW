@@ -1,5 +1,19 @@
 # @scow/protos
 
+## 2.0.0
+
+### Major Changes
+
+- 9bc9514: 将 scowd 调整为所有集群必需的基础服务，移除集群级启停状态，要求每个集群至少配置一个登录节点，并要求为每个登录节点配置有效的 scowd 端口。
+
+### Patch Changes
+
+- Updated dependencies [9bc9514]
+- Updated dependencies [f4619a7]
+- Updated dependencies [3cbaa69]
+- Updated dependencies [d3b7488]
+  - @scow/grpc-api@2.0.0
+
 ## 1.1.4
 
 ### Patch Changes

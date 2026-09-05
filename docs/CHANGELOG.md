@@ -1,5 +1,13 @@
 # @scow/docs
 
+## 1.4.30
+
+### Patch Changes
+
+- 025d6b1: 新增全局 `adapter.timeoutSeconds` 配置，用于调整调度器适配器调用的默认超时时间，未配置时默认为 60 秒。
+- 7e0b13e: 增加统一前端基础架构
+- 3cbaa69: 支持为 Portal 交互式应用文件路径属性配置仅文件或仅目录，并可按完整文件扩展名过滤和校验文件
+
 ## 1.4.29
 
 ### Patch Changes
