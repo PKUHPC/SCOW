@@ -60,7 +60,6 @@ export function ExtensionPage() {
   const frameUrl = useMemo(() => {
     if (!match || !token) return undefined;
     const query = new URLSearchParams(location.search);
-    query.set("scowUserToken", token);
     query.set("scowDark", uiConfigQuery.data?.darkMode ? "true" : "false");
     query.set("scowLangId", i18n.language);
     const url = joinExtensionUrl(match.extension.url, "extensions", ...match.extensionPath);
@@ -72,6 +71,7 @@ export function ExtensionPage() {
     const extensionOrigin = new URL(extension.url).origin;
     const messageHandler = (event: MessageEvent<unknown>) => {
       if (event.source !== frameRef.current?.contentWindow || event.origin !== extensionOrigin) return;
+
       const parsed = extensionEventSchema.safeParse(event.data);
       if (!parsed.success) {
         console.warn("SCOW received an invalid event from extension page", event.data);

@@ -76,7 +76,7 @@ export const ExtensionPage: React.FC<Props> = ({
 
   const darkMode = useDarkMode();
 
-  const extensionQuery = getExtensionRouteQuery(darkMode.dark, currentLanguageId, user?.token);
+  const extensionQuery = getExtensionRouteQuery(darkMode.dark, currentLanguageId);
 
   const query = new URLSearchParams({
     ...Object.fromEntries(Object.entries(rest).filter(([_, val]) => typeof val === "string")),

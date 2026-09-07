@@ -5,14 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UI Extension</title>
     <style>
-      * { box-sizing: border-box; }
-      body { margin: 0; color: #262626; font: 14px/1.5 Arial, sans-serif; background: #fff; }
-      main { padding: 24px; }
-      h1 { margin: 0 0 20px; font-size: 24px; }
-      dl { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px 24px; margin: 0 0 24px; }
-      dt { color: #595959; }
-      dd { margin: 0; overflow-wrap: anywhere; }
-      button { margin-right: 8px; padding: 5px 14px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: #262626;
+        font:
+          14px/1.5 Arial,
+          sans-serif;
+        background: #fff;
+      }
+      main {
+        padding: 24px;
+      }
+      h1 {
+        margin: 0 0 20px;
+        font-size: 24px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: 140px minmax(0, 1fr);
+        gap: 12px 24px;
+        margin: 0 0 24px;
+      }
+      dt {
+        color: #595959;
+      }
+      dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      button {
+        margin-right: 8px;
+        padding: 5px 14px;
+        border: 1px solid #d9d9d9;
+        background: #fff;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -26,7 +56,7 @@
     <script>
       const params = new URLSearchParams(window.location.search);
       const paramsElement = document.getElementById("params");
-      ["scowLangId", "scowDark", "scowUserToken"].forEach((key) => {
+      ["scowLangId", "scowDark"].forEach((key) => {
         const term = document.createElement("dt");
         const description = document.createElement("dd");
         term.textContent = key;

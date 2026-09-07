@@ -77,7 +77,7 @@
 - manifest 保持旧协议的 `portal`、`ai`、`mis` 字段，不新增 `unified` 字段；统一前端聚合 Portal 与 AI 配置并按来源调用协议。
 - Portal 与 AI 配置中的同名同 URL 扩展合并为一个实例；配置冲突时使用来源前缀避免 iframe 路由冲突。
 - 顶部链接支持 priority、远程图标、自动刷新和新页面打开；Portal/AI 侧栏分别支持新增、删除、重排和嵌套导航。
-- iframe 传递从 MIS 当前会话统一读取的 token、语言和暗色参数；postMessage 校验当前 iframe 来源后处理高度、标题、链接刷新、导航刷新和退出。
+- iframe 仅传递语言和暗色参数，不传递用户 token；从 MIS 当前会话读取的 token 仅用于调用扩展配置接口。postMessage 校验当前 iframe 来源后处理高度、标题、链接刷新、导航刷新和退出。
 - 增加 typed real/mock client、zod 网络边界校验、4 项路径与导航单元测试，以及可交互 mock iframe。
 - MIS 业务仍不迁移，本阶段不主动接入 MIS UI Extension 配置。
 - UI Extension 完成验证并提交后暂停，等待用户检查再进入下一阶段。
@@ -122,7 +122,7 @@
 12. 扩展服务 CORS 允许统一前端来源访问 `/api/manifests`、`/{portal|ai}/navbarLinks` 和 `/{portal|ai}/rewriteNavigations`。
 13. 顶部扩展链接的图标、priority、自动刷新、站内/外跳转和新页面打开符合 manifest 返回值。
 14. Portal 与 AI 侧栏都能被对应 manifest 改写，新增、删除、重排、嵌套、远程图标和旧 `svgIcon` 正常。
-15. `/unified/extensions/*` 可直接访问和刷新，iframe 收到 token、语言、暗色及原查询参数。
+15. `/unified/extensions/*` 可直接访问和刷新，iframe 收到语言、暗色及原查询参数。
 16. 扩展页更新高度/标题、刷新链接/导航和退出登录事件正常，其他窗口或来源的消息被忽略。
 
 ## 后续阶段

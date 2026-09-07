@@ -206,7 +206,7 @@ feature 内文件较少时保持扁平；只有组件或 API 文件数量增加�
 - manifest 保持旧版 `portal`、`ai`、`mis` 字段，本阶段只调用已迁移的 Portal/AI 协议，不新增 `unified` 字段。
 - 顶部链接支持 priority、远程图标、自动刷新和新页面打开；链接较多时沿用旧版逻辑只显示图标。
 - Portal/AI 侧栏分别调用 `rewriteNavigations`，支持新增、删除、重排、嵌套、外部链接和旧版 `svgIcon`。
-- `/extensions/*` iframe 继续传递 `scowUserToken`、`scowDark` 和 `scowLangId`；用户 token 统一读取 MIS 当前会话，Portal/AI 仅提供扩展配置来源，并处理旧版高度、标题、刷新与退出 `postMessage` 事件。
+- `/extensions/*` iframe 仅通过查询参数传递 `scowDark` 和 `scowLangId`；统一前端从 MIS 当前会话读取用户 token，仅用于调用扩展配置接口，Portal/AI 仅提供扩展配置来源，并处理旧版高度、标题、刷新与退出消息。
 - 扩展 HTTP API 由浏览器直接跨域调用，扩展服务必须允许统一前端来源的 CORS GET/POST 和 `Content-Type: application/json` 预检。
 
 ### Mock

@@ -622,14 +622,14 @@ export const getAvailableRoutes = (user: User | undefined, storageEnabled: boole
                 <NavIcon src={join(publicConfig.PUBLIC_PATH, childLink.iconPath)} />
               ),
               text: childLink.text,
-              path: `${childLink.url}?token=${user.token}`,
-              clickToPath: `${childLink.url}?token=${user.token}`,
+              path: childLink.url,
+              clickToPath: childLink.url,
               openInNewPage: childLink.openInNewPage,
             }) as NavItemProps,
         );
 
       const parentNavPath = link.url
-        ? `${link.url}?token=${user.token}`
+        ? link.url
         : childrenLinks && childrenLinks.length > 0
           ? childrenLinks[0].path
           : "";

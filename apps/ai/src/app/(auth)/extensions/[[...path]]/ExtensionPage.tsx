@@ -65,7 +65,7 @@ export const ExtensionPage: React.FC<Props> = ({
     return <NotFoundPageComponent />;
   }
 
-  if (!useInfo?.user?.token) {
+  if (!useInfo?.user) {
     return <Redirect href="/api/auth" />;
   }
 
@@ -73,7 +73,7 @@ export const ExtensionPage: React.FC<Props> = ({
 
   const { dark } = useDarkMode();
 
-  const extensionQuery = getExtensionRouteQuery(dark, currentLanguageId, useInfo.user?.token);
+  const extensionQuery = getExtensionRouteQuery(dark, currentLanguageId);
 
   const query = new URLSearchParams({
     ...(rest ? Object.fromEntries(rest.entries()) : {}),

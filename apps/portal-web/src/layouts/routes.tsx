@@ -145,9 +145,9 @@ export const userRoutes: (
     ...(publicConfig.NAV_LINKS && publicConfig.NAV_LINKS.length > 0
       ? publicConfig.NAV_LINKS.map((link) => {
           const parentNavPath = link.url
-            ? `${link.url}?token=${user.token}`
+            ? link.url
             : link.children?.length && link.children?.length > 0
-              ? `${link.children[0].url}?token=${user.token}`
+              ? link.children[0].url
               : "";
 
           return {
@@ -167,8 +167,8 @@ export const userRoutes: (
                         <NavIcon src={join(publicConfig.PUBLIC_PATH, childLink.iconPath)} />
                       ),
                       text: childLink.text,
-                      path: `${childLink.url}?token=${user.token}`,
-                      clickToPath: `${childLink.url}?token=${user.token}`,
+                      path: childLink.url,
+                      clickToPath: childLink.url,
                       clickable: true,
                       openInNewPage: childLink.openInNewPage,
                     }) as NavItemProps,

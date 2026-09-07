@@ -115,7 +115,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   );
 
   const routeQuery = useMemo(
-    () => getExtensionRouteQuery(dark, languageId, user?.token),
+    () => getExtensionRouteQuery(dark, languageId),
     [dark, languageId, user?.token],
   );
 

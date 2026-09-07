@@ -9,27 +9,29 @@ title: 开发UI扩展
 
 ## 上下文参数
 
-SCOW会在访问扩展页和调用某些配置接口时，将以下参数作为查询字符串（querystring）加入访问的URL，UI扩展可以通过这些参数获取当前SCOW系统的信息。具体哪些页面/API会传递这些参数会在具体章节里提到。
+SCOW会在访问扩展页和调用某些配置接口时传递以下上下文。`scowDark`和`scowLangId`通过查询字符串（querystring）传递；`scowUserToken`仅在调用配置接口时使用查询字符串，不会传递给扩展页。具体哪些页面/API会传递这些参数会在具体章节里提到。
 
 | 参数            | 取值                  | 解释                                                          |
 | --------------- | --------------------- | ------------------------------------------------------------- |
 | `scowDark`      | `"true" \| "false"`   | 当前SCOW是否以黑暗主题显示                                    |
-| `scowUserToken` | `string \| undefined` | 当前SCOW的登录用户的token。可通过SCOW认证系统接口查询登录用户 |
+| `scowUserToken` | `string \| undefined` | 当前SCOW的登录用户的token。仅用于调用配置接口，可通过SCOW认证系统接口查询登录用户 |
 | `scowLangId`    | `string`              | 当前SCOW显示所使用的语言ID                                    |
 
 ## 扩展页
 
-UI扩展的功能应实现为标准的网页。当访问SCOW的扩展路径时，SCOW将会在外层显示SCOW的基础导航结构，并在页面主要部分使用一个`<iframe>`组件将扩展页的内容显示出来。[上下文参数](#上下文参数)中的参数也将会传递给`<iframe>`。
+UI扩展的功能应实现为标准的网页。当访问SCOW的扩展路径时，SCOW将会在外层显示SCOW的基础导航结构，并在页面主要部分使用一个`<iframe>`组件将扩展页的内容显示出来。`scowDark`和`scowLangId`会传递给`<iframe>`的查询字符串；SCOW不会通过URL或其他方式向扩展页传递用户token。
+
+扩展站与SCOW同源（协议、域名和端口均相同）时，扩展页发起的请求可以使用该源下已有的登录会话。扩展站与SCOW跨域时，扩展页无法获取SCOW的登录Cookie或用户token；如需识别当前用户，扩展站必须接入与SCOW一致的统一认证系统，并通过自身的认证流程建立登录会话。
 
 若只设置了一个UI扩展，当用户访问SCOW部署路径的`/extensions/*`的路径时，`<iframe>`将会显示UI扩展`/extensions/*`下的内容。
 
 若设置了多个UI扩展，当用户访问SCOW部署路径的`/extensions/{name}/*`的路径时，`<iframe>`将会显示`{name}`部分对应的UI扩展的`/extensions/*`下的内容。
 
-例如，假设SCOW部署于`https://myscow.com/scow`，您的扩展站1部署于`https://myscowext1.com/ext1`，扩展站2部署于`https://myscowext2.com/ext2`。
+例如，假设SCOW部署于`https://myscow.com/scow`，扩展站1和扩展站2分别部署于同源地址`https://myscow.com/ext1`和`https://myscow.com/ext2`。
 
-- 若用户在配置中使用单个UI扩展配置语法时，当用户访问`https://myscow/scow/extensions/parent/child?test=123`时，SCOW将会显示一个iframe，其URL为`https://myscowext1.com/ext1/extensions/parent/child?test=123&scowDark={当前SCOW是否以黑暗模式显示}&scowUserToken={用户token}&scowLangId={当前SCOW显示语言ID}`。
-- 若用户在配置中使用多个UI扩展配置语法，但是只配置了扩展站1时，起名称为`extname1`，当用户访问`https://myscow/scow/extensions/extname1/parent/child?test=123`时，SCOW将会显示一个iframe，其URL为`https://myscowext1.com/ext1/extensions/parent/child?test=123&scowDark={当前SCOW是否以黑暗模式显示}&scowUserToken={用户token}&scowLangId={当前SCOW显示语言ID}`。
-- 若用户在配置中使用多个UI扩展配置语法，配置了扩展站1和2，名称分别为`extname1`和`extname2`，当用户访问`https://myscow/scow/extensions/extname1/parent/child?test=123`时，SCOW将会显示一个iframe，其URL为`https://myscowext1.com/ext1/extensions/parent/child?test=123&scowDark={当前SCOW是否以黑暗模式显示}&scowUserToken={用户token}&scowLangId={当前SCOW显示语言ID}`。
+- 若用户在配置中使用单个UI扩展配置语法时，当用户访问`https://myscow.com/scow/extensions/parent/child?test=123`时，SCOW将会显示一个iframe，其URL为`https://myscow.com/ext1/extensions/parent/child?test=123&scowDark={当前SCOW是否以黑暗模式显示}&scowLangId={当前SCOW显示语言ID}`。
+- 若用户在配置中使用多个UI扩展配置语法，但是只配置了扩展站1时，其名称为`extname1`，当用户访问`https://myscow.com/scow/extensions/extname1/parent/child?test=123`时，SCOW将会显示一个iframe，其URL为`https://myscow.com/ext1/extensions/parent/child?test=123&scowDark={当前SCOW是否以黑暗模式显示}&scowLangId={当前SCOW显示语言ID}`。
+- 若用户在配置中使用多个UI扩展配置语法，配置了扩展站1和2，名称分别为`extname1`和`extname2`，当用户访问`https://myscow.com/scow/extensions/extname1/parent/child?test=123`时，SCOW将会显示一个iframe，其URL为`https://myscow.com/ext1/extensions/parent/child?test=123&scowDark={当前SCOW是否以黑暗模式显示}&scowLangId={当前SCOW显示语言ID}`。
 
 ## 配置接口
 
@@ -258,7 +260,7 @@ UI扩展实现参考： https://github.com/PKUHPC/scow-ui-extension-demo/commit/
 
 ### `scow.logout`: 通知用户登出
 
-当token过期时，您可以向SCOW发送以下格式的消息，使用户登出。
+当扩展站自身的认证会话失效时，您可以向SCOW发送以下格式的消息，使用户退出SCOW并重新认证。
 
 ```json
 {
@@ -269,5 +271,5 @@ UI扩展实现参考： https://github.com/PKUHPC/scow-ui-extension-demo/commit/
 ## 其他注意事项
 
 - UI扩展示例项目：[PKUHPC/scow-ui-extension-demo](https://github.com/PKUHPC/scow-ui-extension-demo)
-- 如果您的扩展站和SCOW部署地址非同源，请注意使得您的扩展站的所有路径均支持CORS访问。
+- 如果您的扩展站和SCOW部署地址非同源，扩展站必须接入与SCOW一致的统一认证系统，并根据配置接口的跨域请求需要设置CORS策略。不要尝试从扩展页读取SCOW的登录Cookie或用户token。
     - Next.js项目可以参考[示例项目中的`src/middleware.ts`](https://github.com/PKUHPC/scow-ui-extension-demo/blob/main/src/middleware.ts)

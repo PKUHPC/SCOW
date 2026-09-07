@@ -82,14 +82,11 @@ export const UserIndicator: React.FC<Props> = ({
                     return {
                       key: link.text,
                       label: EXTERNAL_URL_PREFIX.some((pref) => link.url.startsWith(pref)) ? (
-                        <Typography.Link
-                          href={`${link.url}?token=${user.token}`}
-                          target={link.openInNewPage ? "_blank" : "_self"}
-                        >
+                        <Typography.Link href={link.url} target={link.openInNewPage ? "_blank" : "_self"}>
                           {link.text}
                         </Typography.Link>
                       ) : (
-                        <Link href={`${link.url}?token=${user.token}`} target={link.openInNewPage ? "_blank" : "_self"}>
+                        <Link href={link.url} target={link.openInNewPage ? "_blank" : "_self"}>
                           {link.text}
                         </Link>
                       ),

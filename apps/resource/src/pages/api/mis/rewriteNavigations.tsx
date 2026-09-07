@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { NextApiRequest, NextApiResponse } from "next";
 import { applyMiddleware } from "src/applyMiddleware";
 import { PlatformRole, TenantRole } from "src/models/user";
+import { getUserToken } from "src/server/auth/cookie";
 import { validateToken } from "src/server/auth/token";
 
 interface NavItem {
@@ -30,11 +31,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const body = req.body as Request;
 
   const scowLangId = req.query.scowLangId as string;
-  const scowUserToken = req.query.scowUserToken as string;
 
   const isChinese = scowLangId === "zh_cn";
 
-  const userInfo = await validateToken(scowUserToken);
+  const userInfo = await validateToken(getUserToken(req));
 
   if (userInfo?.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
     // 将租户授权分区页面插入到 平台管理-租户管理-三级导航的末端
