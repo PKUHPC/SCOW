@@ -33,6 +33,7 @@ export default async () => {
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
     skipTrailingSlashRedirect: true,
+    serverExternalPackages: ["node-ssh", "ssh2"],
     transpilePackages: ["antd", "@ant-design/icons"],
   };
 

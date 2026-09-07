@@ -67,7 +67,21 @@ const getRequiredFiles = async (packageRoot) => {
   packageJson.files.push("!**/*.ts");
 
   // find the files
-  const files = await globby(packageJson.files, { cwd: packageRoot });
+  const entries = await globby(packageJson.files, {
+    cwd: packageRoot,
+    followSymbolicLinks: false,
+    onlyFiles: false,
+  });
+
+  // Keep directory symlinks such as Next.js external modules, but let globby
+  // expand real directories so negated patterns still apply.
+  const files = (
+    await Promise.all(
+      entries.map(async (entry) =>
+        (await fs.promises.lstat(join(packageRoot, entry))).isDirectory() ? undefined : entry,
+      ),
+    )
+  ).filter((entry) => entry !== undefined);
 
   return DEFAULT_COPY_ITEMS.concat(files);
 };
@@ -77,7 +91,7 @@ console.log("Creating dist folder ", DIST_BASE_PATH);
 await fs.promises.mkdir(DIST_BASE_PATH, { recursive: true });
 
 const cp = async (source, target) => {
-  await fs.promises.cp(source, target, { recursive: true });
+  await fs.promises.cp(source, target, { recursive: true, verbatimSymlinks: true });
 };
 
 // Copy root items

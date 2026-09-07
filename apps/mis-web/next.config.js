@@ -14,12 +14,12 @@ module.exports = async (phase) => {
   };
 
   const runtimeConfig = await buildRuntimeConfig(phase, BASE_PATH);
+  global.__SCOW_RUNTIME_CONFIG__ = runtimeConfig;
 
   /**
    * @type {import("next").NextConfig}
    */
   const config = {
-    ...runtimeConfig,
     compiler: {
       styledComponents: true,
     },

@@ -1,6 +1,13 @@
 import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs/lib";
-import Document from "next/document";
+import Document, { Head, Html, Main, NextScript } from "next/document";
+import { publicConfig } from "src/utils/config";
 import { ServerStyleSheet } from "styled-components";
+
+const serializePublicConfig = () =>
+  JSON.stringify(publicConfig)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 
 export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
@@ -34,5 +41,23 @@ export default class MyDocument extends Document {
     } finally {
       sheet.seal();
     }
+  }
+
+  render() {
+    return (
+      <Html>
+        <Head />
+        <body>
+          <script
+            id="__SCOW_RUNTIME_CONFIG__"
+            dangerouslySetInnerHTML={{
+              __html: `globalThis.__SCOW_RUNTIME_CONFIG__ = { serverRuntimeConfig: {}, publicRuntimeConfig: ${serializePublicConfig()} };`,
+            }}
+          />
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
   }
 }

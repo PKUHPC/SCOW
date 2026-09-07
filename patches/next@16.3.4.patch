@@ -1,8 +1,8 @@
 diff --git a/dist/server/lib/router-server.js b/dist/server/lib/router-server.js
-index a71e5a5da32c237e0b439386bc4c3fd86dc4e845..2df30904b72145ab1805082b76eeba9143cd7662 100644
+index 53b7745..bfeda98 100644
 --- a/dist/server/lib/router-server.js
 +++ b/dist/server/lib/router-server.js
-@@ -621,9 +621,9 @@ async function initialize(opts) {
+@@ -720,9 +720,9 @@ async function initialize(opts) {
              });
              // TODO: allow upgrade requests to pages/app paths?
              // this was not previously supported

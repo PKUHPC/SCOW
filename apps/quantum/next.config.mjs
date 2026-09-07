@@ -46,9 +46,6 @@ export default async () => {
     },
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
-    publicRuntimeConfig: {
-      BASE_PATH: BASE_PATH,
-    },
     skipTrailingSlashRedirect: true,
     transpilePackages: ["antd", "@ant-design/icons"],
   };

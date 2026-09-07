@@ -4,7 +4,13 @@ import { nextJsApiRouter } from "@connectrpc/connect-next";
 import { loggerInterceptor } from "src/server/connectrpc/interceptor/loggerInterceptor";
 import routes from "src/server/connectrpc/router";
 
-const { handler, config: conf } = nextJsApiRouter({ routes, interceptors: [loggerInterceptor] });
+const { handler } = nextJsApiRouter({ routes, interceptors: [loggerInterceptor] });
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 const customHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   // 设置 CORS 头信息
@@ -26,6 +32,4 @@ const customHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   await handler(req, res);
 };
 
-const config = conf as any;
-
-export { config, customHandler as default };
+export default customHandler;

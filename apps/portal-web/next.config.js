@@ -14,12 +14,12 @@ module.exports = async (phase) => {
   };
 
   const runtimeConfig = await buildRuntimeConfig(phase, BASE_PATH);
+  global.__SCOW_RUNTIME_CONFIG__ = runtimeConfig;
 
   /**
    * @type {import("next").NextConfig}
    */
   const config = {
-    ...runtimeConfig,
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
     compiler: {

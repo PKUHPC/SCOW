@@ -18,7 +18,7 @@
     },
     "lib": ["dom", "dom.iterable", "esnext"],
     "incremental": false,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "plugins": [
       {
         "name": "next"
@@ -26,6 +26,14 @@
     ],
     "noEmit": false
   },
-  "include": ["next-env.d.ts", "env.d.ts", "**/*.ts", "**/*.tsx", "src/**/*.ts", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "src/**/*.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }

@@ -21,6 +21,7 @@ const basePath = BASE_PATH === "/" ? "" : BASE_PATH;
 // Replace @BASE_PATH@ in .next files
 const options = {
   files: ".next/**/*.*",
+  ignore: ".next/node_modules/**",
   from: /\/@BASE_PATH@/g,
   to: basePath,
 };

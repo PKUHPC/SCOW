@@ -7,7 +7,6 @@ import { I18nStringType, SystemLanguageConfig } from "@scow/config/build/i18n";
 import { UiExtensionConfigSchema } from "@scow/config/build/uiExtensions";
 import { UserLink } from "@scow/lib-web/build/layouts/base/types";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import getConfig from "next/config";
 
 export interface ServerRuntimeConfig {
   AUTH_EXTERNAL_URL: string;
@@ -94,8 +93,19 @@ export interface PublicRuntimeConfig {
   DASHBOARD_USER_DISPLAY_MODE: "full" | "simplified";
 }
 
-export const runtimeConfig: ServerRuntimeConfig = getConfig().serverRuntimeConfig;
-export const publicConfig: PublicRuntimeConfig = getConfig().publicRuntimeConfig;
+interface RuntimeConfigs {
+  serverRuntimeConfig: ServerRuntimeConfig;
+  publicRuntimeConfig: PublicRuntimeConfig;
+}
+
+const configs = (
+  globalThis as typeof globalThis & {
+    __SCOW_RUNTIME_CONFIG__?: RuntimeConfigs;
+  }
+).__SCOW_RUNTIME_CONFIG__;
+
+export const runtimeConfig = (configs?.serverRuntimeConfig ?? {}) as ServerRuntimeConfig;
+export const publicConfig = (configs?.publicRuntimeConfig ?? {}) as PublicRuntimeConfig;
 
 export interface NavLink {
   text: string;
