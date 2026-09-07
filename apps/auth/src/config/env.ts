@@ -38,4 +38,6 @@ export const config = envConfig({
   DEFAULT_SETUP_HOME_PATH: str({ desc: "默认SCOW已启动服务路径，用于logo等静态资源链接构建", default: "/" }),
 });
 
-export const rootKeyPair = getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);
+export function getRootKeyPair() {
+  return getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);
+}

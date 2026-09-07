@@ -6,7 +6,7 @@ import { serveLoginHtml } from "src/auth/loginHtml";
 import { registerPostHandler } from "src/auth/ssh/postHandler";
 import { authConfig, SshConfigSchema } from "src/config/auth";
 import { clusters } from "src/config/clusters";
-import { rootKeyPair } from "src/config/env";
+import { getRootKeyPair } from "src/config/env";
 import { ensureNotUndefined } from "src/utils/validations";
 
 function checkLoginNode(sshConfig: SshConfigSchema) {
@@ -33,6 +33,7 @@ export const createSshAuthProvider = async (f: FastifyInstance) => {
   const { ssh } = ensureNotUndefined(authConfig, ["ssh"]);
 
   const loginNode = checkLoginNode(ssh);
+  const rootKeyPair = getRootKeyPair();
 
   f.log.info("Determined login node %s", loginNode);
 
