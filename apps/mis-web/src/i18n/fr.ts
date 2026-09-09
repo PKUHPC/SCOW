@@ -689,6 +689,7 @@ export default {
         timeWait: "Temps d'attente du job (secondes)",
         timeWaitTip:
           "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
+        jobFeeTip: "Les frais sont calculés selon le barème en vigueur lors de la soumission du job.",
         recordTime: "Heure d'enregistrement",
         workFee: "Facturation du job (CNY)",
         tenantFee: "Facturation du locataire (CNY)",
@@ -749,6 +750,7 @@ export default {
         timeWait: "Temps d'attente",
         timeWaitTip:
           "Les écarts d'horloge entre les nœuds sont normaux et n'affectent ni l'exécution ni la facturation du job.",
+        jobFeeTip: "Les frais sont calculés selon le barème en vigueur lors de la soumission du job.",
         detail: "Détails du job non terminé",
       },
       runningJobTable: {

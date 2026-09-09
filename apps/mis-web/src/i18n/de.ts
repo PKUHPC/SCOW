@@ -694,6 +694,7 @@ export default {
         timeWait: "Wartezeit des Jobs (Sekunden)",
         timeWaitTip:
           "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
+        jobFeeTip: "Die Kosten werden anhand der Preisliste zum Zeitpunkt der Auftragseinreichung berechnet.",
         recordTime: "Erfassungszeit",
         workFee: "Job-Abrechnung (CNY)",
         tenantFee: "Mandantenabrechnung (CNY)",
@@ -754,6 +755,7 @@ export default {
         timeWait: "Wartezeit",
         timeWaitTip:
           "Zeitunterschiede zwischen Knoten sind normal und beeinflussen weder Jobausführung noch Abrechnung.",
+        jobFeeTip: "Die Kosten werden anhand der Preisliste zum Zeitpunkt der Auftragseinreichung berechnet.",
         detail: "Details laufender Jobs",
       },
       runningJobTable: {

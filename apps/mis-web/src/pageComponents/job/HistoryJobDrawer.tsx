@@ -68,13 +68,13 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
     [labelWithTooltip(t(p("timeWait")), t(p("timeWaitTip"))), "timeWait", (t) => (t ? formatTime(t * 1000) : t)],
     [t(p("recordTime")), "recordTime", formatDateTime],
     [
-      (pr) => (pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("tenantFee"))),
+      (pr) => labelWithTooltip(pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("tenantFee")), t(p("jobFeeTip"))),
       "accountPrice",
       moneyToString,
       (pr: Props) => pr.showedPrices.includes("account"),
     ],
     [
-      (pr) => (pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("platformFee"))),
+      (pr) => labelWithTooltip(pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("platformFee")), t(p("jobFeeTip"))),
       "tenantPrice",
       moneyToString,
       (pr: Props) => pr.showedPrices.includes("tenant"),

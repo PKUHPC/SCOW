@@ -687,6 +687,7 @@ export default {
         timeUsed: "Tempo de execução do job (segundos)",
         timeWait: "Tempo de espera do job (segundos)",
         timeWaitTip: "Diferenças de horário entre nós são normais e não afetam a execução nem a cobrança do job.",
+        jobFeeTip: "O custo é calculado de acordo com a tabela de preços no momento do envio do job.",
         recordTime: "Hora do registro",
         workFee: "Cobrança do job (CNY)",
         tenantFee: "Cobrança do inquilino (CNY)",
@@ -746,6 +747,7 @@ export default {
         timeUsed: "Tempo de execução",
         timeWait: "Tempo de espera",
         timeWaitTip: "Diferenças de horário entre nós são normais e não afetam a execução nem a cobrança do job.",
+        jobFeeTip: "O custo é calculado de acordo com a tabela de preços no momento do envio do job.",
         detail: "Detalhes do job em execução",
       },
       runningJobTable: {

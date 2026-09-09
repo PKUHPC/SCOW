@@ -685,6 +685,7 @@ export default {
         timeWait: "Tiempo de espera del trabajo (segundos)",
         timeWaitTip:
           "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
+        jobFeeTip: "El coste se calcula según la tabla de precios en el momento de enviar el trabajo.",
         recordTime: "Hora de registro",
         workFee: "Precio del trabajo (CNY)",
         tenantFee: "Precio del inquilino (CNY)",
@@ -746,6 +747,7 @@ export default {
         timeWait: "Tiempo de espera",
         timeWaitTip:
           "Las diferencias horarias entre nodos son normales y no afectan la ejecución ni la facturación del trabajo.",
+        jobFeeTip: "El coste se calcula según la tabla de precios en el momento de enviar el trabajo.",
         detail: "Detalles de trabajos sin finalizar",
       },
       runningJobTable: {

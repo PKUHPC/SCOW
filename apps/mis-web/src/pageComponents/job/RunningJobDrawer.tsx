@@ -66,8 +66,8 @@ export const RunningJobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
     [t(pCommon("reason")), "reason", getAiExceptionJobI18nReason],
     [t(p("timeLimit")), "timeLimit"],
     [t(pCommon("timeUsed")), "runningTime"],
-    [t(p("accountPrice")), "accountPrice", (v) => nullableMoneyToString(v)],
-    [t(p("tenantPrice")), "tenantPrice", (v) => nullableMoneyToString(v)],
+    [labelWithTooltip(t(p("accountPrice")), t(p("jobFeeTip"))), "accountPrice", (v) => nullableMoneyToString(v)],
+    [labelWithTooltip(t(p("tenantPrice")), t(p("jobFeeTip"))), "tenantPrice", (v) => nullableMoneyToString(v)],
     [t(p("chargingPeriod")), "chargingPeriod"],
     [
       labelWithTooltip(t(p("timeWait")), t(p("timeWaitTip"))),

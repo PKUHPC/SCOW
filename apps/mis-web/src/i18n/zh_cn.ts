@@ -666,6 +666,7 @@ export default {
         timeUsed: "执行时间",
         timeWait: "等待时间",
         timeWaitTip: "不同节点间时间可能存在时差属于正常现象，不影响作业运行和计费",
+        jobFeeTip: "按照作业提交时间的价格表计算费用",
         recordTime: "记录时间",
         workFee: "作业计费（元）",
         tenantFee: "作业计费（元）",
@@ -724,6 +725,7 @@ export default {
         timeUsed: "执行时间",
         timeWait: "等待时间",
         timeWaitTip: "不同节点间时间可能存在时差属于正常现象，不影响作业运行和计费",
+        jobFeeTip: "按照作业提交时间的价格表计算费用",
         detail: "未结束的作业详细信息",
       },
       runningJobTable: {

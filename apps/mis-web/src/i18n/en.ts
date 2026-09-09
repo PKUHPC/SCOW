@@ -698,6 +698,7 @@ export default {
         timeUsed: "Execution Time",
         timeWait: "Wait Time",
         timeWaitTip: "Clock differences between nodes are normal and do not affect job execution or billing.",
+        jobFeeTip: "The fee is calculated according to the price table at the time the job was submitted.",
         recordTime: "Record Time",
         workFee: "Job Billing (CNY)",
         tenantFee: "Job Billing (CNY)",
@@ -757,6 +758,7 @@ export default {
         timeUsed: "Execution Time",
         timeWait: "Wait Time",
         timeWaitTip: "Clock differences between nodes are normal and do not affect job execution or billing.",
+        jobFeeTip: "The fee is calculated according to the price table at the time the job was submitted.",
         detail: "Unfinished Job Details",
       },
       runningJobTable: {

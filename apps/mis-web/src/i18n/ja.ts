@@ -642,6 +642,7 @@ export default {
         timeUsed: "ジョブ実行時間（秒）",
         timeWait: "ジョブ待機時間（秒）",
         timeWaitTip: "ノード間で時刻差が生じる場合がありますが正常であり、ジョブの実行や課金には影響しません。",
+        jobFeeTip: "ジョブの提出時点の価格表に基づいて料金を計算します。",
         recordTime: "記録時刻",
         workFee: "ジョブ課金（CNY）",
         tenantFee: "テナント課金（CNY）",
@@ -701,6 +702,7 @@ export default {
         timeUsed: "実行時間",
         timeWait: "待機時間",
         timeWaitTip: "ノード間で時刻差が生じる場合がありますが正常であり、ジョブの実行や課金には影響しません。",
+        jobFeeTip: "ジョブの提出時点の価格表に基づいて料金を計算します。",
         detail: "未完了ジョブ詳細",
       },
       runningJobTable: {
