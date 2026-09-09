@@ -905,6 +905,7 @@ export default {
         setSuccess: "설정 성공",
         priceLimited: "사용자 작업 과금 한도",
         alreadyUsed: "현재 사용/총 한도",
+        alreadyUsedTip: "한도 설정 후 사용자의 작업 요금이 사용량에 포함됩니다. 작업 요금을 수동으로 조정해도 사용량은 동기화되지 않습니다.",
         cancelPriceLimited: "작업 과금 한도 취소",
         confirmCancelLimited: "이 계정의 해당 사용자 작업 과금 한도를 취소하시겠습니까?",
         cancelAndNotBlock: "한도 취소 및 차단 해제",

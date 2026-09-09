@@ -922,6 +922,7 @@ export default {
         batchCancleCompleted: "批量取消限额完成，其中 {} 操作失败",
         priceLimited: "用户作业费用限额",
         alreadyUsed: "当前已使用/总限额",
+        alreadyUsedTip: "设置限额后，系统将该用户的作业扣费金额计入已使用额度；手动调整作业计费金额时，已使用额度不会同步更新。",
         cancelPriceLimited: "取消作业费用限额",
         confirmCancelLimited: "确认要取消此用户在此账户中的限额吗？",
         confirmCancelSelectLimited: "确认要取消所选用户在此账户中的限额吗？",

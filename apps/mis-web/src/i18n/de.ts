@@ -961,6 +961,7 @@ export default {
         setSuccess: "Erfolgreich festgelegt",
         priceLimited: "Benutzer-Job-Limit für Gebühren",
         alreadyUsed: "Aktuell genutzt/Gesamtes Limit",
+        alreadyUsedTip: "Nach dem Festlegen eines Limits werden die Jobkosten des Benutzers auf den verwendeten Betrag angerechnet. Manuelle Anpassungen aktualisieren diesen Betrag nicht.",
         cancelPriceLimited: "Job-Gebührenlimit aufheben",
         confirmCancelLimited: "Sind Sie sicher, das Job-Gebührenlimit für diesen Benutzer in diesem Konto aufzuheben?",
         cancelAndNotBlock: "Limit aufheben und gleichzeitig entsperren",

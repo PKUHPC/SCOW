@@ -953,6 +953,7 @@ export default {
         setSuccess: "Configurado con éxito",
         priceLimited: "Límite de cargo por trabajos del usuario",
         alreadyUsed: "Usado actualmente/Límite total",
+        alreadyUsedTip: "Después de establecer un límite, los cargos de los trabajos del usuario se contabilizan en el importe usado; los ajustes manuales no lo actualizan.",
         cancelPriceLimited: "Cancelar límite de cargo por trabajos",
         confirmCancelLimited:
           "¿Está seguro de cancelar el límite de cargo por trabajos" + " para este usuario en esta cuenta?",

@@ -956,6 +956,7 @@ export default {
         setSuccess: "Définition réussie",
         priceLimited: "Limite de facturation des jobs de l'utilisateur",
         alreadyUsed: "Utilisé actuellement / Limite totale",
+        alreadyUsedTip: "Après définition d'une limite, les frais des jobs de l'utilisateur sont comptabilisés dans le montant utilisé ; un ajustement manuel ne le met pas à jour.",
         cancelPriceLimited: "Annuler la limite de facturation des jobs",
         confirmCancelLimited:
           "Confirmez-vous l'annulation de la limite de facturation des jobs pour cet utilisateur dans ce compte ?",

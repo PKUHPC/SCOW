@@ -902,6 +902,7 @@ export default {
         setSuccess: "設定に成功しました",
         priceLimited: "ユーザーのジョブ課金上限",
         alreadyUsed: "現在の使用/合計上限",
+        alreadyUsedTip: "上限設定後、ユーザーのジョブ料金が使用額に加算されます。ジョブ料金を手動で調整しても使用額は更新されません。",
         cancelPriceLimited: "ジョブ課金上限を解除",
         confirmCancelLimited: "このアカウントで当該ユーザーのジョブ課金上限を解除しますか？",
         cancelAndNotBlock: "上限解除と同時にブロック解除",

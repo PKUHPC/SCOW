@@ -963,6 +963,7 @@ export default {
         batchCancleCompleted: "Batch limit cancle completed, where {} operation failed",
         priceLimited: "User Job Charge Limit",
         alreadyUsed: "Currently Used/Total Limit",
+        alreadyUsedTip: "After setting a limit, the user's job charges are counted toward the used amount; manually adjusting job charges does not update the used amount.",
         cancelPriceLimited: "Cancel Job Charge Limit",
         confirmCancelLimited: "Are you sure you want to cancel the job charge limit for this user in this account?",
         confirmCancelSelectLimited:

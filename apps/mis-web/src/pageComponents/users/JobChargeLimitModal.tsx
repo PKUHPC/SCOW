@@ -1,10 +1,10 @@
 import type { Money } from "@scow/protos/build/common/money";
 
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { compareUsedChargeRule, positiveNumberRule } from "@scow/lib-web/build/utils/form";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
-import { App, Form, InputNumber, Modal, Space } from "antd";
+import { App, Form, InputNumber, Modal, Space, Tooltip } from "antd";
 import { useState } from "react";
 import { api } from "src/apis";
 import { ModalLink } from "src/components/ModalLink";
@@ -156,7 +156,16 @@ export const JobChargeLimitModal: React.FC<Props> = ({
         <Form.Item label={t(pCommon("accountName"))}>
           <span>{accountName}</span>
         </Form.Item>
-        <Form.Item label={t(p("alreadyUsed"))}>
+        <Form.Item
+          label={
+            <Space size={4}>
+              {t(p("alreadyUsed"))}
+              <Tooltip title={t(p("alreadyUsedTip"))}>
+                <QuestionCircleOutlined />
+              </Tooltip>
+            </Space>
+          }
+        >
           <Space align="start">
             <span>{formalUserInfo.usedAndLimit?.join("、")}</span>
             <span style={{ whiteSpace: "nowrap" }}>

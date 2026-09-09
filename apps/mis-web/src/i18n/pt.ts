@@ -951,6 +951,7 @@ export default {
         setSuccess: "Definido com sucesso",
         priceLimited: "Limite de cobrança de job do usuário",
         alreadyUsed: "Usado atualmente/Limite total",
+        alreadyUsedTip: "Após definir um limite, os custos dos jobs do usuário são contabilizados no valor usado; ajustes manuais não atualizam esse valor.",
         cancelPriceLimited: "Cancelar limite de cobrança de job",
         confirmCancelLimited:
           "Tem certeza de que deseja cancelar o limite de cobrança de job para este usuário nesta conta?",
