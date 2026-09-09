@@ -31,14 +31,14 @@ PY
 }
 
 function pip_install_with_fallback {
-  local pip_cmd=$1
+  local python_cmd=$1
   shift
 
   local -a pip_common_args=()
-  if "${pip_cmd}" install --help 2>/dev/null | grep -q -- '--default-timeout'; then
+  if "${python_cmd}" -m pip install --help 2>/dev/null | grep -q -- '--default-timeout'; then
     pip_common_args+=(--default-timeout 15)
   fi
-  if "${pip_cmd}" install --help 2>/dev/null | grep -q -- '--retries'; then
+  if "${python_cmd}" -m pip install --help 2>/dev/null | grep -q -- '--retries'; then
     pip_common_args+=(--retries 1)
   fi
 
@@ -52,7 +52,7 @@ function pip_install_with_fallback {
   local pypi_source
   for pypi_source in "${pypi_sources[@]}"; do
     echo "[INFO] 使用 PyPI 源: ${pypi_source}" >>/tmp/jupyterlab.log
-    if "${pip_cmd}" install "${pip_common_args[@]}" "$@" -i "${pypi_source}" >>/tmp/jupyterlab.log 2>&1; then
+    if "${python_cmd}" -m pip install "${pip_common_args[@]}" "$@" -i "${pypi_source}" >>/tmp/jupyterlab.log 2>&1; then
       return 0
     fi
     echo "[WARN] 当前 PyPI 源安装失败: ${pypi_source}" >>/tmp/jupyterlab.log
@@ -61,12 +61,90 @@ function pip_install_with_fallback {
   return 1
 }
 
-function get_pip_break_system_packages_arg {
-  local pip_cmd=$1
+function is_system_python {
+  local python_cmd=$1
+  local python_path
 
-  if "${pip_cmd}" install --help 2>/dev/null | grep -q -- '--break-system-packages'; then
-    echo "--break-system-packages"
+  python_path=$("${python_cmd}" -c 'import os, sys; print(os.path.realpath(sys.executable))' 2>/dev/null) || return 1
+  case "$python_path" in
+    /usr/bin/python|/usr/bin/python[0-9]*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+function install_pip_with_package_manager {
+  if [ "$(id -u)" -ne 0 ]; then
+    echo "[WARN] 当前用户不是 root，跳过系统包管理器安装 pip" >>/tmp/jupyterlab.log
+    return 1
   fi
+
+  if command -v apt-get >/dev/null 2>&1; then
+    if ! DEBIAN_FRONTEND=noninteractive apt-get \
+      -o Acquire::http::Timeout=30 \
+      -o Acquire::https::Timeout=30 \
+      -o Acquire::Retries=1 update >>/tmp/jupyterlab.log 2>&1 || \
+      ! DEBIAN_FRONTEND=noninteractive apt-get \
+      -o Acquire::http::Timeout=30 \
+      -o Acquire::https::Timeout=30 \
+      -o Acquire::Retries=1 install -y python3-pip >>/tmp/jupyterlab.log 2>&1; then
+      echo "[WARN] apt-get 安装 python3-pip 失败" >>/tmp/jupyterlab.log
+      return 1
+    fi
+  elif command -v apk >/dev/null 2>&1; then
+    if ! apk --timeout 30 add --no-cache py3-pip >>/tmp/jupyterlab.log 2>&1; then
+      echo "[WARN] apk 安装 py3-pip 失败" >>/tmp/jupyterlab.log
+      return 1
+    fi
+  elif command -v dnf >/dev/null 2>&1; then
+    if ! dnf --setopt=timeout=30 --setopt=retries=1 install -y python3-pip >>/tmp/jupyterlab.log 2>&1; then
+      echo "[WARN] dnf 安装 python3-pip 失败" >>/tmp/jupyterlab.log
+      return 1
+    fi
+  elif command -v yum >/dev/null 2>&1; then
+    if ! yum --setopt=timeout=30 --setopt=retries=1 install -y python3-pip >>/tmp/jupyterlab.log 2>&1; then
+      echo "[WARN] yum 安装 python3-pip 失败" >>/tmp/jupyterlab.log
+      return 1
+    fi
+  else
+    echo "[WARN] 未找到支持的系统包管理器（apt-get/apk/dnf/yum）" >>/tmp/jupyterlab.log
+    return 1
+  fi
+
+  return 0
+}
+
+function ensure_pip {
+  local python_cmd=$1
+
+  if "${python_cmd}" -m pip --version >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "[INFO] pip 模块未安装，尝试使用 ensurepip 安装" >>/tmp/jupyterlab.log
+  if "${python_cmd}" -m ensurepip --upgrade >>/tmp/jupyterlab.log 2>&1 && \
+    "${python_cmd}" -m pip --version >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "[WARN] ensurepip 不可用，尝试使用系统包管理器安装 pip" >>/tmp/jupyterlab.log
+  if ! is_system_python "$python_cmd"; then
+    echo "[INFO] 当前 Python 不是发行版 Python，跳过系统包管理器安装 pip" >>/tmp/jupyterlab.log
+    return 1
+  fi
+  if install_pip_with_package_manager && \
+    "${python_cmd}" -m pip --version >/dev/null 2>&1; then
+    echo "[INFO] 使用系统包管理器安装 pip 完成" >>/tmp/jupyterlab.log
+    return 0
+  fi
+
+  echo "[ERROR] pip、ensurepip 和系统包管理器均不可用，无法安装 pip" >>/tmp/jupyterlab.log
+  return 1
+}
+
+function pip_supports_break_system_packages {
+  local python_cmd=$1
+
+  "${python_cmd}" -m pip install --help 2>/dev/null | grep -q -- '--break-system-packages'
 }
 
 function start_jupyterlab {
@@ -88,38 +166,32 @@ function start_jupyterlab {
     return 1
   fi
 
-  if ! command -v jupyter-lab >/dev/null 2>&1; then
+  PY_VERSION=$("$PYTHON_CMD" -c "import sys; print(sys.version_info[0])" 2>/dev/null)
+  if [ "$PY_VERSION" != "3" ]; then
+    echo "[ERROR] JupyterLab 需要 Python3 环境" >>/tmp/jupyterlab.log
+    return 1
+  fi
+
+  if ! "${PYTHON_CMD}" -m jupyterlab --version >/dev/null 2>&1; then
     echo "[INFO] jupyter-lab is not installed, installing..." >>/tmp/jupyterlab.log
 
-    PY_VERSION=$($PYTHON_CMD -c "import sys; print(sys.version_info[0])" 2>/dev/null)
-    if [ "$PY_VERSION" = "3" ]; then
-      echo "[INFO] Python3 detected, installing with pip3" >>/tmp/jupyterlab.log
-      if command -v pip3 >/dev/null 2>&1; then
-        pip_install_with_fallback pip3 --upgrade pip
-        local BREAK_SYSTEM_PACKAGES_ARG=$(get_pip_break_system_packages_arg pip3)
-        if ! pip_install_with_fallback pip3 ${BREAK_SYSTEM_PACKAGES_ARG} ipykernel jupyterlab; then
-          echo "[ERROR] pip3 install jupyterlab failed" >>/tmp/jupyterlab.log
-          return 1
-        fi
-        echo "[INFO] jupyterlab installed with pip3" >>/tmp/jupyterlab.log
-      else
-        echo "[ERROR] pip3 does not exist, please check Python3 environment" >>/tmp/jupyterlab.log
-        return 1
-      fi
-    else
-      echo "[INFO] Python2/default Python detected, installing with pip" >>/tmp/jupyterlab.log
-      if command -v pip >/dev/null 2>&1; then
-        pip_install_with_fallback pip --upgrade pip
-        if ! pip_install_with_fallback pip ipykernel jupyterlab; then
-          echo "[ERROR] pip install jupyterlab failed" >>/tmp/jupyterlab.log
-          return 1
-        fi
-        echo "[INFO] jupyterlab installed with pip" >>/tmp/jupyterlab.log
-      else
-        echo "[ERROR] pip does not exist, please check Python environment" >>/tmp/jupyterlab.log
-        return 1
-      fi
+    if ! ensure_pip "$PYTHON_CMD"; then
+      return 1
     fi
+
+    local -a PIP_SYSTEM_PACKAGE_ARGS=()
+    if pip_supports_break_system_packages "$PYTHON_CMD"; then
+      PIP_SYSTEM_PACKAGE_ARGS+=(--break-system-packages)
+    fi
+
+    if ! pip_install_with_fallback "$PYTHON_CMD" "${PIP_SYSTEM_PACKAGE_ARGS[@]}" --upgrade pip; then
+      echo "[WARN] pip 升级失败，继续使用当前版本安装 JupyterLab" >>/tmp/jupyterlab.log
+    fi
+    if ! pip_install_with_fallback "$PYTHON_CMD" "${PIP_SYSTEM_PACKAGE_ARGS[@]}" ipykernel jupyterlab; then
+      echo "[ERROR] 使用 ${PYTHON_CMD} -m pip 安装 jupyterlab 失败" >>/tmp/jupyterlab.log
+      return 1
+    fi
+    echo "[INFO] 使用 ${PYTHON_CMD} -m pip 安装 jupyterlab 完成" >>/tmp/jupyterlab.log
   else
     echo "[INFO] jupyter-lab is already installed" >>/tmp/jupyterlab.log
   fi
@@ -132,7 +204,7 @@ function start_jupyterlab {
 
   echo -e "{\"HOST\":\"$HOST\",\"PORT\":\"$SVCPORT\",\"PASSWORD\":\"$PASSWORD\"}" >$SERVER_SESSION_INFO
 
-  jupyter-lab \
+  "${PYTHON_CMD}" -m jupyterlab \
     --ServerApp.ip='0.0.0.0' \
     --ServerApp.port=${PORT} \
     --ServerApp.port_retries=0 \
