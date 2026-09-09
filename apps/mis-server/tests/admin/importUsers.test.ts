@@ -208,6 +208,7 @@ describe("resource management", () => {
       server.ext.clusters,
       expect.any(Object),
       server.ext.resource,
+      true,
     );
   });
 });

@@ -232,14 +232,13 @@ export async function blockAccount(
 }
 
 /**
- * Unblocks the account or reconcile account assigned partitions in the slurm.
+ * Unblocks the account or reconciles account assigned partitions in the slurm.
  * If it is whitelisted, it doesn't block
  * Call flush after this.
  *
- * 无论账户当前是否已在集群中封锁，都会按授权分区收敛集群状态：
- * 未授权分区保持分区封锁，已授权分区执行分区解封。
- * 账户原本未封锁时返回 ALREADY_UNBLOCKED，不修改账户状态，也不发送 accountUnblocked hook；
- * 账户原本已封锁时更新状态并发送 hook。
+ * 账户已经解封时默认直接返回 ALREADY_UNBLOCKED，不执行适配器调用、分区收敛或 hook。
+ * 需要同步已授权分区时，可通过 reconcileAssignedPartitions 显式开启收敛。
+ * 账户处于封锁状态时，按授权分区收敛集群状态，更新状态并发送 hook。
  *
  * @returns Operation result
  **/
@@ -249,7 +248,14 @@ export async function unblockAccount(
   clusterPlugin: ClusterPlugin["clusters"],
   logger: Logger,
   scowResourcePlugin: ScowResourcePlugin["resource"],
+  reconcileAssignedPartitions = false,
 ): Promise<"OK" | "ALREADY_UNBLOCKED"> {
+  const wasBlockedInCluster = account.blockedInCluster;
+
+  if (!wasBlockedInCluster && !reconcileAssignedPartitions) {
+    return "ALREADY_UNBLOCKED";
+  }
+
   const results = await Promise.allSettled(
     Object.entries(currentActivatedClusters).map(async ([clusterId, _]) => {
       return await unblockAccountAssignedPartitionsInCluster(
@@ -284,7 +290,7 @@ export async function unblockAccount(
     });
   }
 
-  if (!account.blockedInCluster) {
+  if (!wasBlockedInCluster) {
     return "ALREADY_UNBLOCKED";
   }
 

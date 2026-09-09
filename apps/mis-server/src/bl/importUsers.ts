@@ -224,7 +224,7 @@ export async function importUsers(
             failedUnblockAccounts.push(acc.accountName);
           } else {
             try {
-              await unblockAccount(account, currentActivatedClusters, clusterPlugin, logger, scowResourcePlugin);
+              await unblockAccount(account, currentActivatedClusters, clusterPlugin, logger, scowResourcePlugin, true);
             } catch (e) {
               // 集群解锁账户失败，记录失败账户
               logger.warn("Unblock account %s failed during importing users: %o", account.accountName, e);
