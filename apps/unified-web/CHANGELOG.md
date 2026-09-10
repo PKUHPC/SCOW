@@ -1,5 +1,14 @@
 # @scow/unified-web
 
+## 1.11.5
+
+### Patch Changes
+
+- b4c85a0: 扩展页不再通过 URL 接收用户令牌
+- Updated dependencies [370568d]
+- Updated dependencies [b4c85a0]
+  - @scow/lib-web@2.0.1
+
 ## 1.11.4
 
 ### Patch Changes

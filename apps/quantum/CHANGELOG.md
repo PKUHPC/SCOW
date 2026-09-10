@@ -1,5 +1,14 @@
 # @scow/quantum
 
+## 0.1.22
+
+### Patch Changes
+
+- 370568d: 将 Web 应用统一升级到 Next.js 16.3.4，并适配运行时配置、ConnectRPC 路由与服务端依赖打包。
+- Updated dependencies [370568d]
+- Updated dependencies [b4c85a0]
+  - @scow/lib-web@2.0.1
+
 ## 0.1.21
 
 ### Patch Changes

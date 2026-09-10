@@ -1,5 +1,11 @@
 # @scow/mis-server
 
+## 1.11.8
+
+### Patch Changes
+
+- 6f02be1: 修复账户已经处于解封状态时仍调用适配器进行分区收敛的问题。
+
 ## 1.11.7
 
 ### Patch Changes

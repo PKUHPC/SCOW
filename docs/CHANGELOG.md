@@ -1,5 +1,11 @@
 # @scow/docs
 
+## 1.4.31
+
+### Patch Changes
+
+- b4c85a0: 扩展页不再通过 URL 接收用户令牌
+
 ## 1.4.30
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @scow/mis-web
 
+## 1.11.8
+
+### Patch Changes
+
+- 370568d: 将 Web 应用统一升级到 Next.js 16.3.4，并适配运行时配置、ConnectRPC 路由与服务端依赖打包。
+- b4c85a0: 扩展页不再通过 URL 接收用户令牌
+- 73e23f6: 管理员作业计费增加提示语
+- 89396c0: 用户限额功能优化，增加提示语
+- Updated dependencies [370568d]
+- Updated dependencies [b4c85a0]
+  - @scow/lib-web@2.0.1
+
 ## 1.11.7
 
 ### Patch Changes
