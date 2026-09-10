@@ -57,12 +57,12 @@ jobs:
         with:
           node-version-file: package.json
           registry-url: https://registry.npmmirror.com
-          mirror: https://npmmirror.com/mirrors/node
 
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           check-latest: true
+          go-download-base-url: "https://golang.google.cn/dl"
 
       - uses: pnpm/action-setup@v4
 
@@ -151,7 +151,6 @@ jobs:
         with:
           node-version-file: package.json
           registry-url: https://registry.npmmirror.com
-          mirror: https://npmmirror.com/mirrors/node
 
       - uses: pnpm/action-setup@v4
 
@@ -515,7 +514,6 @@ jobs:
         with:
           node-version-file: package.json
           registry-url: https://registry.npmmirror.com
-          mirror: https://npmmirror.com/mirrors/node
 
       - uses: pnpm/action-setup@v4
 
