@@ -50,3 +50,19 @@ export function removePort(address: string): string {
   // Remove :port if present
   return address.replace(/:\d+$/, "");
 }
+
+/**
+ * 解析路径模板，替换其中的 {{mountPath}} 和 {{userId}} 占位符。
+ */
+export function expandTemplatePath(pathTemplate: string, mountPath: string, userId: string): string {
+  return pathTemplate.replace(/\{\{mountPath\}\}/g, mountPath).replace(/\{\{userId\}\}/g, userId);
+}
+
+/**
+ * 确保路径以 `/` 开头，并折叠连续斜杠。
+ * 用于侧边栏路径匹配等需要规范化路径的场景。
+ */
+export function normPath(p: string): string {
+  const withSlash = p.startsWith("/") ? p : "/" + p;
+  return withSlash.replace(/\/+/g, "/");
+}

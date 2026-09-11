@@ -6,7 +6,10 @@ import {
 import type { SchedulerAdapterClient } from "@scow/lib-scheduler-adapter";
 import { getUserAccountsClusterIds } from "@scow/lib-scow-resource";
 import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
+import { expandTemplatePath } from "@scow/utils";
 import { TRPCError } from "@trpc/server";
+import { resolve } from "path";
+import { PlatformRole } from "src/models/User";
 import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { logger } from "src/server/utils/logger";
@@ -63,7 +66,7 @@ export const checkClusterAvailable = (clusterIds: string[], clusterId: string) =
   }
 };
 
-export const shouldPathsSkipPermissionCheck = (
+export const checkClusterPublicPaths = (
   clusterId: string,
   paths: string[],
   isPlatformAdmin: boolean,
@@ -78,6 +81,71 @@ export const shouldPathsSkipPermissionCheck = (
   return paths.every((path) => isParentOrSameFolder(clusterPublicPath, path));
 };
 
+export function isPathInEntryPaths(path: string, clusterId: string, userId: string): boolean {
+  const cluster = clusters[clusterId];
+  const entryPaths = cluster?.entryPaths ?? [];
+
+  for (const entry of entryPaths) {
+    for (const p of entry.paths ?? []) {
+      const resolved = resolve(expandTemplatePath(p.pathTemplate, entry.mountPath, userId));
+      if (isParentOrSameFolder(resolved, path)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+const checkEntryPaths = (clusterId: string, paths: string[], userId: string): boolean => {
+  const cluster = clusters[clusterId];
+  const entryPaths = cluster?.entryPaths ?? [];
+
+  for (const entry of entryPaths) {
+    if ((entry.paths ?? []).length === 0) {
+      logger.warn(`Cluster ${clusterId} entry path ${entry.mountPath} has no paths configured, skipping.`);
+    }
+  }
+
+  return entryPaths.length > 0 && paths.every((path) => isPathInEntryPaths(path, clusterId, userId));
+};
+
+export enum PermissionCheckMode {
+  NORMAL = "NORMAL",
+  PLATFORM_OWNED = "PLATFORM_OWNED",
+  ENTRY_PATHS = "ENTRY_PATHS",
+}
+
+export const shouldPathsSkipPermissionCheck = (
+  clusterId: string,
+  paths: string[],
+  userId: string,
+  userPlatformRoles?: PlatformRole[] | null,
+  permissionCheckMode?: PermissionCheckMode,
+  homeDir?: string,
+): boolean => {
+  const isPlatformAdmin = userPlatformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
+  const mode = permissionCheckMode ?? PermissionCheckMode.NORMAL;
+
+  switch (mode) {
+    case PermissionCheckMode.PLATFORM_OWNED:
+      return checkClusterPublicPaths(clusterId, paths, isPlatformAdmin);
+    case PermissionCheckMode.ENTRY_PATHS:
+      return checkEntryPaths(clusterId, paths, userId);
+    case PermissionCheckMode.NORMAL:
+    default:
+      if (homeDir) {
+        const allInAllowedZone = paths.every(
+          (p) => isParentOrSameFolder(homeDir, p) || isPathInEntryPaths(p, clusterId, userId),
+        );
+        const anyInEntryPaths = paths.some((p) => isPathInEntryPaths(p, clusterId, userId));
+        return (allInAllowedZone && anyInEntryPaths) || checkClusterPublicPaths(clusterId, paths, isPlatformAdmin);
+      }
+
+      return checkEntryPaths(clusterId, paths, userId) || checkClusterPublicPaths(clusterId, paths, isPlatformAdmin);
+  }
+};
+
 export const checkIsPublicPaths = (clusterId: string, paths: string[]): boolean => {
   const cluster = clusters[clusterId];
   const clusterPublicPath = cluster.ai.clusterPublicPath;
@@ -87,4 +155,19 @@ export const checkIsPublicPaths = (clusterId: string, paths: string[]): boolean 
   }
 
   return paths.every((path) => isParentOrSameFolder(clusterPublicPath, path));
+};
+
+export function isPathAllowed(path: string, homeDir: string, clusterId: string, userId: string): boolean {
+  return isParentOrSameFolder(homeDir, path) || isPathInEntryPaths(path, clusterId, userId);
+}
+
+export const computeAssetVersionNoCheckPermission = (
+  clusterId: string,
+  path: string,
+  userId: string,
+  platformRoles: PlatformRole[] | null | undefined,
+  isPlatformOwned: boolean,
+): boolean => {
+  const mode = isPlatformOwned ? PermissionCheckMode.PLATFORM_OWNED : PermissionCheckMode.ENTRY_PATHS;
+  return shouldPathsSkipPermissionCheck(clusterId, [path], userId, platformRoles, mode);
 };

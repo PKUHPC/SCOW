@@ -1,12 +1,10 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError as GrpcServiceError } from "@ddadaal/tsgrpc-common";
-import { plugin } from "@ddadaal/tsgrpc-server";
-import { ensureNotUndefined } from "@ddadaal/tsgrpc-server";
+import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { LockMode, raw, UniqueConstraintViolationException } from "@mikro-orm/core";
-import { createAccount } from "@scow/lib-auth";
-import { removeUserFromAccount } from "@scow/lib-auth";
+import { createAccount, removeUserFromAccount } from "@scow/lib-auth";
 import { Decimal, decimalToMoney, moneyToNumber } from "@scow/lib-decimal";
 import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
@@ -22,9 +20,12 @@ import {
 import { blockAccount, unblockAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { authUrl } from "src/config";
+import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
+import { AccountStorageQuota } from "src/entities/AccountStorageQuota";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
+import { SystemState } from "src/entities/SystemState";
 import { Tenant } from "src/entities/Tenant";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User, UserState } from "src/entities/User";
@@ -32,13 +33,21 @@ import { UserAccount, UserRole as EntityUserRole, UserRole, UserStatus } from "s
 import { InternalMessageType } from "src/models/messageType";
 import { CLUSTEROPS_ERROR_CODE } from "src/plugins/clusters";
 import { callHook } from "src/plugins/hookClient";
+import { getAccountGroupName } from "src/utils/account";
 import { getAccountStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
+import { getDefaultGroupGid, getGroupService, resetPrimaryGroupIfNeeded } from "src/utils/directoryGroup";
 import { getAccountOwnerAndAdmin } from "src/utils/getAccountOwnerAndAdmin";
 import { toRef } from "src/utils/orm";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
 import { getSchedulerAdapterJobsByClusterFeatures } from "src/utils/schedulerAdapterJobTypes";
 import { sendMessage } from "src/utils/sendMessage";
+import {
+  ACCOUNT_QUOTA_STATE,
+  initializeCreatedAccountGroupStorageQuota,
+  revertUserFileGroupToDefault,
+  switchUserToAccountGroup,
+} from "src/utils/storageQuota";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 function ensureAccountNotDeleted(account: Account) {
@@ -109,7 +118,7 @@ export const accountServiceServer = plugin((server) => {
 
         const blockThresholdAmount = account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
-        const result = await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
+        const result = await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger, em);
 
         if (result === "AlreadyBlocked") {
           logger.info("Account %s is already blocked", accountName);
@@ -222,7 +231,7 @@ export const accountServiceServer = plugin((server) => {
         }
 
         const currentActivatedClusters = await getActivatedClusters(em, logger);
-        await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource);
+        await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource, em);
 
         logger.info("Account %s unblocked successfully", accountName);
         return { executed: true };
@@ -327,6 +336,30 @@ export const accountServiceServer = plugin((server) => {
         .execute<RawCountQueryResult[]>();
 
       const userCountMap = new Map(countsResult.map((c) => [c.accountId, c.count]));
+
+      // 批量查询账户存储配额
+      interface RawStorageQuotaResult {
+        accountId: string;
+        storageId: string;
+        storageQuotaMb: string | null;
+      }
+      const storageQuotaRows = await em
+        .createQueryBuilder(AccountStorageQuota, "asq")
+        .select([
+          "asq.account_id as accountId",
+          "asq.storage_id as storageId",
+          "asq.storage_quota_mb as storageQuotaMb",
+        ])
+        .where({ account: { $in: accountIds } })
+        .execute<RawStorageQuotaResult[]>();
+
+      // storageQuotaMap: accountId -> [{ storageId, quotaMb }]
+      const storageQuotaMap = new Map<string, { storageId: string; quotaMb: number }[]>();
+      for (const q of storageQuotaRows) {
+        if (!storageQuotaMap.has(q.accountId)) storageQuotaMap.set(q.accountId, []);
+        storageQuotaMap.get(q.accountId)!.push({ storageId: q.storageId, quotaMb: Number(q.storageQuotaMb ?? 0) });
+      }
+
       const abnormalAccountsWithoutOwner: string[] = [];
 
       // 4. 组装结果
@@ -362,6 +395,7 @@ export const accountServiceServer = plugin((server) => {
           balance: decimalToMoney(balanceDec),
           blockThresholdAmount: x.blockThresholdAmount ? decimalToMoney(blockThresholdAmountDec) : undefined,
           defaultBlockThresholdAmount: decimalToMoney(tenantDefaultAccountBlockThresholdDec),
+          storageQuotas: storageQuotaMap.get(x.id) ?? [],
         };
       });
 
@@ -396,6 +430,64 @@ export const accountServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
+      // 如果配置了目录服务，且 ACCOUNT_GROUP_INITIALIZED 为 true，则启用用户组操作
+      const groupService = await getGroupService(em, logger);
+      const accountGroupName = getAccountGroupName(accountName);
+      // 普通创建账户不复用已有同名目录组；只有导入流程保留既有组恢复逻辑。
+      const accountGroupExisted = groupService
+        ? await groupService.checkGroupExists(accountGroupName)
+        : false;
+
+      // 账户存储配额功能开启时，主管理员不能已经属于其他账户
+      const quotaStateRecord = await em.findOne(SystemState, {
+        key: SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+      });
+      const accountQuotaEnabled = quotaStateRecord?.value === ACCOUNT_QUOTA_STATE.ENABLED;
+
+      if (groupService && accountGroupExisted) {
+        logger.warn("directory service group %s already exists, cannot create account with this name", accountGroupName);
+        throw {
+          code: Status.ALREADY_EXISTS,
+          message: `The directory service group for account name ${accountName} already exists.`,
+          details: "DIRECTORY_GROUP_ALREADY_EXISTS",
+        } as ServiceError;
+      }
+
+      // 账户配额依赖账户组。正常启用流程会先完成账户组初始化；如果状态不一致，则拒绝创建不完整的账户。
+      if (accountQuotaEnabled && !groupService) {
+        logger.error("Account storage quota is enabled but account group initialization is incomplete");
+        throw {
+          code: Status.FAILED_PRECONDITION,
+          message: "User group feature is not initialized, cannot initialize account storage quota",
+          details: "USER_GROUP_NOT_ENABLED",
+        } as ServiceError;
+      }
+
+      if (accountQuotaEnabled || quotaStateRecord?.value === ACCOUNT_QUOTA_STATE.ENABLING) {
+        const existingUserAccount = await em.findOne(
+          UserAccount,
+          {
+            user: { userId: ownerId, tenant: { name: tenantName } },
+            account: { state: { $ne: AccountState.DELETED } },
+          },
+          { populate: ["account"] },
+        );
+
+        if (existingUserAccount) {
+          const existingAccountName = existingUserAccount.account.getEntity().accountName;
+          logger.warn(
+            "User %s already belongs to account %s, cannot create new account when quota is enabled or enabling",
+            ownerId,
+            existingAccountName,
+          );
+          throw {
+            code: Status.FAILED_PRECONDITION,
+            message: `This user already exists in the account ${existingAccountName}, and cannot be the primary admin of a new account`,
+            details: "OWNER_ALREADY_IN_ANOTHER_ACCOUNT",
+          } as ServiceError;
+        }
+      }
+
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "create account task");
 
@@ -405,7 +497,13 @@ export const accountServiceServer = plugin((server) => {
       logger.debug("Should block account %s in cluster: %s", accountName, shouldBlockInCluster);
 
       // insert the account now to avoid future conflict
-      const account = new Account({ accountName, comment, tenant, blockedInCluster: shouldBlockInCluster });
+      const account = new Account({
+        accountName,
+        comment,
+        tenant,
+        blockedInCluster: shouldBlockInCluster,
+        ...(groupService ? { accountGroupName } : {}),
+      });
 
       const userAccount = new UserAccount({
         account,
@@ -472,6 +570,109 @@ export const accountServiceServer = plugin((server) => {
           throw e;
         });
       };
+
+      // 在目录服务中创建用户组；失败时回滚数据库记录
+      if (groupService) {
+        if (!accountGroupExisted) {
+          await groupService.createGroup(accountGroupName).catch(async (e) => {
+            logger.error("Failed to create directory service group %s: %s", accountGroupName, e);
+            await rollback({
+              code: Status.INTERNAL,
+              message: `Failed to create directory service group ${accountGroupName} for account ${accountName}: ${e?.message ?? e}`,
+            } as ServiceError);
+          });
+        }
+        await groupService.addUserToGroup(ownerId, accountGroupName).catch(async (e) => {
+          logger.error("Failed to add user %s to directory service group %s: %s", ownerId, accountGroupName, e);
+          await groupService.deleteGroup(accountGroupName).catch(() => {});
+          await rollback({
+            code: Status.INTERNAL,
+            message: `Failed to add user ${ownerId} to directory service group ${accountGroupName}: ${e?.message ?? e}`,
+          } as ServiceError);
+        });
+
+        if (accountQuotaEnabled) {
+          const rollbackGroupOps = async () => {
+            // 普通创建已拒绝既有同名组，此处只清理本次创建的账户组。
+            await groupService.removeUserFromGroup(ownerId, accountGroupName).catch((rollbackError) => {
+              logger.error(
+                "Rollback failed: remove account owner %s from group %s: %s",
+                ownerId,
+                accountGroupName,
+                rollbackError,
+              );
+            });
+            await groupService.deleteGroup(accountGroupName).catch((rollbackError) => {
+              logger.error("Rollback failed: delete account group %s: %s", accountGroupName, rollbackError);
+            });
+          };
+          await switchUserToAccountGroup(
+            groupService,
+            em,
+            ownerId,
+            accountGroupName,
+            ownerId,
+            misConfig,
+            logger,
+            async (e) => {
+              await rollbackGroupOps();
+              logger.info("Rollback account creation of %s", accountName);
+              await em.removeAndFlush([account, userAccount]);
+              throw {
+                code: Status.INTERNAL,
+                message: `Failed to apply quota operations for user ${ownerId}: ${(e as Error)?.message ?? e}. Changes have been rolled back.`,
+              } as ServiceError;
+            },
+          );
+
+          // 账户组、主管理员主组及文件所属组均处理成功后，再初始化账户组的底层存储配额。
+          // 任一 scowd 配额下发失败时，初始化函数先封锁已触达的配额，再由这里回滚目录服务和数据库操作。
+          await initializeCreatedAccountGroupStorageQuota(
+            accountName,
+            accountGroupName,
+            tenantName,
+            shouldBlockInCluster,
+            em,
+            logger,
+          ).catch(async (e) => {
+            logger.error("Failed to initialize storage quota for account %s: %s", accountName, e);
+            // 恢复 owner 文件的所属组，避免已删除的账户组 GID 继续残留在文件上。
+            await revertUserFileGroupToDefault(groupService, em, ownerId, ownerId, misConfig, logger).catch(
+              (rollbackError) =>
+                logger.error("Rollback failed: restore file group for account owner %s: %s", ownerId, rollbackError),
+            );
+            // primary group 与默认组 membership 是 LDAP 中两个独立状态，需要分别恢复。
+            await resetPrimaryGroupIfNeeded(groupService, ownerId, accountGroupName, misConfig).catch((rollbackError) =>
+              logger.error("Rollback failed: reset primary group for account owner %s: %s", ownerId, rollbackError),
+            );
+            // 解析 owner 的默认组并恢复 LDAP membership；恢复 primary group 不会自动将用户重新加入默认组。
+            await (async () => {
+              const defaultGroupGid = await getDefaultGroupGid(groupService, ownerId, misConfig);
+              if (defaultGroupGid === undefined) {
+                throw new Error(`Could not determine default group GID for user ${ownerId}`);
+              }
+              const defaultGroupName = await groupService.getGroupNameByGid(defaultGroupGid);
+              if (!defaultGroupName) {
+                throw new Error(`Could not find default group for user ${ownerId} (gid: ${defaultGroupGid})`);
+              }
+              await groupService.addUserToGroup(ownerId, defaultGroupName);
+            })().catch((rollbackError) =>
+              logger.error(
+                "Rollback failed: restore default group membership for account owner %s: %s",
+                ownerId,
+                rollbackError,
+              ),
+            );
+            // 用户状态恢复完成后，清理本次创建的账户组及其成员关系。
+            await rollbackGroupOps();
+            // 最后删除 MIS 中新建的账户及 owner 关系；关联黑名单由数据库外键级联删除。
+            await rollback({
+              code: Status.INTERNAL,
+              message: `Failed to initialize storage quota for account ${accountName}. Changes have been rolled back.`,
+            } as ServiceError);
+          });
+        }
+      }
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
@@ -719,7 +920,7 @@ export const accountServiceServer = plugin((server) => {
         }
         account.state = AccountState.NORMAL;
         const currentActivatedClusters = await getActivatedClusters(em, logger);
-        await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource);
+        await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource, em);
       }
 
       await em.persistAndFlush(whitelist);
@@ -779,7 +980,7 @@ export const accountServiceServer = plugin((server) => {
         if (shouldBlockInCluster) {
           logger.info("Account %s is out of balance and not whitelisted. Block the account.", account.accountName);
           const currentActivatedClusters = await getActivatedClusters(em, logger);
-          await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
+          await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger, em);
         }
 
         return { executed: true };
@@ -851,7 +1052,7 @@ export const accountServiceServer = plugin((server) => {
 
       if (shouldBlockInCluster) {
         logger.info("Account %s may be out of balance. Block the account.", account.accountName);
-        await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
+        await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger, em);
       }
 
       if (!shouldBlockInCluster) {
@@ -859,7 +1060,7 @@ export const accountServiceServer = plugin((server) => {
           "The balance of Account %s is greater than the block threshold amount. " + "Unblock the account.",
           account.accountName,
         );
-        await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource);
+        await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource, em);
       }
 
       // 判断移除白名单后是否时欠费状态，如果是则发送账户欠费通知
@@ -988,6 +1189,28 @@ export const accountServiceServer = plugin((server) => {
       account.state = AccountState.DELETED;
       account.comment = account.comment + (comment ? "  " + comment.trim() : "");
       account.blockedInCluster = true;
+
+      // 从目录服务用户组中移除账户下所有用户（不删除组本身）
+      const groupService = await getGroupService(em, logger);
+      const accountGroupName = account.accountGroupName;
+
+      if (groupService && accountGroupName) {
+        const deleteQuotaStateRecord = await em.findOne(SystemState, {
+          key: SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+        });
+
+        for (const userAccount of userAccounts) {
+          const userId = userAccount.user.getEntity().userId;
+
+          await resetPrimaryGroupIfNeeded(groupService, userId, accountGroupName, misConfig);
+          await groupService.removeUserFromGroup(userId, accountGroupName);
+
+          if (deleteQuotaStateRecord?.value === ACCOUNT_QUOTA_STATE.ENABLED) {
+            await revertUserFileGroupToDefault(groupService, em, userId, ownerId!, misConfig, logger);
+          }
+        }
+      }
+      // 目录服务操作完，数据库才落库
       await em.flush();
 
       await callHook("accountDeleted", { accountName, comment, ownerId, tenantName }, logger);

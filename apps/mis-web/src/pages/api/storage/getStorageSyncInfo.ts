@@ -9,6 +9,7 @@ import { TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
+import { hasStorageAccess } from "src/utils/storage";
 
 export const StorageSyncInfo = Type.Object({
   syncStarted: Type.Boolean(),
@@ -22,8 +23,7 @@ export const GetStorageSyncInfoSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-    cluster: Type.String(),
-    path: Type.String(),
+    storageId: Type.String(),
   }),
 
   responses: {
@@ -38,7 +38,7 @@ export const GetStorageSyncInfoSchema = typeboxRouteSchema({
 });
 
 export default route(GetStorageSyncInfoSchema, async (req, res) => {
-  const { cluster, path } = req.query;
+  const { storageId } = req.query;
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -56,7 +56,7 @@ export default route(GetStorageSyncInfoSchema, async (req, res) => {
         tenantName: info.tenant,
       });
 
-      if (!response.assignedClusterPartitions[cluster]) {
+      if (!hasStorageAccess(storageId, Object.keys(response.assignedClusterPartitions))) {
         return { 403: null };
       }
     } catch (e) {
@@ -73,10 +73,6 @@ export default route(GetStorageSyncInfoSchema, async (req, res) => {
   const client = getClient(StorageServiceClient);
 
   return asyncUnaryCall(client, "getSyncInfo", {
-    cluster,
-    path,
-    tenant: info.tenant,
-  })
-    .then((res) => ({ 200: { ...res } }))
-    .catch((e) => console.log("getSyncInfo error", e));
+    storageId, tenant: info.tenant,
+  }).then((res) => ({ 200: { ...res } })).catch((e) => console.log("getSyncInfo error", e));
 });

@@ -20,7 +20,9 @@ import { FetchPlugin, fetchPlugin } from "src/plugins/fetch";
 import { ormPlugin } from "src/plugins/orm";
 import { PricePlugin, pricePlugin } from "src/plugins/price";
 import { StatisticPlugin, statisticPlugin } from "src/plugins/statistic";
+import { StorageBillingPlugin, storageBillingPlugin } from "src/plugins/storageBilling";
 import { SyncBlockStatusPlugin, syncBlockStatusPlugin } from "src/plugins/syncBlockStatus";
+import { SyncAccountStorageDataPlugin } from "src/plugins/syncAccountStorageData";
 import { SyncStorageDataPlugin } from "src/plugins/syncStorageData";
 
 declare module "@ddadaal/tsgrpc-server" {
@@ -33,7 +35,9 @@ declare module "@ddadaal/tsgrpc-server" {
       SyncBlockStatusPlugin,
       ScowResourcePlugin,
       ClearCachePlugin,
-      SyncStorageDataPlugin {
+      StorageBillingPlugin,
+      SyncStorageDataPlugin,
+      SyncAccountStorageDataPlugin {
     orm: MikroORM<MySqlDriver>;
     capabilities: Capabilities;
   }
@@ -53,6 +57,7 @@ export const plugins = [
   authServicePlugin,
   clearCachePlugin,
   SyncStorageDataPlugin,
+  SyncAccountStorageDataPlugin,
   CleanExpiredWhitelistsPlugin,
 ];
 
@@ -64,4 +69,8 @@ plugins.push(apiAuthPlugin(commonConfig.scowApi));
 
 if (misConfig.bill?.enabled) {
   plugins.push(billPlugin);
+}
+
+if (misConfig.storageBilling?.enabled) {
+  plugins.push(storageBillingPlugin);
 }

@@ -171,7 +171,7 @@ export default {
         pathTraversal: "Path cannot contain ..",
         pathCurrentDirectory: "Path cannot contain .",
         homeDirRequired: "Failed to get the user's home directory",
-        notInHomeDir: "Absolute path must be under the user's home directory",
+        notInHomeDir: "Absolute path must be under the user's home directory or a trusted path",
         wdTooltip1:
           "1. Please enter the absolute path. If you enter a relative path, it will be " +
           "relative to the user's home directory.",
@@ -324,6 +324,7 @@ export default {
         permission: "Permission",
         notShowHiddenItem: "Do not show hidden items",
         showHiddenItem: "Show hidden items",
+        homeDirectory: "Home Directory",
       },
       singleCrossClusterTransferSelector: {
         placeholder: "Please select a cluster",
@@ -393,6 +394,8 @@ export default {
         cluster: "Cluster",
         uploadFile: "Upload File",
         uploadDir: "Upload Directory",
+        uploadMenuFile: "File",
+        uploadMenuDir: "Folder",
         submitJob: "Submit Job",
         compressionInProgress: "Compression in progress: ",
         compressSelected: "Compress",
@@ -405,6 +408,13 @@ export default {
         storageQuotaTooltip:
           "The current file system has backups set up, which will take up additional " +
           "storage space. Therefore, the storage usage will be higher than your actual file size.",
+        accountStorageQuotaTooltip:
+          "When the account is blocked or in arrears, data cannot be written. " +
+          "Even if the account storage quota is not used up, insufficient quota will still be reported.",
+        userStorageQuota: "User Storage",
+        accountStorageQuota: "Account Storage",
+        homeDirectory: "Home Directory",
+        entryPathCreateFailed: "Failed to create quick-path directory, please contact the administrator",
         failedResolveSymlink: "Failed to resolve symbolic link",
         noAccessPermission: "No access permission",
         noPath: "Path not found, please check",
@@ -456,6 +466,8 @@ export default {
           openInShell: "Open in shell",
           createFile: "New File",
           mkDir: "New Directory",
+          newMenuFile: "File",
+          newMenuDir: "Folder",
           download: "Download",
           rename: "Rename",
           deleteConfirmTitle: "Confirm Deletion",
@@ -684,7 +696,7 @@ export default {
         hours: "hours",
         accountNameLabel: "Account:",
         whitelistTag: "Whitelist",
-        accountOwner: "Account Owner:",
+        accountOwner: "Account Primary Admin:",
         accountBalance: "Balance:",
         accountBlockThreshold: "Block Threshold:",
         userUsedLimit: "Used/Limit:",

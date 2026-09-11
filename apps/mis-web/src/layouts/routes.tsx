@@ -17,7 +17,9 @@ import {
   AdminManageIcon,
   AlarmLogIcon,
   AuthorizeAppIcon,
+  BillingManagementIcon,
   ClusterManagementIcon,
+  ComputeResourceIcon,
   CreateAccountIcon,
   CreateUserIcon,
   CreatTenantIcon,
@@ -28,8 +30,6 @@ import {
   FinancePayIcon,
   HistoryJobsIcon,
   ImportUsersIcon,
-  JobBillingIcon,
-  ManageJobPriceIcon,
   MessageConfigIcon,
   MonitorIcon,
   NodeMigrationIcon,
@@ -43,6 +43,7 @@ import {
   ShellIcon,
   SlurmBlockStatusIcon,
   StatisticIcon,
+  StorageResourceIcon,
   TenantBillsIcon,
   TenantInfoIcon,
   TenantManageIcon,
@@ -67,10 +68,12 @@ const pTenant = prefix("layouts.route.tenantManagement.");
 const pUserSpace = prefix("layouts.route.user.");
 const pAccount = prefix("layouts.route.accountManagement.");
 
-export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) => NavItemProps[] = (
-  platformRoles,
-  t,
-) => [
+export const platformAdminRoutes: (
+  platformRoles: PlatformRole[],
+  t: TransType,
+  accountGroupInitConfirmed: boolean,
+  accountStorageQuotaConfirmed: boolean,
+) => NavItemProps[] = (platformRoles, t, accountGroupInitConfirmed, accountStorageQuotaConfirmed) => [
   {
     Icon: AdminManageIcon,
     text: t("layouts.route.platformManagement.fistNav"),
@@ -86,9 +89,26 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
         ? [
             {
-              Icon: JobBillingIcon,
-              text: t(pPlatform("jobBillingTable")),
-              path: "/admin/jobBilling",
+              Icon: BillingManagementIcon,
+              text: "计费管理",
+              path: "/admin/billing",
+              clickable: false,
+              children: [
+                {
+                  Icon: ComputeResourceIcon,
+                  text: "计算资源",
+                  path: "/admin/jobBilling",
+                },
+                ...(publicConfig.STORAGE_BILLING_ENABLED
+                  ? [
+                      {
+                        Icon: StorageResourceIcon,
+                        text: "存储资源",
+                        path: "/admin/storageBilling",
+                      },
+                    ]
+                  : []),
+              ],
             },
             {
               Icon: RunningJobsIcon,
@@ -138,6 +158,15 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
               text: t(pPlatform("accountList")),
               path: "/admin/accounts",
             },
+            ...(!accountStorageQuotaConfirmed
+              ? [
+                  {
+                    Icon: TenantStorageQuotaIcon,
+                    text: t(pPlatform("accountStorageQuota")),
+                    path: "/admin/accountStorageQuota",
+                  },
+                ]
+              : []),
           ]
         : []),
       {
@@ -225,6 +254,15 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
                 },
               ]
             : []),
+          ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && !accountGroupInitConfirmed
+            ? [
+                {
+                  Icon: ImportUsersIcon,
+                  text: t(pPlatform("userGroup")),
+                  path: "/admin/userGroup",
+                },
+              ]
+            : []),
         ],
       },
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
@@ -299,7 +337,8 @@ export const tenantRoutes: (
   storageEnabled: boolean,
   token: string,
   t: TransType,
-) => NavItemProps[] = (tenantRoles, storageEnabled, token, t) => [
+  accountStorageQuotaEnabled: boolean,
+) => NavItemProps[] = (tenantRoles, storageEnabled, token, t, accountStorageQuotaEnabled) => [
   {
     Icon: TenantManageIcon,
     text: t(pTenant("firstNav")),
@@ -314,9 +353,26 @@ export const tenantRoutes: (
               path: "/tenant/info",
             },
             {
-              Icon: ManageJobPriceIcon,
-              text: t(pTenant("manageJobPrice")),
-              path: "/tenant/jobBillingTable",
+              Icon: BillingManagementIcon,
+              text: "计费管理",
+              path: "/tenant/billing",
+              clickable: false,
+              children: [
+                {
+                  Icon: ComputeResourceIcon,
+                  text: "计算资源",
+                  path: "/tenant/jobBillingTable",
+                },
+                ...(publicConfig.STORAGE_BILLING_ENABLED
+                  ? [
+                      {
+                        Icon: StorageResourceIcon,
+                        text: "存储资源",
+                        path: "/tenant/storageBilling",
+                      },
+                    ]
+                  : []),
+              ],
             },
             {
               Icon: RunningJobsIcon,
@@ -467,6 +523,24 @@ export const tenantRoutes: (
               Icon: TenantStorageQuotaIcon,
               text: t(pTenant("storageManager")),
               path: "/tenant/storageManager",
+              clickToPath: "/tenant/storageManager/userBaseStorageQuota",
+              clickable: false,
+              children: [
+                {
+                  Icon: TenantStorageQuotaIcon,
+                  text: t(pTenant("userBaseStorageQuota")),
+                  path: "/tenant/storageManager/userBaseStorageQuota",
+                },
+                ...(accountStorageQuotaEnabled
+                  ? [
+                      {
+                        Icon: TenantStorageQuotaIcon,
+                        text: t(pTenant("accountStorageQuota")),
+                        path: "/tenant/accountStorageQuota",
+                      },
+                    ]
+                  : []),
+              ],
             },
           ]
         : []),
@@ -502,7 +576,7 @@ export const userRoutes: (accounts: AccountAffiliation[], t: TransType) => NavIt
         : []),
       {
         Icon: PartitionsIcon,
-        text: t(pUserSpace("clusterPartitions")),
+        text: "计费标准",
         path: "/user/partitions",
       },
     ],
@@ -573,7 +647,14 @@ export const customNavLinkRoutes = (navLinkItems: NavItemProps[]): NavItemProps[
   return navLinkItems;
 };
 
-export const getAvailableRoutes = (user: User | undefined, storageEnabled: boolean, t: TransType): NavItemProps[] => {
+export const getAvailableRoutes = (
+  user: User | undefined,
+  storageEnabled: boolean,
+  t: TransType,
+  accountGroupInitConfirmed = false,
+  accountStorageQuotaConfirmed = false,
+  accountStorageQuotaEnabled = false,
+): NavItemProps[] => {
   if (!user) {
     return [];
   }
@@ -591,11 +672,11 @@ export const getAvailableRoutes = (user: User | undefined, storageEnabled: boole
   }
 
   if (user.tenantRoles.length !== 0) {
-    routes.push(...tenantRoutes(user.tenantRoles, storageEnabled, user.token, t));
+    routes.push(...tenantRoutes(user.tenantRoles, storageEnabled, user.token, t, accountStorageQuotaEnabled));
   }
 
   if (user.platformRoles.length !== 0) {
-    routes.push(...platformAdminRoutes(user.platformRoles, t));
+    routes.push(...platformAdminRoutes(user.platformRoles, t, accountGroupInitConfirmed, accountStorageQuotaConfirmed));
   }
 
   // 获取当前用户角色
@@ -605,7 +686,8 @@ export const getAvailableRoutes = (user: User | undefined, storageEnabled: boole
   if (publicConfig.NAV_LINKS && publicConfig.NAV_LINKS.length > 0) {
     const mappedNavLinkItems = publicConfig.NAV_LINKS.filter(
       (link) =>
-        !link.allowedRoles || (link.allowedRoles.length && link.allowedRoles.some((role) => userCurrentRoles[role])),
+        !link.allowedRoles ||
+        (link.allowedRoles.length && link.allowedRoles.some((role) => userCurrentRoles[role])),
     ).map((link) => {
       const childrenLinks = link.children
         ?.filter(

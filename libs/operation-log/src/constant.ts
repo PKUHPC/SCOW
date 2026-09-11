@@ -130,6 +130,7 @@ export const OperationType: OperationTypeEnum = {
   removeFromDefaultApps: "removeFromDefaultApps",
   batchSetTenantUsersQuota: "batchSetTenantUsersQuota",
   syncTenantUsersStorageUsage: "syncTenantUsersStorageUsage",
+  syncTenantAccountsStorageUsage: "syncTenantAccountsStorageUsage",
   createDevHost: "createDevHost",
   authorizeCluster: "authorizeCluster",
   unauthorizeCluster: "unauthorizeCluster",
@@ -140,5 +141,7 @@ export const OperationType: OperationTypeEnum = {
   addToDefaultPartitions: "addToDefaultPartitions",
   removeFromDefaultPartitions: "removeFromDefaultPartitions",
   changeJobPrice: "changeJobPrice",
+  batchSetAccountStorageQuota: "batchSetAccountStorageQuota",
+  setAccountDefaultStorageQuota: "setAccountDefaultStorageQuota",
   changeJobPlatformPrice: "changeJobPlatformPrice",
 };

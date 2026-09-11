@@ -38,7 +38,7 @@ const modalBaseStyles = css`
     left: -24px;
     right: -24px;
     bottom: 0;
-    border-bottom: 1px solid var(--ant-color-split, rgba(0, 0, 0, 0.06));
+    border-bottom: 1px solid ${(props) => props.theme.palette.gray[4]};
   }
 
   .ant-modal-body {

@@ -13,5 +13,5 @@ export const fileOps = (cluster: string): FileOps => {
 
   const getClient = (userId: string) => getScowdClient(cluster, userId);
 
-  return { ...scowdFileServices(getClient) };
+  return { ...scowdFileServices(getClient, cluster) };
 };

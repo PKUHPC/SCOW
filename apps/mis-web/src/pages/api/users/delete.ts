@@ -80,7 +80,10 @@ export default /* #__PURE__*/ route(DeleteUserSchema, async (req, res) => {
       handlegRPCError(
         {
           [status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
-          [status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
+          [status.FAILED_PRECONDITION]: (e) =>
+            e.details === "DIRECTORY_SERVICE_NOT_CONFIGURED"
+              ? { 500: { message: e.details } }
+              : { 409: { message: e.details } },
           [status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
           [status.UNIMPLEMENTED]: (e) => ({ 501: { message: e.details } }),
         },

@@ -10,6 +10,7 @@ const { DEFAULT_PRIMARY_COLOR, getUiConfig } = require("@scow/config/build/ui");
 const { getPortalConfig } = require("@scow/config/build/portal");
 const { getCommonConfig, getSystemLanguageConfig } = require("@scow/config/build/common");
 const { getAuditConfig } = require("@scow/config/build/audit");
+const { getPublicStorageConfig } = require("@scow/config/build/storage");
 
 /**
  * Get auth capabilities
@@ -99,6 +100,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
   const portalConfig = getPortalConfig(configPath, console);
   const commonConfig = getCommonConfig(configPath, console);
   const auditConfig = getAuditConfig(configPath, console);
+  const publicStorageConfig = getPublicStorageConfig(configPath, console);
 
   const versionTag = readVersionFile()?.tag;
   /**
@@ -187,6 +189,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     SHADOW_DESK_WMS: portalConfig.loginDesktop?.shadowDesk?.wms,
 
     DASHBOARD_USER_DISPLAY_MODE: commonConfig.dashboard?.userDisplayMode ?? "full",
+
+    PUBLIC_STORAGE_CONFIG: publicStorageConfig,
   };
 
   if (!building && !testenv) {

@@ -9,9 +9,13 @@ import { createServer } from "src/app";
 import * as blockOperations from "src/bl/block";
 import { commonConfig } from "src/config/common";
 import { Account } from "src/entities/Account";
+import { AccountUserSyncRecord, SyncStatus } from "src/entities/AccountUserSyncRecord";
 import { Tenant } from "src/entities/Tenant";
 import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
+import { SystemState } from "src/entities/SystemState";
+import * as storageQuotaOperations from "src/utils/storageQuota";
+import * as directoryGroupOperations from "src/utils/directoryGroup";
 import { dropDatabase } from "tests/data/helpers";
 import { createTestClient, mockAccountResourceOperations } from "tests/utils";
 
@@ -98,6 +102,22 @@ it("imports users and accounts", async () => {
   ]);
 });
 
+it("preserves the synchronization-running details when account user synchronization is running", async () => {
+  const em = orm.em.fork();
+  await em.persistAndFlush(
+    new AccountUserSyncRecord({
+      sessionId: "running-sync-session",
+      syncStatus: SyncStatus.RUNNING,
+      maxSyncDurationMinutes: 5,
+    }),
+  );
+
+  await expect(asyncClientCall(client, "importUsers", { data, whitelist: true })).rejects.toMatchObject({
+    code: Status.FAILED_PRECONDITION,
+    details: expect.stringContaining("Account User Synchronization is running."),
+  });
+});
+
 it("import users and accounts if in different tenant", async () => {
   const em = orm.em.fork();
 
@@ -160,6 +180,113 @@ it("import users and accounts if an account exists", async () => {
   ]);
 });
 
+it("rejects a user imported into different accounts when account quota is enabled", async () => {
+  const em = orm.em.fork();
+  await em.persistAndFlush(
+    new SystemState(
+      SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+      storageQuotaOperations.ACCOUNT_QUOTA_STATE.ENABLED,
+    ),
+  );
+  const invalidData = {
+    accounts: [
+      { accountName: "account1", users: [{ userId: "user1", userName: "user1", blocked: false }], owner: "user1", blocked: false },
+      { accountName: "account2", users: [{ userId: "user1", userName: "user1", blocked: false }], owner: "user1", blocked: false },
+    ],
+  };
+
+  await expect(asyncClientCall(client, "importUsers", { data: invalidData, whitelist: true }))
+    .rejects.toMatchObject({
+      code: Status.FAILED_PRECONDITION,
+      details: "MULTI_ACCOUNT_USERS:user1",
+    });
+});
+
+it("rejects a user already belonging to another account when account quota is enabled", async () => {
+  const em = orm.em.fork();
+  const tenant = await em.findOneOrFail(Tenant, { name: "default" });
+  const user = new User({ name: "user1", userId: "user1", email: "", tenant });
+  const existingAccount = new Account({ accountName: "existing", tenant, blockedInCluster: false });
+  await em.persistAndFlush([
+    user,
+    existingAccount,
+    new UserAccount({ account: existingAccount, user, role: UserRole.USER, blockedInCluster: UserStatus.UNBLOCKED }),
+    new SystemState(
+      SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+      storageQuotaOperations.ACCOUNT_QUOTA_STATE.ENABLED,
+    ),
+  ]);
+  const invalidData = {
+    accounts: [{
+      accountName: "new-account",
+      users: [{ userId: "user1", userName: "user1", blocked: false }],
+      owner: "user1",
+      blocked: false,
+    }],
+  };
+
+  await expect(asyncClientCall(client, "importUsers", { data: invalidData, whitelist: true }))
+    .rejects.toMatchObject({
+      code: Status.FAILED_PRECONDITION,
+      details: "MULTI_ACCOUNT_USERS:user1",
+    });
+});
+
+it("reconciles storage quota when importing an account that is already blocked", async () => {
+  const em = orm.em.fork();
+  const tenant = await em.findOneOrFail(Tenant, { name: "default" });
+  const user = new User({ name: "user1", userId: "user1", email: "", tenant });
+  const account = new Account({
+    accountName: "blocked-account",
+    accountGroupName: "blocked-account",
+    tenant,
+    blockedInCluster: true,
+  });
+  await em.persistAndFlush([
+    user,
+    account,
+    new UserAccount({ account, user, role: UserRole.OWNER, blockedInCluster: UserStatus.UNBLOCKED }),
+    new SystemState(
+      SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+      storageQuotaOperations.ACCOUNT_QUOTA_STATE.ENABLED,
+    ),
+  ]);
+  const blockAccountStorageQuotas = jest
+    .spyOn(storageQuotaOperations, "blockAccountStorageQuotas")
+    .mockResolvedValue(undefined);
+  const groupService = {
+    listUserGroups: jest.fn().mockResolvedValue([{ name: user.userId, gid: undefined }]),
+    getUserPrimaryGroup: jest.fn().mockResolvedValue(user.userId),
+  };
+  const getGroupService = jest
+    .spyOn(directoryGroupOperations, "getGroupService")
+    .mockResolvedValue(groupService as any);
+
+  try {
+    await asyncClientCall(client, "importUsers", {
+      data: {
+        accounts: [{
+          accountName: account.accountName,
+          users: [{ userId: user.userId, userName: user.name, blocked: false }],
+          owner: user.userId,
+          blocked: true,
+        }],
+      },
+      whitelist: false,
+    });
+
+    expect(blockAccountStorageQuotas).toHaveBeenCalledTimes(1);
+    expect(blockAccountStorageQuotas).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ accountName: account.accountName, blockedInCluster: true }),
+      expect.anything(),
+    );
+  } finally {
+    blockAccountStorageQuotas.mockRestore();
+    getGroupService.mockRestore();
+  }
+});
+
 describe("resource management", () => {
   let originalScowResource: typeof commonConfig.scowResource;
   let unblockAccount: jest.SpyInstance;
@@ -208,6 +335,7 @@ describe("resource management", () => {
       server.ext.clusters,
       expect.any(Object),
       server.ext.resource,
+      expect.any(Object),
       true,
     );
   });

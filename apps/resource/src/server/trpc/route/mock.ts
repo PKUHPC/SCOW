@@ -80,6 +80,7 @@ export const CLUSTER_CONFIGS_DATA: GetClusterConfigFilesResponse = {
       },
       adapterUrl: "111.111.111",
       priority: 0,
+      entryPaths: [],
     },
     {
       clusterId: "hpc02",
@@ -88,6 +89,7 @@ export const CLUSTER_CONFIGS_DATA: GetClusterConfigFilesResponse = {
       },
       adapterUrl: "111.111.112",
       priority: 0,
+      entryPaths: [],
     },
   ],
 };
@@ -104,6 +106,7 @@ export const ACCOUNTS_DATA: GetAccountsResponse = {
       comment: "a_aa comment",
       state: Account_AccountState.NORMAL,
       displayedState: Account_DisplayedAccountState.DISPLAYED_NORMAL,
+      storageQuotas: [],
     },
     {
       accountName: "a_bb",
@@ -115,6 +118,7 @@ export const ACCOUNTS_DATA: GetAccountsResponse = {
       comment: "a_bb comment",
       state: Account_AccountState.NORMAL,
       displayedState: Account_DisplayedAccountState.DISPLAYED_NORMAL,
+      storageQuotas: [],
     },
   ],
 };

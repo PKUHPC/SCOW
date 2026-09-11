@@ -13,13 +13,13 @@ import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
+import { hasStorageAccess } from "src/utils/storage";
 
 export const SyncTenantUsersStorageUsageSchema = typeboxRouteSchema({
   method: "POST",
 
   body: Type.Object({
-    cluster: Type.String(),
-    path: Type.String(),
+    storageId: Type.String(),
   }),
 
   responses: {
@@ -36,8 +36,8 @@ export const SyncTenantUsersStorageUsageSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/ route(SyncTenantUsersStorageUsageSchema, async (req, res) => {
-  const { cluster, path } = req.body;
+export default /* #__PURE__*/route(SyncTenantUsersStorageUsageSchema, async (req, res) => {
+  const { storageId } = req.body;
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -56,7 +56,7 @@ export default /* #__PURE__*/ route(SyncTenantUsersStorageUsageSchema, async (re
         tenantName: info.tenant,
       });
 
-      if (!response.assignedClusterPartitions[cluster]) {
+      if (!hasStorageAccess(storageId, Object.keys(response.assignedClusterPartitions))) {
         return { 403: null };
       }
     } catch (e) {
@@ -74,19 +74,15 @@ export default /* #__PURE__*/ route(SyncTenantUsersStorageUsageSchema, async (re
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.syncTenantUsersStorageUsage,
-    operationTypePayload: {
-      cluster,
-      path,
-      tenant: info.tenant,
+    operationTypePayload:{
+      storageId, tenant: info.tenant,
     },
   };
 
   const client = getClient(StorageServiceClient);
 
   return await asyncClientCall(client, "syncTenantUsersStorageUsage", {
-    cluster,
-    path,
-    tenant: info.tenant,
+    storageId, tenant: info.tenant,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);

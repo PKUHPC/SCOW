@@ -14,6 +14,7 @@ import { DEFAULT_INIT_USER_ID, DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { queryIfInitialized } from "src/utils/init";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
+import { isAccountUserSyncRunningDetails } from "src/utils/syncAccountUser";
 
 export const ImportUsersSchema = typeboxRouteSchema({
   method: "POST",
@@ -26,7 +27,18 @@ export const ImportUsersSchema = typeboxRouteSchema({
   responses: {
     204: Type.Null(),
     400: Type.Object({ code: Type.Literal("INVALID_DATA") }),
-    409: Type.Object({ message: Type.Optional(Type.String()) }),
+    409: Type.Object({
+      code: Type.Union([
+        Type.Literal("SYNC_RUNNING"),
+        Type.Literal("FAILED_PRECONDITION"),
+        Type.Literal("QUOTA_ENABLING"),
+        Type.Literal("MULTI_ACCOUNT_USERS"),
+        Type.Literal("MULTI_GROUP_USERS"),
+        Type.Literal("DEFAULT_GROUP_NOT_REMOVED"),
+      ]),
+      targets: Type.Optional(Type.String()),
+      message: Type.Optional(Type.String()),
+    }),
   },
 });
 
@@ -72,7 +84,42 @@ export default route(ImportUsersSchema, async (req, res) => {
       handlegRPCError(
         {
           [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_DATA" } }) as const,
-          [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
+          [Status.FAILED_PRECONDITION]: (e) => {
+            if (e.details === "QUOTA_ENABLING") return { 409: { code: "QUOTA_ENABLING" as const } };
+            if (e.details?.startsWith("MULTI_ACCOUNT_USERS:")) {
+              return {
+                409: {
+                  code: "MULTI_ACCOUNT_USERS" as const,
+                  targets: e.details.slice("MULTI_ACCOUNT_USERS:".length),
+                },
+              };
+            }
+            if (e.details?.startsWith("MULTI_GROUP_USERS:")) {
+              return {
+                409: {
+                  code: "MULTI_GROUP_USERS" as const,
+                  targets: e.details.slice("MULTI_GROUP_USERS:".length),
+                },
+              };
+            }
+            if (e.details?.startsWith("DEFAULT_GROUP_NOT_REMOVED:")) {
+              return {
+                409: {
+                  code: "DEFAULT_GROUP_NOT_REMOVED" as const,
+                  targets: e.details.slice("DEFAULT_GROUP_NOT_REMOVED:".length),
+                },
+              };
+            }
+            if (isAccountUserSyncRunningDetails(e.details)) {
+              return { 409: { code: "SYNC_RUNNING" as const } };
+            }
+            return {
+              409: {
+                code: "FAILED_PRECONDITION" as const,
+                message: e.details || e.message || "Error occurred.",
+              },
+            };
+          },
         },
         async () => await callLog(logInfo, OperationResult.FAIL),
       ),

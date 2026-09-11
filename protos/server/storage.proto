@@ -2,66 +2,76 @@ syntax = "proto3";
 
 package scow.server;
 
-import "google/protobuf/timestamp.proto";
 import "common/sort_order.proto";
+import "google/protobuf/timestamp.proto";
 
 enum QuotaSortField {
-  USED_STORAGE_BYTES = 0;
+  USED_STORAGE_MB = 0;
   STORAGE_QUOTA = 1;
 }
 
 message GetTenantQuotaRequest {
   string tenant_name = 1;
-  string cluster = 2;
-  string path = 3;
+  reserved 2, 3;
   optional string id_or_name = 4;
   uint32 page = 5;
 
   // if undefined or 0, page_size is 10
   optional uint64 page_size = 6;
-  // 排序字段: "usedStorageBytes" 或 "storageQuota"
+  // 排序字段: "USED_STORAGE_MB(用量)" 或 "STORAGE_QUOTA(配额)"
   optional QuotaSortField sort_field = 7;
   // ASC 或者 DESC, 默认为 ASC
   optional common.SortOrder sort_order = 8;
+  string storage_id = 9;
 }
 
 message UserQuotaInfo {
   string user_id = 1;
   string user_name = 2;
-  uint64 quota_bytes = 3;
-  uint64 used_storage_bytes = 4;
+  uint64 quota_mb = 3;
+  uint64 used_storage_mb = 4;
   bool use_default = 5;
 }
 
 message GetTenantQuotaResponse {
-  uint64 total_storage_bytes = 1;
-  uint64 remaining_storage_bytes = 2;
-  uint64 user_default_quota_bytes = 3;
-  uint64 total_user_count = 4;
-  repeated UserQuotaInfo users_quota_info = 5;
+  uint64 total_user_count = 1;
+  repeated UserQuotaInfo users_quota_info = 2;
+}
+
+
+message GetTenantQuotaSummaryRequest {
+  string tenant_name = 1;
+  string storage_id = 2;
+}
+
+message GetTenantQuotaSummaryResponse {
+  uint64 total_storage_mb = 1;
+  uint64 remaining_storage_mb = 2;
+  uint64 user_default_quota_mb = 3;
+  uint64 tenant_assigned_quota_mb = 4;
+  uint64 tenant_used_storage_mb = 5;
+  repeated string mounted_clusters = 6;
 }
 
 message SetTenantUserQuotaRequest {
-  string cluster = 1;
-  string path = 2;
+  reserved 1, 2;
   string user_id = 3;
-  optional uint64 user_quota_bytes = 4;
+  optional uint64 user_quota_mb = 4;
   optional bool use_tenant_default_user_quota = 5;
   string tenant_name = 6;
+  string storage_id = 7;
 }
 
-
-message SetTenantUserQuotaResponse {
-}
+message SetTenantUserQuotaResponse {}
 
 message BatchSetTenantUsersQuotaRequest {
-  string cluster = 1;
-  string path = 2;
+  reserved 1, 2;
   repeated string user_ids = 3;
-  optional uint64 user_quota_bytes = 4;
+  optional uint64 user_quota_mb = 4;
   optional bool use_tenant_default_user_quota = 5;
+  string storage_id = 6;
+  string tenant_name = 7;
 }
-
 
 message BatchSetTenantUsersQuotaResponse {
   repeated string failed_user_ids = 1;
@@ -69,9 +79,9 @@ message BatchSetTenantUsersQuotaResponse {
 
 message SetTenantUserDefaultQuotaRequest {
   string tenant_name = 1;
-  string cluster = 2;
-  string path = 3;
-  uint64 user_quota_bytes = 4;
+  reserved 2, 3;
+  uint64 user_quota_mb = 4;
+  string storage_id = 5;
 }
 
 message SetTenantUserDefaultQuotaResponse {
@@ -82,16 +92,18 @@ message SetTenantUserDefaultQuotaResponse {
 
 message GetUserStorageUsageRequest {
   string user_id = 1;
-  string cluster = 2;
-  // 考虑以后可能会存在集群下多个共享存储路径，此处设置为数组
-  // 空数组代表查询所有
-  repeated string paths = 3;
+  reserved 2; // cluster_id 字段已废弃，不再使用 --- IGNORE ---
+  reserved 3; // paths 字段已废弃，不再使用 --- IGNORE ---
+  // 指定要查询的存储系统 ID 列表，空数组代表需查询所有开启了配额管理的存储系统
+  // 服务端根据 storageId 反查挂载集群，并过滤掉未在线/未授权的集群
+  repeated string storage_ids = 4;
 }
 
 message StorageUsage {
-  string path = 1;
-  uint64 quota_bytes = 2;
-  uint64 used_storage_bytes = 3;
+  reserved 1; // path 字段已废弃，不再使用 --- IGNORE ---
+  uint64 quota_mb = 2;
+  uint64 used_storage_mb = 3;
+  string storage_id = 4;
 }
 
 message GetUserStorageUsageResponse {
@@ -99,20 +111,29 @@ message GetUserStorageUsageResponse {
 }
 
 message SyncTenantUsersStorageUsageRequest {
-  string cluster = 1;
+  reserved 1, 3;
   string tenant = 2;
-  string path = 3;
+  string storage_id = 4;
 }
 
 message SyncTenantUsersStorageUsageResponse {
   repeated string failed_user_ids = 1;
+}
 
+message SyncTenantAccountsStorageUsageRequest {
+  reserved 1, 3;
+  string tenant = 2;
+  string storage_id = 4;
+}
+
+message SyncTenantAccountsStorageUsageResponse {
+  repeated string failed_account_names = 1;
 }
 
 message GetSyncInfoRequest {
-  string cluster = 1;
-  string path = 2;
+  reserved 1, 2;
   string tenant = 3;
+  string storage_id = 4;
 }
 
 message GetSyncInfoResponse {
@@ -121,8 +142,110 @@ message GetSyncInfoResponse {
   optional google.protobuf.Timestamp last_sync_time = 3;
 }
 
+message GetAccountSyncInfoRequest {
+  reserved 1, 2;
+  string tenant = 3;
+  string storage_id = 4;
+}
+
+message GetAccountSyncInfoResponse {
+  bool sync_started = 1;
+  string schedule = 2;
+  optional google.protobuf.Timestamp last_sync_time = 3;
+}
+
+enum AccountStorageQuotaState {
+  UNKNOWN = 0;
+  DISABLED = 1;
+  ENABLING = 2;
+  ENABLED = 3;
+}
+
+message EnableAccountStorageQuotaRequest {
+  string operator_id = 1;
+}
+
+message EnableAccountStorageQuotaResponse {}
+
+message SetConfirmedEnableAccountQuotaRequest {}
+
+message SetConfirmedEnableAccountQuotaResponse {}
+
+message BatchSetAccountStorageQuotaRequest {
+  string tenant_name = 1;
+  repeated string account_names = 2;
+  string storage_id = 3;
+  // 配额大小，单位 MB。当 use_tenant_default_account_quota 为 true 时忽略。
+  uint64 quota_mb = 4;
+  // 为 true 时将账户配额重置为跟随默认值（storageQuota 存 null）
+  bool use_tenant_default_account_quota = 5;
+}
+
+// FAILED_PRECONDITION: 账户存储配额功能未开启
+// OUT_OF_RANGE: quota_mb 超出文件系统总存储量
+message BatchSetAccountStorageQuotaResponse {
+  repeated string failed_account_names = 1;
+}
+
+message SetAccountDefaultStorageQuotaRequest {
+  string tenant_name = 1;
+  string storage_id = 2;
+  // 配额大小，单位 MB。
+  uint64 quota_mb = 3;
+}
+
+message SetAccountDefaultStorageQuotaResponse {
+  uint32 successes = 1;
+  uint32 failures = 2;
+  repeated string failed_account_names = 3;
+}
+
+message AccountQuotaInfo {
+  string account_name = 1;
+  string owner_id = 2;
+  string owner_name = 3;
+  uint64 quota_mb = 4;
+  uint64 used_storage_mb = 5;
+  // true 表示账户未单独设置配额，跟随租户默认值
+  bool use_default = 6;
+}
+
+message GetAccountQuotaRequest {
+  string tenant_name = 1;
+  string storage_id = 2;
+  optional string account_name = 3;
+}
+
+message GetAccountQuotaResponse {
+  uint64 total_storage_mb = 1;
+  uint64 remaining_storage_mb = 2;
+  uint64 account_default_quota_mb = 3;
+  repeated string mounted_clusters = 4;
+  repeated AccountQuotaInfo accounts_quota_info = 5;
+}
+
+message GetAccountStorageUsageRequest {
+  string tenant_name = 1;
+  string account_name = 2;
+  repeated string storage_ids = 3;
+}
+
+message GetAccountStorageUsageResponse {
+  repeated StorageUsage quota_usage = 1;
+}
+
+message GetAccountStorageQuotaStateRequest {}
+
+message GetAccountStorageQuotaStateResponse {
+  // 账户存储配额功能当前状态
+  AccountStorageQuotaState state = 1;
+  // 是否已确认开启（用于控制前端成功弹窗只展示一次）
+  bool confirmed = 2;
+}
+
 service StorageService {
   rpc GetTenantQuota(GetTenantQuotaRequest) returns (GetTenantQuotaResponse);
+  rpc GetTenantQuotaSummary(GetTenantQuotaSummaryRequest) returns (GetTenantQuotaSummaryResponse);
   rpc SetTenantUserQuota(SetTenantUserQuotaRequest) returns (SetTenantUserQuotaResponse);
   // 批量修改租户下用户的配额
   rpc BatchSetTenantUsersQuota(BatchSetTenantUsersQuotaRequest) returns (BatchSetTenantUsersQuotaResponse);
@@ -132,5 +255,18 @@ service StorageService {
   rpc GetUserStorageUsage(GetUserStorageUsageRequest) returns (GetUserStorageUsageResponse);
 
   rpc SyncTenantUsersStorageUsage(SyncTenantUsersStorageUsageRequest) returns (SyncTenantUsersStorageUsageResponse);
+  rpc SyncTenantAccountsStorageUsage(SyncTenantAccountsStorageUsageRequest) returns (SyncTenantAccountsStorageUsageResponse);
   rpc GetSyncInfo(GetSyncInfoRequest) returns (GetSyncInfoResponse);
+  rpc GetAccountSyncInfo(GetAccountSyncInfoRequest) returns (GetAccountSyncInfoResponse);
+
+  // 账户存储配额相关接口
+  rpc GetAccountStorageQuotaState(GetAccountStorageQuotaStateRequest) returns (GetAccountStorageQuotaStateResponse);
+  rpc EnableAccountStorageQuota(EnableAccountStorageQuotaRequest) returns (EnableAccountStorageQuotaResponse);
+  rpc SetConfirmedEnableAccountQuota(SetConfirmedEnableAccountQuotaRequest) returns (SetConfirmedEnableAccountQuotaResponse);
+  // 批量修改账户存储配额
+  rpc BatchSetAccountStorageQuota(BatchSetAccountStorageQuotaRequest) returns (BatchSetAccountStorageQuotaResponse);
+  // 设置账户默认存储配额
+  rpc SetAccountDefaultStorageQuota(SetAccountDefaultStorageQuotaRequest) returns (SetAccountDefaultStorageQuotaResponse);
+  rpc GetAccountQuota(GetAccountQuotaRequest) returns (GetAccountQuotaResponse);
+  rpc GetAccountStorageUsage(GetAccountStorageUsageRequest) returns (GetAccountStorageUsageResponse);
 }

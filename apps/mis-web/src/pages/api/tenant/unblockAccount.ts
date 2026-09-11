@@ -70,7 +70,12 @@ export default /* #__PURE__*/ route(UnblockAccountSchema, async (req, res) => {
       handlegRPCError(
         {
           [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
-          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({
+            200: {
+              executed: false,
+              reason: e.details,
+            },
+          }),
           [Status.UNIMPLEMENTED]: (e) => ({ 200: { executed: false, reason: e.details } }),
           [Status.INTERNAL]: (e) => ({ 200: { executed: false, reason: e.details } }),
         },

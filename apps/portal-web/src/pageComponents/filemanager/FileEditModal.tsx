@@ -400,7 +400,12 @@ export const FileEditModal: React.FC<Props> = ({
       </Space>
     ) : (
       <>
-        {storageInfo && storageInfo.quotaBytes - storageInfo.usedStorageBytes <= convertToBytes("10M") && (
+        {storageInfo && (
+          storageInfo.quotaMb - storageInfo.usedStorageMb <= 10 ||
+          (storageInfo.accountQuotaMb !== undefined &&
+            storageInfo.accountUsedStorageMb !== undefined &&
+            storageInfo.accountQuotaMb - storageInfo.accountUsedStorageMb <= 10)
+        ) && (
           <Alert
             style={{ textAlign: "left", marginBottom: "10px" }}
             message={t(p("quotaLimit"))}

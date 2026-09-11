@@ -1,6 +1,13 @@
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
+import { misConfig } from "src/config/mis";
 import { Account } from "src/entities/Account";
 import { UserRole as EntityUserRole } from "src/entities/UserAccount";
+
+export function getAccountGroupName(accountName: string): string {
+  return misConfig.accountGroupNamePrefix
+    ? `${misConfig.accountGroupNamePrefix}_${accountName}`
+    : accountName;
+}
 
 // 根据主管理员id或name模糊查询对应账户名
 export async function getAccountNamesByUserIdOrName(

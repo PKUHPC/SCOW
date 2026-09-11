@@ -12,6 +12,17 @@ import { prefix } from "src/i18n";
 import en from "src/i18n/en";
 import { SyncAccountUserOperationType, SyncExceptionType } from "src/models/synchronization";
 
+/**
+ * 兼容现有服务端 details 的同步任务占用文案前缀。
+ * details 还会追加具体被阻塞的任务名称，因此只能匹配首句，不能匹配完整文本。
+ */
+export const ACCOUNT_USER_SYNC_RUNNING_DETAILS_PREFIX = "Account User Synchronization is running.";
+
+/** 判断 gRPC details 是否表示账户用户同步任务正在运行。 */
+export function isAccountUserSyncRunningDetails(details: string | undefined): boolean {
+  return details?.startsWith(ACCOUNT_USER_SYNC_RUNNING_DETAILS_PREFIX) ?? false;
+}
+
 type TransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string;
 
 const p = prefix("page.admin.systemDebug.syncClusterAccountUser.syncDetailsContent.");

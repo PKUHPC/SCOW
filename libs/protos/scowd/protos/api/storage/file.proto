@@ -47,6 +47,10 @@ message MakeDirectoryRequest {
   string user_id = 1;
   string dir_path = 2;
   optional bool no_check_permission = 3;
+  // 需要指定目录特殊权限时使用
+  // 创建多存储用户隔离目录时指定权限为 0700
+  // 如不指定默认为 0755
+  optional string mode = 4;
 }
 
 message MakeDirectoryResponse {
@@ -95,9 +99,24 @@ message ChangeModeRequest {
   string path = 2;
   string mode = 3;
   bool recursive  = 4;
+  optional bool no_check_permission = 5;
 }
 
 message ChangeModeResponse {
+}
+
+message ChangeOwnerRequest {
+  string user_id = 1; // 以谁的身份执行操作
+  string path = 2; // 目标路径
+  // 若指定，则只修改属主为此 uid 的文件；不传则修改路径下所有文件
+  optional uint32 target_uid = 3;
+  optional uint32 uid = 4;        // 新的 uid，不传则不改属主
+  optional uint32 gid = 5;        // 新的 gid，不传则不改属组
+  bool recursive = 6;
+  optional bool no_check_permission = 7;
+}
+
+message ChangeOwnerResponse {
 }
 
 message GetFileMetadataRequest {
@@ -286,6 +305,7 @@ service FileService {
   rpc ReadFile(ReadFileRequest) returns (ReadFileResponse) {};
 
   rpc ChangeMode(ChangeModeRequest) returns (ChangeModeResponse) {};
+  rpc ChangeOwner(ChangeOwnerRequest) returns (ChangeOwnerResponse) {};
 
   rpc Download(DownloadRequest) returns (stream DownloadResponse);
   // 下载并压缩，将压缩数据以流的方式返回

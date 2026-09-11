@@ -795,6 +795,9 @@ importers:
       dotenv:
         specifier: 16.4.7
         version: 16.4.7
+      ldapjs:
+        specifier: 2.3.3
+        version: 2.3.3
       node-cron:
         specifier: 3.0.3
         version: 3.0.3
@@ -820,6 +823,9 @@ importers:
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
+      '@types/ldapjs':
+        specifier: 2.2.5
+        version: 2.2.5
       '@types/node-cron':
         specifier: 3.0.11
         version: 3.0.11

@@ -7,7 +7,6 @@ import {
   getDesktopEnabled,
   getFileTransferEnabled,
   getPublicConfigClusters,
-  getStorageEnabled,
   isEqual,
 } from "src/utils/cluster";
 
@@ -75,47 +74,38 @@ export function ClusterInfoStore(
   const [crossClusterFileTransferEnabled, setCrossClusterFileTransferEnabled] =
     useState<boolean>(initialEnableFileTransfer);
 
-  const [storageEnabled, setStorageEnabled] = useState<boolean>(false);
-
   useEffect(() => {
     // 可用集群不存在时
     if (currentClusters.length === 0) {
-        setDefaultCluster(undefined);
-        setEnableLoginDesktop(false);
-        setCrossClusterFileTransferEnabled(false);
+      setDefaultCluster(undefined);
+      setEnableLoginDesktop(false);
+      setCrossClusterFileTransferEnabled(false);
     } else {
-        const currentClusterIds = currentClusters.map((x) => x.id);
-        const specifiedClusterConfigs = Object.fromEntries(
-          Object.entries(clusterConfigs).filter(([clusterId]) => currentClusterIds.includes(clusterId)),
-        );
+      const currentClusterIds = currentClusters.map((x) => x.id);
+      const specifiedClusterConfigs = Object.fromEntries(
+        Object.entries(clusterConfigs).filter(([clusterId]) => currentClusterIds.includes(clusterId)),
+      );
 
-        // set桌面功能是否可用
-        const currentEnableLoginDesktop = getDesktopEnabled(clusterConfigs, portalRuntimeDesktopEnabled);
-        setEnableLoginDesktop(currentEnableLoginDesktop);
+      // set桌面功能是否可用
+      const currentEnableLoginDesktop = getDesktopEnabled(clusterConfigs, portalRuntimeDesktopEnabled);
+      setEnableLoginDesktop(currentEnableLoginDesktop);
 
-        // set文件传输功能是否可用
-        const currentCrossClusterFileTransferEnabled = getFileTransferEnabled(specifiedClusterConfigs);
-        setCrossClusterFileTransferEnabled(currentCrossClusterFileTransferEnabled);
+      // set文件传输功能是否可用
+      const currentCrossClusterFileTransferEnabled = getFileTransferEnabled(specifiedClusterConfigs);
+      setCrossClusterFileTransferEnabled(currentCrossClusterFileTransferEnabled);
 
-        // set默认集群
-        // 上一次记录的集群为undefined的情况，使用可用集群中的某一个集群作为新的默认集群
-        if (!defaultCluster?.id) {
+      // set默认集群
+      // 上一次记录的集群为undefined的情况，使用可用集群中的某一个集群作为新的默认集群
+      if (!defaultCluster?.id) {
+        setDefaultCluster(currentClusters[0]);
+
+        // 上一次记录的默认集群已不在可用集群中的情况
+      } else {
+        const currentDefaultExists = currentClusters.find((x) => x.id === defaultCluster?.id);
+        if (!currentDefaultExists) {
           setDefaultCluster(currentClusters[0]);
-
-          // 上一次记录的默认集群已不在可用集群中的情况
-        } else {
-          const currentDefaultExists = currentClusters.find((x) => x.id === defaultCluster?.id);
-          if (!currentDefaultExists) {
-            setDefaultCluster(currentClusters[0]);
-          }
         }
-
-        setStorageEnabled(
-          getStorageEnabled(
-            clusterConfigs,
-            Object.values(activatedClusters).map((cluster) => cluster.id),
-          ),
-        );
+      }
     }
   }, [currentClusters, clusterConfigs, portalRuntimeDesktopEnabled]);
 
@@ -131,7 +121,6 @@ export function ClusterInfoStore(
     crossClusterFileTransferEnabled,
     activatedClusters,
     setActivatedClusters,
-    storageEnabled,
     fullClusterConfigs,
   };
 }

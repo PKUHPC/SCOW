@@ -35,6 +35,14 @@ describe("path validation", () => {
     expect(validateHomeScopedPath("//home//other/x", homeDir)).toBeDefined();
   });
 
+  it("accepts paths under additional trusted roots", () => {
+    const trustedRoots = ["/data/user", "/shared/project"];
+
+    expect(validateHomeScopedPath("/data/user/output", homeDir, {}, trustedRoots)).toBeUndefined();
+    expect(validateRelativeToHomePath("/shared/project/input", homeDir, {}, trustedRoots)).toBeUndefined();
+    expect(validateHomeScopedPath("/shared/other", homeDir, {}, trustedRoots)).toBeDefined();
+  });
+
   it("rejects invalid container mount targets", () => {
     expect(validateContainerMountTargetPath("/")).toBeDefined();
     expect(validateContainerMountTargetPath("/etc/passwd")).toBeDefined();

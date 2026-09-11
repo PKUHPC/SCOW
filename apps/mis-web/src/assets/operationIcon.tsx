@@ -947,6 +947,28 @@ export const NodeMigrationIcon: React.ForwardRefExoticComponent<IconProps> = Rea
     ),
 );
 
+// 移除分段价格图标
+const removeTierSVG = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none">
+    <circle cx="11" cy="11" r="10.25" fill="white" stroke="currentColor" strokeWidth="1.5" />
+    <line
+      x1="6.75"
+      y1="11.25"
+      x2="15.25"
+      y2="11.25"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+export const RemoveTierIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+    <Icon component={removeTierSVG} {...props} ref={ref} />
+  ),
+);
+
 // 移出默认授权应用图标
 const removeDefaultAuthSVG = () => (
   <svg width="15" height="14" viewBox="0 0 15 14" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -12,6 +12,7 @@ import { styled, useTheme } from "styled-components";
 
 import { validateEnvKeyFormat } from "./common";
 import { AddButton, RemoveButton } from "./ResourceSelectorList";
+import { useClusterEntryPathRoots } from "./useClusterEntryPathRoots";
 
 const EnvListContainer = styled.div`
   display: flex;
@@ -59,6 +60,7 @@ export const EnvironmentVariableList = ({ clusterId, homeDir }: Props) => {
   const t = useI18nTranslateToString();
   const form = Form.useFormInstance();
   const builtinTooltipColor = theme.palette.gray[7];
+  const trustedRootPaths = useClusterEntryPathRoots(clusterId);
 
   const envVariables: { key?: string; value?: string }[] = Form.useWatch("envVariables", form) ?? [];
 
@@ -158,14 +160,18 @@ export const EnvironmentVariableList = ({ clusterId, homeDir }: Props) => {
                             { required: true, message: t(p("valueRequired")) },
                             ...(isWorkDir
                               ? [
-                                  createHomeScopedPathValidator(homeDir, {
-                                    unsafeCharacter: t(pPathValidation("unsafeCharacter")),
-                                    pathTraversal: t(pPathValidation("pathTraversal")),
-                                    currentDirectory: t(pPathValidation("currentDirectory")),
-                                    absoluteRequired: t(pPathValidation("absoluteRequired")),
-                                    homeDirRequired: t(pPathValidation("homeDirRequired")),
-                                    notInHomeDir: t(p("notInHomeDir")),
-                                  }),
+                                  createHomeScopedPathValidator(
+                                    homeDir,
+                                    {
+                                      unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                                      pathTraversal: t(pPathValidation("pathTraversal")),
+                                      currentDirectory: t(pPathValidation("currentDirectory")),
+                                      absoluteRequired: t(pPathValidation("absoluteRequired")),
+                                      homeDirRequired: t(pPathValidation("homeDirRequired")),
+                                      notInHomeDir: t(p("notInHomeDir")),
+                                    },
+                                    trustedRootPaths,
+                                  ),
                                 ]
                               : []),
                           ]

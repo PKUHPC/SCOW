@@ -1,62 +1,41 @@
-import { DatabaseOutlined, FolderAddOutlined } from "@ant-design/icons";
+import {
+  ModalContainer,
+  ModalContent,
+  ModalFileListCard,
+  ModalPathBarRow,
+  ModalSidebarCard,
+  ModalSidebarEntry,
+  fileSelectModalStyles,
+} from "@scow/lib-web/build/components/filemanager/FileSelectorModalLayout";
+import { FileTableWrapper } from "@scow/lib-web/build/components/filemanager/FileTableWrapper";
+import { PathBar } from "@scow/lib-web/build/components/filemanager/PathBar";
+import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { useAutoSelectSidebar } from "@scow/lib-web/build/hooks/useAutoSelectSidebar";
 import { fileIcon as FileIcon } from "@scow/lib-web/build/icons/commonIcons";
-import { Button, Modal } from "antd";
+import { CreateIcon, EntryPathIcon, HomeDirIcon } from "@scow/lib-web/build/icons/FileIcon";
+import { formatPath } from "@scow/lib-web/build/utils/filePathUtils";
+import { buildEnrichedEntryPaths } from "@scow/lib-web/build/utils/storageClusterHelper";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { Button } from "antd";
 import Link from "next/link";
 import { join } from "path";
-import React, { Key, useCallback, useEffect, useRef, useState } from "react";
+import React, { Key, useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
+import { useStore } from "simstate";
 import { api } from "src/apis";
-import { FilterFormContainer } from "src/components/FilterFormContainer";
+import { FolderTriggerButton } from "src/components/FolderTriggerButton";
 import { ModalButton } from "src/components/ModalLink";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { FileTable } from "src/pageComponents/filemanager/FileTable";
 import { MkdirModal } from "src/pageComponents/filemanager/MkdirModal";
-import { PathBar } from "src/pageComponents/filemanager/PathBar";
 import { FileInfo } from "src/pages/api/file/list";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { UserStore } from "src/stores/UserStore";
 import { Cluster } from "src/utils/cluster";
 import { styled } from "styled-components";
 
-const ModalContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const TopBar = styled(FilterFormContainer)`
-  display: flex;
-  flex-direction: row;
-  padding-bottom: 8px;
-  width: 100%;
-  & > button {
-    margin: 0px 4px;
-  }
-`;
-
-const FolderTriggerButton = styled(Button)`
-  width: 36px !important;
-  height: 24px !important;
-  border-radius: 6px !important;
-  border-style: none;
-  background: ${({ theme }) => theme.token.colorPrimaryBg} !important;
-  box-shadow: none !important;
-  border-color: transparent !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 !important;
-  margin-inline-end: 16px;
-
-  .anticon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 0;
-
-    svg {
-      width: 20px !important;
-      height: 32px !important;
-    }
-  }
+const FileSelectModalWrapper = styled(StyledModal)`
+  ${fileSelectModalStyles}
 `;
 
 interface Props {
@@ -64,31 +43,30 @@ interface Props {
   onSubmit: (path: string) => void;
 }
 
-// 处理path的特殊情况,比如为空或者不以"/"开头
-const formatPath = (path: string) => {
-  if (path === "") {
-    return "/";
-  }
-  if (!path.startsWith("/")) {
-    return "/" + path;
-  }
-  return path;
-};
+const p = prefix("pageComp.job.fileSelectModal.");
+const pFileManager = prefix("pageComp.fileManagerComp.fileManager.");
 
 export const FileSelectModal: React.FC<Props> = ({ cluster, onSubmit }) => {
+  const t = useI18nTranslateToString();
+  const languageId = useI18n().currentLanguage.id;
+
+  const { fullClusterConfigs } = useStore(ClusterInfoStore);
+  const { user } = useStore(UserStore);
+
   const { data: homeDirectory, isLoading: isGettingHomeDirectoryLoading } = useAsync({
     promiseFn: useCallback(async () => api.getHomeDirectory({ query: { cluster: cluster.id } }), [cluster.id]),
   });
 
   const [visible, setVisible] = useState(false);
   const [path, setPath] = useState<string>("/");
+  const [prevPath, setPrevPath] = useState<string>("/");
   const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
 
-  const prevPathRef = useRef<string>(path);
-
-  const fileFilter = (files: FileInfo[]): FileInfo[] => {
-    return files.filter((file) => file.type === "DIR" && !file.name.startsWith("."));
-  };
+  // Build sidebar entries from cluster config
+  const enrichedEntryPaths = useMemo(() => {
+    const clusterConfig = fullClusterConfigs[cluster.id];
+    return buildEnrichedEntryPaths(clusterConfig?.entryPaths, user?.identityId);
+  }, [fullClusterConfigs, cluster.id, user?.identityId]);
 
   const listFilePromiseFn = useCallback(async () => {
     return visible ? await api.listFile({ query: { cluster: cluster.id, path: join("/", path) } }) : { items: [] };
@@ -101,14 +79,28 @@ export const FileSelectModal: React.FC<Props> = ({ cluster, onSubmit }) => {
   } = useAsync({
     promiseFn: listFilePromiseFn,
     onResolve(_) {
-      prevPathRef.current = path;
+      setPrevPath(path);
     },
     onReject(_) {
-      if (prevPathRef.current !== path) {
-        setPath(prevPathRef.current);
-      }
+      setPath(prevPath);
     },
   });
+
+  const fileFilter = (files: FileInfo[]): FileInfo[] => {
+    return files.filter((file) => file.type === "DIR" && !file.name.startsWith("."));
+  };
+
+  const selectedEntryIndex = useAutoSelectSidebar(path, homeDirectory?.path, enrichedEntryPaths);
+
+  useEffect(() => {
+    setPath(homeDirectory?.path ?? "/");
+  }, [homeDirectory]);
+
+  const navigateTo = (target: string) => {
+    setPrevPath(path);
+    setPath(target);
+    setSelectedKeys([]);
+  };
 
   const closeModal = () => {
     setVisible(false);
@@ -125,18 +117,8 @@ export const FileSelectModal: React.FC<Props> = ({ cluster, onSubmit }) => {
   const onClickLink = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, clickPath: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setPath(clickPath);
-    setSelectedKeys([]);
+    navigateTo(formatPath(clickPath));
   };
-
-  const isLoading = isFileLoading;
-
-  const t = useI18nTranslateToString();
-  const p = prefix("pageComp.job.fileSelectModal.");
-
-  useEffect(() => {
-    setPath(homeDirectory?.path ?? "/");
-  }, [homeDirectory]);
 
   return (
     <>
@@ -148,83 +130,132 @@ export const FileSelectModal: React.FC<Props> = ({ cluster, onSubmit }) => {
       >
         <FileIcon />
       </FolderTriggerButton>
-      <Modal
-        width={600}
+      <FileSelectModalWrapper
+        // 宽度限制：大屏 970px，小屏随视口短边缩放
+        width="min(970px, calc(100vw - 32px))"
+        // 高度限制：大屏 632px，小屏不超过 60vh
+        styles={{
+          content: {
+            height: "min(632px, 60vh)",
+          },
+        }}
         open={visible}
+        centered
         onCancel={() => {
           closeModal();
         }}
         title={t(p("title"))}
         footer={[
-          <MkdirButton key="new" cluster={cluster.id} path={join("/", path)} reload={reload}>
-            {t(p("newPath"))}
-          </MkdirButton>,
-          <Button
-            key="cancel"
-            onClick={() => {
-              closeModal();
+          <div
+            key="footer"
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 36,
             }}
           >
-            {t("button.cancelButton")}
-          </Button>,
-          <Button key="ok" type="primary" onClick={onOkClick}>
-            {t("button.confirmButton")}
-          </Button>,
+            <div key="left">
+              <MkdirButton key="new" cluster={cluster.id} path={join("/", path)} reload={reload}>
+                {t(p("newPath"))}
+              </MkdirButton>
+            </div>
+            <div key="right" style={{ display: "flex", gap: 8 }}>
+              <Button
+                key="cancel"
+                onClick={() => {
+                  closeModal();
+                }}
+              >
+                {t("button.cancelButton")}
+              </Button>
+              <Button key="ok" type="primary" onClick={onOkClick}>
+                {t("button.confirmButton")}
+              </Button>
+            </div>
+          </div>,
         ]}
       >
         <ModalContainer>
-          <TopBar>
+          <ModalPathBarRow>
             <PathBar
+              compact
               path={formatPath(path)}
-              loading={isLoading}
+              loading={isFileLoading}
               onPathChange={(curPath) => {
-                if (curPath === path) {
+                const absPath = formatPath(curPath);
+                if (absPath === path) {
                   reload();
                 } else {
-                  setPath(join("/", curPath));
+                  navigateTo(absPath);
                 }
               }}
               breadcrumbItemRender={(segment, index, curPath) =>
-                index === 0 ? (
-                  <Link href="" onClick={(e) => onClickLink(e, "/")}>
-                    <DatabaseOutlined />
-                  </Link>
-                ) : (
+                index === 0 ? null : (
                   <Link href="" onClick={(e) => onClickLink(e, curPath)}>
                     {segment}
                   </Link>
                 )
               }
             />
-          </TopBar>
-          <FileTable
-            style={{ width: "100%" }}
-            files={data?.items || []}
-            filesFilter={fileFilter}
-            fileNameRender={(fileName: string) => <Button type="link">{fileName}</Button>}
-            hiddenColumns={["size", "mode"]}
-            loading={isLoading}
-            pagination={false}
-            rowKey={(r: FileInfo): React.Key => join(path, r.name)}
-            onRow={(r) => ({
-              onClick: () => {
-                setSelectedKeys([join(path, r.name)]);
-              },
-              onDoubleClick: () => {
-                setPath(join(path, r.name));
-              },
-            })}
-            rowSelection={{
-              type: "radio",
-              selectedRowKeys: selectedKeys,
-              onChange: setSelectedKeys,
-            }}
-            scroll={{ x: true, y: 500 }}
-          />
+          </ModalPathBarRow>
+
+          <ModalContent>
+            <ModalSidebarCard>
+              <ModalSidebarEntry
+                $selected={selectedEntryIndex === "home"}
+                onClick={() => {
+                  if (homeDirectory?.path) navigateTo(homeDirectory.path);
+                }}
+              >
+                <HomeDirIcon disabled={selectedEntryIndex !== "home"} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{t(pFileManager("homeDirectory"))}</span>
+              </ModalSidebarEntry>
+              {enrichedEntryPaths.map((entry, index) => (
+                <ModalSidebarEntry
+                  key={index}
+                  $selected={selectedEntryIndex === index}
+                  onClick={() => navigateTo(entry.resolvedPath)}
+                >
+                  <EntryPathIcon disabled={selectedEntryIndex !== index} />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {getI18nConfigCurrentText(entry.displayName, languageId)}
+                  </span>
+                </ModalSidebarEntry>
+              ))}
+            </ModalSidebarCard>
+
+            <ModalFileListCard>
+              <FileTableWrapper $fillHeight>
+                <FileTable
+                  files={data?.items || []}
+                  filesFilter={fileFilter}
+                  fileNameRender={(fileName: string) => <Button type="link">{fileName}</Button>}
+                  hiddenColumns={["size", "mode", "action"]}
+                  loading={isFileLoading}
+                  pagination={false}
+                  rowKey={(r: FileInfo): React.Key => join(path, r.name)}
+                  onRow={(r) => ({
+                    onClick: () => {
+                      setSelectedKeys([join(path, r.name)]);
+                    },
+                    onDoubleClick: () => {
+                      navigateTo(join(path, r.name));
+                    },
+                  })}
+                  rowSelection={{
+                    type: "radio",
+                    selectedRowKeys: selectedKeys,
+                    onChange: setSelectedKeys,
+                  }}
+                />
+              </FileTableWrapper>
+            </ModalFileListCard>
+          </ModalContent>
         </ModalContainer>
-      </Modal>
+      </FileSelectModalWrapper>
     </>
   );
 };
 
-const MkdirButton = ModalButton(MkdirModal, { icon: <FolderAddOutlined /> });
+const MkdirButton = ModalButton(MkdirModal, { icon: <CreateIcon /> });

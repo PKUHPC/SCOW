@@ -68,7 +68,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, tenantName
   const tArgs = useI18nTranslate();
   const languageId = useI18n().currentLanguage.id;
 
-  const { publicConfigClusters } = useStore(ClusterInfoStore);
+  const { publicConfigClusters, publicStorageConfigs } = useStore(ClusterInfoStore);
 
   const OperationResultTexts = getOperationResultTexts(t);
   const OperationTypeTexts = getOperationTypeTexts(t);
@@ -158,7 +158,14 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, tenantName
       return {
         ...data,
         operationType: data.operationEvent?.$case || "unknown",
-        operationDetail: getOperationDetail(data.operationEvent, t, tArgs, languageId, publicConfigClusters),
+        operationDetail: getOperationDetail(
+          data.operationEvent,
+          t,
+          tArgs,
+          languageId,
+          publicConfigClusters,
+          publicStorageConfigs,
+        ),
       };
     });
   };

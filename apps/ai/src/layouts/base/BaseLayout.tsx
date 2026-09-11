@@ -44,7 +44,7 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content)<{ $isDashboard: boolean }>`
+const Content = styled(Layout.Content)<{ $isDashboard: boolean; $disableScroll: boolean }>`
   margin: ${(props) => (props.$isDashboard ? "8px 8px 0px" : "8px")};
   padding: 16px;
   flex: 1;
@@ -52,7 +52,7 @@ const Content = styled(Layout.Content)<{ $isDashboard: boolean }>`
   flex-direction: column;
   background: ${({ theme }) => theme.token.colorBgLayout};
   max-height: calc(100vh - 78px);
-  overflow-y: auto;
+  overflow-y: ${(props) => (props.$disableScroll ? "hidden" : "auto")};
   .ant-table-wrapper .ant-table {
     scrollbar-color: auto !important;
   }
@@ -218,7 +218,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           <SideNav activeKeys={activeKeys} pathname={pathname} routes={sidebarRoutes} appRouter={router} />
         ) : undefined}
         <ContentPart>
-          <Content $isDashboard={pathname === "/dashboard"}>
+          <Content $isDashboard={pathname === "/dashboard"} $disableScroll={pathname.startsWith("/files")}>
             {children}
             {pathname === "/dashboard" ? (
               <Footer text={footerText} versionTag={usePublicConfig()?.publicConfig?.VERSION_TAG} />

@@ -1,5 +1,6 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
+import { getPublicStorageConfig, PublicStorageItem } from "@scow/config/build/storage";
 import { createOperationLogClient, OperationType } from "@scow/lib-operation-log";
 import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
 import { ExportOperationLog, OperationLog } from "@scow/protos/build/audit/operation_log";
@@ -206,6 +207,20 @@ export default route(ExportOperationLogSchema, async (req, res) => {
     const p = prefix("component.others.");
     const OperationTypeTexts = getOperationTypeTexts(t);
     const OperationResultTexts = getOperationResultTexts(t);
+    let publicStorageConfigs: Record<string, PublicStorageItem> = {};
+
+    // storage.yaml 缺失时仍允许导出日志，只回退为展示 storageId。
+    try {
+      publicStorageConfigs = getPublicStorageConfig().storages.reduce<Record<string, PublicStorageItem>>(
+        (storageMap, storage) => {
+          storageMap[storage.storageId] = storage;
+          return storageMap;
+        },
+        {},
+      );
+    } catch {
+      publicStorageConfigs = {};
+    }
 
     const { users } = await asyncClientCall(client, "getUsersByIds", {
       userIds: filter.operatorUserIds,
@@ -225,7 +240,14 @@ export default route(ExportOperationLogSchema, async (req, res) => {
         operationDetail: x.operationEvent
           ? x.operationEvent?.$case === "customEvent"
             ? getI18nCurrentText(x.operationEvent.customEvent.content, languageId)
-            : getOperationDetail(x.operationEvent, t, tArgs, languageId, JSON.parse(publicConfigClusters))
+            : getOperationDetail(
+                x.operationEvent,
+                t,
+                tArgs,
+                languageId,
+                JSON.parse(publicConfigClusters),
+                publicStorageConfigs,
+              )
           : "",
         operationResult: OperationResultTexts[x.operationResult],
         operatorUserId: `${userMap.get(x.operatorUserId) || ""} (ID: ${x.operatorUserId})`,

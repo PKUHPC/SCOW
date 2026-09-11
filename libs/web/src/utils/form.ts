@@ -189,15 +189,15 @@ export const createLinuxAbsolutePathValidator =
  *
  * 允许：
  * - 相对路径，例如 "project/output"；
- * - 位于 homeDir 下的绝对路径，例如 homeDir 为 "/home/alice" 时允许 "/home/alice/project"。
+ * - 位于 homeDir 或 additionalRootPaths 下的绝对路径。
  *
  * 禁止：
  * - 空格、tab、换行、控制字符；
  * - , ; | & > < ` $ " ' \ * ? [ ] { } ( )；
  * - 任意路径段为 ".."；
  * - 任意路径段为 "."。
- * - 绝对路径不在 homeDir 下；
- * - homeDir 为空时的绝对路径。
+ * - 绝对路径不在 homeDir 或 additionalRootPaths 下；
+ * - homeDir 和 additionalRootPaths 均为空时的绝对路径。
  *
  * 不校验：
  * - 是否必须以 "/" 开头；
@@ -205,20 +205,21 @@ export const createLinuxAbsolutePathValidator =
  * - 相对路径最终拼接后的路径是否真实存在或可写。
  */
 export const createRelativeToHomePathValidator =
-  (homeDir: string | undefined, messages: PathValidationMessages = {}) =>
+  (homeDir: string | undefined, messages: PathValidationMessages = {}, additionalRootPaths: string[] = []) =>
   () => ({
     validator(_: RuleObject, value: unknown) {
-      const error = validateRelativeToHomePath(value, homeDir, messages);
+      const error = validateRelativeToHomePath(value, homeDir, messages, additionalRootPaths);
       return error ? rejectPath(error) : Promise.resolve();
     },
   });
 
 /**
- * 创建用户家目录范围内的绝对路径校验规则，适用于 WORK_DIR、挂载源等用户文件路径。
+ * 创建用户家目录或可信根目录范围内的绝对路径校验规则，适用于 WORK_DIR、挂载源等用户文件路径。
  *
  * 允许：
  * - 等于 homeDir 的绝对路径，例如 homeDir 为 "/home/alice" 时允许 "/home/alice"；
  * - 位于 homeDir 下的绝对路径，例如 "/home/alice/project"。
+ * - 位于 additionalRootPaths 下的绝对路径。
  *
  * 禁止：
  * - 相对路径，例如 "project/output"；
@@ -226,8 +227,8 @@ export const createRelativeToHomePathValidator =
  * - , ; | & > < ` $ " ' \ * ? [ ] { } ( )；
  * - 任意路径段为 ".."；
  * - 任意路径段为 "."；
- * - homeDir 为空时的非空路径；
- * - 不在 homeDir 下的路径。
+ * - homeDir 和 additionalRootPaths 均为空时的非空路径；
+ * - 不在 homeDir 或 additionalRootPaths 下的路径。
  *
  * 不校验：
  * - 路径是否真实存在；
@@ -235,10 +236,10 @@ export const createRelativeToHomePathValidator =
  * - 是否为符号链接。
  */
 export const createHomeScopedPathValidator =
-  (homeDir: string | undefined, messages: PathValidationMessages = {}) =>
+  (homeDir: string | undefined, messages: PathValidationMessages = {}, additionalRootPaths: string[] = []) =>
   () => ({
     validator(_: RuleObject, value: unknown) {
-      const error = validateHomeScopedPath(value, homeDir, messages);
+      const error = validateHomeScopedPath(value, homeDir, messages, additionalRootPaths);
       return error ? rejectPath(error) : Promise.resolve();
     },
   });

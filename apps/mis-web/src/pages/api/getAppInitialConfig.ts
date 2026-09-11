@@ -1,6 +1,7 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
 import { createI18nStringSchema } from "@scow/config/build/i18n";
+import { getPublicStorageConfig, PublicStorageConfigSchema } from "@scow/config/build/storage";
 import { getDarkModeCookieValue } from "@scow/lib-web/build/layouts/darkMode";
 import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { formatActivatedClusters } from "@scow/lib-web/build/utils/misCommon/clustersActivation";
@@ -55,6 +56,7 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
       ),
 
       clusterConfigs: Type.Record(Type.String(), ClusterConfigSchema),
+      publicStorageConfigs: PublicStorageConfigSchema,
 
       initialActivatedClusters: Type.Record(
         Type.String(),
@@ -85,6 +87,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
     initialLanguageId: "",
     systemLanguageConfig: publicConfig.SYSTEM_LANGUAGE_CONFIG,
     clusterConfigs: {},
+    publicStorageConfigs: { storages: [] },
     initialActivatedClusters: {},
     initialSimpleClustersInfo: {},
     titleTag: "",
@@ -112,6 +115,13 @@ export default route(GetAppInitialConfigSchema, async (req) => {
 
   if (Object.keys(clusters).length > 0) {
     extra.clusterConfigs = clusters;
+  }
+
+  // storage.yaml 缺失时不影响系统初始化，页面侧回退为直接展示 storageId。
+  try {
+    extra.publicStorageConfigs = getPublicStorageConfig();
+  } catch {
+    extra.publicStorageConfigs = { storages: [] };
   }
 
   const simpleClustersInfo: Record<string, SimpleClusterSchema> = {};

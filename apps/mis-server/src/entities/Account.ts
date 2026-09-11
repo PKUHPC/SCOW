@@ -50,6 +50,10 @@ export class Account {
   @Enum({ items: () => AccountState, default: AccountState.NORMAL, comment: Object.values(AccountState).join(", ") })
   state: AccountState;
 
+  // 账户关联的用户组名称
+  @Property({ unique: true, nullable: true })
+  accountGroupName?: string;
+
   @Property({ columnType: DATETIME_TYPE, nullable: true })
   createTime: Date;
 
@@ -60,6 +64,7 @@ export class Account {
     blockedInCluster: boolean;
     comment?: string;
     state?: AccountState;
+    accountGroupName?: string;
     createTime?: Date;
   }) {
     this.accountName = init.accountName;
@@ -70,6 +75,9 @@ export class Account {
     }
     this.comment = init.comment ?? "";
     this.state = init.state ?? AccountState.NORMAL;
+    if (init.accountGroupName) {
+      this.accountGroupName = init.accountGroupName;
+    }
     this.createTime = init.createTime ?? new Date();
   }
 }

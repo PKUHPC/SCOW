@@ -13,6 +13,19 @@ import { ServerErrorPage } from "src/components/errorPages/ServerErrorPage";
 import { Redirect } from "src/components/Redirect";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 
+const FileManagerLoading = () => (
+  <div
+    style={{
+      minHeight: "calc(100vh - 48px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Spin />
+  </div>
+);
+
 export const HomeDirFileManagerPage: NextPage = requireAuth(() => true)(() => {
   const router = useRouter();
 
@@ -28,7 +41,7 @@ export const HomeDirFileManagerPage: NextPage = requireAuth(() => true)(() => {
   });
 
   if (isLoading) {
-    return <Spin />;
+    return <FileManagerLoading />;
   }
 
   if (error) {

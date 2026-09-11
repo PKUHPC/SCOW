@@ -132,6 +132,7 @@ export default {
       imagePulling: "이미지 가져오는 중",
       insufficientResources: "자원이 부족합니다",
     },
+    directoryServiceNotConfigured: "디렉터리 서비스가 구성되지 않았습니다. 관리자에게 문의하세요.",
   },
   dashboard: {
     title: "대시보드",
@@ -205,6 +206,7 @@ export default {
         systemDebug: "플랫폼 운영",
         statusSynchronization: "계정/사용자 동기화",
         jobSynchronization: "작업 동기화",
+        userGroup: "사용자 그룹",
         resourceManagement: "자원 관리",
         clusterManagement: "클러스터 관리",
         accountList: "계정",
@@ -239,6 +241,7 @@ export default {
         accountChargeRecords: "계정 지출 기록",
         accountBills: "계정 청구서 상세",
         storageManager: "스토리지 관리자",
+        userBaseStorageQuota: "사용자 기본 스토리지 할당량",
         permissionManagement: "권한 관리",
         defaultAuthorizedApp: "기본 권한 애플리케이션",
         appAuthorization: "애플리케이션 권한 부여",
@@ -303,6 +306,7 @@ export default {
         delete: "삭제",
         deleteSuccess: "계정 삭제 성공!",
         deleteFail: "계정 삭제 실패. 관리자에게 문의하세요.",
+        deleteDirectoryGroupFailed: "계정 삭제 중 디렉터리 서비스 작업이 실패했습니다. 관리자에게 문의하세요.",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "설정 성공",
@@ -378,6 +382,12 @@ export default {
         selectAccount: "계정을 선택하세요!",
         specifyOwner: "각 계정의 주 관리자를 지정하세요.",
         incorrectFormat: "데이터 형식이 올바르지 않습니다.",
+        quotaEnabling: "Account storage quota is being enabled. Please import again later.",
+        multiAccountUsers: "The following users would belong to multiple accounts and cannot be imported: {}",
+        multiGroupUsers:
+          "The following users belong to multiple groups. Please ensure all users belong to only one group before importing: {}",
+        defaultGroupNotRemoved:
+          "The following users could not have their default group determined. Import failed. Please check the directory service configuration and try again: {}",
         importSuccess: "가져오기 성공",
         selectCluster: "클러스터:",
         alreadyExist: "계정이 SCOW에 이미 존재합니다.",
@@ -874,6 +884,7 @@ export default {
         blockAccount: "사용자가 차단되었습니다. 먼저 차단을 해제하세요",
         arrearsAccount: "사용자 연체 상태를 가져오지 못했습니다",
         addSuccess: "추가 성공!",
+        directoryGroupAddFailed: "디렉터리 그룹에 사용자 추가 실패. 잠시 후 다시 시도하세요.",
         userDeleted: "사용자가 삭제되어 추가할 수 없습니다",
       },
       createUserForm: {
@@ -963,6 +974,7 @@ export default {
         cannotRemoverUserWhoHaveRunningJobFromAccount:
           "사용자에게 아직 실행 중인 작업이 있습니다. 작업 종료를 기다리거나 수동으로 종료한 후 이동하세요." +
           " 또한 계정/사용자 동기화가 실행 중일 수 있습니다. 동기화 완료 후 다시 시도하세요.",
+        directoryServiceOperationFailed: "디렉터리 서비스 작업이 실패했습니다. 관리자에게 문의하세요.",
 
         blockUserInAccountFailed: "계정에서 사용자 차단 실패",
         unblockUserInAccountFailed: "계정에서 사용자 차단 해제 실패",
@@ -999,7 +1011,13 @@ export default {
         notFoundStorageConfig: "시스템 오류, 해당 스토리지 설정을 찾을 수 없습니다",
         totalStorage: "총 스토리지",
         remainingStorage: "남은 스토리지",
+        storageSystem: "파일 시스템",
         userDefaultQuota: "사용자 기본 스토리지 할당량",
+        tenantAssignedQuota: "테넌트 할당량 합계",
+        tenantAssignedQuotaTooltip: "이 테넌트의 모든 사용자에게 할당된 스토리지 할당량의 합계",
+        tenantUsedStorage: "테넌트 사용량",
+        tenantUsedStorageTooltip: "이 테넌트의 모든 사용자의 스토리지 사용량 합계",
+        mountedClusters: "마운트된 클러스터",
         edit: "편집",
         user: "사용자",
         storageQuota: "스토리지 할당량",
@@ -1019,10 +1037,9 @@ export default {
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "기본 스토리지 할당량 수정",
         confirm: "확인",
-        modifyUserDeulatQuotaSuccess: "사용자 기본 스토리지 할당량 수정 성공",
-        modifyPartialSuccess:
-          "기본 스토리지 할당량은 수정되었으나, {}명의 사용자에 대한 할당량 조정 중 예외가 발생했습니다.",
-        cluster: "클러스터",
+        modifyUserDefaultQuotaSuccess: "사용자 기본 스토리지 할당량 수정 성공",
+        modifyPartialSuccess: "기본 스토리지 할당량은 수정되었으나, {}명의 사용자에 대한 할당량 조정 중 예외가 발생했습니다.",
+        fileSystem: "파일 시스템",
         tip: "변경 사항은 즉시 적용됩니다. 할당량을 줄이면 사용자가 스토리지 한도를 초과하여 실행 중인 작업이 데이터를 기록하지 못할 수 있습니다. 신중히 진행하세요",
       },
       userQuotaChangeModal: {
@@ -1034,7 +1051,7 @@ export default {
         batchModifyUserQuotaSuccess: "사용자 스토리지 할당량 일괄 수정 성공",
         batchModifyUserQuotaPartialSuccess: "사용자 스토리지 할당량 일괄 수정에서 {}건 성공, {}건 실패",
         batchModifyUserQuotaFailed: "사용자 스토리지 할당량 일괄 수정 실패",
-        cluster: "클러스터",
+        fileSystem: "파일 시스템",
         user: "사용자",
         selectedUsers: "선택된 사용자",
         defaultStorageQuota: "기본 스토리지 할당량",
@@ -1197,6 +1214,7 @@ export default {
       partitions: {
         getBillingTableErrorMessage: "클러스터 및 파티션 정보를 가져오지 못했습니다. 관리자에게 문의하세요.",
         partitionInfo: "파티션 정보",
+        billingStandard: "Billing Standard",
         loading: "파티션 로딩 중...",
       },
       operationLogs: {
@@ -1205,6 +1223,42 @@ export default {
       historyJobs: {
         userCompletedJob: "완료된 작업",
       },
+    },
+    storageBilling: {
+      storageResource: "Storage Resource",
+      computeResource: "Compute Resource",
+      noAvailableBillingData: "No billing data available",
+      fileSystem: "File System:",
+      fileSystemTitle: "File System",
+      all: "All",
+      setStoragePrice: "Set Storage Price",
+      newBillingId: "New Billing ID:",
+      generatedAfterSave: "Generated after saving",
+      billingMode: "Billing Mode",
+      billingId: "Billing ID",
+      selectBillingMode: "Please select a billing mode",
+      usage: "Usage",
+      quota: "Quota",
+      quotaModeRequiresAccountStorageQuota:
+        "Account storage quota is not enabled. Quota-based billing cannot be selected.",
+      unknown: "Unknown",
+      startValue: "Start Value",
+      endValue: "End Value",
+      unitPrice: "Unit Price (CNY/TB/Day)",
+      required: "Required",
+      setLastTierEndFirst: "Please set the end value of the current last tier first",
+      endMustGreaterThanStart: "The end value must be greater than the start value",
+      lastTierMustBeNoLimit: "The last tier must be unlimited",
+      add: "Add",
+      setPriceSuccess: "Price set successfully",
+      saveFailed: "Save failed",
+      save: "Save",
+      collapseHistory: "Collapse History",
+      expandHistory: "Expand History",
+      historyBillingId: "Historical Billing ID",
+      effectiveDate: "Effective Date",
+      validPeriod: "Valid Period",
+      timeRange: "{} to {}",
     },
     tenant: {
       info: {
@@ -1279,6 +1333,7 @@ export default {
         create: {
           tenantNotExistUser: "사용자 {1}는 테넌트 {0}에 존재하지 않습니다.",
           accountNameOccupied: "계정 이름이 이미 사용 중입니다",
+          directoryGroupNameOccupied: "이 계정 이름에 해당하는 디렉터리 서비스 그룹이 이미 존재합니다. 다른 계정 이름을 사용하세요.",
           userIdAndNameNotMatch: "사용자 ID와 이름이 일치하지 않습니다.",
           createSuccess: "생성 성공!",
           ownerUserId: "주 관리자 사용자 ID",
@@ -1305,6 +1360,7 @@ export default {
       },
       storageManager: {
         storageManager: "스토리지 관리자",
+        userBaseStorageQuota: "사용자 기본 스토리지 할당량",
       },
       permissionManagement: {
         defaultApps: {
@@ -1489,6 +1545,24 @@ export default {
           syncJobNow: "지금 동기화",
           accountUserSyncRunning:
             "계정/사용자 동기화가 실행 중입니다. " + "작업 동기화를 시작하기 전에 완료를 기다리세요.",
+        },
+        userGroup: {
+          title: "사용자 그룹",
+          alertLine1: "사용자 그룹 기능을 활성화하면 시스템이 기존 데이터를 자동으로 초기화하여 각 계정에 독립적인 사용자 그룹을 할당하고, "
+          + "계정의 모든 사용자가 해당 그룹에 속하게 됩니다.",
+          alertLine2: "이 기능은 핵심 기반 기능입니다. 활성화 후에는 비활성화할 수 없으며 데이터를 롤백할 수 없습니다. "
+          + "계속하기 전에 비즈니스 영향을 충분히 평가했는지 확인하세요.",
+          featureLabel: "사용자 그룹 기능",
+          confirmTitle: "사용자 그룹 기능 활성화 확인",
+          confirmContent: "이 작업은 사용자 그룹 기능을 활성화합니다. 활성화 후에는 비활성화할 수 없으며 데이터를 롤백할 수 없습니다. "
+          + "비즈니스 영향을 충분히 평가했음을 확인하세요.",
+          confirmOk: "활성화 확인",
+          confirmCancel: "취소",
+          successTitle: "사용자 그룹 기능이 성공적으로 활성화되었습니다",
+          successContent: "사용자 그룹 기능이 활성화되었습니다. 확인을 클릭하면 이 구성 페이지가 자동으로 숨겨지며 추가 구성이 필요하지 않습니다.",
+          successOk: "확인",
+          initializingMessage: "데이터를 초기화하는 중입니다. 잠시 기다려주세요...",
+          initFailedMessage: "초기화에 실패했습니다. 나중에 다시 시도하세요",
         },
       },
       resourceManagement: {
@@ -1759,6 +1833,7 @@ export default {
       setTenantUserQuota: "사용자 스토리지 할당량 수정",
       batchSetTenantUsersQuota: "테넌트 사용자 스토리지 할당량 일괄 수정",
       syncTenantUsersStorageUsage: "테넌트 사용자 스토리지 사용량 동기화",
+      syncTenantAccountsStorageUsage: "Sync the storage usage of accounts under a tenant",
       authorizeApp: "애플리케이션 권한 부여",
       unauthorizeApp: "애플리케이션 권한 취소",
       migrateNode: "노드 마이그레이션",
@@ -1898,11 +1973,11 @@ export default {
       changeEmail: "사용자: {}",
       editUserProfile: "사용자: {}",
       decompressFile: "경로: {0} , 파일 {1}",
-      setTenantUserQuota: "사용자: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}, 테넌트 기본값 사용: {4}",
-      batchSetTenantUsersQuota:
-        "사용자들: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}, 테넌트 기본값 사용: {4}",
-      setTenantUserDefaultQuota: "테넌트: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}",
-      syncTenantUsersStorageUsage: "테넌트: {0}, 클러스터: {1}, 경로: {2}",
+      setTenantUserQuota: "사용자: {0}, 파일 시스템: {1}, 스토리지 할당량: {2}",
+      batchSetTenantUsersQuota: "사용자들: {0}, 파일 시스템: {1}, 스토리지 할당량: {2}",
+      setTenantUserDefaultQuota: "테넌트: {0}, 파일 시스템: {1}, 스토리지 할당량: {2}",
+      syncTenantUsersStorageUsage: "테넌트: {0}, 파일 시스템: {1}",
+      syncTenantAccountsStorageUsage: "Tenant: {0}, File system: {1}",
       hpcAppScope: "HPC",
       aiAppScope: "AI",
       tenantAppAuthorizationLog: "클러스터: {0}, 애플리케이션: {1} ({3}), 테넌트: {2}",

@@ -176,6 +176,7 @@ export default {
         permission: "권한",
         notShowHiddenItem: "숨김 항목 표시 안 함",
         showHiddenItem: "숨김 항목 표시",
+        homeDirectory: "홈 디렉토리",
       },
       singleCrossClusterTransferSelector: {
         placeholder: "클러스터를 선택하세요",
@@ -254,6 +255,12 @@ export default {
         usage: "사용량",
         storageQuotaTooltip:
           "현재 파일 시스템은 백업으로 추가 공간을 사용합니다. 따라서 사용량이 실제 파일 크기보다 높게 표시될 수 있습니다",
+        accountStorageQuotaTooltip:
+          "계정이 차단되었거나 연체 상태이면 데이터를 쓸 수 없습니다. 계정 저장소 할당량이 남아 있어도 할당량 부족으로 표시됩니다.",
+        userStorageQuota: "사용자 저장소",
+        accountStorageQuota: "계정 저장소",
+        homeDirectory: "홈 디렉토리",
+        entryPathCreateFailed: "빠른 경로 디렉토리 생성에 실패했습니다. 관리자에게 문의하세요",
         failedResolveSymlink: "심볼릭 링크 해석 실패",
         noAccessPermission: "접근 권한 없음",
         noPath: "경로를 찾을 수 없습니다. 확인하세요",

@@ -524,6 +524,17 @@ message ChangeJobPrice {
   common.Money price = 3;
 }
 
+message BatchSetAccountStorageQuota {
+  repeated string account_names = 1;
+  string storage_id = 2;
+  uint64 storage_quota_mb = 3;
+}
+
+message SetAccountDefaultStorageQuota {
+  string storage_id = 1;
+  uint64 storage_quota_mb = 2;
+}
+
 message ChangeJobPlatformPrice {
   uint64 job_id = 1;
   string cluster = 2;
@@ -810,31 +821,37 @@ message UnlockUser {
 
 message SetTenantUserDefaultQuota {
   string tenant_name = 1;
-  string cluster = 2;
-  string path = 3;
   uint64 storage_quota = 4;
+  reserved 2, 3;
+  string storage_id = 5;
 }
 
 message SetTenantUserQuota {
   string user_id = 1;
-  string cluster = 2;
-  string path = 3;
   optional uint64 storage_quota = 4;
   optional bool use_tenant_default_user_quota = 5;
+  reserved 2, 3;
+  string storage_id = 6;
 }
 
 message BatchSetTenantUsersQuota {
   repeated string user_ids = 1;
-  string cluster = 2;
-  string path = 3;
   optional uint64 storage_quota = 4;
   optional bool use_tenant_default_user_quota = 5;
+  reserved 2, 3;
+  string storage_id = 6;
 }
 
 message SyncTenantUsersStorageUsage {
-  string cluster = 1;
-  string path = 2;
   string tenant = 3;
+  reserved 1, 2;
+  string storage_id = 4;
+}
+
+message SyncTenantAccountsStorageUsage {
+  string tenant = 3;
+  reserved 1, 2;
+  string storage_id = 4;
 }
 
 message AuthorizeApp {
@@ -1066,6 +1083,9 @@ message CreateOperationLogRequest {
     RemoveFromDefaultPartitions remove_from_default_partitions = 130;
     ChangeJobPrice change_job_price = 131;
     ChangeJobPlatformPrice change_job_platform_price = 132;
+    BatchSetAccountStorageQuota batch_set_account_storage_quota = 134;
+    SetAccountDefaultStorageQuota set_account_default_storage_quota = 135;
+    SyncTenantAccountsStorageUsage sync_tenant_accounts_storage_usage = 136;
   }
 }
 
@@ -1206,6 +1226,9 @@ message OperationLog {
     RemoveFromDefaultPartitions remove_from_default_partitions = 132;
     ChangeJobPrice change_job_price = 133;
     ChangeJobPlatformPrice change_job_platform_price = 134;
+    SetAccountDefaultStorageQuota set_account_default_storage_quota = 135;
+    SyncTenantAccountsStorageUsage sync_tenant_accounts_storage_usage = 136;
+    BatchSetAccountStorageQuota batch_set_account_storage_quota = 137;
   }
 }
 

@@ -9,8 +9,13 @@ import { procedure } from "src/server/trpc/procedure/base";
 import { PlatformRole } from "src/server/trpc/route/auth";
 import { buildUserMap } from "src/server/trpc/route/utils/userMap";
 import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
-import { checkIsPublicPaths } from "src/server/utils/clusters";
-import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
+import {
+  checkClusterAvailable,
+  checkIsPublicPaths,
+  computeAssetVersionNoCheckPermission,
+  PermissionCheckMode,
+  shouldPathsSkipPermissionCheck,
+} from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
@@ -364,7 +369,20 @@ export const createDatasetVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
-    const noCheckPermission = shouldPathsSkipPermissionCheck(dataset.clusterId, [path], isPlatformOwned ?? false);
+    const noCheckPermission = computeAssetVersionNoCheckPermission(
+      dataset.clusterId,
+      path,
+      user.identityId,
+      user.platformRoles,
+      !!isPlatformOwned,
+    );
+
+    if (isPlatformOwned && !noCheckPermission) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `${path} is outside the required PublicPath boundary`,
+      });
+    }
 
     // 检查目录是否存在
     await driver.withFileDriver(
@@ -664,6 +682,14 @@ export const deleteDatasetVersion = procedure
       checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
       if (!isPlatformOwned) {
+        const noCheckPermission = shouldPathsSkipPermissionCheck(
+          dataset.clusterId,
+          [datasetVersion.privatePath],
+          user.identityId,
+          user.platformRoles,
+          PermissionCheckMode.ENTRY_PATHS,
+        );
+
         try {
           await driver.withFileDriver(
             {
@@ -671,7 +697,7 @@ export const deleteDatasetVersion = procedure
               user: user.identityId,
             },
             async (fileDriver) => {
-              await fileDriver.checkSharePermission(datasetVersion.privatePath);
+              await fileDriver.checkSharePermission(datasetVersion.privatePath, noCheckPermission);
             },
             logger,
           );
@@ -829,13 +855,21 @@ export const shareDatasetVersion = procedure
       });
     }
 
+    const noCheckPermission = computeAssetVersionNoCheckPermission(
+      dataset.clusterId,
+      datasetVersion.privatePath,
+      user.identityId,
+      user.platformRoles,
+      !!isPlatformOwned,
+    );
+
     await driver.withFileDriver(
       {
         clusterId: dataset.clusterId,
         user: user.identityId,
       },
       async (fileDriver) => {
-        await fileDriver.checkSharePermission(datasetVersion.privatePath, isPlatformOwned);
+        await fileDriver.checkSharePermission(datasetVersion.privatePath, noCheckPermission);
       },
       logger,
     );
@@ -929,6 +963,7 @@ export const shareDatasetVersion = procedure
             targetName: dataset.name,
             targetSubName: datasetVersion.versionName,
             sharedTopDir,
+            noCheckPermission,
           },
           successCallback,
           failureCallback,
@@ -1188,13 +1223,25 @@ export const copyPublicDatasetVersion = procedure
     checkClusterAvailable(currentClusterIds, datasetVersion.dataset.$.clusterId);
 
     // 3. 检查用户是否可以将源文件复制到目标文件
+    const noCheckPermissionForEntryPaths = shouldPathsSkipPermissionCheck(
+      datasetVersion.dataset.$.clusterId,
+      [input.path],
+      user.identityId,
+      user.platformRoles,
+      PermissionCheckMode.ENTRY_PATHS,
+    );
+
     await driver.withFileDriver(
       {
         clusterId: datasetVersion.dataset.$.clusterId,
         user: user.identityId,
       },
       async (fileDriver) => {
-        await fileDriver.checkCopyFilePath(input.path, path.basename(datasetVersion.path));
+        await fileDriver.checkCopyFilePath(
+          input.path,
+          path.basename(datasetVersion.path),
+          noCheckPermissionForEntryPaths,
+        );
       },
       logger,
     );
@@ -1233,7 +1280,12 @@ export const copyPublicDatasetVersion = procedure
         { clusterId: datasetVersion.dataset.$.clusterId, user: user.identityId },
         async (driver) => {
           // scowd复制需要再路径最后加上文件夹名
-          await driver.copyWithMode(datasetVersion.path, targetCopiedPath, "0750", checkIsPublicPathsResult);
+          await driver.copyWithMode(
+            datasetVersion.path,
+            targetCopiedPath,
+            "0750",
+            checkIsPublicPathsResult || noCheckPermissionForEntryPaths,
+          );
         },
         logger,
       );

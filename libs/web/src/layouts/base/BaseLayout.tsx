@@ -33,7 +33,7 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content)<{ $isDashboard: boolean; $fullBleed: boolean }>`
+const Content = styled(Layout.Content)<{ $isDashboard: boolean; $fullBleed: boolean; $disableScroll: boolean }>`
   margin: ${(props) => (props.$fullBleed ? "0" : props.$isDashboard ? "8px 8px 0px" : "8px")};
   padding: ${(props) => (props.$fullBleed ? "0" : "16px")};
   flex: 1;
@@ -41,7 +41,7 @@ const Content = styled(Layout.Content)<{ $isDashboard: boolean; $fullBleed: bool
   flex-direction: column;
   background: ${({ theme }) => theme.token.colorBgLayout};
   max-height: calc(100vh - 78px);
-  overflow-y: auto;
+  overflow-y: ${(props) => (props.$disableScroll ? "hidden" : "auto")};
   .ant-table-wrapper .ant-table {
     scrollbar-color: auto !important;
   }
@@ -84,6 +84,8 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   operationLogUrl,
 }) => {
   const router = useRouter();
+  const disableContentScroll =
+    router.pathname === "/files/fileTransfer" || router.pathname === "/files/[cluster]/[[...path]]";
 
   const { md } = useBreakpoint();
 
@@ -177,6 +179,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         <ContentPart>
           <Content
             $isDashboard={router.pathname === "/dashboard"}
+            $disableScroll={disableContentScroll}
             // 提交作业和应用页面右侧需要全屏
             $fullBleed={router.pathname === "/jobs/submit" || router.pathname === "/apps/createApps"}
           >

@@ -1,9 +1,9 @@
-import type { PortalConfigSchema } from "@scow/config/build/portal";
-import type { UiConfigSchema } from "@scow/config/build/ui";
-
 import { AuditConfigSchema } from "@scow/config/build/audit";
 import { ScowResourceConfigSchema } from "@scow/config/build/common";
 import { I18nStringType, SystemLanguageConfig } from "@scow/config/build/i18n";
+import type { PortalConfigSchema } from "@scow/config/build/portal";
+import { PublicStorageConfigSchema } from "@scow/config/build/storage";
+import type { UiConfigSchema } from "@scow/config/build/ui";
 import { UiExtensionConfigSchema } from "@scow/config/build/uiExtensions";
 import { UserLink } from "@scow/lib-web/build/layouts/base/types";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
@@ -91,6 +91,8 @@ export interface PublicRuntimeConfig {
   SHADOW_DESK_WMS?: string[];
 
   DASHBOARD_USER_DISPLAY_MODE: "full" | "simplified";
+
+  PUBLIC_STORAGE_CONFIG?: PublicStorageConfigSchema;
 }
 
 interface RuntimeConfigs {

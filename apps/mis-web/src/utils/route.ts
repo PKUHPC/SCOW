@@ -26,7 +26,8 @@ export const route: typeof typeboxRoute = (schema, handler) => {
         }
 
         const SCOW_ERROR = e.metadata.get("IS_SCOW_ERROR");
-        if (!SCOW_ERROR) {
+        // Metadata.get 返回数组；空数组是真值，必须按长度判断是否真的标记为 SCOW 错误。
+        if (SCOW_ERROR.length === 0) {
           throw e;
         }
         const code = e.metadata.get("SCOW_ERROR_CODE")?.[0]?.toString();

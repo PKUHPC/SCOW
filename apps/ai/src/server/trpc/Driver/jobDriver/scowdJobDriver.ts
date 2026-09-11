@@ -49,7 +49,12 @@ import {
   validateUniqueMountTargets,
   validateUniquePaths,
 } from "src/server/utils/app";
-import { getAdapterClient } from "src/server/utils/clusters";
+import {
+  getAdapterClient,
+  isPathAllowed,
+  PermissionCheckMode,
+  shouldPathsSkipPermissionCheck,
+} from "src/server/utils/clusters";
 import { allProtoAiJobTypes } from "src/server/utils/getProtoJobType";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { formatTime } from "src/utils/datetime";
@@ -530,11 +535,15 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    validateMountPoints(normalizedMountPoints, homeDir);
+    validateMountPoints(normalizedMountPoints, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     validateResourceMountTargets([...algorithmVersions, ...datasetVersions, ...modelVersions]);
     validateUniqueMountTargets([
       ...algorithmVersions.map(({ target }) => target),
@@ -545,10 +554,18 @@ export class ScowdJobDriver implements JobDriver {
 
     // 检查挂载点是否为目录，不能是软链接
     for (const { path } of normalizedMountPoints) {
+      const noCheckPermission = shouldPathsSkipPermissionCheck(
+        clusterId,
+        [path],
+        this.userId,
+        null,
+        PermissionCheckMode.ENTRY_PATHS,
+      );
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
           filePath: path,
+          noCheckPermission,
         }),
         this.logger,
       );
@@ -1084,11 +1101,15 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    validateMountPoints(normalizedMountPoints, homeDir);
+    validateMountPoints(normalizedMountPoints, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     validateResourceMountTargets(modelVersions);
     validateUniqueMountTargets([
       ...modelVersions.map(({ target }) => target),
@@ -1109,10 +1130,18 @@ export class ScowdJobDriver implements JobDriver {
 
     // 检查挂载点是否为目录，不能是软链接
     for (const { path } of normalizedMountPoints) {
+      const noCheckPermission = shouldPathsSkipPermissionCheck(
+        clusterId,
+        [path],
+        this.userId,
+        null,
+        PermissionCheckMode.ENTRY_PATHS,
+      );
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
           filePath: path,
+          noCheckPermission,
         }),
         this.logger,
       );
@@ -1324,11 +1353,15 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    validateMountPoints(normalizedMountPoints, homeDir);
+    validateMountPoints(normalizedMountPoints, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     validateResourceMountTargets([...algorithmVersions, ...datasetVersions, ...modelVersions]);
     validateUniqueMountTargets([
       ...algorithmVersions.map(({ target }) => target),
@@ -1336,7 +1369,9 @@ export class ScowdJobDriver implements JobDriver {
       ...modelVersions.map(({ target }) => target),
       ...normalizedMountPoints.map(({ target }) => target),
     ]);
-    validateOptionalHomeScopedPath(tensorBoardDataPath, homeDir);
+    validateOptionalHomeScopedPath(tensorBoardDataPath, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
 
     const scowWorkDirectoryName = `${clusterId}-job-${dayjs().format("YYYYMMDD-HHmmss")}`;
     const trainJobsDirectory = join(aiConfig.appJobsDir, scowWorkDirectoryName);
@@ -1358,10 +1393,18 @@ export class ScowdJobDriver implements JobDriver {
 
     // 检查挂载点是否为目录，不能是软链接
     for (const { path } of normalizedMountPoints) {
+      const noCheckPermission = shouldPathsSkipPermissionCheck(
+        clusterId,
+        [path],
+        this.userId,
+        null,
+        PermissionCheckMode.ENTRY_PATHS,
+      );
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
           filePath: path,
+          noCheckPermission,
         }),
         this.logger,
       );
@@ -1596,11 +1639,15 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir);
+    const workingDirectory = extractAndValidateWorkDir(envVariables, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     // 确保去除 XDL_IP 与 VC_GPU_NUM
     const filteredEnvVars = filterReservedEnvVars(envVariables);
 
-    validateMountPoints(normalizedMountPoints, homeDir);
+    validateMountPoints(normalizedMountPoints, homeDir, (path) =>
+      isPathAllowed(path, homeDir, clusterId, this.userId),
+    );
     validateUniqueMountTargets(normalizedMountPoints.map(({ target }) => target));
 
     const scowWorkDirectoryName = `${clusterId}-devHost-${dayjs().format("YYYYMMDD-HHmmss")}`;
@@ -1611,10 +1658,18 @@ export class ScowdJobDriver implements JobDriver {
 
     // 检查挂载点是否为目录，不能是软链接
     for (const { path } of normalizedMountPoints) {
+      const noCheckPermission = shouldPathsSkipPermissionCheck(
+        clusterId,
+        [path],
+        this.userId,
+        null,
+        PermissionCheckMode.ENTRY_PATHS,
+      );
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
           filePath: path,
+          noCheckPermission,
         }),
         this.logger,
       );

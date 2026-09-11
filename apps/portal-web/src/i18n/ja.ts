@@ -177,6 +177,7 @@ export default {
         permission: "権限",
         notShowHiddenItem: "隠し項目を表示しない",
         showHiddenItem: "隠し項目を表示",
+        homeDirectory: "ホームディレクトリ",
       },
       singleCrossClusterTransferSelector: {
         placeholder: "クラスターを選択してください",
@@ -255,6 +256,12 @@ export default {
         usage: "使用量",
         storageQuotaTooltip:
           "現在のファイルシステムはバックアップにより追加のストレージを消費します。そのため使用量は実際のファイルサイズより多く表示されます",
+        accountStorageQuotaTooltip:
+          "アカウントがブロック中または未払い状態の場合、データを書き込めません。アカウントのストレージクォータを使い切っていなくても、クォータ不足と表示されます。",
+        userStorageQuota: "ユーザーストレージ",
+        accountStorageQuota: "アカウントストレージ",
+        homeDirectory: "ホームディレクトリ",
+        entryPathCreateFailed: "クイックパスのディレクトリ作成に失敗しました。管理者にお問い合わせください",
         failedResolveSymlink: "シンボリックリンクの解決に失敗",
         noAccessPermission: "アクセス権限がありません",
         noPath: "パスが見つかりません。確認してください",

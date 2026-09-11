@@ -1,44 +1,48 @@
-import type { DataNode, EventDataNode } from "antd/es/tree";
-
-import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  ModalContainer,
+  ModalContent,
+  ModalFileListCard,
+  ModalPathBarRow,
+  ModalSidebarCard,
+  ModalSidebarEntry,
+  fileSelectModalStyles,
+} from "@scow/lib-web/build/components/filemanager/FileSelectorModalLayout";
+import { FileTableWrapper } from "@scow/lib-web/build/components/filemanager/FileTableWrapper";
+import { RoundedModalButton, StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { useAutoSelectSidebar } from "@scow/lib-web/build/hooks/useAutoSelectSidebar";
+import { CreateIcon, DecompressIcon, EntryPathIcon, HomeDirIcon, UploadIcon } from "@scow/lib-web/build/icons/FileIcon";
+import { formatPath } from "@scow/lib-web/build/utils/filePathUtils";
+import { buildEnrichedEntryPaths } from "@scow/lib-web/build/utils/storageClusterHelper";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { matchesFileExtension } from "@scow/utils";
-import { Button, message, Modal, Tree } from "antd";
+import { Button, message } from "antd";
 import Link from "next/link";
 import { join } from "path";
-import React, { Key, useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
+import { useStore } from "simstate";
 import { api } from "src/apis";
-import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { FileInfo, FileType } from "src/pages/api/file/list";
-import { isDecompressibleFile, isParentOrSameFolder } from "src/server/file";
+import { isDecompressibleFile } from "src/server/file";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { UserStore } from "src/stores/UserStore";
 import { fileInfoKey } from "src/utils/file";
-import { styled } from "styled-components";
+import { styled, useTheme } from "styled-components";
+
+const FileSelectModalWrapper = styled(StyledModal)`
+  ${fileSelectModalStyles}
+`;
+
+import { PathBar } from "@scow/lib-web/build/components/filemanager/PathBar";
+import { fileIcon as FileIcon } from "@scow/lib-web/build/icons/commonIcons";
+import { FolderTriggerButton } from "src/components/FolderTriggerButton";
 
 import { DecompressFilesModal } from "./DecompressFilesModal";
 import { FileTable } from "./FileTable";
 import { MkdirModal } from "./MkdirModal";
-import { PathBar } from "./PathBar";
 import { UploadModal } from "./UploadModal";
-
-const { DirectoryTree } = Tree;
-
-const ModalContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const TopBar = styled(FilterFormContainer)`
-  display: flex;
-  flex-direction: row;
-  padding-bottom: 8px;
-  width: 100%;
-  & > button {
-    margin: 0px 4px;
-  }
-`;
 
 interface Props {
   clusterId: string;
@@ -47,68 +51,8 @@ interface Props {
   onSubmit: (path: string) => void;
 }
 
-interface DirContent {
-  type: string;
-  name: string;
-  mtime: string;
-  size: number;
-  mode: number;
-}
-
-function convertToDirTree(data: DirContent[], targetKey: string): DataNode[] {
-  const sortedData = data.sort((a, b) => {
-    if (a.type === "DIR" && b.type !== "DIR") {
-      return -1;
-    } else if (a.type !== "DIR" && b.type === "DIR") {
-      return 1;
-    }
-    return 0;
-  });
-
-  // 转换为 treeData 格式
-  return sortedData.map((item) => ({
-    title: item.name,
-    key: join(targetKey, item.name),
-    isLeaf: item.type === "FILE",
-  }));
-}
-
-function updateTreeData(
-  treeData: DataNode[],
-  homeDir: string,
-  targetKey: string,
-  newChildren: DirContent[],
-): DataNode[] {
-  if (targetKey === homeDir) {
-    return convertToDirTree(newChildren, homeDir);
-  }
-  return treeData.map((node) => {
-    // 如果找到了目标节点（即当前目录）
-    if (node.key === targetKey) {
-      // 将新内容转换为 DataNode[] 并设置为 children
-      const childrenNodes = convertToDirTree(newChildren, targetKey);
-      return { ...node, children: childrenNodes };
-    }
-
-    // 如果当前节点有子节点，递归地更新它们
-    if (node.children) {
-      return { ...node, children: updateTreeData(node.children, homeDir, targetKey, newChildren) };
-    }
-
-    return node;
-  });
-}
-
-// 处理path的特殊情况,比如为空或者不以"/"开头
-const formatPath = (path: string) => {
-  if (path === "" || path === undefined) {
-    return "/";
-  }
-  if (!path.startsWith("/")) {
-    return "/" + path;
-  }
-  return path;
-};
+const p = prefix("pageComp.app.advancedFileSelectModal.");
+const pFileManager = prefix("pageComp.fileManagerComp.fileManager.");
 
 export const AdvancedFileSelectModal: React.FC<Props> = ({
   clusterId,
@@ -117,20 +61,23 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   onSubmit,
 }) => {
   const t = useI18nTranslateToString();
-  const p = prefix("pageComp.app.advancedFileSelectModal.");
+  const languageId = useI18n().currentLanguage.id;
+  const theme = useTheme();
+
+  const { fullClusterConfigs } = useStore(ClusterInfoStore);
+  const { user } = useStore(UserStore);
 
   const [visible, setVisible] = useState(false);
-  const [prevPath, setPrevPath] = useState<string>("~");
   const [path, setPath] = useState<string>("~");
-  const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
+  const [prevPath, setPrevPath] = useState<string>("~");
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
   const [selectedFileInfo, setSelectedFileInfo] = useState<FileInfo | undefined>(undefined);
-  const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
-  const [dirTree, setDirTree] = useState<DataNode[]>([]);
 
-  const DecompressionModalButton = ModalButton(DecompressFilesModal, {
-    icon: <ExpandOutlined />,
-    disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()),
-  });
+  // Build sidebar entries from cluster config
+  const enrichedEntryPaths = useMemo(() => {
+    const clusterConfig = fullClusterConfigs[clusterId];
+    return buildEnrichedEntryPaths(clusterConfig?.entryPaths, user?.identityId);
+  }, [fullClusterConfigs, clusterId, user?.identityId]);
 
   const homeDirPromiseFn = useCallback(async () => {
     return visible ? await api.getHomeDirectory({ query: { cluster: clusterId } }) : { path: "~" };
@@ -145,6 +92,15 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
     onReject(_) {
       message.info(t(p("getHomeDirError")));
     },
+  });
+
+  const selectedEntryIndex = useAutoSelectSidebar(path, homeDir?.path, enrichedEntryPaths, "~");
+
+  const decompressDisabled = selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString());
+  const DecompressionModalButton = RoundedModalButton(DecompressFilesModal, {
+    icon: <DecompressIcon disabled={decompressDisabled} />,
+    disabled: decompressDisabled,
+    $color: theme.palette.gray[8],
   });
 
   const listFilePromiseFn = useCallback(async () => {
@@ -164,55 +120,12 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
     },
   });
 
-  useEffect(() => {
-    if (!homeDir?.path || path === "~") return;
-
-    if (!isParentOrSameFolder(homeDir.path, path)) {
-      message.info(t(p("onlyHomeDir")));
-      setPath(prevPath);
-    }
-  }, [homeDir, path]);
-
-  useEffect(() => {
-    if (!curDirContent || curDirContent?.items.length === 0) return;
-
-    if (dirTree.length === 0) {
-      setDirTree(convertToDirTree(curDirContent?.items, path));
-    } else {
-      setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent?.items));
-    }
-  }, [curDirContent]);
-
-  const onDirExpand = (expandDirs: Key[], { node, expanded }: { node: EventDataNode<DataNode>; expanded: boolean }) => {
-    const expandDirSet = new Set(expandDirs);
-    if (!expanded) {
-      node.children?.forEach((children) => {
-        if (expandDirSet.has(children.key)) {
-          expandDirSet.delete(children.key);
-        }
-      });
-    }
-    const newExpandedKeys = Array.from(expandDirSet);
-    setExpandedKeys(newExpandedKeys);
-    if (!node.isLeaf) {
-      setPrevPath(path);
-      setPath(node.key.toString());
-    }
-  };
-
-  const onLoadDir = async ({ key }: any) => {
-    setPrevPath(path);
-    setPath(key);
-  };
-
   const closeModal = () => {
     setVisible(false);
     setPrevPath("~");
     setPath("~");
     setSelectedKeys([]);
     setSelectedFileInfo(undefined);
-    setExpandedKeys([]);
-    setDirTree([]);
   };
 
   const showSelectionError = (fileInfo?: FileInfo) => {
@@ -232,7 +145,6 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   };
 
   const onOkClick = () => {
-    // 不选中文件夹的，直接把所在目录作为值
     if (!selectedFileInfo) {
       if (allowedFileType.includes("DIR")) {
         onSubmit(path);
@@ -249,8 +161,7 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
     }
 
     if (selectedKeys.length > 0) {
-      const selectedFilePath = selectedKeys[0].toString();
-      onSubmit(selectedFilePath);
+      onSubmit(selectedKeys[0].toString());
       closeModal();
     }
   };
@@ -307,18 +218,30 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
     return curDirContent?.items.filter((x) => keys.includes(fileInfoKey(x, path))) ?? [];
   };
 
+  const navigateTo = (target: string) => {
+    setPrevPath(path);
+    setPath(target);
+    setSelectedKeys([]);
+    setSelectedFileInfo(undefined);
+  };
+
   return (
     <>
-      <Button
-        size="small"
+      <FolderTriggerButton
         onClick={() => {
           setVisible(true);
         }}
       >
-        <FolderAddOutlined />
-      </Button>
-      <Modal
-        width={1000}
+        <FileIcon />
+      </FolderTriggerButton>
+      <FileSelectModalWrapper
+        width="min(970px, calc(100vw - 32px))"
+        // 高度限制：大屏 632px，小屏不超过 60vh
+        styles={{
+          content: {
+            height: "min(632px, 60vh)",
+          },
+        }}
         open={visible}
         onCancel={() => {
           closeModal();
@@ -326,14 +249,21 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
         title={t(p("select"))}
         centered
         footer={[
-          <div key="footer" style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
-            <div key="left" style={{ display: "flex", gap: "10px" }}>
+          <div
+            key="footer"
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 36,
+            }}
+          >
+            <div key="left" style={{ display: "flex", gap: 8 }}>
               <UploadFileButton
                 cluster={clusterId}
                 path={path}
                 reload={async () => {
                   curDirContentReload();
-                  setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent?.items ?? []));
                 }}
               >
                 {t(p("upload"))}
@@ -347,13 +277,12 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
                 files={keysToFiles(selectedKeys)}
                 reload={async () => {
                   curDirContentReload();
-                  setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent?.items ?? []));
                 }}
               >
                 {t(p("decompression"))}
               </DecompressionModalButton>
             </div>
-            <div key="right" style={{ display: "flex", gap: "10px" }}>
+            <div key="right" style={{ display: "flex", gap: 8 }}>
               <Button
                 key="cancel"
                 onClick={() => {
@@ -370,90 +299,91 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
         ]}
       >
         <ModalContainer>
-          <TopBar>
+          <ModalPathBarRow>
             <PathBar
+              compact
               path={formatPath(path)}
               loading={isDirContentLoading || isHomeDirLoading}
               onPathChange={(curPath) => {
-                if (!(curPath === path)) {
-                  setPrevPath(path);
-                  setPath(curPath);
+                if (curPath !== path) {
+                  navigateTo(curPath);
                 } else {
                   curDirContentReload();
                 }
               }}
               breadcrumbItemRender={(segment, index, curPath) =>
-                index === 0 ? (
-                  <Link href="" onClick={(e) => onClickLink(e, "/")}>
-                    <DatabaseOutlined />
-                  </Link>
-                ) : (
+                index === 0 ? null : (
                   <Link href="" onClick={(e) => onClickLink(e, curPath)}>
                     {segment}
                   </Link>
                 )
               }
             />
-          </TopBar>
-          <div style={{ display: "flex", flexDirection: "row", width: "100%", alignItems: "flex-start" }}>
-            <DirectoryTree
-              style={{ width: 240, height: 541, overflow: "auto", border: "1px solid #e0e0e0", borderRadius: "5px" }}
-              showLine
-              selectedKeys={[path]}
-              expandedKeys={expandedKeys}
-              loadData={onLoadDir}
-              onExpand={onDirExpand}
-              treeData={dirTree}
-            />
-            <div
-              style={{
-                width: "100%",
-                overflowX: "auto",
-                marginLeft: "6px",
-                display: "flex",
-                flex: 1,
-                border: "1px solid #e0e0e0",
-                borderRadius: "5px",
-              }}
-            >
-              <FileTable
-                style={{ flex: 1, overflowX: "auto" }}
-                files={curDirContent?.items || []}
-                filesFilter={filterVisibleFiles}
-                loading={isDirContentLoading || isHomeDirLoading}
-                fileNameRender={(fileName: string) => <Button type="link">{fileName}</Button>}
-                hiddenColumns={["mtime", "mode", "action"]}
-                pagination={false}
-                rowKey={(r: FileInfo): React.Key => join(path, r.name)}
-                onRow={(r) => ({
-                  onClick: () => {
-                    setSelectedKeys([join(path, r.name)]);
-                    setSelectedFileInfo(r);
-                  },
-                  onDoubleClick: () => {
-                    if (r.type === "DIR") {
-                      setPrevPath(path);
-                      setPath(join(path, r.name));
-                    }
-                  },
-                })}
-                rowSelection={{
-                  type: "radio",
-                  selectedRowKeys: selectedKeys,
-                  onChange: (key, record) => {
-                    setSelectedKeys(key);
-                    setSelectedFileInfo(record[0]);
-                  },
+          </ModalPathBarRow>
+
+          <ModalContent>
+            <ModalSidebarCard>
+              <ModalSidebarEntry
+                $selected={selectedEntryIndex === "home"}
+                onClick={() => {
+                  if (homeDir?.path) navigateTo(homeDir.path);
                 }}
-                scroll={{ x: true, y: 500 }}
-              />
-            </div>
-          </div>
+              >
+                <HomeDirIcon disabled={selectedEntryIndex !== "home"} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{t(pFileManager("homeDirectory"))}</span>
+              </ModalSidebarEntry>
+              {enrichedEntryPaths.map((entry, index) => (
+                <ModalSidebarEntry
+                  key={index}
+                  $selected={selectedEntryIndex === index}
+                  onClick={() => navigateTo(entry.resolvedPath)}
+                >
+                  <EntryPathIcon disabled={selectedEntryIndex !== index} />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {getI18nConfigCurrentText(entry.displayName, languageId)}
+                  </span>
+                </ModalSidebarEntry>
+              ))}
+            </ModalSidebarCard>
+
+            <ModalFileListCard>
+              <FileTableWrapper $fillHeight>
+                <FileTable
+                  files={curDirContent?.items || []}
+                  filesFilter={filterVisibleFiles}
+                  loading={isDirContentLoading || isHomeDirLoading}
+                  fileNameRender={(fileName: string) => <Button type="link">{fileName}</Button>}
+                  hiddenColumns={["mode", "action"]}
+                  pagination={false}
+                  rowKey={(r: FileInfo): React.Key => join(path, r.name)}
+                  onRow={(r) => ({
+                    onClick: () => {
+                      setSelectedKeys([join(path, r.name)]);
+                      setSelectedFileInfo(r);
+                    },
+                    onDoubleClick: () => {
+                      if (r.type === "DIR") {
+                        navigateTo(join(path, r.name));
+                      }
+                    },
+                  })}
+                  rowSelection={{
+                    type: "radio",
+                    selectedRowKeys: selectedKeys,
+                    onChange: (key, record) => {
+                      setSelectedKeys(key);
+                      setSelectedFileInfo(record[0]);
+                    },
+                  }}
+                />
+              </FileTableWrapper>
+            </ModalFileListCard>
+          </ModalContent>
         </ModalContainer>
-      </Modal>
+      </FileSelectModalWrapper>
     </>
   );
 };
 
-const MkdirButton = ModalButton(MkdirModal, { icon: <FolderAddOutlined /> });
-const UploadFileButton = ModalButton(UploadModal, { icon: <UploadOutlined /> });
+const MkdirButton = ModalButton(MkdirModal, { icon: <CreateIcon /> });
+const UploadFileButton = ModalButton(UploadModal, { icon: <UploadIcon /> });

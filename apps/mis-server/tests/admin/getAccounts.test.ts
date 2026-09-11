@@ -2,9 +2,9 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { decimalToMoney } from "@scow/lib-decimal";
 import {
-  Account_AccountState as AccountState,
-  Account_DisplayedAccountState as DisplayedAccountState,
   AccountServiceClient,
+  Account_AccountState as AccountState,
+  Account_DisplayedAccountState as DisplayedAccountState
 } from "@scow/protos/build/server/account";
 import { createServer } from "src/app";
 import { Account } from "src/entities/Account";
@@ -57,14 +57,15 @@ it("gets all accounts", async () => {
       state: AccountState.NORMAL,
       isInWhitelist: false,
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
     {
-      accountName: "hpcb",
-      blocked: false,
-      ownerId: "b",
-      ownerName: "BName",
-      userCount: 1,
-      tenantName: data.tenant.name,
+      "accountName": "hpcb",
+      "blocked": false,
+      "ownerId": "b",
+      "ownerName": "BName",
+      "userCount": 1,
+      "tenantName": data.tenant.name,
       comment: "",
       balance: decimalToMoney(data.accountB.balance),
       blockThresholdAmount: data.accountB.blockThresholdAmount
@@ -74,6 +75,7 @@ it("gets all accounts", async () => {
       state: AccountState.NORMAL,
       isInWhitelist: false,
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
   ]);
 });
@@ -101,14 +103,15 @@ it("account does not have an owner", async () => {
       state: AccountState.NORMAL,
       isInWhitelist: false,
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
     {
-      accountName: "hpcb",
-      blocked: false,
-      ownerId: "b",
-      ownerName: "BName",
-      userCount: 1,
-      tenantName: data.tenant.name,
+      "accountName": "hpcb",
+      "blocked": false,
+      "ownerId": "b",
+      "ownerName": "BName",
+      "userCount": 1,
+      "tenantName": data.tenant.name,
       comment: "",
       balance: decimalToMoney(data.accountB.balance),
       blockThresholdAmount: data.accountB.blockThresholdAmount
@@ -118,6 +121,7 @@ it("account does not have an owner", async () => {
       state: AccountState.NORMAL,
       isInWhitelist: false,
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
     {
       accountName: "hpcc",
@@ -135,6 +139,7 @@ it("account does not have an owner", async () => {
       defaultBlockThresholdAmount: decimalToMoney(data.accountC.tenant.getProperty("defaultAccountBlockThreshold")),
       balance: decimalToMoney(data.accountC.balance),
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
   ]);
 });
@@ -173,14 +178,15 @@ it("gets all accounts", async () => {
       state: AccountState.NORMAL,
       isInWhitelist: false,
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
     {
-      accountName: "hpcb",
-      blocked: false,
-      ownerId: "b",
-      ownerName: "BName",
-      userCount: 1,
-      tenantName: data.tenant.name,
+      "accountName": "hpcb",
+      "blocked": false,
+      "ownerId": "b",
+      "ownerName": "BName",
+      "userCount": 1,
+      "tenantName": data.tenant.name,
       comment: "",
       balance: decimalToMoney(data.accountB.balance),
       blockThresholdAmount: data.accountB.blockThresholdAmount
@@ -190,14 +196,15 @@ it("gets all accounts", async () => {
       state: AccountState.NORMAL,
       isInWhitelist: false,
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
     {
-      accountName: "hpcc",
-      blocked: false,
-      ownerId: "d",
-      ownerName: "dName",
-      userCount: 2,
-      tenantName: data.anotherTenant.name,
+      "accountName": "hpcc",
+      "blocked": false,
+      "ownerId": "d",
+      "ownerName": "dName",
+      "userCount": 2,
+      "tenantName": data.anotherTenant.name,
       comment: "123",
       balance: decimalToMoney(data.accountC.balance),
       blockThresholdAmount: data.accountC.blockThresholdAmount
@@ -207,6 +214,7 @@ it("gets all accounts", async () => {
       state: AccountState.NORMAL,
       isInWhitelist: false,
       displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+      storageQuotas: [],
     },
   ]);
 });

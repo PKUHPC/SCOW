@@ -1,28 +1,38 @@
 import type { inferRouterOutputs } from "@trpc/server";
 
+import { DownOutlined } from "@ant-design/icons";
+import { FileBrowserLayout } from "@scow/lib-web/build/components/filemanager/FileBrowserLayout";
 import {
-  CompressOutlined,
-  CopyOutlined,
-  DatabaseOutlined,
-  DeleteOutlined,
-  DownOutlined,
-  ExpandOutlined,
-  EyeInvisibleOutlined,
-  EyeOutlined,
-  FileAddOutlined,
-  FolderAddOutlined,
-  HomeOutlined,
-  QuestionCircleOutlined,
-  ScissorOutlined,
-  SnippetsOutlined,
-  UploadOutlined,
-  UpOutlined,
-} from "@ant-design/icons";
-import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
+  FILE_MANAGER_TOP_OFFSET_PX,
+  TopCard,
+  SelectPreFix,
+  UpButtonBox,
+  TopBar,
+  OperationBar,
+} from "@scow/lib-web/build/components/filemanager/FileManagerLayout";
+import { FileTableWrapper } from "@scow/lib-web/build/components/filemanager/FileTableWrapper";
+import { PathBar } from "@scow/lib-web/build/components/filemanager/PathBar";
+import { RoundedButton as Button } from "@scow/lib-web/build/components/styledAntdCom/Button";
+import { RoundedModalButton } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { useAutoSelectSidebar } from "@scow/lib-web/build/hooks/useAutoSelectSidebar";
+import {
+  CompressIcon,
+  CopyIcon,
+  CreateIcon,
+  DecompressIcon,
+  DeleteIcon as FileDeleteIcon,
+  EntryPathIcon,
+  ForwardIcon,
+  MoveIcon,
+  PasteIcon,
+  UploadIcon,
+  HomeDirIcon,
+} from "@scow/lib-web/build/icons/FileIcon";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
-import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
 import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
-import { App, Button, Divider, Dropdown, MenuProps, Space, Tooltip } from "antd";
+import { buildEnrichedEntryPaths } from "@scow/lib-web/build/utils/storageClusterHelper";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { App, Dropdown, MenuProps, Space, Switch, Tooltip } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { basename, dirname, join } from "path";
@@ -34,15 +44,13 @@ import { CompressionModal } from "src/components/CompressionModal";
 import { DecompressionModal } from "src/components/DecompressionModal";
 import { FileEditModal } from "src/components/FileEditModal";
 import { FileTable } from "src/components/FileTable";
-import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ImagePreviewer } from "src/components/ImagePreviewer";
 import { MkdirModal } from "src/components/MkdirModal";
-import { ModalButton, ModalLink } from "src/components/ModalLink";
+import { ModalLink } from "src/components/ModalLink";
 import { TitleText } from "src/components/PageTitle";
-import { TableTitle } from "src/components/TableTitle";
 import { UploadDirModal } from "src/components/UploadDirModal";
 import { UploadModal } from "src/components/UploadModal";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DeleteIcon, DownloadIcon, RenameIcon } from "src/icons/operationIcon";
 import { FileType } from "src/models/File";
 import { Cluster } from "src/server/trpc/route/config";
@@ -50,11 +58,10 @@ import { AppRouter } from "src/server/trpc/router";
 import { isDecompressibleFile } from "src/utils/file";
 import { convertToBytes } from "src/utils/format";
 import { trpc } from "src/utils/trpc";
-import { styled, useTheme } from "styled-components";
+import { useTheme } from "styled-components";
 
 import { urlToDownload } from "./api";
 import { CreateFileModal } from "./CreateFileModal";
-import { PathBar } from "./PathBar";
 import { RenameModal } from "./RenameModal";
 
 interface Props {
@@ -64,29 +71,6 @@ interface Props {
   urlPrefix: string;
   setClusterId: React.Dispatch<React.SetStateAction<string>>;
 }
-
-const SelectPreFix = styled.span`
-  width: 65px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-`;
-
-const TopBar = styled(FilterFormContainer)`
-  display: flex;
-  flex-direction: row;
-  padding-bottom: 8px;
-
-  & > button {
-    margin: 0px 4px;
-  }
-`;
-
-const OperationBar = styled(TableTitle)`
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 4px;
-`;
 
 const DEFAULT_FILE_PREVIEW_LIMIT_SIZE = "50m";
 
@@ -114,6 +98,7 @@ enum UploadType {
 export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClusterId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.files.fileManager.");
+  const languageId = useI18n().currentLanguage.id;
 
   const theme = useTheme();
 
@@ -124,13 +109,14 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
   const { message, modal } = App.useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { publicConfig, scowClusterConfigs } = usePublicConfig();
+  const { publicConfig, scowClusterConfigs, user } = usePublicConfig();
 
   const [selectedKeys, setSelectedKeys] = useState<FileInfoKey[]>([]);
   const { operation, setOperation, filePrevPath, setFilePrevPath } = useFileManager();
   const [showHiddenFile, setShowHiddenFile] = useState(false);
   const [decompression, setDecompression] = useState<Compression>({ started: [], completed: [] });
   const [compression, setCompression] = useState<Compression>({ started: [], completed: [] });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [previewFile, setPreviewFile] = useState({
     open: false,
@@ -156,10 +142,41 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
     },
   );
 
-  const { data: storageInfos } = trpc.file.getUserStorageInfo.useQuery(
-    { clusterId: cluster.id, paths: "" },
-    { enabled: scowClusterConfigs[cluster.id]?.storage.enabled },
-  );
+  const { data: homeDirData } = trpc.file.getHomeDir.useQuery({ clusterId: cluster.id });
+  const homePath = homeDirData?.path;
+
+  const enrichedEntryPaths = React.useMemo(() => {
+    const entryPaths = scowClusterConfigs[cluster.id]?.entryPaths;
+    return buildEnrichedEntryPaths(entryPaths, user?.identityId);
+  }, [scowClusterConfigs, cluster.id, user?.identityId]);
+
+  const selectedEntryIndex = useAutoSelectSidebar(path, homePath, enrichedEntryPaths, "~");
+
+  // 暂时注释掉AI部分的存储系统显示
+  // 后续支持再展示相关信息
+  // const { data: storageInfos } = trpc.file.getUserStorageInfo.useQuery(
+  //   { clusterId: cluster.id },
+  //   {
+  //     enabled: hasClusterQuotaEnabledStorage(
+  //       scowClusterConfigs[cluster.id].entryPaths, publicConfig.PUBLIC_STORAGE_CONFIG)
+  //   },
+  // );
+
+  // const clusterStorageConfigs = React.useMemo(() => {
+  //   const entryPaths = scowClusterConfigs[cluster.id]?.entryPaths;
+  //   if (!entryPaths || !publicConfig.PUBLIC_STORAGE_CONFIG) return [];
+  //   return getClusterStorageConfigs(entryPaths, publicConfig.PUBLIC_STORAGE_CONFIG);
+  // }, [scowClusterConfigs, cluster.id]);
+
+  // const selectedStorageConfig = useSelectedStorageConfig(path, clusterStorageConfigs);
+
+  // 当前路径对应的存储配额信息：仅在 showQuotaInfo 时有效
+  // const selectedStorageInfo = React.useMemo(() => {
+  //   if (!storageInfos || !selectedStorageConfig) return null;
+  //   const info = storageInfos.find((i) => i.storageId === selectedStorageConfig.storageId);
+  //   if (!info) return null;
+  //   return { info, config: selectedStorageConfig };
+  // }, [storageInfos, selectedStorageConfig]);
 
   const reload = filesQuery.refetch;
 
@@ -176,14 +193,20 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
     router.push(fullUrl("~"));
   };
 
-  const CompressFilesButton = ModalButton(CompressionModal, {
-    icon: <CompressOutlined />,
+  const CompressFilesButton = RoundedModalButton(CompressionModal, {
+    icon: <CompressIcon disabled={selectedKeys.length === 0} />,
     disabled: selectedKeys.length === 0,
+    $color: theme.palette.gray[8],
   });
 
-  const DecompressFilesButton = ModalButton(DecompressionModal, {
-    icon: <ExpandOutlined />,
+  const DecompressFilesButton = RoundedModalButton(DecompressionModal, {
+    icon: (
+      <DecompressIcon
+        disabled={selectedKeys.length === 0 || selectedKeys.some((sKey) => !isDecompressibleFile(sKey.toString()))}
+      />
+    ),
     disabled: selectedKeys.length === 0 || selectedKeys.some((sKey) => !isDecompressibleFile(sKey.toString())),
+    $color: theme.palette.gray[8],
   });
 
   const getDecompressButtonDisabledReason = () => {
@@ -207,23 +230,36 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
     reload().then((res) => {
       if (res.isError) {
         const code = res.error?.data?.code;
-        const errMsg =
+        const rawErrMsg = res.error?.message ?? "";
+        const isDirMissing =
+          code === "NOT_FOUND" || (code === "BAD_REQUEST" && rawErrMsg.includes("no such file or directory"));
+
+        const isEntryPathCreateFailed = res.error?.message === "ENTRY_PATH_CREATE_FAILED";
+        const displayErrMsg =
           code === "FORBIDDEN"
             ? t(p("noAccessPermission"))
-            : code === "NOT_FOUND"
+            : isDirMissing
               ? t(p("noPath"))
-              : res.error?.message;
-        message.error(errMsg);
+              : isEntryPathCreateFailed
+                ? t(p("entryPathCreateFailed"))
+                : res.error?.message;
+        message.error(displayErrMsg);
 
-        if (filePrevPath && filePrevPath !== path) {
-          router.push(fullUrl(filePrevPath));
-        }
+        // 路径不存在时跳转到家目录
+        toHome();
         return;
       }
 
       setFilePrevPath(path);
     });
   }, [path]);
+
+  // Navigate to home directory when path is the placeholder "~"
+  React.useEffect(() => {
+    if (path === "~" && homePath) {
+      router.replace(fullUrl(homePath));
+    }
+  }, [path, homePath]);
 
   const resetSelectedAndOperation = () => {
     setSelectedKeys([]);
@@ -534,11 +570,11 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
 
   const uploadMenuItems: MenuProps["items"] = [
     {
-      label: t(p("uploadFile")),
+      label: t(p("uploadMenuFile")),
       key: UploadType.File,
     },
     {
-      label: t(p("uploadDir")),
+      label: t(p("uploadMenuDir")),
       key: UploadType.Dir,
     },
   ];
@@ -548,303 +584,386 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
     onClick: handleUploadMenuClick,
   };
 
+  const newMenuItems: MenuProps["items"] = [
+    {
+      label: (
+        <CreateFileLink cluster={cluster} path={path} reload={reload}>
+          {t(p("newMenuFile"))}
+        </CreateFileLink>
+      ),
+      key: "newFile",
+    },
+    {
+      label: (
+        <MkdirLink clusterId={cluster.id} path={path} reload={reload}>
+          {t(p("newMenuDir"))}
+        </MkdirLink>
+      ),
+      key: "newDir",
+    },
+  ];
+
+  const newMenuProps = {
+    items: newMenuItems,
+  };
+
   return (
-    <div>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: `calc(100vh - ${FILE_MANAGER_TOP_OFFSET_PX}px)`,
+        overflow: "hidden",
+      }}
+    >
       <TitleText>
         <span>{t(p("fileManage"))}</span>
       </TitleText>
-      <TopBar>
-        <SelectPreFix>{t(p("cluster"))}:</SelectPreFix>
-        <SingleClusterSelector
-          defaultValue={cluster}
-          onChange={(val) => {
-            setClusterId(val.id);
-            // 重置已复制项和操作
-            resetSelectedAndOperation();
-            // 集群ID被切换时，确保返回家目录
-            toHome();
-          }}
-        />
-        <Button onClick={toHome} icon={<HomeOutlined />} shape="circle" />
-        <Button onClick={up} icon={<UpOutlined />} shape="circle" />
-        <PathBar
-          path={path}
-          loading={filesQuery.isFetching}
-          onPathChange={(curPath) => {
-            if (curPath === path) {
-              reload();
-            } else {
-              router.push(fullUrl(curPath));
-            }
-          }}
-          breadcrumbItemRender={(pathSegment, index, path) =>
-            index === 0 ? (
-              <DatabaseOutlined />
-            ) : (
-              <Link href={fullUrl(path)} key={index} onClick={(e) => e.stopPropagation()}>
-                {pathSegment}
-              </Link>
-            )
-          }
-        />
-      </TopBar>
-      <OperationBar>
-        <Space wrap>
-          <Dropdown menu={uploadMenuProps}>
-            <Button icon={<UploadOutlined />}>
-              <Space>
-                上传
-                <DownOutlined />
-              </Space>
-            </Button>
-          </Dropdown>
-          <Divider type="vertical" />
-          <Button
-            icon={<DeleteOutlined />}
-            danger
-            onClick={onDeleteClick}
-            disabled={selectedKeys.length === 0 || operation?.started}
-          >
-            {t(p("delSelected"))}
-          </Button>
-          <Button
-            icon={<CopyOutlined />}
-            onClick={() =>
-              setOperation({
-                op: "copy",
-                selected: keysToFiles(selectedKeys),
-                originalPath: path,
-                started: false,
-                completed: [],
-              })
-            }
-            disabled={selectedKeys.length === 0 || operation?.started}
-          >
-            {t(p("copySelected"))}
-          </Button>
-          <Button
-            icon={<ScissorOutlined />}
-            onClick={() =>
-              setOperation({
-                op: "move",
-                selected: keysToFiles(selectedKeys),
-                originalPath: path,
-                started: false,
-                completed: [],
-              })
-            }
-            disabled={selectedKeys.length === 0 || operation?.started}
-          >
-            {t(p("moveSelected"))}
-          </Button>
-          <Button
-            icon={<SnippetsOutlined />}
-            onClick={paste}
-            disabled={!operation || operation.started || operation.originalPath === path}
-          >
-            {t(p("pasteSelected"))}
-          </Button>
-          <CompressFilesButton
-            clusterId={cluster.id}
-            reload={reload}
+      <TopCard>
+        <TopBar>
+          <SelectPreFix>{`${t(p("cluster"))} :`}</SelectPreFix>
+          <SingleClusterSelector
+            style={{ minWidth: "160px", height: "36px" }}
+            defaultValue={cluster}
+            onChange={(val) => {
+              setClusterId(val.id);
+              resetSelectedAndOperation();
+              toHome();
+            }}
+          />
+          <UpButtonBox onClick={up}>
+            <ForwardIcon />
+          </UpButtonBox>
+          <PathBar
+            compact
             path={path}
-            files={keysToFiles(selectedKeys)}
-            setCompression={setCompression}
-          >
-            {t(p("compress"))}
-          </CompressFilesButton>
-          <Tooltip title={getDecompressButtonDisabledReason()}>
-            <span>
-              <DecompressFilesButton
-                clusterId={cluster.id}
-                reload={reload}
-                sourcePath={path}
-                files={keysToFiles(selectedKeys)}
-                setDecompression={setDecompression}
-              >
-                {t(p("decompress"))}
-              </DecompressFilesButton>
-            </span>
-          </Tooltip>
-          {operation ? (
-            operation.started ? (
+            loading={filesQuery.isFetching}
+            onPathChange={(curPath) => {
+              if (curPath === path) {
+                reload();
+              } else {
+                router.push(fullUrl(curPath));
+              }
+            }}
+            breadcrumbItemRender={(pathSegment, index, path) =>
+              index === 0 ? null : (
+                <Link href={fullUrl(path)} key={index} onClick={(e) => e.stopPropagation()}>
+                  {pathSegment}
+                </Link>
+              )
+            }
+          />
+        </TopBar>
+        <OperationBar>
+          <Space wrap>
+            <Dropdown menu={newMenuProps}>
+              <Button icon={<CreateIcon />} $color={theme.palette.gray[8]}>
+                <Space>
+                  {t(p("new"))}
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+            <Dropdown menu={uploadMenuProps}>
+              <Button icon={<UploadIcon />} $color={theme.palette.gray[8]}>
+                <Space>
+                  {t(p("upload"))}
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+            <Button
+              $color={theme.palette.gray[8]}
+              icon={<CopyIcon disabled={selectedKeys.length === 0 || !!operation?.started} />}
+              onClick={() =>
+                setOperation({
+                  op: "copy",
+                  selected: keysToFiles(selectedKeys),
+                  originalPath: path,
+                  started: false,
+                  completed: [],
+                })
+              }
+              disabled={selectedKeys.length === 0 || operation?.started}
+            >
+              {t(p("copySelected"))}
+            </Button>
+            <Button
+              $color={theme.palette.gray[8]}
+              icon={<MoveIcon disabled={selectedKeys.length === 0 || !!operation?.started} />}
+              onClick={() =>
+                setOperation({
+                  op: "move",
+                  selected: keysToFiles(selectedKeys),
+                  originalPath: path,
+                  started: false,
+                  completed: [],
+                })
+              }
+              disabled={selectedKeys.length === 0 || operation?.started}
+            >
+              {t(p("moveSelected"))}
+            </Button>
+            <Button
+              $color={theme.palette.gray[8]}
+              icon={<PasteIcon disabled={!operation || operation.started || operation.originalPath === path} />}
+              onClick={paste}
+              disabled={!operation || operation.started || operation.originalPath === path}
+            >
+              {t(p("pasteSelected"))}
+            </Button>
+            <CompressFilesButton
+              clusterId={cluster.id}
+              reload={reload}
+              path={path}
+              files={keysToFiles(selectedKeys)}
+              setCompression={setCompression}
+            >
+              {t(p("compress"))}
+            </CompressFilesButton>
+            <Tooltip title={getDecompressButtonDisabledReason()}>
               <span>
-                {`${t(p("ing"))}${operationTexts[operation.op]}，` +
-                  `${t(p("completed"))} ${operation.completed.length} / ${operation.selected.length}`}
+                <DecompressFilesButton
+                  clusterId={cluster.id}
+                  reload={reload}
+                  sourcePath={path}
+                  files={keysToFiles(selectedKeys)}
+                  setDecompression={setDecompression}
+                >
+                  {t(p("decompress"))}
+                </DecompressFilesButton>
               </span>
+            </Tooltip>
+            <Button
+              $color={theme.palette.gray[8]}
+              icon={<FileDeleteIcon disabled={selectedKeys.length === 0 || !!operation?.started} />}
+              onClick={onDeleteClick}
+              disabled={selectedKeys.length === 0 || operation?.started}
+            >
+              {t(p("delSelected"))}
+            </Button>
+            {operation ? (
+              operation.started ? (
+                <span>
+                  {`${t(p("ing"))}${operationTexts[operation.op]}，` +
+                    `${t(p("completed"))} ${operation.completed.length} / ${operation.selected.length}`}
+                </span>
+              ) : (
+                <span>
+                  {`${t(p("select"))}${operationTexts[operation.op]}${operation.selected.length}${t(p("item"))}`}
+                  <a onClick={() => setOperation(undefined)} style={{ marginLeft: "4px" }}>
+                    {t("button.cancelButton")}
+                  </a>
+                </span>
+              )
             ) : (
-              <span>
-                {`${t(p("select"))}${operationTexts[operation.op]}${operation.selected.length}${t(p("item"))}`}
-                <a onClick={() => setOperation(undefined)} style={{ marginLeft: "4px" }}>
-                  {t("button.cancelButton")}
+              ""
+            )}
+            {compression.started.length - compression.completed.length > 0 && (
+              <div>
+                <span style={{ color: theme.token.colorPrimary }}>
+                  {t(p("compressing"))}:{`${compression.completed.length} / ${compression.started.length}`}
+                </span>
+              </div>
+            )}
+            {decompression.started.length - decompression.completed.length > 0 && (
+              <div>
+                <span style={{ color: theme.token.colorPrimary }}>
+                  {t(p("decompressing"))}:{`${decompression.completed.length} / ${decompression.started.length}`}
+                </span>
+              </div>
+            )}
+          </Space>
+          <Space wrap>
+            <span>{t(p("showHiddenFiles"))}</span>
+            <Switch checked={showHiddenFile} onChange={onHiddenClick} />
+          </Space>
+        </OperationBar>
+      </TopCard>
+      <FileBrowserLayout
+        style={{ flex: 1, minHeight: 0 }}
+        entries={[
+          {
+            key: "home",
+            label: t(p("homeDirectory")),
+            icon: <HomeDirIcon disabled={selectedEntryIndex !== "home"} />,
+            selected: selectedEntryIndex === "home",
+            onClick: () => {
+              toHome();
+            },
+          },
+          ...enrichedEntryPaths.map((entry, index) => ({
+            key: index,
+            label: getI18nConfigCurrentText(entry.displayName, languageId),
+            icon: <EntryPathIcon disabled={selectedEntryIndex !== index} />,
+            selected: selectedEntryIndex === index,
+            onClick: () => {
+              router.push(fullUrl(entry.resolvedPath));
+            },
+          })),
+        ]}
+        // AI不支持存储配额之前暂时隐藏存储信息显示
+        // sidebarBottom={(
+        //   <>
+        //     <Divider style={{ margin: "8px 0" }} />
+        //     {showQuotaInfo && selectedStorageInfo && (
+        //       <StorageInfoSection>
+        //         <div style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 10 }}>
+        //           <StorageIcon />
+        //           {getI18nConfigCurrentText(selectedStorageInfo.config.displayName, languageId)}
+        //         </div>
+        //         <Progress
+        //           percent={selectedStorageInfo.info.quotaMb > 0
+        //             ? Math.min(
+        //               100,
+        //               Math.round(
+        //                 (Number(selectedStorageInfo.info.usedStorageMb) /
+        //                   Number(selectedStorageInfo.info.quotaMb)) * 100,
+        //               ),
+        //             )
+        //             : 0}
+        //           size="small"
+        //           status={
+        //             selectedStorageInfo.info.quotaMb > 0 &&
+        //               selectedStorageInfo.info.usedStorageMb >= selectedStorageInfo.info.quotaMb
+        //               ? "exception" : "normal"
+        //           }
+        //           showInfo={false}
+        //         />
+        //         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        //           <span>
+        //             {`${formatMBToGB(selectedStorageInfo.info.usedStorageMb).toFixed(2)} GB`}
+        //             {" / "}
+        //             {`${formatMBToGB(selectedStorageInfo.info.quotaMb).toFixed(2)} GB`}
+        //             {selectedStorageInfo.config.replicaExist && (
+        //               <Tooltip title={t(p("storageQuotaTooltip"))}>
+        //                 <QuestionCircleOutlined style={{ marginLeft: 4 }} />
+        //               </Tooltip>
+        //             )}
+        //           </span>
+        //           <span>
+        //             {selectedStorageInfo.info.quotaMb > 0
+        //               ? `${Math.min(100, Math.round((Number(selectedStorageInfo.info.usedStorageMb) / Number(selectedStorageInfo.info.quotaMb)) * 100))}%`
+        //               : "0%"
+        //             }
+        //           </span>
+        //         </div>
+        //       </StorageInfoSection>
+        //     )}
+        //   </>
+        // )}
+        collapsed={sidebarCollapsed}
+        onCollapseToggle={() => setSidebarCollapsed((c) => !c)}
+      >
+        <FileTableWrapper $fillHeight $inFileManager>
+          <FileTable
+            files={filesQuery.data ?? []}
+            filesFilter={(files) => files.filter((file) => showHiddenFile || !file.name.startsWith("."))}
+            loading={filesQuery.isFetching}
+            pagination={false}
+            rowSelection={{
+              selectedRowKeys: selectedKeys,
+              onChange: setSelectedKeys,
+            }}
+            rowKey={(r) => fileInfoKey(r, path)}
+            onRow={(r) => ({
+              onClick: () => {
+                setSelectedKeys([fileInfoKey(r, path)]);
+              },
+              onDoubleClick: () => {
+                if (r.type === "DIR") {
+                  router.push(fullUrl(join(path, r.name)));
+                } else if (r.type === "FILE") {
+                  handlePreview(r.name, r.size);
+                } else if (r.type === "SYMLINK" && r.linkTargetPath) {
+                  navigateResolvedSymlinkTarget(r.linkTargetPath);
+                }
+              },
+            })}
+            fileNameRender={(_, r) =>
+              r.type === "DIR" ? (
+                <Link href={fullUrl(join(path, r.name))} passHref style={{ color: "inherit", textDecoration: "none" }}>
+                  {r.name}
+                </Link>
+              ) : r.type === "SYMLINK" ? (
+                <Tooltip
+                  title={
+                    <div>
+                      {t(p("tableInfo.symlinkTooltip.type"))}
+                      <br />
+                      <div>{t(p("tableInfo.symlinkTooltip.targetPathPrefix"))}</div>
+                      {r.linkTargetPath ?? ""}
+                    </div>
+                  }
+                >
+                  <a
+                    onClick={() => {
+                      const initialPath = r.linkTargetPath ?? join(path, r.name);
+                      navigateResolvedSymlinkTarget(initialPath);
+                    }}
+                    style={{ color: "inherit", textDecoration: "none" }}
+                  >
+                    {r.name}
+                  </a>
+                </Tooltip>
+              ) : (
+                <a
+                  onClick={() => {
+                    handlePreview(r.name, r.size);
+                  }}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
+                  {r.name}
                 </a>
-              </span>
-            )
-          ) : (
-            ""
-          )}
-          {compression.started.length - compression.completed.length > 0 && (
-            <div>
-              <span style={{ color: theme.token.colorPrimary }}>
-                {t(p("compressing"))}:{`${compression.completed.length} / ${compression.started.length}`}
-              </span>
-            </div>
-          )}
-          {decompression.started.length - decompression.completed.length > 0 && (
-            <div>
-              <span style={{ color: theme.token.colorPrimary }}>
-                {t(p("decompressing"))}:{`${decompression.completed.length} / ${decompression.started.length}`}
-              </span>
-            </div>
-          )}
-        </Space>
-        <Space wrap>
-          <Button onClick={onHiddenClick} icon={showHiddenFile ? <EyeInvisibleOutlined /> : <EyeOutlined />}>
-            {showHiddenFile ? t(p("noDisplay")) : t(p("display"))}
-            {t(p("hidden"))}
-          </Button>
-          <CreateFileButton cluster={cluster} path={path} reload={reload}>
-            {t(p("newFile"))}
-          </CreateFileButton>
-          <MkdirButton clusterId={cluster.id} path={path} reload={() => reload()}>
-            {t(p("newDir"))}
-          </MkdirButton>
-        </Space>
-      </OperationBar>
-
-      <TableTitle justify="space-between">
-        {storageInfos && (
-          <div>
-            <span>
+              )
+            }
+            actionRender={(_, i: FileInfo) => (
               <Space>
-                {`${t(p("storageQuota"))}(${scowClusterConfigs[cluster.id].storage.paths[0]})`}:
-                <strong>{formatBytesToGB(storageInfos[0].quotaBytes).toFixed(2) + " GB"}</strong>
-              </Space>
-            </span>
-            <Divider type="vertical" />
-            <span>
-              <Space>
-                {t(p("usage"))}:<strong>{formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}</strong>
-                {scowClusterConfigs[cluster.id].storage.replicaExist && (
-                  <Tooltip title={t(p("storageQuotaTooltip"))}>
-                    <QuestionCircleOutlined />
+                {i.type === "FILE" && (
+                  <Tooltip title={t(p("download"))}>
+                    <a href={urlToDownload(cluster.id, join(path, i.name), true, publicConfig.BASE_PATH)}>
+                      <DownloadIcon />
+                    </a>
                   </Tooltip>
                 )}
+                <RenameLink cluster={cluster} path={join(path, i.name)} reload={reload} isFile={i.type !== "DIR"}>
+                  <Tooltip title={t(p("rename"))}>
+                    <RenameIcon />
+                  </Tooltip>
+                </RenameLink>
+                <Tooltip title={t("button.deleteButton")}>
+                  <DeleteIcon
+                    onClick={() => {
+                      const fullPath = join(path, i.name);
+                      modal.confirm({
+                        title: t(p("confirmDelTitle")),
+                        content: `${t(p("confirmDelTitle"))}${fullPath}？`,
+                        okText: t("button.confirmButton"),
+                        onOk: () => {
+                          deleteMutation.mutate(
+                            {
+                              target: i.type,
+                              clusterId: cluster.id,
+                              path: fullPath,
+                            },
+                            {
+                              onSuccess: () => {
+                                message.success(t(p("delSuccessful")));
+                                resetSelectedAndOperation();
+                                reload();
+                              },
+                            },
+                          );
+                        },
+                      });
+                    }}
+                  />
+                </Tooltip>
               </Space>
-            </span>
-          </div>
-        )}
-      </TableTitle>
-      <FileTable
-        files={filesQuery.data ?? []}
-        filesFilter={(files) => files.filter((file) => showHiddenFile || !file.name.startsWith("."))}
-        loading={filesQuery.isFetching}
-        pagination={{
-          showSizeChanger: true,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
-        }}
-        rowSelection={{
-          selectedRowKeys: selectedKeys,
-          onChange: setSelectedKeys,
-        }}
-        rowKey={(r) => fileInfoKey(r, path)}
-        onRow={(r) => ({
-          onClick: () => {
-            setSelectedKeys([fileInfoKey(r, path)]);
-          },
-          onDoubleClick: () => {
-            if (r.type === "DIR") {
-              router.push(fullUrl(join(path, r.name)));
-            } else if (r.type === "FILE") {
-              handlePreview(r.name, r.size);
-            } else if (r.type === "SYMLINK" && r.linkTargetPath) {
-              navigateResolvedSymlinkTarget(r.linkTargetPath);
-            }
-          },
-        })}
-        fileNameRender={(_, r) =>
-          r.type === "DIR" ? (
-            <Link href={fullUrl(join(path, r.name))} passHref style={{ color: "inherit", textDecoration: "none" }}>
-              {r.name}
-            </Link>
-          ) : r.type === "SYMLINK" ? (
-            <Tooltip
-              title={
-                <div>
-                  {t(p("tableInfo.symlinkTooltip.type"))}
-                  <br />
-                  <div>{t(p("tableInfo.symlinkTooltip.targetPathPrefix"))}</div>
-                  {r.linkTargetPath ?? ""}
-                </div>
-              }
-            >
-              <a
-                onClick={() => {
-                  const initialPath = r.linkTargetPath ?? join(path, r.name);
-                  navigateResolvedSymlinkTarget(initialPath);
-                }}
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
-                {r.name}
-              </a>
-            </Tooltip>
-          ) : (
-            <a
-              onClick={() => {
-                handlePreview(r.name, r.size);
-              }}
-              style={{ color: "inherit", textDecoration: "none" }}
-            >
-              {r.name}
-            </a>
-          )
-        }
-        actionRender={(_, i: FileInfo) => (
-          <Space>
-            {i.type === "FILE" && (
-              <Tooltip title={t(p("download"))}>
-                <a href={urlToDownload(cluster.id, join(path, i.name), true, publicConfig.BASE_PATH)}>
-                  <DownloadIcon />
-                </a>
-              </Tooltip>
             )}
-            <RenameLink cluster={cluster} path={join(path, i.name)} reload={reload} isFile={i.type !== "DIR"}>
-              <Tooltip title={t(p("rename"))}>
-                <RenameIcon />
-              </Tooltip>
-            </RenameLink>
-            <Tooltip title={t("button.deleteButton")}>
-              <DeleteIcon
-                onClick={() => {
-                  const fullPath = join(path, i.name);
-                  modal.confirm({
-                    title: t(p("confirmDelTitle")),
-                    // icon: < />,
-                    content: `${t(p("confirmDelTitle"))}${fullPath}？`,
-                    okText: t("button.confirmButton"),
-                    onOk: () => {
-                      deleteMutation.mutate(
-                        {
-                          target: i.type,
-                          clusterId: cluster.id,
-                          path: fullPath,
-                        },
-                        {
-                          onSuccess: () => {
-                            message.success(t(p("delSuccessful")));
-                            resetSelectedAndOperation();
-                            reload();
-                          },
-                        },
-                      );
-                    },
-                  });
-                }}
-              />
-            </Tooltip>
-          </Space>
-        )}
-      />
+          />
+        </FileTableWrapper>
+      </FileBrowserLayout>
       <ImagePreviewer previewImage={previewImage} setPreviewImage={setPreviewImage} />
       <FileEditModal previewFile={previewFile} setPreviewFile={setPreviewFile} />
       <UploadModal
@@ -866,5 +985,5 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
 };
 
 const RenameLink = ModalLink(RenameModal);
-const CreateFileButton = ModalButton(CreateFileModal, { icon: <FileAddOutlined /> });
-const MkdirButton = ModalButton(MkdirModal, { icon: <FolderAddOutlined /> });
+const CreateFileLink = ModalLink(CreateFileModal);
+const MkdirLink = ModalLink(MkdirModal);

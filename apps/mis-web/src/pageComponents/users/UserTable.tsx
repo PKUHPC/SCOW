@@ -349,9 +349,10 @@ export const UserTable: React.FC<Props> = ({ data, isLoading, reload, update, ac
                         .httpError(500, () => {
                           message.destroy("removeUser");
                           message.error({
-                            content: t(p("removeFailed")),
+                            content: t(p("directoryServiceOperationFailed")),
                             duration: 4,
                           });
+                          reload();
                         })
                         .then(() => {
                           message.destroy("removeUser");

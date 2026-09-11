@@ -6,17 +6,32 @@ import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { ScowResourcePlugin } from "@scow/lib-scow-resource";
 import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { blockAccount, unblockAccount } from "src/bl/block";
+import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
+import { SystemState } from "src/entities/SystemState";
 import { Tenant } from "src/entities/Tenant";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { ClusterPlugin } from "src/plugins/clusters";
+import { getAccountGroupName } from "src/utils/account";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
+import {
+  getGroupService,
+  LDAP_GROUP_OPERATION_BATCH_SIZE,
+  validateUserAccountGroupBeforeJoin,
+} from "src/utils/directoryGroup";
 import { toRef } from "src/utils/orm";
-import { setNewUserStorageQuota } from "src/utils/storageQuota";
+import {
+  ACCOUNT_QUOTA_STATE,
+  blockAccountStorageQuotas,
+  checkAndFixUserGroupsForAccountQuota,
+  prepareImportedRelationsForAccountQuota,
+  setNewUserStorageQuota,
+  validateImportedUserAccountRelations,
+} from "src/utils/storageQuota";
 
 export interface ImportUsersData {
   accounts: {
@@ -94,6 +109,23 @@ export async function importUsers(
   const accounts: Account[] = [];
   const userAccounts: UserAccount[] = [];
 
+  const quotaStateRecord = await em.findOne(SystemState, {
+    key: SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+  });
+  const quotaState = quotaStateRecord?.value ?? ACCOUNT_QUOTA_STATE.DISABLED;
+  if (quotaState === ACCOUNT_QUOTA_STATE.ENABLING) {
+    throw { code: Status.FAILED_PRECONDITION, details: "QUOTA_ENABLING" } as ServiceError;
+  }
+
+  if (quotaState === ACCOUNT_QUOTA_STATE.ENABLED) {
+    await validateImportedUserAccountRelations(
+      em,
+      data.accounts.flatMap((account) =>
+        account.users.map((user) => ({ userId: user.userId, accountName: account.accountName })),
+      ),
+    );
+  }
+
   // 获取只需要创建的账户数据
   const existingAccountNames = existingAccounts.map((x) => x.accountName);
   const existingAccountNamesSet =
@@ -133,7 +165,80 @@ export async function importUsers(
       indexes.push(userAccounts.indexOf(userAccount));
     }
   }
-  const finalUserAccounts = userAccounts.filter((_, i) => !indexes.includes(i));
+  let finalUserAccounts = userAccounts.filter((_, i) => !indexes.includes(i));
+
+  const groupService = await getGroupService(em, logger);
+  if (quotaState === ACCOUNT_QUOTA_STATE.ENABLED && !groupService) {
+    throw { code: Status.FAILED_PRECONDITION, details: "USER_GROUP_NOT_ENABLED" } as ServiceError;
+  }
+
+  if (groupService && finalUserAccounts.length > 0) {
+    // 目录组功能开启时始终维护账户组；配额模式下额外修改主组、文件属组和底层配额。
+    const relationKeys = new Set<string>();
+    const relationsToPrepare = finalUserAccounts.filter((relation) => {
+      const key = `${relation.user.getEntity().userId}-${relation.account.getEntity().accountName}`;
+      if (relationKeys.has(key)) return false;
+      relationKeys.add(key);
+      return true;
+    });
+    finalUserAccounts = relationsToPrepare;
+    const existingOwnerRelations = await em.find(
+      UserAccount,
+      {
+        account: {
+          accountName: { $in: relationsToPrepare.map((relation) => relation.account.getEntity().accountName) },
+        },
+        role: UserRole.OWNER,
+      },
+      { populate: ["account", "user"] },
+    );
+    const existingOwnerIds = new Map(
+      existingOwnerRelations.map((relation) => [relation.account.$.accountName, relation.user.$.userId]),
+    );
+    const importedOwnerIds = new Map(data.accounts.map((account) => [account.accountName, account.owner]));
+    const relationsForQuota = relationsToPrepare.map((relation) => ({
+      account: relation.account.getEntity(),
+      userId: relation.user.getEntity().userId,
+      ownerId:
+        importedOwnerIds.get(relation.account.getEntity().accountName) ??
+        existingOwnerIds.get(relation.account.getEntity().accountName)!,
+    }));
+
+    // 配额模式先按与后续修正一致的 LDAP 批次校验，并复用组查询结果。
+    if (quotaState === ACCOUNT_QUOTA_STATE.ENABLED) {
+      const cachedGroups = new Map<string, { name: string; gid: number | undefined }[]>();
+      const uniqueRelations = [...new Map(relationsForQuota.map((relation) => [relation.userId, relation])).values()];
+      for (let i = 0; i < uniqueRelations.length; i += LDAP_GROUP_OPERATION_BATCH_SIZE) {
+        await Promise.all(uniqueRelations.slice(i, i + LDAP_GROUP_OPERATION_BATCH_SIZE).map(async (relation) => {
+          const targetAccountGroupName = relation.account.accountGroupName
+            ?? getAccountGroupName(relation.account.accountName);
+          const state = await validateUserAccountGroupBeforeJoin(
+            groupService,
+            relation.userId,
+            targetAccountGroupName,
+            misConfig,
+            logger,
+          );
+          cachedGroups.set(relation.userId, state.groups);
+        }));
+      }
+      await checkAndFixUserGroupsForAccountQuota(
+        [...new Set(relationsToPrepare.map((relation) => relation.user.getEntity().userId))],
+        groupService,
+        misConfig,
+        cachedGroups,
+      );
+    }
+    await prepareImportedRelationsForAccountQuota(
+      em,
+      relationsForQuota,
+      groupService,
+      misConfig,
+      whitelistAll,
+      logger,
+      quotaState === ACCOUNT_QUOTA_STATE.ENABLED,
+    );
+  }
 
   if (newAccountsToCreate.length > 0) {
     logger.info("Add assignment of clusters and partitions to %s new accounts", newAccountsToCreate.length);
@@ -194,11 +299,9 @@ export async function importUsers(
   ]);
 
   for (const user of Object.values(usersMap)) {
-    // 只对新创建的用户设置存储配额
-    const existingUser = existingUsers.find((u) => u.userId === user.userId);
-    if (!existingUser) {
-      await setNewUserStorageQuota(em, DEFAULT_TENANT_NAME, user.userId);
-    }
+    // 导入重试时用户可能已由上一次失败落库；对本批用户重新收敛缺失存储的配额。
+    // 已成功初始化的 storageId 会由 setNewUserStorageQuota 幂等跳过。
+    await setNewUserStorageQuota(em, DEFAULT_TENANT_NAME, user.userId, logger);
   }
 
   // 账户信息导入scow完成后，更新slurm的block状态
@@ -214,6 +317,9 @@ export async function importUsers(
       : [];
   // 仅对根据租户默认阈值需要封锁、且当前尚未封锁的账户执行封锁
   const accountsToBlock = shouldBlockInCluster ? accounts.filter((a) => !a.blockedInCluster) : [];
+  // 导入时已经处于封锁状态的账户不会再次调用 blockAccount，但仍需收敛账户组存储配额。
+  const blockedAccountsToReconcileStorage =
+    quotaState === ACCOUNT_QUOTA_STATE.ENABLED && !whitelistAll ? accounts.filter((a) => a.blockedInCluster) : [];
 
   if (accountsToUnblock.length > 0) {
     await Promise.allSettled(
@@ -223,14 +329,6 @@ export async function importUsers(
           if (!account) {
             failedUnblockAccounts.push(acc.accountName);
           } else {
-            try {
-              await unblockAccount(account, currentActivatedClusters, clusterPlugin, logger, scowResourcePlugin, true);
-            } catch (e) {
-              // 集群解锁账户失败，记录失败账户
-              logger.warn("Unblock account %s failed during importing users: %o", account.accountName, e);
-              failedUnblockAccounts.push(account.accountName);
-              throw e;
-            }
             if (whitelistAll) {
               logger.info("Add %s to whitelist", account.accountName);
               const whitelist = new AccountWhitelist({
@@ -242,6 +340,14 @@ export async function importUsers(
               // 加入白名单后账户状态变为正常
               account.state = AccountState.NORMAL;
               await em.persistAndFlush(whitelist);
+            }
+            try {
+              await unblockAccount(account, currentActivatedClusters, clusterPlugin, logger, scowResourcePlugin, em, true);
+            } catch (e) {
+              // 集群解锁账户失败，记录失败账户
+              logger.warn("Unblock account %s failed during importing users: %o", account.accountName, e);
+              failedUnblockAccounts.push(account.accountName);
+              throw e;
             }
           }
         });
@@ -259,7 +365,7 @@ export async function importUsers(
             failedBlockAccounts.push(acc.accountName);
           } else {
             try {
-              await blockAccount(account, currentActivatedClusters, clusterPlugin, logger);
+              await blockAccount(account, currentActivatedClusters, clusterPlugin, logger, em);
             } catch (e) {
               // 集群封锁账户失败，记录失败账户
               logger.warn("Block account %s failed during importing users: %o", account.accountName, e);
@@ -269,6 +375,34 @@ export async function importUsers(
           }
         });
       }),
+    );
+  }
+
+  // 对于scow未执行封锁，维持集群封锁状态的账户
+  // 执行账户配额封锁
+  if (blockedAccountsToReconcileStorage.length > 0) {
+    await Promise.allSettled(
+      blockedAccountsToReconcileStorage.map((acc) =>
+        em.transactional(async (em) => {
+          const account = await em.findOne(Account, { accountName: acc.accountName }, { populate: ["tenant"] });
+          if (!account) {
+            failedBlockAccounts.push(acc.accountName);
+            return;
+          }
+
+          try {
+            await blockAccountStorageQuotas(em, account, logger);
+          } catch (e) {
+            logger.warn(
+              "Reconcile blocked account %s storage quota failed during importing users: %o",
+              account.accountName,
+              e,
+            );
+            failedBlockAccounts.push(account.accountName);
+            throw e;
+          }
+        }),
+      ),
     );
   }
   logger.info(

@@ -7,10 +7,17 @@ import { parseKeyValue } from "@scow/lib-config";
 import { readVersionFile } from "@scow/utils/build/version";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
+import {
+  ClusterEntryPath,
+  ClusterEntryPathSchema,
+  I18nStringTypeSchema,
+  PublicStorageConfigSchema,
+} from "src/models/ClusterStorage";
 import { aiConfig } from "src/server/config/ai";
 import { commonConfig } from "src/server/config/common";
 import { config as envConfig } from "src/server/config/env";
 import { misConfig } from "src/server/config/mis";
+import { publicStorageConfig } from "src/server/config/storage";
 import { uiConfig } from "src/server/config/ui";
 import { router } from "src/server/trpc/def";
 import { authProcedure, baseProcedure } from "src/server/trpc/procedure/base";
@@ -21,17 +28,6 @@ import { z } from "zod";
 const configPath = USE_MOCK ? join(__dirname, "config") : undefined;
 // 配置文件中的已配置集群
 export const clusters = getClusterConfigs(configPath, console, ["ai"]);
-
-const I18nStringTypeSchema = z.union([
-  z.string(),
-  z.object({
-    i18n: z.object({
-      default: z.string(),
-      en: z.string().optional(),
-      zh_cn: z.string().optional(),
-    }),
-  }),
-]);
 
 const SystemLanguageConfigSchema = z.object({
   defaultLanguage: z.string(),
@@ -130,6 +126,7 @@ const PublicConfigSchema = z.object({
   AI_USER_SHARE_ENABLED: z.boolean(),
   INFER_ENABLED: z.boolean(),
   CLUSTERS_GRAFANA_CONFIG: z.record(z.string(), grafanaConfigSchema).optional(),
+  PUBLIC_STORAGE_CONFIG: PublicStorageConfigSchema.optional(),
 });
 
 const UiConfigSchema = z.object({
@@ -188,12 +185,6 @@ const LoginNodeConfigSchema = z.array(
     address: z.string(),
   }),
 );
-
-const StorageConfigSchema = z.object({
-  enabled: z.boolean(),
-  paths: z.array(z.string()),
-  replicaExist: z.boolean(),
-});
 
 const ClusterAiConfigSchema = z.object({
   app: z
@@ -326,6 +317,8 @@ export const config = router({
         INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
 
         CLUSTERS_GRAFANA_CONFIG: clustersGrafanaConfig,
+
+        PUBLIC_STORAGE_CONFIG: publicStorageConfig,
       };
     }),
   getScowClusterConfig: authProcedure
@@ -342,7 +335,7 @@ export const config = router({
       z.record(
         z.string(),
         z.object({
-          storage: StorageConfigSchema,
+          entryPaths: z.array(ClusterEntryPathSchema).optional(),
           loginNodes: LoginNodeConfigSchema,
           ai: ClusterAiConfigSchema,
         }),
@@ -353,11 +346,7 @@ export const config = router({
         (acc, clusterId) => {
           const cluster = clusters[clusterId];
           acc[clusterId] = {
-            storage: {
-              enabled: cluster.storage?.enabled ?? false,
-              paths: cluster.storage?.paths ?? [],
-              replicaExist: cluster.storage?.replicaExist ?? false,
-            },
+            entryPaths: cluster?.entryPaths,
             loginNodes: cluster?.loginNodes,
             ai: {
               app: {
@@ -382,7 +371,7 @@ export const config = router({
         {} as Record<
           string,
           {
-            storage: { enabled: boolean; paths: string[]; replicaExist: boolean };
+            entryPaths: ClusterEntryPath[] | undefined;
             loginNodes: LoginNodeConfig;
             ai: {
               app: { maxRunningTimeHours?: number };

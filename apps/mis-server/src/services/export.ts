@@ -205,6 +205,7 @@ export const exportServiceServer = plugin((server) => {
           blockThresholdAmount: decimalToMoney(blockThresholdAmount),
           blocked: Boolean(x.blockedInCluster),
           state: account_AccountStateFromJSON(x.state),
+          storageQuotas: [],
         };
       };
 

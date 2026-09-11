@@ -9,6 +9,7 @@ const { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_SERVER } = require("next/cons
 const { join } = require("path");
 const { getCapabilities } = require("@scow/lib-auth");
 const { readVersionFile } = require("@scow/utils/build/version");
+const { getPublicStorageConfig } = require("@scow/config/build/storage");
 
 /**
  * Get auth capabilities
@@ -94,6 +95,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
   const commonConfig = getCommonConfig(configBasePath, console);
   const auditConfig = getAuditConfig(configBasePath, console);
   const authConfig = getAuthConfig(configBasePath, console);
+  const publicStorageConfig = getPublicStorageConfig(configBasePath, console);
 
   const versionTag = readVersionFile()?.tag;
 
@@ -180,6 +182,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
       misConfig.jobChargeType,
       misConfig.changeJobPriceType,
       ...(config.QUANTUM_DEPLOYED ? [misConfig.quantumJobChargeType] : []),
+      ...(misConfig.storageBilling?.enabled ? [misConfig.storageBilling.chargeType] : []),
       ...(misConfig.customChargeTypes || []),
     ],
 
@@ -212,6 +215,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     NOTIF_ADDRESS: commonConfig.notification.address,
 
     BILL_ENABLED: misConfig.bill?.enabled,
+    STORAGE_BILLING_ENABLED: misConfig.storageBilling?.enabled,
     CHANGE_JOB_PRICE_TYPE: misConfig.changeJobPriceType,
 
     SYNC_HISTORY_DAY_PERIOD: misConfig.syncAccountUser.syncHistoryDayPeriod,
@@ -220,6 +224,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     MAX_EXPORT_COUNT: misConfig.maxExportCount,
 
     ROOT_SHELL_ENABLED: misConfig.rootShell?.enabled,
+
+    PUBLIC_STORAGE_CONFIG: publicStorageConfig,
   };
 
   if (!building) {

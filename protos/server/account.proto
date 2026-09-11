@@ -150,6 +150,12 @@ message Account {
   AccountState state = 11;
   optional bool is_in_whitelist = 12;
   DisplayedAccountState displayed_state = 13;
+  repeated StorageQuotaEntry storage_quotas = 14;
+
+  message StorageQuotaEntry {
+    string storage_id = 1;
+    uint64 quota_mb = 2;
+  }
 }
 
 message GetAccountsResponse {

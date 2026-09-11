@@ -24,6 +24,7 @@ export const AdminAccountInfo = Type.Object({
   balance: Money,
   blockThresholdAmount: Type.Optional(Money),
   defaultBlockThresholdAmount: Money,
+  storageQuotas: Type.Array(Type.Object({ storageId: Type.String(), quotaMb: Type.Number() })),
 });
 export type AdminAccountInfo = Static<typeof AdminAccountInfo>;
 

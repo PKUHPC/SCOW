@@ -8,6 +8,7 @@ import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { publicConfig } from "src/utils/config";
 import { moneyToString } from "src/utils/money";
+import { isAccountUserSyncRunningDetails } from "src/utils/syncAccountUser";
 
 interface Props {
   open: boolean;
@@ -190,8 +191,12 @@ export const JobPriceChangeModal: React.FC<Props> = ({
             reload();
             onClose();
           })
-          .httpError(409, () => {
-            message.error(t("common.accountUserSyncRunning"));
+          .httpError(409, (e) => {
+            if (isAccountUserSyncRunningDetails(e.message)) {
+              message.error(t("common.accountUserSyncRunning"));
+            } else {
+              message.error(e.message || "Error occurred.");
+            }
             reload();
             onClose();
           })

@@ -1,5 +1,6 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ClusterConfigSchema, getClusterConfigs, getLoginNode } from "@scow/config/build/cluster";
+import { getServerStorageConfig } from "@scow/config/build/storage";
 import { createAdapterCertificates } from "@scow/lib-scheduler-adapter";
 import { getSchedulerAdapterClient } from "@scow/lib-scheduler-adapter/build/client";
 import { SslConfig as AdapterSslConfig } from "@scow/lib-scheduler-adapter/build/ssl";
@@ -39,6 +40,31 @@ interface ClusterCheckResult {
   hasError: boolean;
 }
 
+// 无需在 storage.yaml 中定义的保留 storageId，用于后续对本地文件系统定义快捷路径使用
+const RESERVED_STORAGE_IDS = new Set(["SCOW-LOCAL"]);
+
+// 校验集群引用storageId的存在性（保留字段跳过校验）
+function validateStorageClusterEntryPathRefs(
+  clusters: Record<string, ClusterConfigSchema>,
+  storageConfig: { storages: { storageId: string }[] },
+): string[] {
+  const configuredIds = new Set(storageConfig.storages.map((s) => s.storageId));
+  const errors: string[] = [];
+
+  for (const [clusterId, clusterConfig] of Object.entries(clusters)) {
+    for (const entry of clusterConfig.entryPaths ?? []) {
+      if (RESERVED_STORAGE_IDS.has(entry.storageId)) continue;
+      if (!configuredIds.has(entry.storageId)) {
+        errors.push(
+          `cluster ${clusterId}: entryPaths storageId "${entry.storageId}" does not exist in storage.yaml`,
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
 function generateScowdUrl(address: string, scowdPort: number, sslEnabled: boolean) {
   return sslEnabled ? `https://${removePort(address)}:${scowdPort}` : `http://${removePort(address)}:${scowdPort}`;
 }
@@ -70,6 +96,18 @@ export const checkClusters = async ({ configPath, scowConfigPath, continueOnErro
     }
     hasError = true;
     clusters = {};
+  }
+
+  // 跨文件校验：集群 entryPaths.storageId 是否在 storage.yaml 中定义
+  const storageConfig = getServerStorageConfig(scowConfigPath);
+  if (storageConfig.storages.length > 0) {
+    const storageErrors = validateStorageClusterEntryPathRefs(clusters, storageConfig);
+    if (storageErrors.length > 0) {
+      for (const error of storageErrors) {
+        logger.error("Storage validation failed: %s", error);
+      }
+      hasError = true;
+    }
   }
 
   const clusterCount = Object.keys(clusters).length;

@@ -29,7 +29,10 @@ export interface ShareParams {
   // 分享的目标子级名称：数据集版本，算法版本，模型版本的名称
   targetSubName: string;
   // 默认是用户家目录/nfs/home/{userId}的上上级目录/nfs，配置了sharedTopDir则直接使用
-  sharedTopDir: string;
+  sharedTopDir: string,
+  // 是否可以根据源文件路径绕过权限校验
+  // 默认为 false
+  noCheckPermission?: boolean,
 }
 
 export interface FileDriver {
@@ -39,7 +42,7 @@ export interface FileDriver {
   copyWithMode(fromPath: string, toPath: string, mode: string, noCheckPermission?: boolean): Promise<void>;
   createFile(path: string, noCheckPermission?: boolean): Promise<void>;
   getHomeDirectory(): Promise<string>;
-  makeDirectory(path: string, noCheckPermission?: boolean): Promise<void>;
+  makeDirectory(path: string, noCheckPermission?: boolean, mode?: string): Promise<void>;
   move(fromPath: string, toPath: string, noCheckPermission?: boolean): Promise<void>;
   readDirectory(path: string, noCheckPermission?: boolean): Promise<ListDirectoryOutput[]>;
   download(path: string, download: string, res: NextApiResponse<any>, noCheckPermission?: boolean): Promise<void>;
@@ -51,31 +54,27 @@ export interface FileDriver {
   ): Promise<NextResponse<{ message: string }>>;
   getFileMetadata(path: string, noCheckPermission?: boolean): Promise<FileMeta>;
   exists(path: string, noCheckPermission?: boolean): Promise<boolean>;
-  chmod(path: string, mode: string): Promise<void>;
+  chmod(path: string, mode: string, noCheckPermission?: boolean): Promise<void>;
   decompressFile(filePath: string, decompressionPath: string, noCheckPermission?: boolean): Promise<void>;
   compressFiles(paths: string[], archivePath: string, noCheckPermission?: boolean): Promise<void>;
 
   /**
-   * 取消分享时删除相应的文件夹
-   * @param sharedPath 需要取消分享的已分享主表绝对路径或子表绝对路径
-   */
+ * 取消分享时删除相应的文件夹
+ * @param sharedPath 需要取消分享的已分享主表绝对路径或子表绝对路径
+ */
   unShareFileOrDir(sharedPath: string, successCallback?: callback, failureCallback?: callback): Promise<void>;
 
-  shareFileOrDir(
-    shareParams: ShareParams,
-    successCallback?: shareOkCallback,
-    failureCallback?: callback,
-  ): Promise<void>;
+  shareFileOrDir(shareParams: ShareParams, successCallback?: shareOkCallback, failureCallback?: callback): Promise<void>;
 
   /**
-   *
-   * @param newName 变更后的名称
-   * @param oldPath 需要变更的原主表绝对路径或者原子表绝对路径
-   *
-   */
+ *
+ * @param newName 变更后的名称
+ * @param oldPath 需要变更的原主表绝对路径或者原子表绝对路径
+ *
+ */
   getUpdatedSharedPath(newName: string, oldPath: string): Promise<string>;
 
-  checkCopyFilePath(toPath: string, fileName: string): Promise<void>;
+  checkCopyFilePath(toPath: string, fileName: string, noCheckPermission?: boolean): Promise<void>;
   checkCreateResourcePath(toPath: string, noCheckPermission?: boolean): Promise<void>;
   checkSharePermission(sourcePath: string, noCheckPermission?: boolean): Promise<void>;
 }

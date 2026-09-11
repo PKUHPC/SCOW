@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import React, { useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { isAccountUserSyncRunningDetails } from "src/utils/syncAccountUser";
 
 interface FormProps {
   accountName: string;
@@ -130,8 +131,12 @@ const NewAccountModal: React.FC<ModalProps> = ({ open, close, refresh }) => {
       .httpError(404, () => {
         message.error(t(p("notExist")));
       })
-      .httpError(409, () => {
-        message.error(t("common.accountUserSyncRunning"));
+      .httpError(409, (e) => {
+        if (isAccountUserSyncRunningDetails(e.message)) {
+          message.error(t("common.accountUserSyncRunning"));
+        } else {
+          message.error(e.message || "Error occurred.");
+        }
       })
       .then(() => {
         message.success(t(p("addSuccess")));

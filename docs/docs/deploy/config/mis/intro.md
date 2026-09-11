@@ -201,6 +201,30 @@ maxExportCount: 100000000
   # 是否允许平台管理员以root身份登录登录节点，默认不允许
   # enabled: true
 
+# 用户组管理使用的目录服务配置(可选)
+# directoryService:
+#   type: ldap
+#   ldap:
+#     url: ldap://10.129.227.65
+#     bindDN: cn=Manager,ou=hpc,o=pku
+#     bindPassword: "admin"
+#     searchBase: "ou=hpc,o=pku"
+#     groupBase: "ou=Group,ou=hpc,o=pku"
+#     # 账户对应的用户组的gid开始值，auth中新建用户的uid是用66000开始的（newGroupPerUser模式下gid和uid是同一个值）
+#     # gid可以重复，为了避免冲突，这个gidStart应设置为一个较大的数
+#     # 这个gidStart和auth中用户uidStart的差值为最大可创建用户数
+#     # gidStart: 666000
+#     attrs:
+#       uid: uid
+#     addUser:
+#       groupStrategy: newGroupPerUser
+#       # 如果groupStrategy设置为oneGroupForAllUsers，那么必须设置此属性
+#       oneGroupForAllUsers:
+#         # 用户的gidNumber属性的值
+#         gidNumber: 5000
+
+# 账户关联的用户组名称前缀（可选）
+# accountGroupNamePrefix: "abc"
 ```
 
 ## 启动服务

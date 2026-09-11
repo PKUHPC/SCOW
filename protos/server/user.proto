@@ -142,10 +142,11 @@ message RemoveUserFromAccountRequest {
   optional string user_id = 2;
   string account_name = 3;
   repeated string user_ids = 4;
+  string operator_id = 5;
 }
 
 // NOT_FOUND: user_id is not found.
-// OUT_OF_RANGE: user is the primary admin of the account
+// OUT_OF_RANGE: user is the owner of the account
 message RemoveUserFromAccountResponse {
   bool success = 1;
   repeated UserOperationResult results = 2;
@@ -156,6 +157,7 @@ message AddUserToAccountRequest {
   string user_id = 2;
   string account_name = 3;
   bool is_tenant_admin = 4;
+  string operator_id = 5;
 }
 
 // ALREADY_EXISTS: user already in the account
@@ -221,7 +223,7 @@ message DeleteUserRequest {
   optional string deletion_comment = 3;
 }
 
-// FAILED_PRECONDITION: the user is a primary admin of an account.
+// FAILED_PRECONDITION: the user is an owner of an account.
 // NOT_FOUND: user is not found
 message DeleteUserResponse {
 }

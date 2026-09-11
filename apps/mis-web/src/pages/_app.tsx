@@ -203,6 +203,7 @@ function MyApp({ appProps: { pageProps, Component }, extra }: { appProps: AppPro
     return createStore(
       ClusterInfoStore,
       extra.clusterConfigs,
+      extra.publicStorageConfigs,
       extra.initialActivatedClusters,
       extra.initialSimpleClustersInfo,
     );

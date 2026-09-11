@@ -17,11 +17,14 @@ import { updateBlockStatusInSlurm } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { importUsers, ImportUsersData } from "src/bl/importUsers";
 import { misConfig } from "src/config/mis";
-import { Account } from "src/entities/Account";
+import { createGroupService } from "src/directoryService/groupService";
+import { Account, AccountState } from "src/entities/Account";
 import { AccountUserSyncRecord } from "src/entities/AccountUserSyncRecord";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, User } from "src/entities/User";
+import { AccountGroupInitStatus, SystemState } from "src/entities/SystemState";
 import { UserAccount, UserRole } from "src/entities/UserAccount";
+import { getAccountGroupName } from "src/utils/account";
 import { getTotalStatisticsInfoCached } from "src/utils/cache";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
@@ -322,6 +325,136 @@ export const adminServiceServer = plugin((server) => {
     checkAccountUserSynchronizationRunning: async ({ em }) => {
       const isRunningSyncFound = await checkRunningSyncTask(em, logger);
       return [{ isRunning: isRunningSyncFound }];
+    },
+
+    // 账户开启关联用户组功能初始化（异步执行，立即返回）
+    initAccountGroup: async ({ em, logger }) => {
+      const groupService = createGroupService(misConfig.directoryService, logger);
+
+      // 设置初始化状态为 initializing
+      let stateRecord = await em.findOne(SystemState, { key: SystemState.KEYS.ACCOUNT_GROUP_INITIALIZED });
+      if (stateRecord) {
+        stateRecord.value = AccountGroupInitStatus.INITIALIZING;
+      } else {
+        stateRecord = new SystemState(SystemState.KEYS.ACCOUNT_GROUP_INITIALIZED, AccountGroupInitStatus.INITIALIZING);
+        em.persist(stateRecord);
+      }
+      await em.flush();
+
+      // 异步执行，不阻塞响应
+      void (async () => {
+        logger.trace("Account group initialization started.");
+
+        try {
+          const accounts = await em.find(Account, { state: { $ne: AccountState.DELETED } });
+
+          let groupCreatedCount = 0;
+          let groupAlreadyExistedCount = 0;
+          const accountGroupFailures: { accountName: string; error: string }[] = [];
+
+          // 第一步：账户组初始化
+          for (const account of accounts) {
+            try {
+              const groupName = account.accountGroupName
+                ?? getAccountGroupName(account.accountName);
+
+              const exists = await groupService.checkGroupExists(groupName);
+              if (exists) {
+                groupAlreadyExistedCount++;
+              } else {
+                await groupService.createGroup(groupName);
+                groupCreatedCount++;
+              }
+
+              if (!account.accountGroupName) {
+                account.accountGroupName = groupName;
+              }
+            } catch (e: any) {
+              logger.error("Failed to init account group for %s: %o", account.accountName, e);
+              accountGroupFailures.push({
+                accountName: account.accountName,
+                error: e?.message ?? String(e),
+              });
+            }
+          }
+
+          await em.flush();
+
+          // 第二步：用户属组补齐
+          const userAccounts = await em.find(UserAccount, {
+            account: { state: { $ne: AccountState.DELETED } },
+          }, { populate: ["account", "user"] });
+
+          let userAddedSuccessCount = 0;
+          let userAddedFailCount = 0;
+          const userGroupFailures: { userId: string; accountName: string; error: string }[] = [];
+
+          for (const ua of userAccounts) {
+            const account = ua.account.$;
+            const user = ua.user.$;
+
+            if (!account.accountGroupName) continue;
+
+            try {
+              await groupService.addUserToGroup(user.userId, account.accountGroupName);
+              userAddedSuccessCount++;
+            } catch (e: any) {
+              logger.error("Failed to add user %s to group %s: %o", user.userId, account.accountGroupName, e);
+              userAddedFailCount++;
+              userGroupFailures.push({
+                userId: user.userId,
+                accountName: account.accountName,
+                error: e?.message ?? String(e),
+              });
+            }
+          }
+
+          stateRecord.value = AccountGroupInitStatus.INITIALIZED;
+          await em.flush();
+
+          // 输出执行报告
+          logger.info(
+            "Account group initialization completed. "
+            + "totalAccounts=%d, groupCreated=%d, groupAlreadyExisted=%d, "
+            + "userAddedSuccess=%d, userAddedFail=%d, failures=%o",
+            accounts.length,
+            groupCreatedCount,
+            groupAlreadyExistedCount,
+            userAddedSuccessCount,
+            userAddedFailCount,
+            { accountGroupFailures, userGroupFailures },
+          );
+        } catch (e: any) {
+          logger.error("Account group initialization failed: %o", e);
+          stateRecord.value = AccountGroupInitStatus.NOT_INITIALIZED;
+          await em.flush();
+        }
+      })();
+
+      return [{}];
+    },
+
+    getAccountGroupStatus: async ({ em }) => {
+      const [initialized, pageVisible] = await Promise.all([
+        em.findOne(SystemState, { key: SystemState.KEYS.ACCOUNT_GROUP_INITIALIZED }),
+        em.findOne(SystemState, { key: SystemState.KEYS.ACCOUNT_GROUP_INIT_CONFIRMED }),
+      ]);
+      return [{
+        accountGroupInitialized: initialized?.value ?? AccountGroupInitStatus.NOT_INITIALIZED,
+        accountGroupInitConfirmed: pageVisible?.value === "true",
+      }];
+    },
+
+    setAccountGroupInitConfirmed: async ({ em }) => {
+      let record = await em.findOne(SystemState, { key: SystemState.KEYS.ACCOUNT_GROUP_INIT_CONFIRMED });
+      if (record) {
+        record.value = "true";
+      } else {
+        record = new SystemState(SystemState.KEYS.ACCOUNT_GROUP_INIT_CONFIRMED, "true");
+        em.persist(record);
+      }
+      await em.flush();
+      return [{}];
     },
   });
 });

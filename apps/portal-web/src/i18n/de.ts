@@ -182,6 +182,7 @@ export default {
         permission: "Berechtigungen",
         notShowHiddenItem: "Versteckte Elemente nicht anzeigen",
         showHiddenItem: "Versteckte Elemente anzeigen",
+        homeDirectory: "Home-Verzeichnis",
       },
       singleCrossClusterTransferSelector: {
         placeholder: "Bitte Cluster auswählen",
@@ -261,6 +262,13 @@ export default {
         storageQuotaTooltip:
           "Das aktuelle Dateisystem hat Backups eingerichtet," +
           " die zusätzlichen Speicher belegen. Die Nutzung kann daher höher als die tatsächliche Dateigröße sein",
+        accountStorageQuotaTooltip:
+          "Wenn das Konto gesperrt oder im Rückstand ist, können keine Daten geschrieben werden. " +
+          "Auch wenn das Kontospeicherkontingent nicht aufgebraucht ist, wird weiterhin ein unzureichendes Kontingent gemeldet.",
+        userStorageQuota: "Benutzerspeicher",
+        accountStorageQuota: "Kontospeicher",
+        homeDirectory: "Home-Verzeichnis",
+        entryPathCreateFailed: "Schnellpfad-Verzeichnis konnte nicht erstellt werden, bitte wenden Sie sich an den Administrator",
         failedResolveSymlink: "Symbolischen Link auflösen fehlgeschlagen",
         noAccessPermission: "Keine Zugriffsberechtigung",
         noPath: "Pfad nicht gefunden, bitte prüfen",

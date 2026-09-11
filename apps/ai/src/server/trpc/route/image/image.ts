@@ -11,7 +11,7 @@ import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { PlatformRole } from "src/server/trpc/route/auth";
 import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
-import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
+import { checkClusterAvailable, PermissionCheckMode, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { getHarborConfig, HarborClient } from "src/server/utils/harbor";
 import {
@@ -339,10 +339,18 @@ export const createImage = procedure
       }
     }
 
-    // 如果是公共数据资产且为本地上传路径
-    if (isPlatformOwned && source === Source.INTERNAL) {
-      const noCheckPermission = shouldPathsSkipPermissionCheck(input.clusterId, [sourcePath], true);
-      if (!noCheckPermission) {
+    let noCheckPermission = false;
+    // 本地路径创建镜像时，公共资产只允许公共目录，普通资产允许 entryPaths。
+    if (source === Source.INTERNAL) {
+      const permissionMode = isPlatformOwned ? PermissionCheckMode.PLATFORM_OWNED : PermissionCheckMode.ENTRY_PATHS;
+      noCheckPermission = shouldPathsSkipPermissionCheck(
+        input.clusterId,
+        [sourcePath],
+        user.identityId,
+        user.platformRoles,
+        permissionMode,
+      );
+      if (isPlatformOwned && !noCheckPermission) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: `${sourcePath} is outside the required PublicPath boundary`,
@@ -400,7 +408,7 @@ export const createImage = procedure
               loginInfo: { userName, password },
               harborImageUrl,
               imageId: image.id,
-              noCheckPermission: isPlatformOwned,
+              noCheckPermission,
             });
           },
           logger,

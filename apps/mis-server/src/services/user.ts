@@ -6,33 +6,33 @@ import { Status } from "@grpc/grpc-js/build/src/constants";
 import { FilterQuery, Loaded, LockMode, QueryOrder, raw } from "@mikro-orm/core";
 import {
   addUserToAccount,
-  changeEmail as libChangeEmail,
   createUser,
   deleteUser,
   getCapabilities,
   getUser,
   HttpError,
+  changeEmail as libChangeEmail,
   removeUserFromAccount,
 } from "@scow/lib-auth";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date";
 import {
-  AccountState as PFAccountState,
   AccountStatus,
   accountUserInfo_UserStateInAccountFromJSON,
   GetAccountUsersResponse,
+  AccountState as PFAccountState,
+  UserRole as PFUserRole,
+  UserStatus as PFUserStatus,
   platformRoleFromJSON,
   platformRoleToJSON,
   QueryIsUserInAccountResponse,
   tenantRoleFromJSON,
   tenantRoleToJSON,
-  UserRole as PFUserRole,
+  UserOperationResult,
   UserServiceServer,
   UserServiceService,
   userStateFromJSON,
-  UserStatus as PFUserStatus,
 } from "@scow/protos/build/server/user";
-import { UserOperationResult } from "@scow/protos/build/server/user";
 import { blockUserInAccount, unblockUserInAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { processExpiredWhitelist } from "src/bl/whitelist";
@@ -40,6 +40,7 @@ import { authUrl } from "src/config";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
+import { SystemState } from "src/entities/SystemState";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
@@ -47,11 +48,22 @@ import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo, getUserStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase } from "src/utils/createUser";
+import {
+  getDefaultGroupGid,
+  getGroupService,
+  resetPrimaryGroupIfNeeded,
+  validateUserAccountGroupBeforeJoin,
+} from "src/utils/directoryGroup";
 import { logger } from "src/utils/logger";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
 import { getSchedulerAdapterJobsByClusterFeatures } from "src/utils/schedulerAdapterJobTypes";
-import { setNewUserStorageQuota } from "src/utils/storageQuota";
+import {
+  ACCOUNT_QUOTA_STATE,
+  setNewUserStorageQuota,
+  revertUserFileGroupToDefault,
+  switchUserToAccountGroup,
+} from "src/utils/storageQuota";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 interface ResultInfo extends UserOperationResult {
@@ -206,7 +218,7 @@ export const userServiceServer = plugin((server) => {
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "add user to account task");
 
-      const { accountName, userId, tenantName, isTenantAdmin } = request;
+      const { accountName, userId, tenantName, isTenantAdmin, operatorId } = request;
 
       const account = await em.findOne(
         Account,
@@ -265,6 +277,54 @@ export const userServiceServer = plugin((server) => {
           code: Status.ALREADY_EXISTS,
           message: `User ${userId} already in the account ${accountName}.`,
         } as ServiceError;
+      }
+
+      // 检查账户存储配额功能状态
+      const quotaStateRecord = await em.findOne(SystemState, {
+        key: SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+      });
+      const quotaState = quotaStateRecord?.value;
+
+      if (quotaState === ACCOUNT_QUOTA_STATE.ENABLING) {
+        throw {
+          code: Status.FAILED_PRECONDITION,
+          details: "QUOTA_ENABLING",
+        } as ServiceError;
+      }
+
+      if (quotaState === ACCOUNT_QUOTA_STATE.ENABLED) {
+        const existingUserAccount = await em.findOne(
+          UserAccount,
+          {
+            user: { userId, tenant: { name: tenantName } },
+            account: { state: { $ne: AccountState.DELETED } },
+          },
+          { populate: ["account"] },
+        );
+
+        if (existingUserAccount) {
+          throw {
+            code: Status.ALREADY_EXISTS,
+            details: "USER_ALREADY_IN_ANOTHER_ACCOUNT",
+          } as ServiceError;
+        }
+
+        const groupService = await getGroupService(em, logger);
+        if (!groupService || !account.accountGroupName) {
+          throw {
+            code: Status.FAILED_PRECONDITION,
+            message: "Account storage quota is enabled but the account group is not initialized.",
+            details: "USER_GROUP_NOT_ENABLED",
+          } as ServiceError;
+        }
+        // 只读校验放在调度器、数据库、LDAP 和文件操作之前，冲突时无需回滚。
+        await validateUserAccountGroupBeforeJoin(
+          groupService,
+          userId,
+          account.accountGroupName,
+          misConfig,
+          logger,
+        );
       }
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
@@ -329,6 +389,9 @@ export const userServiceServer = plugin((server) => {
         throw realErrors[0].reason;
       }
 
+      // 如果 ACCOUNT_GROUP_INITIALIZED 为 true 且账户关联了用户组，准备 LDAP 操作
+      const groupService = await getGroupService(em, logger);
+
       const newUserAccount = new UserAccount({
         account,
         user,
@@ -339,6 +402,50 @@ export const userServiceServer = plugin((server) => {
       account.users.add(newUserAccount);
 
       await em.persistAndFlush([account, user, newUserAccount]);
+      // Scow 关系写入成功后，将用户加入 LDAP 对应用户组
+      if (groupService && account.accountGroupName) {
+        const accountGroupName = account.accountGroupName;
+        await groupService.addUserToGroup(userId, accountGroupName).catch(async (e) => {
+          logger.error("Failed to add user %s to directory service group %s: %s", userId, accountGroupName, e);
+          // 回滚 Scow 用户-账户关系
+          account.users.remove(newUserAccount);
+          await em.removeAndFlush(newUserAccount);
+          throw {
+            code: Status.INTERNAL,
+            message:
+              `Failed to add user ${userId} to directory service group ` +
+              `${accountGroupName}: ${e?.message ?? e}. Please retry later.`,
+          } as ServiceError;
+        });
+
+        if (quotaState === ACCOUNT_QUOTA_STATE.ENABLED) {
+          const rollbackAddUser = async () => {
+            await groupService.removeUserFromGroup(userId, accountGroupName).catch((rollbackErr) => {
+              logger.error(
+                `Rollback failed: remove user ${userId} from account group ${accountGroupName}: ${rollbackErr}`,
+              );
+            });
+            account.users.remove(newUserAccount);
+            await em.removeAndFlush(newUserAccount);
+          };
+          await switchUserToAccountGroup(
+            groupService,
+            em,
+            userId,
+            accountGroupName,
+            operatorId,
+            misConfig,
+            logger,
+            async (e) => {
+              await rollbackAddUser();
+              throw {
+                code: Status.INTERNAL,
+                message: `Failed to apply quota operations for user ${userId}: ${(e as Error)?.message ?? e}. Changes have been rolled back.`,
+              } as ServiceError;
+            },
+          );
+        }
+      }
 
       if (server.ext.capabilities.accountUserRelation) {
         await addUserToAccount(authUrl, { accountName, userId }, logger);
@@ -351,7 +458,7 @@ export const userServiceServer = plugin((server) => {
       // 判断当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "remove user from account task");
 
-      const { accountName, tenantName } = request;
+      const { accountName, tenantName, operatorId } = request;
 
       const results: ResultInfo[] = [];
       const userIds = request.userIds?.length > 0 ? request.userIds : request.userId ? [request.userId] : [];
@@ -459,6 +566,67 @@ export const userServiceServer = plugin((server) => {
 
           const userAccReference = em.getReference(UserAccount, userAccount.id);
           await em.removeAndFlush(userAccReference);
+
+          // Scow 关系删除成功后，从目录服务用户组中移除用户
+          const groupService = await getGroupService(em, logger);
+
+          const accountGroupName = userAccount.account.getProperty("accountGroupName");
+
+          if (groupService && accountGroupName) {
+            // 回滚：恢复 Scow 用户-账户关系
+            const rollbackScowRelation = async () => {
+              const accountForRestore = await em.findOne(Account, { accountName, tenant: { name: tenantName } });
+              const userForRestore = await em.findOne(User, { userId, tenant: { name: tenantName } });
+              if (accountForRestore && userForRestore) {
+                const restoredUa = new UserAccount({
+                  account: accountForRestore,
+                  user: userForRestore,
+                  role: userAccount.role,
+                  blockedInCluster: userAccount.blockedInCluster,
+                  state: userAccount.state,
+                });
+                await em.persistAndFlush(restoredUa).catch((re) => {
+                  logger.error(
+                    "Failed to restore Scow user-account relation for user %s in account %s: %s",
+                    userId,
+                    accountName,
+                    re,
+                  );
+                });
+              }
+            };
+
+            try {
+              // 若待移除组是用户的主组，按 groupStrategy 回退主组
+              await resetPrimaryGroupIfNeeded(groupService, userId, accountGroupName, misConfig);
+              await groupService.removeUserFromGroup(userId, accountGroupName);
+
+              const removeQuotaStateRecord = await em.findOne(SystemState, {
+                key: SystemState.KEYS.ACCOUNT_STORAGE_QUOTA_STATE,
+              });
+              if (removeQuotaStateRecord?.value === ACCOUNT_QUOTA_STATE.ENABLED) {
+                await revertUserFileGroupToDefault(groupService, em, userId, operatorId, misConfig, logger);
+                // switchUserToAccountGroup 在 addUserToAccount 时会把用户从默认组 memberUid 移出，
+                // 这里对应地把用户加回默认组，恢复 LDAP 状态一致性。
+                const defaultGroupGid = await getDefaultGroupGid(groupService, userId, misConfig);
+                if (defaultGroupGid !== undefined) {
+                  const defaultGroupName = await groupService.getGroupNameByGid(defaultGroupGid);
+                  if (defaultGroupName) {
+                    await groupService.addUserToGroup(userId, defaultGroupName);
+                  }
+                }
+              }
+            } catch (e) {
+              logger.error(
+                "Directory service operation failed for user %s in group %s: %s",
+                userId,
+                accountGroupName,
+                (e as Error)?.message ?? e,
+              );
+              await rollbackScowRelation();
+              throw e;
+            }
+          }
 
           if (server.ext.capabilities.accountUserRelation) {
             await removeUserFromAccount(authUrl, { accountName, userId }, logger);
@@ -821,12 +989,7 @@ export const userServiceServer = plugin((server) => {
         { identityId: user.userId, id: user.id, mail: user.email, name: user.name, password },
         server.logger,
       )
-        .then(async () => {
-          // 设置用户的存储配额
-          await setNewUserStorageQuota(em, tenantName, identityId);
-
-          return true;
-        })
+        .then(() => true)
         // If the call of creating user of auth fails,  delete the user created in the database.
         .catch(async (e) => {
           if (e.status === 409) {
@@ -834,11 +997,10 @@ export const userServiceServer = plugin((server) => {
             return false;
           } else if (e instanceof ConnectError) {
             await em.removeAndFlush(user);
-
-            server.logger.error("Failed to set user storage quota.", e);
+            server.logger.error("Error creating user in auth.", e);
             throw {
               code: Status.INTERNAL,
-              message: `Failed to set user ${identityId} storage quota.`,
+              message: `Error creating user with userId ${identityId} in auth.`,
             } as ServiceError;
           } else {
             // 回滚数据库
@@ -850,6 +1012,16 @@ export const userServiceServer = plugin((server) => {
             } as ServiceError;
           }
         });
+
+      // auth 中已存在用户时也要重新收敛配额，避免重试创建永久跳过缺失存储。
+      await setNewUserStorageQuota(em, tenantName, identityId, logger).catch(async (e) => {
+        await em.removeAndFlush(user);
+        server.logger.error("Failed to set user storage quota.", e);
+        throw {
+          code: Status.INTERNAL,
+          message: `Failed to set user ${identityId} storage quota.`,
+        } as ServiceError;
+      });
 
       await callHook("userCreated", { tenantName, userId: user.userId }, logger);
 
@@ -883,7 +1055,7 @@ export const userServiceServer = plugin((server) => {
 
       // 设置用户的存储配额
       try {
-        await setNewUserStorageQuota(em, tenantName, identityId);
+        await setNewUserStorageQuota(em, tenantName, identityId, logger);
       } catch (e) {
         await em.removeAndFlush(user);
 
@@ -1030,6 +1202,29 @@ export const userServiceServer = plugin((server) => {
           });
         if (hasCapabilities) {
           await removeUserFromAccount(authUrl, { accountName, userId }, logger);
+        }
+      }
+
+      // 从目录服务用户组中移除用户
+      const groupService = await getGroupService(em, logger);
+
+      if (groupService) {
+        for (const userAccount of userAccounts) {
+          const accountGroupName = userAccount.account.getEntity().accountGroupName;
+          if (!accountGroupName) continue;
+
+          try {
+            await resetPrimaryGroupIfNeeded(groupService, userId, accountGroupName, misConfig);
+            await groupService.removeUserFromGroup(userId, accountGroupName);
+          } catch (e) {
+            logger.error(
+              "Directory service operation failed for user %s in group %s: %s",
+              userId,
+              accountGroupName,
+              (e as Error)?.message ?? e,
+            );
+            throw e;
+          }
         }
       }
 

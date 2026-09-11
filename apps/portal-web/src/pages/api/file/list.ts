@@ -38,6 +38,7 @@ export const ListFileSchema = typeboxRouteSchema({
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
     403: Type.Object({ code: Type.Literal("NOT_ACCESSIBLE") }),
     412: Type.Object({ code: Type.Literal("DIRECTORY_NOT_FOUND") }),
+    503: Type.Object({ code: Type.Literal("ENTRY_PATH_CREATE_FAILED") }),
   },
 });
 
@@ -50,6 +51,7 @@ export const mapType = {
 } as const;
 
 export default route(ListFileSchema, async (req, res) => {
+
   const info = await auth(req, res);
 
   if (!info) {
@@ -61,28 +63,15 @@ export default route(ListFileSchema, async (req, res) => {
   const client = getClient(FileServiceClient);
 
   return asyncUnaryCall(client, "readDirectory", {
-    cluster,
-    userId: info.identityId,
-    path,
-    updateAccessTime,
-  }).then(
-    ({ results }) => ({
-      200: {
-        items: results.map(({ mode, mtime, name, size, type, linkTargetPath, linkTargetType }) => ({
-          mode,
-          mtime,
-          name,
-          size,
-          type: mapType[type],
-          linkTargetPath,
-          linkTargetType: linkTargetType !== undefined ? mapType[linkTargetType] : undefined,
-        })),
-      },
-    }),
-    handlegRPCError({
-      [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
-      [status.PERMISSION_DENIED]: () => ({ 403: { code: "NOT_ACCESSIBLE" as const } }),
-      [status.INVALID_ARGUMENT]: () => ({ 412: { code: "DIRECTORY_NOT_FOUND" as const } }),
-    }),
-  );
+    cluster, userId: info.identityId, path, updateAccessTime,
+  }).then(({ results }) => ({ 200: {
+    items: results.map(({ mode, mtime, name, size, type, linkTargetPath, linkTargetType }) => ({
+      mode, mtime, name, size, type: mapType[type], linkTargetPath,
+      linkTargetType: linkTargetType !== undefined ? mapType[linkTargetType] : undefined,
+    })) } }), handlegRPCError({
+    [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+    [status.PERMISSION_DENIED]: () => ({ 403: { code: "NOT_ACCESSIBLE" as const } }),
+    [status.INVALID_ARGUMENT]: () => ({ 412: { code: "DIRECTORY_NOT_FOUND" as const } }),
+    [status.FAILED_PRECONDITION]: () => ({ 503: { code: "ENTRY_PATH_CREATE_FAILED" as const } }),
+  }));
 });

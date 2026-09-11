@@ -1,6 +1,7 @@
 import type { AuthPpolicyConfigSchema } from "@scow/config/build/auth";
 import type { ClusterTextsConfigSchema } from "@scow/config/build/clusterTexts";
 import type { MisConfigSchema } from "@scow/config/build/mis";
+import { PublicStorageConfigSchema } from "@scow/config/build/storage";
 import type { UiConfigSchema } from "@scow/config/build/ui";
 
 import { AuditConfigSchema } from "@scow/config/build/audit";
@@ -116,6 +117,7 @@ export interface PublicRuntimeConfig {
   NOTIF_ADDRESS: string;
 
   BILL_ENABLED?: boolean;
+  STORAGE_BILLING_ENABLED?: boolean;
   CHANGE_JOB_PRICE_TYPE: string;
 
   SYNC_HISTORY_DAY_PERIOD: MisConfigSchema["syncAccountUser"]["syncHistoryDayPeriod"];
@@ -124,6 +126,8 @@ export interface PublicRuntimeConfig {
   MAX_EXPORT_COUNT: number;
 
   ROOT_SHELL_ENABLED?: boolean;
+
+  PUBLIC_STORAGE_CONFIG?: PublicStorageConfigSchema;
 }
 
 interface RuntimeConfigs {

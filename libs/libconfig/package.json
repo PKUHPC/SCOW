@@ -11,6 +11,7 @@
     "!**/*.map"
   ],
   "main": "build/index.js",
+  "browser": "build/browser.js",
   "scripts": {
     "dev": "concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\"",
     "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",

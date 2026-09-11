@@ -116,8 +116,8 @@ export default {
       },
       // fileSelectModal
       fileSelectModal: {
-        title: "文件目录选择框",
-        newPath: "新目录",
+        title: "选择文件夹",
+        newPath: "新建文件夹",
       },
       // jobDrawer
       jobDrawer: {
@@ -171,7 +171,7 @@ export default {
         pathTraversal: "路径不能包含 ..",
         pathCurrentDirectory: "路径不能包含 .",
         homeDirRequired: "无法获取用户家目录",
-        notInHomeDir: "绝对路径必须位于用户家目录下",
+        notInHomeDir: "绝对路径必须位于用户家目录或可信路径下",
         wdTooltip1: "1. 请填写绝对路径，如填写相对路径，则相对于该用户家目录；",
 
         wdTooltip2: "2. 填写目录不可访问或者不可操作时，提交作业或者作业运行将失败；",
@@ -317,6 +317,7 @@ export default {
         permission: "权限",
         notShowHiddenItem: "不显示隐藏的项目",
         showHiddenItem: "显示隐藏的项目",
+        homeDirectory: "家目录",
       },
       singleCrossClusterTransferSelector: {
         placeholder: "请选择集群",
@@ -386,6 +387,8 @@ export default {
         cluster: "集群",
         uploadFile: "上传文件",
         uploadDir: "上传文件夹",
+        uploadMenuFile: "文件",
+        uploadMenuDir: "文件夹",
         submitJob: "提交作业",
         compressionInProgress: "正在进行压缩: ",
         compressSelected: "压缩",
@@ -395,6 +398,11 @@ export default {
         storageQuota: "存储配额",
         usage: "使用量",
         storageQuotaTooltip: "当前文件系统设置了备份会占用额外的存储空间，因此存储使用量会高于您的实际文件大小",
+        accountStorageQuotaTooltip: "账户处于封锁或欠费状态时无法写入数据，即使账户存储配额未用完也会提示配额不足。",
+        userStorageQuota: "用户存储",
+        accountStorageQuota: "账户存储",
+        homeDirectory: "家目录",
+        entryPathCreateFailed: "快捷路径目录创建失败，请联系管理员",
         failedResolveSymlink: "解析软链接失败",
         noAccessPermission: "无访问权限",
         noPath: "找不到该路径，请检查",
@@ -446,6 +454,8 @@ export default {
           openInShell: "在shell中打开",
           createFile: "新建文件",
           mkDir: "新建文件夹",
+          newMenuFile: "文件",
+          newMenuDir: "文件夹",
           download: "下载",
           rename: "重命名",
           deleteConfirmTitle: "确认删除",
@@ -952,7 +962,6 @@ export default {
       },
     },
     _app: {
-
       textExceedsLength: "终端登录提示信息过多，请减少'~/.bashrc'等文件中不必要的信息输出!",
       otherError: "服务器出错啦！",
       adapterConnectionError: "{} 集群无法连接，请稍后重试 ",

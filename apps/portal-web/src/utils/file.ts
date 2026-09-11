@@ -1,4 +1,5 @@
 import { CloseOutlined } from "@ant-design/icons";
+import type { FileIconComponent } from "@scow/lib-web/build/components/filemanager/FileTableWrapper";
 import {
   ArchiveIcon,
   FolderIcon,
@@ -33,9 +34,9 @@ export const baseTypeIcons = {
   DIR: FolderIcon,
   SYMLINK: SymlinkIcon,
   ERROR: CloseOutlined,
-} as Record<Exclude<FileType, "FILE">, React.ComponentType>;
+} as Record<Exclude<FileType, "FILE">, FileIconComponent>;
 
-export const iconFor = (file: FileInfo): React.ComponentType => {
+export const iconFor = (file: FileInfo): FileIconComponent => {
   if (file.type === "FILE") {
     const name = file.name || "";
     if (isDecompressibleFile(name)) {

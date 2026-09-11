@@ -128,6 +128,7 @@ export const validateRelativeToHomePath = (
   value: unknown,
   homeDir: string | undefined,
   messages: PathValidationMessages = {},
+  additionalRootPaths: string[] = [],
 ) => {
   const error = validateSafePathValue(value, messages, { forbidCurrentDirectory: true });
   if (error) {
@@ -138,12 +139,13 @@ export const validateRelativeToHomePath = (
     return undefined;
   }
 
-  if (!homeDir) {
+  const allowedRootPaths = [homeDir, ...additionalRootPaths].filter((path): path is string => Boolean(path));
+  if (allowedRootPaths.length === 0) {
     return messages.homeDirRequired ?? "无法获取用户家目录";
   }
 
-  if (!isSameOrChildPath(homeDir, String(value))) {
-    return messages.notInHomeDir ?? "绝对路径必须位于用户家目录下";
+  if (!allowedRootPaths.some((rootPath) => isSameOrChildPath(rootPath, String(value)))) {
+    return messages.notInHomeDir ?? "绝对路径必须位于用户家目录或可信路径下";
   }
 
   return undefined;
@@ -153,6 +155,7 @@ export const validateHomeScopedPath = (
   value: unknown,
   homeDir: string | undefined,
   messages: PathValidationMessages = {},
+  additionalRootPaths: string[] = [],
 ) => {
   const error = validateSafePathValue(value, messages, { absolute: true, forbidCurrentDirectory: true });
   if (error) {
@@ -163,12 +166,13 @@ export const validateHomeScopedPath = (
     return undefined;
   }
 
-  if (!homeDir) {
+  const allowedRootPaths = [homeDir, ...additionalRootPaths].filter((path): path is string => Boolean(path));
+  if (allowedRootPaths.length === 0) {
     return messages.homeDirRequired ?? "无法获取用户家目录";
   }
 
-  if (!isSameOrChildPath(homeDir, String(value))) {
-    return messages.notInHomeDir ?? "路径必须位于用户家目录下";
+  if (!allowedRootPaths.some((rootPath) => isSameOrChildPath(rootPath, String(value)))) {
+    return messages.notInHomeDir ?? "路径必须位于用户家目录或可信路径下";
   }
 
   return undefined;

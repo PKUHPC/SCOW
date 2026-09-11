@@ -97,17 +97,6 @@ hpc:
 ai:
   enabled: false
 
-# # 可选，默认不开启
-# storage:
-#   # 必填，bool 类型
-#   enabled: true
-#   # 必填，字符串数组，代表当前需要被管理的文件系统挂载点
-#   # 当前 SCOW 仅支持一个挂载点
-#   paths: ["/data"]
-#   # 可选，默认未开启副本备份
-#   # 文件系统若有冗余备份数据时开启该配置
-#   replicaExist: true
-
 # 集群描述信息，可选
 description: 集群描述
 ```

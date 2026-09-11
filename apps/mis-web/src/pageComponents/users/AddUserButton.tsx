@@ -19,6 +19,7 @@ import { CreateUserModal } from "src/pageComponents/users/CreateUserModal";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { addUserToAccountParams, getUserIdRule, useBuiltinCreateUser } from "src/utils/createUser";
+import { isAccountUserSyncRunningDetails } from "src/utils/syncAccountUser";
 
 /**
  * FormProps 定义表单中的字段，identityId 代表用户 ID，name 代表用户全名。
@@ -216,10 +217,18 @@ export const AddUserButton: React.FC<Props> = ({
         }
       })
       .httpError(409, (e) => {
-        if (e.code === "SYNC_ACCOUNT_USER_IS_RUNNING") {
+        if (e.code === "SYNC_ACCOUNT_USER_IS_RUNNING" && (!e.message || isAccountUserSyncRunningDetails(e.message))) {
           message.error(t("common.accountUserSyncRunning"));
+        } else if (e.code === "QUOTA_ENABLING") {
+          message.error(t(p("quotaEnabling")));
+        } else if (e.code === "USER_ALREADY_IN_ANOTHER_ACCOUNT") {
+          message.error(t(p("userAlreadyInAnotherAccount")));
+        } else if (e.code === "DIRECTORY_GROUP_ADD_FAILED") {
+          message.error(t(p("directoryGroupAddFailed")));
+        } else if (e.code === "DIRECTORY_SERVICE_NOT_CONFIGURED") {
+          message.error(t(pCommon("directoryServiceNotConfigured")));
         } else {
-          message.error(e.message);
+          message.error(e.message || "Error occurred.");
         }
       })
       .httpError(410, ({ code }) => {

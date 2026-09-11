@@ -10,8 +10,8 @@ export interface SyncStorageDataPlugin {
     start: () => void;
     stop: () => void;
     schedule: string;
-    lastSync: (cluster?: string, path?: string, tenant?: string) => Date | null;
-    run: (cluster?: string, path?: string, tenant?: string) => Promise<SyncError[]>;
+    lastSync: (storageId?: string, tenant?: string) => Date | null;
+    run: (storageId?: string, tenant?: string) => Promise<SyncError[]>;
     isRunning: boolean;
   };
 }
@@ -24,11 +24,11 @@ export const SyncStorageDataPlugin = plugin(async (f) => {
 
   const logger = f.logger.child({ plugin: "syncStorageData" });
 
-  const trigger = (cluster?: string, path?: string, tenant?: string) => {
+  const trigger = (storageId?: string, tenant?: string) => {
     if (syncStorageDataIsRunning) return Promise.resolve([] as SyncError[]);
 
     syncStorageDataIsRunning = true;
-    return syncStorageUsage(f.ext.orm.em.fork(), logger, cluster, path, tenant).finally(() => {
+    return syncStorageUsage(f.ext.orm.em.fork(), logger, storageId, tenant).finally(() => {
       syncStorageDataIsRunning = false;
     });
   };
@@ -37,7 +37,7 @@ export const SyncStorageDataPlugin = plugin(async (f) => {
     schedule,
     () => {
       void trigger()?.catch((e) => {
-        logger.error("Error when fetching jobs. %o", e);
+        logger.error("Error when syncing users storage usage. %o", e);
       });
     },
     {
@@ -74,9 +74,9 @@ export const SyncStorageDataPlugin = plugin(async (f) => {
       }
     },
     schedule,
-    lastSync: (cluster?: string, path?: string, tenant?: string) => {
-      if (cluster && path && tenant) {
-        return lastSyncTime[generateKey(cluster, path, tenant)];
+    lastSync: (storageId?: string, tenant?: string) => {
+      if (storageId && tenant) {
+        return lastSyncTime[generateKey(storageId, tenant)];
       }
       let lastTime: Date | null = null;
       Object.keys(lastSyncTime).forEach((key) => {
@@ -86,7 +86,9 @@ export const SyncStorageDataPlugin = plugin(async (f) => {
       });
       return lastTime;
     },
-    run: (cluster?: string, path?: string, tenant?: string) => trigger(cluster, path, tenant),
-    isRunning: syncStorageDataIsRunning,
+    run: (storageId?: string, tenant?: string) => trigger(storageId, tenant),
+    get isRunning() {
+      return syncStorageDataIsRunning;
+    },
   } as SyncStorageDataPlugin["syncStorageUsage"]);
 });
