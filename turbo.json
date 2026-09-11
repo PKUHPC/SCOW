@@ -57,5 +57,23 @@
       "dependsOn": ["prepareDev"],
       "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "buf.genCrane.yaml", "buf.genCrane-ai.yaml"]
     }
+    ,"@scow/scowd#build": {
+      "dependsOn": ["prepareDev"],
+      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"],
+      "outputs": ["build/**", "protos/gen/**"]
+    },
+    "@scow/scowd#prepareDev": {
+      "inputs": ["buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"],
+      "outputs": ["protos/gen/**"]
+    },
+    "@scow/scowd#lint": {
+      "dependsOn": ["prepareDev"],
+      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"]
+    },
+    "@scow/scowd#test": {
+      "dependsOn": ["prepareDev"],
+      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"],
+      "outputs": []
+    }
   }
 }

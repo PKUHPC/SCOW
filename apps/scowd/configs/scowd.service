@@ -1,0 +1,19 @@
+[Unit]
+Description=scowd
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c 'cd /scowd && exec ./scowd'
+WorkingDirectory=/scowd
+Restart=always
+RestartSec=3
+User=root
+Group=root
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="TERM=xterm-256color"
+KillMode=process
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target

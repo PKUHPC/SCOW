@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo run build",
     "build:adapters": "turbo run build --filter \"@scow/scow-adapters\"",
+    "build:scowd": "turbo run build --filter \"@scow/scowd\"",
     "build:cli": "turbo run build --filter \"@scow/cli\"",
     "build:scow": "turbo run build --filter=\"!@scow/docs\" --filter=\"!@scow/cli\" --filter=\"!@scow/scow-adapters\" --filter=\"!./dev/**\"",
     "build:libs": "turbo run build --filter \"./libs/**\"",

@@ -1,0 +1,17 @@
+{
+  "name": "@scow/scowd",
+  "version": "1.12.0",
+  "private": true,
+  "files": [
+    "build",
+    "configs",
+    "README.md"
+  ],
+  "scripts": {
+    "prepareDev": "make protos",
+    "build": "make build",
+    "build:docker": "make build-docker",
+    "lint": "make lint",
+    "test": "sh -c 'make test'"
+  }
+}

@@ -1,0 +1,70 @@
+name: Build and Publish SCOWD
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_arm64:
+        description: Build arm64 binary
+        type: boolean
+        default: false
+      expire_time:
+        description: Optional RFC3339 expiration time
+        type: string
+        default: ""
+      target:
+        description: ccrepo target directory
+        type: string
+        default: manual
+  push:
+    branches: [master]
+    tags: ["v**"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [closed]
+
+env:
+  GOPROXY: https://goproxy.cn,direct
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request_target'
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+    strategy:
+      matrix:
+        arch: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.build_arm64 && '["amd64", "arm64"]' || '["amd64"]') }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          go-download-base-url: https://golang.google.cn/dl
+      - name: Generate proto and test
+        working-directory: apps/scowd
+        run: |
+          go tool buf generate --template buf.gen.yaml ../../libs/protos/scowd/protos
+          go test ./...
+      - name: Build SCOWD
+        working-directory: apps/scowd
+        run: make build ARCH=${{ matrix.arch }} VERSION=${{ github.ref_name }} EXPIRE_TIME='${{ inputs.expire_time }}'
+      - name: Upload binary
+        if: github.event_name != 'pull_request_target'
+        env:
+          USERNAME: ${{ secrets.CCREPO_USERNAME }}
+          PASSWORD: ${{ secrets.CCREPO_PASSWORD }}
+        run: |
+          if [[ "${{ github.event_name }}" == push && "${{ github.ref }}" == refs/heads/master ]]; then target=master; else target='${{ inputs.target }}'; [[ -z "$target" ]] && target="pr-${{ github.event.number }}"; fi
+          curl -f --user "$USERNAME:$PASSWORD" --upload-file "apps/scowd/build/bin/scowd-${{ matrix.arch }}" \
+            "https://ccrepo.pku.edu.cn/repository/scowbin/scowd/${target}/scowd-${{ matrix.arch }}"
+
+  cleanup-pr:
+    if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+    steps:
+      - name: Remove PR binaries
+        env:
+          USERNAME: ${{ secrets.CCREPO_USERNAME }}
+          PASSWORD: ${{ secrets.CCREPO_PASSWORD }}
+        run: |
+          for arch in amd64 arm64; do curl -f -X DELETE --user "$USERNAME:$PASSWORD" "https://ccrepo.pku.edu.cn/repository/scowbin/scowd/pr-${{ github.event.number }}/scowd-${arch}" || true; done

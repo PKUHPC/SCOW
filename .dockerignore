@@ -4,6 +4,9 @@
 !apps/scow-adapters/pkg/ai/db/**
 !apps/scow-adapters/pkg/slurm/db
 !apps/scow-adapters/pkg/slurm/db/**
+!apps/scowd/pkg/libs/db
+!apps/scowd/pkg/libs/db/**
+apps/scowd/protos/gen
 **/node_modules
 **/generated
 **/.next

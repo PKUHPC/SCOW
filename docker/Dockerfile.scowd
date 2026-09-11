@@ -1,0 +1,33 @@
+FROM --platform=$BUILDPLATFORM ccrepo.pku.edu.cn/dockerhub/rockylinux/rockylinux:8.9 AS builder
+
+RUN sed -e 's|^mirrorlist=|#mirrorlist=|g' \
+    -e 's|^#baseurl=http://dl.rockylinux.org/$contentdir|baseurl=https://mirrors.pku.edu.cn/rocky|g' \
+    -i.bak /etc/yum.repos.d/[Rr]ocky*.repo
+
+ARG BUILDARCH
+ARG TARGETARCH
+ARG VERSION=dev
+ARG EXPIRE_TIME=
+
+RUN dnf install -y curl tar gzip git make ca-certificates && dnf clean all
+
+ENV GOVERSION=1.25.10
+RUN curl -fLO https://mirrors.aliyun.com/golang/go${GOVERSION}.linux-${BUILDARCH}.tar.gz && \
+    tar -C /usr/local -xzf go${GOVERSION}.linux-${BUILDARCH}.tar.gz && \
+    rm go${GOVERSION}.linux-${BUILDARCH}.tar.gz
+
+ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+ENV GOPROXY=https://goproxy.cn,direct
+
+WORKDIR /app/apps/scowd
+COPY apps/scowd/go.mod apps/scowd/go.sum ./
+RUN go mod download
+
+COPY apps/scowd/ ./
+COPY libs/protos/scowd/protos/ /app/libs/protos/scowd/protos/
+RUN make build ARCH="${TARGETARCH}" VERSION="${VERSION}" EXPIRE_TIME="${EXPIRE_TIME}"
+
+FROM scratch AS scowd-target
+ARG TARGETARCH
+COPY --from=builder /app/apps/scowd/build/bin/scowd-${TARGETARCH} /scowd-${TARGETARCH}

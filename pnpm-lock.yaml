@@ -2082,6 +2082,8 @@ importers:
 
   apps/scowctl: {}
 
+  apps/scowd: {}
+
   apps/unified-web:
     dependencies:
       '@ant-design/icons':

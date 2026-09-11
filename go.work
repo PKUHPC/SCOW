@@ -3,4 +3,5 @@ go 1.25.9
 use (
 	.
 	./apps/scow-adapters
+	./apps/scowd
 )

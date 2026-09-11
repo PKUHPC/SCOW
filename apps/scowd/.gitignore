@@ -1,0 +1,5 @@
+/build/
+/protos/gen/
+/logs/
+*.test
+*.out

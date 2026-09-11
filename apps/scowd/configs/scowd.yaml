@@ -1,0 +1,72 @@
+# 可选
+# logger:
+#   # 可选，默认 info
+#   level: debug
+#   # 可选，默认在程序当前目录下的 logs 目录下
+#   directory: "/opt/aaa"
+#   # 可选，默认 90 天
+#   retentionDays: 100
+#   # 可选，默认 3 天
+#   compressDays: 3
+
+server:
+  host:
+  port: 9999
+
+TLS:
+  enabled: false
+  caCertPath: /root/longsijie/ca.crt
+  serverCertPath: /root/longsijie/server.crt
+  serverPrivateKeyPath: /root/longsijie/server.key
+
+# 代理相关配置，v0.4.0 新增
+# proxy:
+#   # 适配器代理配置
+#   adapterProxy:
+#     # 是否开启
+#     enabled: true
+#     # scowd 监听地址
+#     host:
+#     port: 8999
+#     # 适配器地址
+#     adapterAddress: 172.58.2.102:8999
+#     # scowd 和 适配器间的 tls 配置
+#     adapterTLS:
+#       enabled: true
+#       caCertPath: /root/scowd-config/SCOWD/configs/adapter/certs/ca.crt
+#       clientCertPath: /root/scowd-config/SCOWD/configs/adapter/certs/scow.crt
+#       clientPrivateKeyPath:  /root/scowd-config/SCOWD/configs/adapter/certs/scow.key
+#   # 交互式应用代理
+#   appProxy:
+#     # 是否开启
+#     enabled: true
+#     # 监听地址
+#     host:
+#     port: 9000
+
+# 子进程相关配置
+# childProcess:
+#   # 限制单个用户子进程资源用量
+#   resourceLimits:
+#     enabled: true
+#     cpuCores: 2      # 限制为2个CPU核
+#     memoryMB: 1024   # 限制为1GB内存
+#
+#   # shell 会话空闲多久后会被回收（单位：分钟）
+#   # 仅对使用过 shell 功能的子进程生效；<=0 使用默认 60 分钟
+#   shellIdleTimeoutMinutes: 60
+
+# # ai 集群下配置，非必填
+# ai:
+#   # 默认为 false
+#   enabled: false
+#   # 共享文件夹路径，用于存放公共数据集、镜像等
+#   # 若 enabled 为 true，则该项为必填项
+#   sharedFolderPath: "/data/.share"
+#   # 容器运行时，选配containerd、docker，默认为containerd
+#   containerRuntime: "containerd"
+
+# 文件传输相关配置
+# fileTransfer:
+#   # 分片大小（MB），默认 100MB
+#   chunkSizeMB: 100
