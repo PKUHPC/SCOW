@@ -2,9 +2,10 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
-import { getClusterConfigs } from "@scow/config/build/cluster";
+import { ClusterEntryPathsConfigError, getClusterConfigs } from "@scow/config/build/cluster";
+import { StorageConfigValidationError } from "@scow/config/build/storage";
 import { convertClusterConfigsToServerProtoType, NO_CLUSTERS } from "@scow/lib-server";
-import { scowErrorMetadata } from "@scow/lib-server/build/error";
+import { CLUSTER_CONFIG_VALIDATION_ERROR, scowErrorMetadata, STORAGE_CONFIG_VALIDATION_ERROR } from "@scow/lib-server/build/error";
 import { libCheckActivatedClusters } from "@scow/lib-server/build/misCommon/clustersActivation";
 import { ConfigServiceServer, ConfigServiceService } from "@scow/protos/build/common/config";
 import { readFileSync } from "fs";
@@ -46,7 +47,27 @@ export const configServiceServer = plugin((server) => {
     },
 
     getClusterConfigFiles: async ({ em, logger }) => {
-      const clusterConfigs = getClusterConfigs(undefined, logger);
+
+      let clusterConfigs: ReturnType<typeof getClusterConfigs>;
+      try {
+        clusterConfigs = getClusterConfigs(undefined, logger);
+      } catch (e) {
+        if (e instanceof ClusterEntryPathsConfigError) {
+          throw new ServiceError({
+            code: status.INVALID_ARGUMENT,
+            details: e.message,
+            metadata: scowErrorMetadata(CLUSTER_CONFIG_VALIDATION_ERROR),
+          });
+        }
+        if (e instanceof StorageConfigValidationError) {
+          throw new ServiceError({
+            code: status.INVALID_ARGUMENT,
+            details: e.message,
+            metadata: scowErrorMetadata(STORAGE_CONFIG_VALIDATION_ERROR),
+          });
+        }
+        throw e;
+      }
 
       const clusterConfigsProto = convertClusterConfigsToServerProtoType(clusterConfigs);
 

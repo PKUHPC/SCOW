@@ -2,7 +2,14 @@ import { Plugin } from "@ddadaal/tsgrpc-server";
 import { AsyncLocalStorage } from "async_hooks";
 import pino from "pino";
 
-export const logContextFieldNames = ["userId", "tenantName", "accountName", "cluster", "clusterId"] as const;
+export const logContextFieldNames = [
+  "userId",
+  "tenantName",
+  "accountName",
+  "cluster",
+  "clusterId",
+  "storageId",
+] as const;
 
 export type LogContextFieldName = (typeof logContextFieldNames)[number];
 export type LogContext = Partial<Record<LogContextFieldName | "req" | "path", string>>;

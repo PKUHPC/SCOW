@@ -135,6 +135,7 @@ export default {
       imagePulling: "Загрузка образа",
       insufficientResources: "Недостаточно ресурсов",
     },
+    directoryServiceNotConfigured: "Служба каталогов не настроена. Пожалуйста, обратитесь к администратору.",
   },
   dashboard: {
     title: "Панель",
@@ -208,6 +209,7 @@ export default {
         systemDebug: "Операции платформы",
         statusSynchronization: "Синхронизация аккаунтов/пользователей",
         jobSynchronization: "Синхронизация заданий",
+        userGroup: "Группа пользователей",
         resourceManagement: "Управление ресурсами",
         clusterManagement: "Управление кластерами",
         accountList: "Аккаунты",
@@ -242,6 +244,7 @@ export default {
         accountChargeRecords: "Записи расходов аккаунта",
         accountBills: "Детали счета аккаунта",
         storageManager: "Менеджер хранения",
+        userBaseStorageQuota: "Базовая квота хранилища пользователя",
         permissionManagement: "Управление правами",
         defaultAuthorizedApp: "Приложение по умолчанию с авторизацией",
         appAuthorization: "Авторизовать приложение",
@@ -312,6 +315,7 @@ export default {
         delete: "Удалить",
         deleteSuccess: "Аккаунт успешно удален!",
         deleteFail: "Не удалось удалить аккаунт. Пожалуйста, обратитесь к администратору.",
+        deleteDirectoryGroupFailed: "Ошибка службы каталогов при удалении аккаунта. Пожалуйста, обратитесь к администратору.",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "Установлено успешно",
@@ -391,6 +395,12 @@ export default {
         selectAccount: "Пожалуйста, выберите аккаунт!",
         specifyOwner: "Укажите главного администратора для каждого аккаунта.",
         incorrectFormat: "Неверный формат данных.",
+        quotaEnabling: "Account storage quota is being enabled. Please import again later.",
+        multiAccountUsers: "The following users would belong to multiple accounts and cannot be imported: {}",
+        multiGroupUsers:
+          "The following users belong to multiple groups. Please ensure all users belong to only one group before importing: {}",
+        defaultGroupNotRemoved:
+          "The following users could not have their default group determined. Import failed. Please check the directory service configuration and try again: {}",
         importSuccess: "Импорт выполнен успешно.",
         selectCluster: "Кластер:",
         alreadyExist: "Аккаунт уже существует в SCOW.",
@@ -917,6 +927,7 @@ export default {
         blockAccount: "Пользователь заблокирован. Сначала разблокируйте",
         arrearsAccount: "Не удалось получить статус задолженности пользователя",
         addSuccess: "Добавлено успешно!",
+        directoryGroupAddFailed: "Не удалось добавить пользователя в группу каталога. Повторите попытку позже.",
         userDeleted: "Пользователь удален и не может быть добавлен",
       },
       createUserForm: {
@@ -1012,6 +1023,7 @@ export default {
         cannotRemoverUserWhoHaveRunningJobFromAccount:
           "У пользователя все еще выполняется задание. Подождите завершения задания или завершите его вручную перед перемещением." +
           " Или выполняется синхронизация Аккаунт/Пользователь. Повторите попытку после завершения синхронизации.",
+        directoryServiceOperationFailed: "Операция службы каталогов завершилась неудачей. Пожалуйста, обратитесь к администратору.",
 
         blockUserInAccountFailed: "Не удалось заблокировать пользователя в аккаунте.",
         unblockUserInAccountFailed: "Не удалось разблокировать пользователя в аккаунте.",
@@ -1048,7 +1060,13 @@ export default {
         notFoundStorageConfig: "Системная ошибка: не найдена соответствующая конфигурация хранилища",
         totalStorage: "Всего хранилища",
         remainingStorage: "Оставшееся хранилище",
+        storageSystem: "Файловая система",
         userDefaultQuota: "Квота хранилища по умолчанию для пользователя",
+        tenantAssignedQuota: "Назначенная квота арендатора",
+        tenantAssignedQuotaTooltip: "Сумма назначенных квот на хранение для всех пользователей этого арендатора",
+        tenantUsedStorage: "Использование арендатора",
+        tenantUsedStorageTooltip: "Сумма использования хранилища всеми пользователями этого арендатора",
+        mountedClusters: "Смонтированные кластеры",
         edit: "Редактировать",
         user: "Пользователь",
         storageQuota: "Квота хранилища",
@@ -1069,14 +1087,12 @@ export default {
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "Изменить квоту хранилища по умолчанию",
         confirm: "Подтвердить",
-        modifyUserDeulatQuotaSuccess: "Квота хранилища по умолчанию для пользователя успешно изменена",
-        modifyPartialSuccess:
-          "Квота по умолчанию успешно изменена; возникло исключение при настройке квоты для {}, всего — {} пользователей.",
-        cluster: "Кластер",
-        tip:
-          "Изменения вступают в силу немедленно. " +
-          "Уменьшение квот может привести к превышению лимитов хранилища и помешать выполняющимся заданиям записывать данные. " +
-          "Пожалуйста, действуйте осторожно",
+        modifyUserDefaultQuotaSuccess: "Квота хранилища по умолчанию для пользователя успешно изменена",
+        modifyPartialSuccess: "Квота по умолчанию успешно изменена; возникло исключение при настройке квоты для {}, всего — {} пользователей.",
+        fileSystem: "Файловая система",
+        tip: "Изменения вступают в силу немедленно. "
+          + "Уменьшение квот может привести к превышению лимитов хранилища и помешать выполняющимся заданиям записывать данные. "
+          + "Пожалуйста, действуйте осторожно",
       },
       userQuotaChangeModal: {
         modifyStorageQuota: "Изменить квоту хранилища",
@@ -1089,7 +1105,7 @@ export default {
           "Пакетное изменение квот хранилища пользователей прошло успешно для {} записей" +
           " и не удалось для {} записей.",
         batchModifyUserQuotaFailed: "Не удалось пакетно изменить квоты хранилища пользователей",
-        cluster: "Кластер",
+        fileSystem: "Файловая система",
         user: "Пользователь",
         selectedUsers: "Выбранные пользователи",
         defaultStorageQuota: "Квота хранилища по умолчанию",
@@ -1264,6 +1280,7 @@ export default {
         getBillingTableErrorMessage:
           "Не удалось получить информацию о кластере и разделах. " + "Пожалуйста, свяжитесь с администратором.",
         partitionInfo: "Информация о разделах",
+        billingStandard: "Billing Standard",
         loading: "Загрузка разделов...",
       },
       operationLogs: {
@@ -1272,6 +1289,42 @@ export default {
       historyJobs: {
         userCompletedJob: "Завершенные задания",
       },
+    },
+    storageBilling: {
+      storageResource: "Storage Resource",
+      computeResource: "Compute Resource",
+      noAvailableBillingData: "No billing data available",
+      fileSystem: "File System:",
+      fileSystemTitle: "File System",
+      all: "All",
+      setStoragePrice: "Set Storage Price",
+      newBillingId: "New Billing ID:",
+      generatedAfterSave: "Generated after saving",
+      billingMode: "Billing Mode",
+      billingId: "Billing ID",
+      selectBillingMode: "Please select a billing mode",
+      usage: "Usage",
+      quota: "Quota",
+      quotaModeRequiresAccountStorageQuota:
+        "Account storage quota is not enabled. Quota-based billing cannot be selected.",
+      unknown: "Unknown",
+      startValue: "Start Value",
+      endValue: "End Value",
+      unitPrice: "Unit Price (CNY/TB/Day)",
+      required: "Required",
+      setLastTierEndFirst: "Please set the end value of the current last tier first",
+      endMustGreaterThanStart: "The end value must be greater than the start value",
+      lastTierMustBeNoLimit: "The last tier must be unlimited",
+      add: "Add",
+      setPriceSuccess: "Price set successfully",
+      saveFailed: "Save failed",
+      save: "Save",
+      collapseHistory: "Collapse History",
+      expandHistory: "Expand History",
+      historyBillingId: "Historical Billing ID",
+      effectiveDate: "Effective Date",
+      validPeriod: "Valid Period",
+      timeRange: "{} to {}",
     },
     tenant: {
       info: {
@@ -1349,6 +1402,7 @@ export default {
         create: {
           tenantNotExistUser: "Пользователь {1} не существует в тенанте {0}.",
           accountNameOccupied: "Имя аккаунта уже занято",
+          directoryGroupNameOccupied: "Группа службы каталогов с таким именем аккаунта уже существует. Используйте другое имя.",
           userIdAndNameNotMatch: "ID пользователя и имя не совпадают.",
           createSuccess: "Создано успешно!",
           ownerUserId: "ID пользователя главного администратора",
@@ -1375,6 +1429,7 @@ export default {
       },
       storageManager: {
         storageManager: "Менеджер хранилища",
+        userBaseStorageQuota: "Базовая квота хранилища пользователя",
       },
       permissionManagement: {
         defaultApps: {
@@ -1585,6 +1640,25 @@ export default {
           accountUserSyncRunning:
             "Выполняется синхронизация аккаунтов и пользователей. " +
             "Подождите ее окончания перед запуском синхронизации заданий.",
+        },
+        userGroup: {
+          title: "Группа пользователей",
+          alertLine1: "После включения функции групп пользователей система автоматически инициализирует существующие данные, "
+          + "назначит независимую группу пользователей каждому аккаунту, и все пользователи аккаунта будут принадлежать соответствующей группе.",
+          alertLine2: "Это базовая основная функция. После включения её нельзя отключить, а данные нельзя откатить. "
+          + "Пожалуйста, убедитесь, что вы полностью оценили бизнес-последствия перед продолжением.",
+          featureLabel: "Функция групп пользователей",
+          confirmTitle: "Подтверждение включения функции групп пользователей",
+          confirmContent: "Эта операция включит функцию групп пользователей. После включения её нельзя отключить, а данные нельзя откатить. "
+          + "Подтвердите, что вы полностью оценили бизнес-последствия.",
+          confirmOk: "Подтвердить включение",
+          confirmCancel: "Отмена",
+          successTitle: "Функция групп пользователей успешно включена",
+          successContent: "Функция групп пользователей теперь активна. После нажатия подтверждения эта страница настроек будет автоматически скрыта "
+          + "и дополнительная настройка не требуется.",
+          successOk: "Подтвердить",
+          initializingMessage: "Инициализация данных, пожалуйста, подождите...",
+          initFailedMessage: "Ошибка инициализации, повторите попытку позже",
         },
       },
       resourceManagement: {
@@ -1857,6 +1931,7 @@ export default {
       setTenantUserQuota: "Изменить квоту хранилища пользователя",
       batchSetTenantUsersQuota: "Пакетно изменить квоты хранилища пользователей тенанта",
       syncTenantUsersStorageUsage: "Синхронизировать использование хранилища пользователей тенанта",
+      syncTenantAccountsStorageUsage: "Sync the storage usage of accounts under a tenant",
       authorizeApp: "Авторизовать приложение",
       unauthorizeApp: "Отозвать авторизацию приложения",
       migrateNode: "Мигрировать узел",
@@ -1999,12 +2074,11 @@ export default {
       changeEmail: "Пользователь: {}",
       editUserProfile: "Пользователь: {}",
       decompressFile: "Путь: {0} , Файл: {1}",
-      setTenantUserQuota:
-        "Пользователь: {0}, Кластер: {1}, Путь: {2}, Квота хранилища: {3}, Использовать значение тенанта по умолчанию: {4}",
-      batchSetTenantUsersQuota:
-        "Пользователи: {0}, Кластер: {1}, Путь: {2}, Квота хранилища: {3}, Использовать значение тенанта по умолчанию: {4}",
-      setTenantUserDefaultQuota: "Тенант: {0}, Кластер: {1}, Путь: {2}, Квота хранилища: {3}",
-      syncTenantUsersStorageUsage: "Тенант: {0}, Кластер: {1}, Путь: {2}",
+      setTenantUserQuota: "Пользователь: {0}, Файловая система: {1}, Квота хранилища: {2}",
+      batchSetTenantUsersQuota: "Пользователи: {0}, Файловая система: {1}, Квота хранилища: {2}",
+      setTenantUserDefaultQuota: "Тенант: {0}, Файловая система: {1}, Квота хранилища: {2}",
+      syncTenantUsersStorageUsage: "Тенант: {0}, Файловая система: {1}",
+      syncTenantAccountsStorageUsage: "Tenant: {0}, File system: {1}",
       hpcAppScope: "HPC",
       aiAppScope: "AI",
       tenantAppAuthorizationLog: "Кластер: {0}, Приложение: {1} ({3}), Тенант: {2}",

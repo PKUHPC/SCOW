@@ -190,14 +190,6 @@ bill:
 # 自定义生成之前某个账期的账单，例如 customTerms: ["2023","202407","202408"]，将会在系统启动时，生成"2023","202407","202408"三个周期的账单
   customTerms: []
 
-# # 可选，默认不开启
-# storage:
-#   # 必填，bool 类型
-#   enabled: true
-#   # 必填，字符串数组，代表当前需要被管理的文件系统挂载点
-#   # 当前 SCOW 仅支持一个挂载点
-#   paths: ["/data"]
-
 # # 同步scow与调度器(如slurm)账户用户信息的配置
 # syncAccountUser:
 #   # 单次同步最长处理时间，单位分钟
@@ -245,3 +237,48 @@ bill:
 # rootShell:
   # 是否允许平台管理员以root身份登录登录节点，默认不允许
   # enabled: false
+
+# 用户组管理使用的目录服务配置(可选)
+# directoryService:
+#   type: ldap
+#   ldap:
+#     url: ldap://10.129.227.65
+#     bindDN: cn=Manager,ou=hpc,o=pku
+#     bindPassword: "admin"
+#     searchBase: "ou=hpc,o=pku"
+#     groupBase: "ou=Group,ou=hpc,o=pku"
+#     # 账户对应的用户组的gid开始值，auth中新建用户的uid是用66000开始的（newGroupPerUser模式下gid和uid是同一个值）
+#     # gid可以重复，为了避免冲突，这个gidStart应设置为一个较大的数
+#     # 这个gidStart和auth中用户uidStart的差值为最大可创建用户数
+#     # gidStart: 666000
+#     attrs:
+#       uid: uid
+#     addUser:
+#       groupStrategy: newGroupPerUser
+#       # 如果groupStrategy设置为oneGroupForAllUsers，那么必须设置此属性
+#       oneGroupForAllUsers:
+#         # 用户的gidNumber属性的值
+#         gidNumber: 5000
+
+# 账户关联的用户组名称前缀（可选）
+# accountGroupNamePrefix: "abc"
+
+# 存储计费相关配置
+storageBilling:
+  # 是否启用存储计费功能，默认 false
+  enabled: false
+
+  # 存储计费周期 cron 表达式，默认每天凌晨2点执行
+  cron: "0 2 * * *"
+
+  # 存储费用的扣费类型名称（写入 ChargeRecord.type）
+  chargeType: "存储费用"
+
+  # 账户封锁/欠费或用户被封锁时是否继续计费，如果冲突，以 chargeWhenBlocked 优先
+  # true：继续计费（按使用量时按实际使用量，按配额时因配额已清除而停止）
+  # false：停止计费
+  chargeWhenBlocked: false
+
+# 可选配置
+# 存储操作故障转移时等待单个集群响应的超时时间（秒）（不包括批量处理时间）
+# storageOperationTimeoutSeconds: 10

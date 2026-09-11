@@ -1,0 +1,68 @@
+syntax = "proto3";
+package scow.server;
+
+import "common/money.proto";
+import "google/protobuf/timestamp.proto";
+
+// ──────────────── 计费模式 ────────────────
+enum StorageBillingMode {
+  STORAGE_BILLING_MODE_UNKNOWN = 0;
+  STORAGE_BILLING_MODE_USAGE = 1;   // 按使用量
+  STORAGE_BILLING_MODE_QUOTA = 2;   // 按配额
+}
+
+// ──────────────── 阶梯价格 ────────────────
+message StoragePriceTier {
+  double start_tb = 1;                       // 阶梯起始（含），单位 TB
+  common.Money price_per_tb_per_day = 2;     // 元/TB/天
+}
+
+message OriginalStoragePriceTier {
+  double start_size = 1;                     // 用户输入的阶梯起始值
+  optional double end_size = 2;              // 用户输入的阶梯结束值；不传=无上限
+  string unit = 3;                           // 用户输入的单位，例如 GB/TB
+  common.Money price_per_tb_per_day = 4;     // 元/TB/天
+}
+
+// ──────────────── 价格项 ────────────────
+message StorageBillingItem {
+  uint32 id = 1;
+  string storage_id = 2;
+  StorageBillingMode billing_mode = 3;
+  repeated StoragePriceTier tiers = 4;
+  optional string tenant_name = 5;
+  google.protobuf.Timestamp create_time = 6;
+  string description = 7;
+  repeated OriginalStoragePriceTier original_tiers = 8;
+}
+
+// ──────────── 获取价格表 ────────────
+message GetStorageBillingItemsRequest {
+  string storage_id = 1;
+  optional string tenant_name = 2;     // 不传=平台默认；传=租户默认
+}
+
+message GetStorageBillingItemsResponse {
+  repeated StorageBillingItem active_items = 1;
+  repeated StorageBillingItem history_items = 2;
+}
+
+// ──────────── 设置价格 ────────────
+message AddStorageBillingItemRequest {
+  string storage_id = 1;
+  StorageBillingMode billing_mode = 2;
+  repeated StoragePriceTier tiers = 3;
+  optional string tenant_name = 4;
+  string description = 5;
+  repeated OriginalStoragePriceTier original_tiers = 6;
+}
+
+message AddStorageBillingItemResponse {
+  uint32 id = 1;
+}
+
+// ──────────── Service ────────────
+service StorageBillingService {
+  rpc GetStorageBillingItems(GetStorageBillingItemsRequest) returns (GetStorageBillingItemsResponse);
+  rpc AddStorageBillingItem(AddStorageBillingItemRequest) returns (AddStorageBillingItemResponse);
+}

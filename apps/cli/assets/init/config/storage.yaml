@@ -1,0 +1,31 @@
+storages:
+  - storageId: "nfs1"
+    displayName: "存储系统1"
+    quotaEnabled: true
+    replicaExist: true
+    fs:
+      # 枚举值 oceanStorPacific，nfs, lfs, gpfs
+      type: "nfs"
+      nfs:
+        # NFS 最低版本为 3.0；版本号仅支持一至三段数字，如 4、4.2 或 4.2.0
+        version: "4.2"
+  - storageId: "nfs2"
+    displayName: "存储系统2"
+    quotaEnabled: true
+    replicaExist: true
+    fs:
+      # 枚举值 oceanStorPacific，nfs, lfs, gpfs
+      type: "nfs"
+      nfs:
+        # NFS 最低版本为 3.0；版本号仅支持一至三段数字，如 4、4.2 或 4.2.0
+        version: "4.2"
+  - storageId: "nfs3"
+    displayName: "存储系统3"
+    quotaEnabled: false
+    replicaExist: true
+    fs:
+      # 枚举值 oceanStorPacific，nfs, lfs, gpfs
+      type: "nfs"
+      nfs:
+        # NFS 最低版本为 3.0；版本号仅支持一至三段数字，如 4、4.2 或 4.2.0
+        version: "4.2"

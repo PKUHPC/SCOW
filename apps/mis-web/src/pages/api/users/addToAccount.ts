@@ -44,7 +44,14 @@ export const AddUserToAccountSchema = typeboxRouteSchema({
 
     /** 用户或账户存在问题 */
     409: Type.Object({
-      code: Type.Union([Type.Literal("ACCOUNT_OR_USER_ERROR"), Type.Literal("SYNC_ACCOUNT_USER_IS_RUNNING")]),
+      code: Type.Union([
+        Type.Literal("ACCOUNT_OR_USER_ERROR"),
+        Type.Literal("SYNC_ACCOUNT_USER_IS_RUNNING"),
+        Type.Literal("QUOTA_ENABLING"),
+        Type.Literal("USER_ALREADY_IN_ANOTHER_ACCOUNT"),
+        Type.Literal("DIRECTORY_GROUP_ADD_FAILED"),
+        Type.Literal("DIRECTORY_SERVICE_NOT_CONFIGURED"),
+      ]),
       message: Type.Optional(Type.String()),
     }),
 
@@ -68,8 +75,7 @@ export default /* #__PURE__*/ route(AddUserToAccountSchema, async (req, res) => 
     return (
       u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
       // 账户管理员且允许账户管理员添加用户
-      (acccountBelonged &&
-        acccountBelonged.role !== UserRole.USER &&
+      ((acccountBelonged && acccountBelonged.role !== UserRole.USER) &&
         publicConfig.ADD_USER_TO_ACCOUNT.accountAdmin.allowed) ||
       u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
     );
@@ -109,6 +115,7 @@ export default /* #__PURE__*/ route(AddUserToAccountSchema, async (req, res) => 
     accountName,
     userId: identityId,
     isTenantAdmin: info.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    operatorId: info.identityId,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
@@ -117,7 +124,10 @@ export default /* #__PURE__*/ route(AddUserToAccountSchema, async (req, res) => 
     .catch(
       handlegRPCError(
         {
-          [Status.ALREADY_EXISTS]: (e) => ({ 409: { code: "ACCOUNT_OR_USER_ERROR" as const, message: e.details } }),
+          [Status.ALREADY_EXISTS]: (e) =>
+            e.details === "USER_ALREADY_IN_ANOTHER_ACCOUNT"
+              ? { 409: { code: "USER_ALREADY_IN_ANOTHER_ACCOUNT" as const } }
+              : { 409: { code: "ACCOUNT_OR_USER_ERROR" as const, message: e.details } },
           [Status.NOT_FOUND]: (e) => {
             if (e.details === "USER_OR_TENANT_NOT_FOUND") {
               /**
@@ -137,8 +147,17 @@ export default /* #__PURE__*/ route(AddUserToAccountSchema, async (req, res) => 
               return { 410: { code: "ACCOUNT_DELETED" as const } };
             }
           },
-          [Status.FAILED_PRECONDITION]: (e) => ({
-            409: { code: "SYNC_ACCOUNT_USER_IS_RUNNING" as const, message: e.details },
+          [Status.FAILED_PRECONDITION]: (e) => {
+            if (e.details === "DIRECTORY_SERVICE_NOT_CONFIGURED") {
+              return { 409: { code: "DIRECTORY_SERVICE_NOT_CONFIGURED" as const } };
+            }
+            if (e.details === "QUOTA_ENABLING") {
+              return { 409: { code: "QUOTA_ENABLING" as const } };
+            }
+            return { 409: { code: "SYNC_ACCOUNT_USER_IS_RUNNING" as const, message: e.details } };
+          },
+          [Status.INTERNAL]: (e) => ({
+            409: { code: "DIRECTORY_GROUP_ADD_FAILED" as const, message: e.message },
           }),
         },
         async () => await callLog(logInfo, OperationResult.FAIL),

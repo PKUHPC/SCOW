@@ -182,6 +182,7 @@ export default {
         permission: "Permissão",
         notShowHiddenItem: "Não mostrar itens ocultos",
         showHiddenItem: "Mostrar itens ocultos",
+        homeDirectory: "Diretório pessoal",
       },
       singleCrossClusterTransferSelector: {
         placeholder: "Selecione um cluster",
@@ -260,6 +261,13 @@ export default {
         usage: "Utilização",
         storageQuotaTooltip:
           "O sistema de ficheiros atual possui backups que ocupam espaço adicional," + " aumentando a utilização",
+        accountStorageQuotaTooltip:
+          "Quando a conta está bloqueada ou em atraso, não é possível gravar dados. " +
+          "Mesmo que a quota de armazenamento da conta não tenha sido esgotada, será indicada quota insuficiente.",
+        userStorageQuota: "Armazenamento do usuário",
+        accountStorageQuota: "Armazenamento da conta",
+        homeDirectory: "Diretório pessoal",
+        entryPathCreateFailed: "Falha ao criar diretório de caminho rápido, entre em contato com o administrador",
         failedResolveSymlink: "Falha ao resolver link simbólico",
         noAccessPermission: "Sem permissão de acesso",
         noPath: "Caminho não encontrado, verifique",

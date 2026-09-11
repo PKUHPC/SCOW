@@ -12,6 +12,7 @@ import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { AIJobLabelType, validateMaxRunningTimeMinutes } from "src/server/utils/maxRunningTime";
 import { fetchSubmitRecord } from "src/server/utils/submitRecord";
+import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
@@ -94,7 +95,7 @@ export const createDevHost = procedure
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-    const { clusterId, devHostName, image, maxTimeMinutes, mountPoints, remoteImageUrl } = input;
+    const { clusterId, devHostName, image, maxTimeMinutes, mountPoints, account, partition, remoteImageUrl } = input;
 
     const devHostConfig = clusters[clusterId]?.ai?.devHost;
     if (!devHostConfig?.enabled) {
@@ -126,6 +127,15 @@ export const createDevHost = procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
+    await validateSubmitAiJobInfoUnderMis({
+      userId,
+      accountName: account,
+      clusterId,
+      logger,
+      partitionName: partition,
+      checkAccountApp: false,
+    });
+
     const em = await forkEntityManager();
     const { image: existImage } = await checkCreateAppEntity({ em, image, datasets: [], algorithms: [], models: [] });
 
@@ -143,7 +153,12 @@ export const createDevHost = procedure
       logger,
     );
 
-    const { clusterId: _cid, account, privateImageRepositoryCredentials: _cred, ...rawFormData } = input;
+    const {
+      clusterId: _cid,
+      account: submittedAccount,
+      privateImageRepositoryCredentials: _cred,
+      ...rawFormData
+    } = input;
     const parsedFormData = DevSubmitRecordFormDataSchema.safeParse(rawFormData);
     if (!parsedFormData.success) {
       logger.warn("Failed to parse dev host form data for jobId %s: %o", devHostId, parsedFormData.error);
@@ -155,7 +170,7 @@ export const createDevHost = procedure
             jobType: JobType.DEV_HOST,
             jobId: devHostId,
             cluster: clusterId,
-            account,
+            account: submittedAccount,
             formData: parsedFormData.data,
           }),
         );

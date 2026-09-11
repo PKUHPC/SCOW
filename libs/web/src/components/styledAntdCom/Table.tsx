@@ -34,7 +34,7 @@ const TableWrapper = ({ className, rowSelection, ...tableProps }: TableProps<any
   return <Table {...tableProps} className={className} rowSelection={mergedRowSelection} />;
 };
 const StyledTableWrapper = ({ scroll, ...tableProps }: TableProps<any>) => (
-  <TableWrapper {...tableProps} scroll={{ ...scroll, x: scroll?.x ?? "max-content" }} />
+  <TableWrapper {...tableProps} scroll={scroll ? { ...scroll, x: scroll.x ?? "max-content" } : undefined} />
 );
 
 export const StyledTable: StyledTableComponent = styled(StyledTableWrapper)<TableProps<any>>`
@@ -175,5 +175,30 @@ export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper)<Ta
 
   .ant-table-tbody > tr:hover > td {
     background-color: ${({ theme }) => theme.palette.gray[1]} !important;
+  }
+`;
+
+/**
+ * 文件管理及文件选择框使用的表格样式。
+ *
+ * 文件列表只需要统一外框颜色和行分隔线，不能继承 TableWithSplitLines 的列分隔线，
+ * 否则每个文件属性单元格都会出现纵向框线。这里继续基于通用 StyledTable，兼容其
+ * 后续的选中态、横向滚动等改动，同时保持文件列表原有的无纵向分隔线设计。
+ */
+export const ConsistentBorderTable: StyledTableComponent = styled(StyledTable)<TableProps<any>>`
+  .ant-table,
+  .ant-table-container,
+  .ant-table-container table > thead > tr > th,
+  .ant-table-container table > tbody > tr > td,
+  .ant-table-thead > tr > th::before {
+    border-color: ${({ theme }) => theme.token.colorBorderSecondary} !important;
+  }
+
+  .ant-table-tbody > tr > td {
+    border-bottom: 1px solid ${({ theme }) => theme.token.colorBorderSecondary} !important;
+  }
+
+  .ant-table-thead > tr > th {
+    border-bottom-color: ${({ theme }) => theme.palette.gray[4]} !important;
   }
 `;

@@ -4,17 +4,56 @@ package api.storage;
 
 option go_package = "scowd/protos/gen/api/storage;apiv1";
 
+/** OceanStor Pacific 华为存储配置 */
+message OceanStorPacificConfig {
+  string version = 1; // 8.2.1+
+  string namespace_id = 2;
+  string username = 3;
+  string password = 4;
+  string base_url = 5;
+}
+
+/** NFS 存储配置 */
+message NfsConfig {
+  string version = 1; // 4.2+
+}
+
+/** Lustre 存储配置 */
+message LustreConfig {
+  string version = 1; // 2.0+
+}
+
+/** GPFS 存储配置 */
+message GpfsConfig {
+  string version = 1; // 4.0+ / 5.0+
+  string filesystem = 2; // gpfs 文件系统名，可能与 path 不一致
+}
+
+message StorageConfig {
+  // 对应主系统下配置的存储配置 中的 storageId
+  string storage_id = 1;
+
+  oneof fs_config {
+    // OceanStor Pacific 使用 LDAP 原始组名调用配额接口，即使组名为纯数字也不转换为 gid 字符串。
+    OceanStorPacificConfig ocean_stor_pacific = 2;
+    NfsConfig nfs = 3;
+    LustreConfig lfs = 4;
+    GpfsConfig gpfs = 5;
+  }
+}
+
 message GetUsersStorageQuotaRequest {
   repeated string user_ids = 1;
   string path = 2;
+  StorageConfig storage = 3;
 }
 
 message UserStorageQuotaInfo {
   string user_id = 1;
-  uint64 used_storage_bytes = 2;
-  uint64 block_soft_limit_bytes = 3;
+  uint64 used_storage_mb = 2;
+  uint64 block_soft_limit_mb = 3;
   // 目前仅使用 硬限制 进行用户配额限制
-  uint64 block_hard_limit_bytes = 4;
+  uint64 block_hard_limit_mb = 4;
   int32 block_grace_days = 5;
 }
 
@@ -27,14 +66,15 @@ message GetFilesystemStorageUsageRequest {
 }
 
 message GetFilesystemStorageUsageResponse {
-  uint64 total_storage_bytes = 1;
-  uint64 used_storage_bytes = 2;
+  uint64 total_storage_mb = 1;
+  uint64 used_storage_mb = 2;
 }
 
 message SetUsersStorageQuotaRequest {
   repeated string user_ids = 1;
   string path = 2;
-  uint64 quota_bytes = 3;
+  uint64 quota_mb = 3;
+  StorageConfig storage = 4;
 }
 
 message SetUsersStorageQuotaResponse {
@@ -45,15 +85,74 @@ message SetUsersStorageQuotaResponse {
 message SetUserStorageQuotaRequest {
   string user_id = 1;
   string path = 2;
-  uint64 quota_bytes = 3;
+  uint64 quota_mb = 3;
+  StorageConfig storage = 4;
 }
 
-message SetUserStorageQuotaResponse {
+message SetUserStorageQuotaResponse {}
+
+message GroupStorageQuotaInfo {
+  // 当前仅用于 SCOW 与请求中传递给 scowd 的 groupName 做内部匹配。
+  // 纯数字组名会由 SCOW 通过 LDAP 转换为 gid 字符串后传递给 scowd，因此该字段可能是原组名，也可能是 gid 字符串。
+  // 如果后续被其他调用方用于展示或回传原始组名，需要增加 gid 到原始组名的反向映射。
+  string group_name = 1;
+  uint64 used_storage_mb = 2;
+  uint64 block_soft_limit_mb = 3;
+  // 目前仅使用 硬限制 进行组配额限制
+  uint64 block_hard_limit_mb = 4;
+  int32 block_grace_days = 5;
 }
+
+message GetGroupsStorageQuotaRequest {
+  // 组名通常为 LDAP 原始组名。
+  // 对 NFS、Lustre、GPFS，SCOW 会在调用前通过 LDAP 查询纯数字组名对应的 gid，
+  // 并将 gid 字符串传递给 scowd；OceanStor Pacific 保持原始 groupName，不做转换。
+  repeated string group_names = 1;
+  string path = 2;
+  StorageConfig storage = 3;
+}
+
+message GetGroupsStorageQuotaResponse {
+  repeated GroupStorageQuotaInfo group_quota_infos = 1;
+}
+
+message SetGroupsStorageQuotaRequest {
+  // 组名通常为 LDAP 原始组名。
+  // 对 NFS、Lustre、GPFS，SCOW 会在调用前通过 LDAP 查询纯数字组名对应的 gid，
+  // 并将 gid 字符串传递给 scowd；OceanStor Pacific 保持原始 groupName，不做转换。
+  repeated string group_names = 1;
+  string path = 2;
+  uint64 quota_mb = 3;
+  StorageConfig storage = 4;
+}
+
+message SetGroupsStorageQuotaResponse {
+  // 当前仅用于 SCOW 内部处理，与请求中传递给 scowd 的 groupNames 一致，可能包含转换后的 gid 字符串。
+  // 如果后续被其他调用方用于展示或回传原始组名，需要增加 gid 到原始组名的反向映射。
+  repeated string succeeded_group_names = 1;
+  // 当前仅用于 SCOW 内部处理，与请求中传递给 scowd 的 groupNames 一致，可能包含转换后的 gid 字符串。
+  // 如果后续被其他调用方用于展示或回传原始组名，需要增加 gid 到原始组名的反向映射。
+  repeated string failed_group_names = 2;
+}
+
+message SetGroupStorageQuotaRequest {
+  // 组名通常为 LDAP 原始组名。
+  // 对 NFS、Lustre、GPFS，SCOW 会在调用前通过 LDAP 查询纯数字组名对应的 gid，
+  // 并将 gid 字符串传递给 scowd；OceanStor Pacific 保持原始 groupName，不做转换。
+  string group_name = 1;
+  string path = 2;
+  uint64 quota_mb = 3;
+  StorageConfig storage = 4;
+}
+
+message SetGroupStorageQuotaResponse {}
 
 service StorageQuotaService {
   rpc GetUsersStorageQuota(GetUsersStorageQuotaRequest) returns (GetUsersStorageQuotaResponse) {}
   rpc GetFilesystemStorageUsage(GetFilesystemStorageUsageRequest) returns (GetFilesystemStorageUsageResponse) {}
   rpc SetUsersStorageQuota(SetUsersStorageQuotaRequest) returns (SetUsersStorageQuotaResponse) {}
   rpc SetUserStorageQuota(SetUserStorageQuotaRequest) returns (SetUserStorageQuotaResponse) {}
+  rpc GetGroupsStorageQuota(GetGroupsStorageQuotaRequest) returns (GetGroupsStorageQuotaResponse) {}
+  rpc SetGroupsStorageQuota(SetGroupsStorageQuotaRequest) returns (SetGroupsStorageQuotaResponse) {}
+  rpc SetGroupStorageQuota(SetGroupStorageQuotaRequest) returns (SetGroupStorageQuotaResponse) {}
 }

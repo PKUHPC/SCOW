@@ -749,9 +749,9 @@ export const mockApi: MockApi<typeof api> = {
   getUserStorageInfo: async () => ({
     storageInfos: [
       {
-        path: "/data/home",
-        quotaBytes: 321321321,
-        usedStorageBytes: 123123123,
+        storageId: "nfs1",
+        quotaMb: 321321321,
+        usedStorageMb: 123123123,
       },
     ],
   }),

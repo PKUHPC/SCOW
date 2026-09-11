@@ -4,6 +4,7 @@ import { createI18nStringSchema, I18nStringType } from "src/i18n";
 import { Logger } from "ts-log";
 
 import { DEFAULT_CONFIG_BASE_PATH } from "./constants";
+import { getServerStorageConfig } from "./storage";
 
 const CLUSTER_CONFIG_BASE_PATH = "clusters";
 
@@ -100,16 +101,26 @@ export const LoginDeskopConfigSchema = Type.Object({
   ),
 });
 
-export const StorageConfigSchema = Type.Object({
-  enabled: Type.Boolean({ description: "是否开启存储配额管理", default: false }),
-  paths: Type.Array(Type.String({ description: "集群共享存储挂在路径" }), { default: [] }),
-  replicaExist: Type.Boolean({ description: "是否存在备份副本", default: false }),
-});
-
 const TurboVncConfigSchema = Type.String({ description: "TurboVNC的安装路径" });
 
 export type LoginDeskopConfigSchema = Static<typeof LoginDeskopConfigSchema>;
 type TurboVncConfigSchema = Static<typeof TurboVncConfigSchema>;
+
+/** 集群下快捷路径入口定义 */
+export const PathEntrySchema = Type.Object({
+  displayName: createI18nStringSchema({ description: "快捷路径入口显示名称" }),
+  pathTemplate: Type.String({ description: "路径模板, 支持 {{mountPath}} 和 {{userId}}" }),
+});
+
+/** 单个快捷入口定义（集群级别） */
+export const StorageEntrySchema = Type.Object({
+  storageId: Type.String({ description: "对应 storage.yaml 中的 storageId" }),
+  mountPath: Type.String({ description: "当前存储在此集群的挂载路径" }),
+  paths: Type.Optional(Type.Array(PathEntrySchema, { description: "快捷路径入口列表", default: [] })),
+});
+
+export type PathEntrySchema = Static<typeof PathEntrySchema>;
+export type StorageEntrySchema = Static<typeof StorageEntrySchema>;
 
 export enum IdmapMode {
   notSet = "notSet",
@@ -246,7 +257,7 @@ export const ClusterConfigSchema = Type.Object({
     { description: "集群在AI中是否启用, 默认不启用", default: { enabled: false } },
   ),
 
-  storage: Type.Optional(StorageConfigSchema),
+  entryPaths: Type.Optional(Type.Array(StorageEntrySchema, { description: "集群挂载的存储入口列表", default: [] })),
   description: Type.Optional(createI18nStringSchema({ description: "集群描述" })),
   publicMountPoints: Type.Optional(
     Type.Array(Type.String({ description: "公共挂载点" }), {
@@ -298,6 +309,89 @@ export type ClusterType = "hpc" | "ai";
  */
 export type GetClusterConfigFn<T> = (baseConfigPath?: string, logger?: Logger, type?: ClusterType[]) => T;
 
+/** 集群配置校验失败时抛出，携带结构化字段供调用方 instanceof 判断 */
+export class ClusterEntryPathsConfigError extends Error {
+  constructor(
+    public readonly clusterId: string,
+    public readonly reason: string,
+    public readonly context?: { storageId?: string; pathTemplate?: string },
+  ) {
+    super(`Cluster ${clusterId}: ${reason}`);
+    this.name = "ClusterEntryPathsConfigError";
+  }
+}
+
+const ALLOWED_PATH_TEMPLATE_PLACEHOLDERS = new Set(["mountPath", "userId"]);
+
+function validatePathTemplate(pathTemplate: string): string[] {
+  const errors: string[] = [];
+
+  // ========== 1. 路径遍历攻击 ==========
+  // 替换占位符后检查，因为占位符本身不是路径段
+  const withoutPlaceholders = pathTemplate.replace(/\{\{[^{}]+\}\}/g, "PLACEHOLDER");
+
+  // 禁止 . 路径段。快捷路径不应该配置隐藏路径
+  if (/(?:^|\/)\.(\/|$)/.test(withoutPlaceholders)) {
+    errors.push("path must not contain '.' segments");
+  }
+  // 禁止 .. 路径遍历
+  if (/(?:^|\/)\.\.(\/|$)/.test(withoutPlaceholders)) {
+    errors.push("path must not contain '..' segments (path traversal)");
+  }
+
+  // ========== 2. 必须是绝对路径 ==========
+  // 模板展开后应该是绝对路径，所以要么以 / 开头，要么以 {{mountPath}} 开头
+  if (!pathTemplate.startsWith("/") && !pathTemplate.startsWith("{{mountPath}}")) {
+    errors.push("path must be absolute (start with '/' or '{{mountPath}}')");
+  }
+
+  // ========== 3. 禁止空段和特殊字符 ==========
+  // 连续斜杠 //
+  if (/\/{2,}/.test(withoutPlaceholders)) {
+    errors.push("path must not contain consecutive slashes '//'");
+  }
+
+  // 空字节注入
+  if (pathTemplate.includes("\0")) {
+    errors.push("path must not contain null bytes");
+  }
+
+  // 不可见/控制字符
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1f\x7f]/.test(pathTemplate)) {
+    errors.push("path must not contain control characters");
+  }
+  // ========== 4. 禁止空段和特殊字符 ==========
+  const placeholderRegex = /\{\{([^{}]+)\}\}|\{([^{}]+)\}/g;
+
+  for (const match of pathTemplate.matchAll(placeholderRegex)) {
+    const rawPlaceholder = match[0];
+    const placeholderName = (match[1] ?? match[2])?.trim();
+
+    if (!placeholderName) {
+      continue;
+    }
+
+    if (rawPlaceholder !== `{{${placeholderName}}}`) {
+      errors.push(
+        `placeholder ${rawPlaceholder} must use the {{name}} format; only {{mountPath}} and {{userId}} are supported`,
+      );
+      continue;
+    }
+
+    if (!ALLOWED_PATH_TEMPLATE_PLACEHOLDERS.has(placeholderName)) {
+      errors.push(`placeholder {{${placeholderName}}} is not supported; only {{mountPath}} and {{userId}} are allowed`);
+    }
+  }
+
+  const sanitizedTemplate = pathTemplate.replace(/\{\{[^{}]+\}\}/g, "");
+  if (sanitizedTemplate.includes("{") || sanitizedTemplate.includes("}")) {
+    errors.push("contains malformed placeholders; only {{mountPath}} and {{userId}} are allowed");
+  }
+
+  return errors;
+}
+
 export const getClusterConfigs: GetClusterConfigFn<Record<string, ClusterConfigSchema>> = (
   baseConfigPath,
   logger,
@@ -311,6 +405,10 @@ export const getClusterConfigs: GetClusterConfigFn<Record<string, ClusterConfigS
     baseConfigPath ?? DEFAULT_CONFIG_BASE_PATH,
     logger,
   );
+
+  const storageConfig = getServerStorageConfig(baseConfigPath, logger);
+  const validStorageIds =
+    storageConfig.storages.length > 0 ? new Set(storageConfig.storages.map((s) => s.storageId)) : null;
 
   // 检查所有集群配置下的登陆节点地址是否重复，如果重复扔出错误
   const uniqueAddressesList = new Set();
@@ -329,6 +427,63 @@ export const getClusterConfigs: GetClusterConfigFn<Record<string, ClusterConfigS
   const isUnique = uniqueAddressesList.size === allAddressesList.length;
   if (!isUnique) {
     throw new Error("login node address must be unique across all clusters and all login nodes.");
+  }
+
+  // 校验各集群 entryPaths 中 storageId、mountPath 的唯一性以及 pathTemplate 占位符合法性
+  for (const cluster in config) {
+    if (Object.hasOwnProperty.call(config, cluster)) {
+      const clusterInfo = config[cluster];
+      if (clusterInfo?.entryPaths && clusterInfo.entryPaths.length > 0) {
+        // 校验 storageId 不能重复
+        const storageIds = clusterInfo.entryPaths.map((e) => e.storageId);
+        if (new Set(storageIds).size !== storageIds.length) {
+          throw new ClusterEntryPathsConfigError(cluster, "duplicate storageId found in entryPaths");
+        }
+
+        // 校验 storageId 必须在 storage.yaml 中存在（仅当 storage.yaml 已配置时）
+        if (validStorageIds) {
+          for (const storageId of storageIds) {
+            if (!validStorageIds.has(storageId)) {
+              throw new ClusterEntryPathsConfigError(
+                cluster,
+                `storageId "${storageId}" in entryPaths is not defined in storage.yaml`,
+                { storageId },
+              );
+            }
+          }
+        }
+
+        // 校验 mountPath 必须是绝对路径
+        for (const entry of clusterInfo.entryPaths) {
+          if (!entry.mountPath.startsWith("/")) {
+            throw new ClusterEntryPathsConfigError(
+              cluster,
+              `storageId "${entry.storageId}": mountPath "${entry.mountPath}" must be an absolute path (must start with /)`,
+              { storageId: entry.storageId },
+            );
+          }
+        }
+
+        // 校验 mountPath 不能完全相同
+        const mountPaths = clusterInfo.entryPaths.map((e) => e.mountPath);
+        if (new Set(mountPaths).size !== mountPaths.length) {
+          throw new ClusterEntryPathsConfigError(cluster, "duplicate mountPath found in entryPaths");
+        }
+        // 校验 pathTemplate 合法性
+        for (const entry of clusterInfo.entryPaths) {
+          for (const path of entry.paths ?? []) {
+            const errors = validatePathTemplate(path.pathTemplate);
+            if (errors.length > 0) {
+              throw new ClusterEntryPathsConfigError(
+                cluster,
+                `storageId ${entry.storageId}, pathTemplate "${path.pathTemplate}": ${errors.join("; ")}`,
+                { storageId: entry.storageId, pathTemplate: path.pathTemplate },
+              );
+            }
+          }
+        }
+      }
+    }
   }
 
   for (const cluster in config) {

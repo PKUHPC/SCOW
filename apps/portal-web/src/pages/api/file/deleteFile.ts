@@ -21,6 +21,7 @@ export const DeleteFileSchema = typeboxRouteSchema({
   responses: {
     204: Type.Null(),
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
+    403: Type.Object({ code: Type.Literal("FORBIDDEN"), error: Type.String() }),
   },
 });
 
@@ -42,25 +43,20 @@ export default route(DeleteFileSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deleteFile,
     operationTypePayload: {
-      clusterId: "",
-      path,
+      clusterId: "", path,
     },
   };
 
   return asyncUnaryCall(client, "deleteFile", {
-    cluster,
-    path,
-    userId: info.identityId,
-  }).then(
-    async () => {
-      await callLog(logInfo, OperationResult.SUCCESS);
-      return { 204: null };
-    },
-    handlegRPCError(
-      {
-        [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
-      },
-      async () => await callLog(logInfo, OperationResult.FAIL),
-    ),
-  );
+    cluster, path, userId: info.identityId,
+  }).then(async () => {
+    await callLog(logInfo, OperationResult.SUCCESS);
+    return { 204: null };
+  }, handlegRPCError({
+    [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+    [status.PERMISSION_DENIED]: (e) => ({ 403: { code: "FORBIDDEN" as const, error: e.details } }),
+  },
+    async () => await callLog(logInfo, OperationResult.FAIL),
+  ));
+
 });

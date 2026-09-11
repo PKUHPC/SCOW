@@ -22,6 +22,7 @@ import {
 import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
 import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { RESOURCE_MOUNT_TYPES, ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
+import { useClusterEntryPathRoots } from "src/app/(auth)/jobs/useClusterEntryPathRoots";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { createImageAddressValidator } from "src/utils/form";
@@ -57,7 +58,6 @@ interface AppConfigSectionProps {
 }
 
 const p = prefix("app.jobs.appConfigSection.");
-const pEnvironmentVariableList = prefix("app.jobs.environmentVariableList.");
 const pPathValidation = prefix("common.pathValidation.");
 
 export const TrainConfigSection = ({
@@ -88,6 +88,7 @@ export const TrainConfigSection = ({
   const modelsPlaceholder = isModelsLoading ? t(p("models.loading")) : t(p("models.placeholder"));
   const needTensorBoard = Form.useWatch<boolean>("needTensorBoard", form) ?? false;
   const clusterId = selectedCluster ?? "";
+  const trustedRootPaths = useClusterEntryPathRoots(selectedCluster);
   const controlHeightLg = Math.max(theme.token.controlHeightLG ?? 40, 42);
 
   return (
@@ -269,14 +270,18 @@ export const TrainConfigSection = ({
                 style={{ flex: 1, marginBottom: 0 }}
                 rules={[
                   { required: true, message: t(p("tensorBoard.dataPathRequired")) },
-                  createHomeScopedPathValidator(homeDir, {
-                    unsafeCharacter: t(pPathValidation("unsafeCharacter")),
-                    pathTraversal: t(pPathValidation("pathTraversal")),
-                    currentDirectory: t(pPathValidation("currentDirectory")),
-                    absoluteRequired: t(pPathValidation("absoluteRequired")),
-                    homeDirRequired: t(pPathValidation("homeDirRequired")),
-                    notInHomeDir: t(pEnvironmentVariableList("notInHomeDir")),
-                  }),
+                  createHomeScopedPathValidator(
+                    homeDir,
+                    {
+                      unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                      pathTraversal: t(pPathValidation("pathTraversal")),
+                      currentDirectory: t(pPathValidation("currentDirectory")),
+                      absoluteRequired: t(pPathValidation("absoluteRequired")),
+                      homeDirRequired: t(pPathValidation("homeDirRequired")),
+                      notInHomeDir: t("app.jobs.mountPointList.notInHomeDir"),
+                    },
+                    trustedRootPaths,
+                  ),
                 ]}
               >
                 <RoundedInput

@@ -132,6 +132,7 @@ export default {
       imagePulling: "イメージ取得中",
       insufficientResources: "リソース不足",
     },
+    directoryServiceNotConfigured: "ディレクトリサービスが設定されていません。管理者に連絡してください。",
   },
   dashboard: {
     title: "ダッシュボード",
@@ -205,6 +206,7 @@ export default {
         systemDebug: "プラットフォーム運用",
         statusSynchronization: "アカウント/ユーザー同期",
         jobSynchronization: "ジョブ同期",
+        userGroup: "ユーザーグループ",
         resourceManagement: "リソース管理",
         clusterManagement: "クラスタ管理",
         accountList: "アカウント",
@@ -239,6 +241,7 @@ export default {
         accountChargeRecords: "アカウント消費記録",
         accountBills: "アカウント請求明細",
         storageManager: "ストレージ管理",
+        userBaseStorageQuota: "ユーザー基本ストレージ容量",
         permissionManagement: "権限管理",
         defaultAuthorizedApp: "既定の許可済みアプリ",
         appAuthorization: "アプリケーション許可",
@@ -303,6 +306,7 @@ export default {
         delete: "削除",
         deleteSuccess: "アカウントの削除に成功しました！",
         deleteFail: "アカウントの削除に失敗しました。管理者に連絡してください。",
+        deleteDirectoryGroupFailed: "アカウント削除中にディレクトリサービスの操作が失敗しました。管理者に連絡してください。",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "設定に成功しました",
@@ -377,6 +381,12 @@ export default {
         selectAccount: "アカウントを選択してください！",
         specifyOwner: "各アカウントの主管理者を指定してください。",
         incorrectFormat: "データ形式が正しくありません。",
+        quotaEnabling: "Account storage quota is being enabled. Please import again later.",
+        multiAccountUsers: "The following users would belong to multiple accounts and cannot be imported: {}",
+        multiGroupUsers:
+          "The following users belong to multiple groups. Please ensure all users belong to only one group before importing: {}",
+        defaultGroupNotRemoved:
+          "The following users could not have their default group determined. Import failed. Please check the directory service configuration and try again: {}",
         importSuccess: "インポートに成功しました。",
         selectCluster: "クラスター:",
         alreadyExist: "アカウントは既にSCOWに存在します。",
@@ -870,6 +880,7 @@ export default {
         blockAccount: "ユーザーはブロックされています。先に解除してください",
         arrearsAccount: "ユーザーの延滞状態を取得できませんでした",
         addSuccess: "追加に成功しました！",
+        directoryGroupAddFailed: "ディレクトリグループへのユーザー追加に失敗しました。しばらくしてから再試行してください。",
         userDeleted: "ユーザーは削除されているため追加できません",
       },
       createUserForm: {
@@ -959,6 +970,7 @@ export default {
         removerUser: "ユーザーを削除",
         cannotRemoverUserWhoHaveRunningJobFromAccount:
           "ユーザーにはまだ実行中のジョブがあります。ジョブが終了するまで待つか、手動で終了してから移動してください。またはアカウント/ユーザーの同期が実行中です。同期完了後に再試行してください。",
+        directoryServiceOperationFailed: "ディレクトリサービスの操作に失敗しました。管理者に連絡してください。",
 
         blockUserInAccountFailed: "アカウントでのユーザーブロックに失敗しました。",
         unblockUserInAccountFailed: "アカウントでのユーザーブロック解除に失敗しました。",
@@ -995,7 +1007,13 @@ export default {
         notFoundStorageConfig: "システムエラー：該当するストレージ設定が見つかりません",
         totalStorage: "総ストレージ",
         remainingStorage: "残りストレージ",
+        storageSystem: "ファイルシステム",
         userDefaultQuota: "ユーザーのデフォルトストレージクォータ",
+        tenantAssignedQuota: "テナント割当クォータ",
+        tenantAssignedQuotaTooltip: "当該テナント配下の全ユーザーに割り当てられたストレージ容量の合計",
+        tenantUsedStorage: "テナント使用量",
+        tenantUsedStorageTooltip: "当該テナント配下の全ユーザーのストレージ使用量の合計",
+        mountedClusters: "マウント済みクラスター",
         edit: "編集",
         user: "ユーザー",
         storageQuota: "ストレージクォータ",
@@ -1015,14 +1033,12 @@ export default {
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "デフォルトのストレージクォータを変更",
         confirm: "確認",
-        modifyUserDeulatQuotaSuccess: "ユーザーのデフォルトストレージクォータを変更しました",
-        modifyPartialSuccess:
-          "デフォルトストレージクォータの変更は成功しましたが、クォータ調整中に例外が発生しました（対象: {}, …—{} ユーザーの合計）。",
-        cluster: "クラスタ",
-        tip:
-          "変更は即時反映されます。" +
-          "クォータを減らすと、ユーザーがストレージ制限を超えて実行中のジョブがデータを書き込めない可能性があります。" +
-          "慎重に操作してください",
+        modifyUserDefaultQuotaSuccess: "ユーザーのデフォルトストレージクォータを変更しました",
+        modifyPartialSuccess: "デフォルトストレージクォータの変更は成功しましたが、クォータ調整中に例外が発生しました（対象: {}, …—{} ユーザーの合計）。",
+        fileSystem: "ファイルシステム",
+        tip: "変更は即時反映されます。"
+          + "クォータを減らすと、ユーザーがストレージ制限を超えて実行中のジョブがデータを書き込めない可能性があります。"
+          + "慎重に操作してください",
       },
       userQuotaChangeModal: {
         modifyStorageQuota: "ストレージクォータを変更",
@@ -1033,7 +1049,7 @@ export default {
         batchModifyUserQuotaSuccess: "ユーザーのストレージクォータの一括変更に成功しました",
         batchModifyUserQuotaPartialSuccess: "ユーザーストレージクォータの一括変更は {} 件成功、{} 件失敗しました。",
         batchModifyUserQuotaFailed: "ユーザーのストレージクォータの一括変更に失敗しました",
-        cluster: "クラスタ",
+        fileSystem: "ファイルシステム",
         user: "ユーザー",
         selectedUsers: "選択したユーザー",
         defaultStorageQuota: "デフォルトのストレージクォータ",
@@ -1201,6 +1217,7 @@ export default {
         getBillingTableErrorMessage:
           "クラスタとパーティション情報の取得に失敗しました。" + " 管理者に連絡してください。",
         partitionInfo: "パーティション情報",
+        billingStandard: "Billing Standard",
         loading: "パーティションを読み込み中...",
       },
       operationLogs: {
@@ -1209,6 +1226,42 @@ export default {
       historyJobs: {
         userCompletedJob: "完了したジョブ",
       },
+    },
+    storageBilling: {
+      storageResource: "Storage Resource",
+      computeResource: "Compute Resource",
+      noAvailableBillingData: "No billing data available",
+      fileSystem: "File System:",
+      fileSystemTitle: "File System",
+      all: "All",
+      setStoragePrice: "Set Storage Price",
+      newBillingId: "New Billing ID:",
+      generatedAfterSave: "Generated after saving",
+      billingMode: "Billing Mode",
+      billingId: "Billing ID",
+      selectBillingMode: "Please select a billing mode",
+      usage: "Usage",
+      quota: "Quota",
+      quotaModeRequiresAccountStorageQuota:
+        "Account storage quota is not enabled. Quota-based billing cannot be selected.",
+      unknown: "Unknown",
+      startValue: "Start Value",
+      endValue: "End Value",
+      unitPrice: "Unit Price (CNY/TB/Day)",
+      required: "Required",
+      setLastTierEndFirst: "Please set the end value of the current last tier first",
+      endMustGreaterThanStart: "The end value must be greater than the start value",
+      lastTierMustBeNoLimit: "The last tier must be unlimited",
+      add: "Add",
+      setPriceSuccess: "Price set successfully",
+      saveFailed: "Save failed",
+      save: "Save",
+      collapseHistory: "Collapse History",
+      expandHistory: "Expand History",
+      historyBillingId: "Historical Billing ID",
+      effectiveDate: "Effective Date",
+      validPeriod: "Valid Period",
+      timeRange: "{} to {}",
     },
     tenant: {
       info: {
@@ -1284,6 +1337,7 @@ export default {
         create: {
           tenantNotExistUser: "ユーザー {1} はテナント {0} に存在しません。",
           accountNameOccupied: "アカウント名は既に使用されています",
+          directoryGroupNameOccupied: "このアカウント名に対応するディレクトリサービスグループが既に存在します。別のアカウント名を使用してください。",
           userIdAndNameNotMatch: "ユーザーIDと氏名が一致しません。",
           createSuccess: "作成に成功しました！",
           ownerUserId: "主管理者ユーザーID",
@@ -1310,6 +1364,7 @@ export default {
       },
       storageManager: {
         storageManager: "ストレージ管理",
+        userBaseStorageQuota: "ユーザー基本ストレージ容量",
       },
       permissionManagement: {
         defaultApps: {
@@ -1512,6 +1567,24 @@ export default {
           syncJobNow: "今すぐ同期",
           accountUserSyncRunning:
             "アカウント/ユーザーの同期が実行中です。" + " ジョブ同期の開始前に完了までお待ちください。",
+        },
+        userGroup: {
+          title: "ユーザーグループ",
+          alertLine1: "ユーザーグループ機能を有効にすると、システムは既存データを自動初期化し、各アカウントに独立したユーザーグループを割り当て、"
+          + "アカウント下のすべてのユーザーが対応するグループに所属します。",
+          alertLine2: "これは基盤となるコア機能です。有効にすると無効にできず、データのロールバックもできません。"
+          + " 操作前にビジネスへの影響を十分に評価してください。",
+          featureLabel: "ユーザーグループ機能",
+          confirmTitle: "ユーザーグループ機能の有効化確認",
+          confirmContent: "この操作によりユーザーグループ機能が有効になります。有効にすると無効にできず、データのロールバックもできません。"
+          + " ビジネスへの影響を十分に評価したことを確認してください。",
+          confirmOk: "有効化を確認",
+          confirmCancel: "キャンセル",
+          successTitle: "ユーザーグループ機能が正常に有効化されました",
+          successContent: "ユーザーグループ機能が有効になりました。確認をクリックすると、この設定ページは自動的に非表示になり、再設定は不要です。",
+          successOk: "確認",
+          initializingMessage: "データを初期化中です。しばらくお待ちください...",
+          initFailedMessage: "初期化に失敗しました。後でもう一度お試しください",
         },
       },
       resourceManagement: {
@@ -1781,6 +1854,7 @@ export default {
       setTenantUserQuota: "ユーザーのストレージクォータを変更",
       batchSetTenantUsersQuota: "テナントのユーザーのストレージクォータを一括変更",
       syncTenantUsersStorageUsage: "テナントのユーザーのストレージ使用量を同期",
+      syncTenantAccountsStorageUsage: "Sync the storage usage of accounts under a tenant",
       authorizeApp: "アプリケーションを許可",
       unauthorizeApp: "アプリケーションの許可を取り消し",
       migrateNode: "ノードを移行",
@@ -1920,12 +1994,11 @@ export default {
       changeEmail: "ユーザー: {}",
       editUserProfile: "ユーザー: {}",
       decompressFile: "パス: {0} , ファイル {1}",
-      setTenantUserQuota:
-        "ユーザー: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}, テナントデフォルトを使用: {4}",
-      batchSetTenantUsersQuota:
-        "ユーザー: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}, テナントデフォルトを使用: {4}",
-      setTenantUserDefaultQuota: "テナント: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}",
-      syncTenantUsersStorageUsage: "テナント: {0}, クラスタ: {1}, パス: {2}",
+      setTenantUserQuota: "ユーザー: {0}, ファイルシステム: {1}, ストレージクォータ: {2}",
+      batchSetTenantUsersQuota: "ユーザー: {0}, ファイルシステム: {1}, ストレージクォータ: {2}",
+      setTenantUserDefaultQuota: "テナント: {0}, ファイルシステム: {1}, ストレージクォータ: {2}",
+      syncTenantUsersStorageUsage: "テナント: {0}, ファイルシステム: {1}",
+      syncTenantAccountsStorageUsage: "Tenant: {0}, File system: {1}",
       hpcAppScope: "HPC",
       aiAppScope: "AI",
       tenantAppAuthorizationLog: "クラスタ: {0}, アプリケーション: {1} ({3}), テナント: {2}",

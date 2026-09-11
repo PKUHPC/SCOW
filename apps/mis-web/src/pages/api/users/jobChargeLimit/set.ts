@@ -12,6 +12,7 @@ import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
+import { isAccountUserSyncRunningDetails } from "src/utils/syncAccountUser";
 
 export const SetJobChargeLimitSchema = typeboxRouteSchema({
   method: "PUT",
@@ -36,7 +37,10 @@ export const SetJobChargeLimitSchema = typeboxRouteSchema({
     404: Type.Null(),
     400: Type.Object({ code: Type.Literal("INVALID_LIMIT_DATA") }),
     // 有正在进行的同步账户用户时，防止与因限额改变可能发生封锁用户或解封用户的冲突
-    409: Type.Null(),
+    409: Type.Object({
+      code: Type.Union([Type.Literal("SYNC_ACCOUNT_USER_IS_RUNNING"), Type.Literal("FAILED_PRECONDITION")]),
+      message: Type.Optional(Type.String()),
+    }),
     500: Type.Object({ message: Type.String() }),
   },
 });
@@ -86,10 +90,7 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
           const userId = logInfo.operationTypePayload.userId;
           const result = res.results?.find((result) => result.userId === userId);
 
-          return callLog(
-            logInfo,
-            res.success || result?.success ? OperationResult.SUCCESS : OperationResult.FAIL,
-          );
+          return callLog(logInfo, res.success || result?.success ? OperationResult.SUCCESS : OperationResult.FAIL);
         }),
       );
 
@@ -100,7 +101,14 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
         {
           [Status.NOT_FOUND]: () => ({ 404: null }),
           [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_LIMIT_DATA" as const } }),
-          [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
+          [Status.FAILED_PRECONDITION]: (e) => ({
+            409: {
+              code: isAccountUserSyncRunningDetails(e.details)
+                ? ("SYNC_ACCOUNT_USER_IS_RUNNING" as const)
+                : ("FAILED_PRECONDITION" as const),
+              message: e.details || e.message || "Error occurred.",
+            },
+          }),
           [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
         },
         async () => {

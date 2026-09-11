@@ -292,6 +292,26 @@ message CheckAccountUserSynchronizationRunningResponse {
   bool is_running = 1;
 }
 
+message InitAccountGroupRequest {
+}
+
+message InitAccountGroupResponse {
+}
+
+message GetAccountGroupStatusRequest {
+}
+
+message GetAccountGroupStatusResponse {
+  string account_group_initialized = 1;
+  bool account_group_init_confirmed = 2;
+}
+
+message SetAccountGroupInitConfirmedRequest {
+}
+
+message SetAccountGroupInitConfirmedResponse {
+}
+
 service AdminService {
   rpc ImportUsers(ImportUsersRequest) returns (ImportUsersResponse);
   rpc GetClusterUsers(GetClusterUsersRequest) returns (GetClusterUsersResponse);
@@ -334,4 +354,11 @@ service AdminService {
   rpc CheckAccountUserSynchronizationRunning(CheckAccountUserSynchronizationRunningRequest) returns (
     CheckAccountUserSynchronizationRunningResponse
   );
+
+  rpc InitAccountGroup(InitAccountGroupRequest) returns (InitAccountGroupResponse);
+
+  rpc GetAccountGroupStatus(GetAccountGroupStatusRequest) returns (GetAccountGroupStatusResponse);
+
+  rpc SetAccountGroupInitConfirmed(SetAccountGroupInitConfirmedRequest) returns (SetAccountGroupInitConfirmedResponse);
+
 }

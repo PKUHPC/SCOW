@@ -8,16 +8,18 @@ import { Head } from "src/utils/head";
 
 const p = prefix("page.tenant.storageManager.");
 
-export const StorageManagerPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(() => {
-  const t = useI18nTranslateToString();
+export const UserBaseStorageQuotaPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(
+  () => {
+    const t = useI18nTranslateToString();
 
-  return (
-    <div>
-      <Head title={t(p("storageManager"))} />
-      <PageTitle titleText={t(p("storageManager"))} />
-      <TenantStorageManagerTable />
-    </div>
-  );
-});
+    return (
+      <div>
+        <Head title={t(p("userBaseStorageQuota"))} />
+        <PageTitle titleText={t(p("userBaseStorageQuota"))} />
+        <TenantStorageManagerTable />
+      </div>
+    );
+  },
+);
 
-export default StorageManagerPage;
+export default UserBaseStorageQuotaPage;

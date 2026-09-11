@@ -1,5 +1,6 @@
 import { ConnectError } from "@connectrpc/connect";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
+import { getClusterQuotaStorageConfigs } from "@scow/lib-server/src";
 import { libGetUserQuotaUsage } from "@scow/lib-web/build/server/storage";
 import { TRPCError } from "@trpc/server";
 import path, { join } from "path";
@@ -98,9 +99,7 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       return await withFileDriver(
         { clusterId, user: user.identityId },
@@ -176,27 +175,26 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [fromPath, toPath], isPlatformAdmin);
-
-      if (op === "copy") {
-        await withFileDriver(
-          { clusterId, user: user.identityId },
-          async (driver) => {
+      await withFileDriver(
+        { clusterId, user: user.identityId },
+        async (driver) => {
+          const homeDir = await driver.getHomeDirectory();
+          const noCheckPermission = shouldPathsSkipPermissionCheck(
+            clusterId,
+            [fromPath, toPath],
+            user.identityId,
+            user.platformRoles,
+            undefined,
+            homeDir,
+          );
+          if (op === "copy") {
             await driver.copy(fromPath, toPath, noCheckPermission);
-          },
-          logger,
-        );
-      } else {
-        await withFileDriver(
-          { clusterId, user: user.identityId },
-          async (driver) => {
+          } else {
             await driver.move(fromPath, toPath, noCheckPermission);
-          },
-          logger,
-        );
-      }
+          }
+        },
+        logger,
+      );
     }),
 
   mkdir: authProcedure
@@ -238,9 +236,7 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       return await withFileDriver(
         { clusterId, user: user.identityId },
@@ -290,9 +286,7 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       return await withFileDriver(
         { clusterId, user: user.identityId },
@@ -318,9 +312,7 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       return await withFileDriver(
         { clusterId, user: user.identityId },
@@ -355,9 +347,8 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
       const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       // 如果是平台管理员访问公共目录，则不会抛出权限错误，而是返回false
       const safeExists = async (noCheckPermission: boolean) => {
@@ -401,9 +392,7 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       return await withFileDriver(
         { clusterId, user: user.identityId },
@@ -430,9 +419,7 @@ export const file = router({
       const subLogger = logger.child({ user, path, clusterId });
       subLogger.info("Download file started");
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       await withFileDriver(
         { clusterId, user: user.identityId },
@@ -465,24 +452,24 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(
-        clusterId,
-        [filePath, decompressionPath],
-        isPlatformAdmin,
-      );
-
-      if (usePublicPath && !noCheckPermission) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: `${decompressionPath} is outside the required PublicPath boundary`,
-        });
-      }
-
       return await withFileDriver(
         { clusterId, user: user.identityId },
         async (driver) => {
+          const homeDir = await driver.getHomeDirectory();
+          const noCheckPermission = shouldPathsSkipPermissionCheck(
+            clusterId,
+            [filePath, decompressionPath],
+            user.identityId,
+            user.platformRoles,
+            undefined,
+            homeDir,
+          );
+          if (usePublicPath && !noCheckPermission) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: `${decompressionPath} is outside the required PublicPath boundary`,
+            });
+          }
           await driver.decompressFile(filePath, decompressionPath, noCheckPermission);
         },
         logger,
@@ -504,12 +491,18 @@ export const file = router({
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [...filePaths, archivePath], isPlatformAdmin);
-
       return await withFileDriver(
         { clusterId, user: user.identityId },
         async (driver) => {
+          const homeDir = await driver.getHomeDirectory();
+          const noCheckPermission = shouldPathsSkipPermissionCheck(
+            clusterId,
+            [...filePaths, archivePath],
+            user.identityId,
+            user.platformRoles,
+            undefined,
+            homeDir,
+          );
           await driver.compressFiles(filePaths, archivePath, noCheckPermission);
         },
         logger,
@@ -528,26 +521,25 @@ export const file = router({
     .input(
       z.object({
         clusterId: z.string(),
-        paths: z.string().transform((val) => (val === "" ? [] : val.split(","))),
       }),
     )
     .output(
       z.array(
         z.object({
-          path: z.string(),
-          quotaBytes: z.number(),
-          usedStorageBytes: z.number(),
+          storageId: z.string(),
+          quotaMb: z.number(),
+          usedStorageMb: z.number(),
         }),
       ),
     )
-    .query(async ({ input: { clusterId, paths }, ctx: { user } }) => {
+    .query(async ({ input: { clusterId }, ctx: { user } }) => {
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
+      const storageIds = getClusterQuotaStorageConfigs(clusters[clusterId]).map((s) => s.storageId);
       const { quotaUsage } = await libGetUserQuotaUsage(
         user.identityId,
-        clusterId,
-        paths,
+        storageIds,
         envConfig.MIS_SERVER_URL,
         commonConfig.scowApi.auth.token,
       );
@@ -608,9 +600,7 @@ export const file = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
       }
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       try {
         const client = getScowdClient(clusterId, userId);
@@ -664,8 +654,7 @@ export const file = router({
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.uploadFile,
         operationTypePayload: {
-          clusterId,
-          path: join(path, name),
+          clusterId, path: join(path, name),
         },
       };
 
@@ -693,9 +682,7 @@ export const file = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
       }
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
 
       try {
         const client = getScowdClient(clusterId);

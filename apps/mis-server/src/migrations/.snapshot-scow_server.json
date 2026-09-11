@@ -562,8 +562,8 @@
         {
           "keyName": "PRIMARY",
           "columnNames": [
-            "id"
-          ],
+          "id"
+        ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -884,6 +884,177 @@
           "columnNames": [
             "id"
           ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 255,
+          "comment": "用户 ID",
+          "mappedType": "string"
+        },
+        "account_name": {
+          "name": "account_name",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 255,
+          "comment": "账户名称",
+          "mappedType": "string"
+        },
+        "cluster": {
+          "name": "cluster",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "storage_id": {
+          "name": "storage_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "comment": "文件系统 storageId",
+          "mappedType": "string"
+        },
+        "date": {
+          "name": "date",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "comment": "日期（东八区 YYYY-MM-DD）",
+          "mappedType": "string"
+        },
+        "usages": {
+          "name": "usages",
+          "type": "json",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "comment": "当天各次采样用量(GB)，保留2位小数",
+          "mappedType": "json"
+        },
+        "average_usage": {
+          "name": "average_usage",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "comment": "日均用量(GB)，进一法取整",
+          "mappedType": "integer"
+        }
+      },
+      "name": "daily_storage_usage",
+      "indexes": [
+        {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
+          "keyName": "daily_storage_usage_user_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "account_name"
+          ],
+          "composite": false,
+          "keyName": "daily_storage_usage_account_name_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "storage_id"
+          ],
+          "composite": false,
+          "keyName": "idx_daily_storage_usage_storage_id",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "daily_storage_usage_storage_id_date_index",
+          "columnNames": [
+            "storage_id",
+            "date"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "daily_storage_usage_account_name_storage_id_date_unique",
+          "columnNames": [
+            "account_name",
+            "storage_id",
+            "date"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
+          "keyName": "daily_storage_usage_user_id_storage_id_date_unique",
+          "columnNames": [
+            "user_id",
+            "storage_id",
+            "date"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+          "id"
+        ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1594,8 +1765,8 @@
         {
           "keyName": "PRIMARY",
           "columnNames": [
-            "id"
-          ],
+          "id"
+        ],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2059,6 +2230,134 @@
           "length": null,
           "mappedType": "integer"
         },
+        "storage_id": {
+          "name": "storage_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "billing_mode": {
+          "name": "billing_mode",
+          "type": "enum('usage','quota')",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "enumItems": [
+            "usage",
+            "quota"
+          ],
+          "mappedType": "enum"
+        },
+        "tiers": {
+          "name": "tiers",
+          "type": "json",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "json"
+        },
+        "original_tiers": {
+          "name": "original_tiers",
+          "type": "json",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "mappedType": "json"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "create_time": {
+          "name": "create_time",
+          "type": "DATETIME(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "mappedType": "datetime"
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "default": "''",
+          "mappedType": "string"
+        }
+      },
+      "name": "storage_price_item",
+      "indexes": [
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "keyName": "storage_price_item_tenant_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "storage_price_item_tenant_id_foreign": {
+          "constraintName": "storage_price_item_tenant_id_foreign",
+          "columnNames": [
+            "tenant_id"
+          ],
+          "localTableName": "storage_price_item",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "tenant",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
         "item_id": {
           "name": "item_id",
           "type": "varchar(255)",
@@ -2287,6 +2586,16 @@
           "comment": "NORMAL, FROZEN, BLOCKED_BY_ADMIN, DELETED",
           "mappedType": "enum"
         },
+        "account_group_name": {
+          "name": "account_group_name",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 255,
+          "mappedType": "string"
+        },
         "create_time": {
           "name": "create_time",
           "type": "DATETIME(6)",
@@ -2331,6 +2640,16 @@
           "unique": true
         },
         {
+          "columnNames": [
+            "account_group_name"
+          ],
+          "composite": false,
+          "keyName": "account_account_group_name_unique",
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
           "keyName": "PRIMARY",
           "columnNames": [
             "id"
@@ -2366,6 +2685,124 @@
           ],
           "referencedTableName": "account_whitelist",
           "deleteRule": "set null",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "storage_id": {
+          "name": "storage_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "comment": "文件系统 storageId",
+          "mappedType": "string"
+        },
+        "storage_quota_mb": {
+          "name": "storage_quota_mb",
+          "type": "bigint",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "comment": "账户存储配额，单位 MB，null 表示使用默认值",
+          "mappedType": "bigint"
+        },
+        "usage": {
+          "name": "usage",
+          "type": "bigint",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "comment": "租户下账户的存储使用量（MB）",
+          "mappedType": "bigint"
+        }
+      },
+      "name": "account_storage_quota",
+      "indexes": [
+        {
+          "columnNames": [
+            "account_id"
+          ],
+          "composite": false,
+          "keyName": "account_storage_quota_account_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "storage_id"
+          ],
+          "composite": false,
+          "keyName": "idx_storage_id",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "account_storage_quota_account_id_storage_id_unique",
+          "columnNames": [
+            "account_id",
+            "storage_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "account_storage_quota_account_id_foreign": {
+          "constraintName": "account_storage_quota_account_id_foreign",
+          "columnNames": [
+            "account_id"
+          ],
+          "localTableName": "account_storage_quota",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "account",
+          "deleteRule": "cascade",
           "updateRule": "cascade"
         }
       },
@@ -2558,6 +2995,17 @@
           "comment": "存储挂载目录",
           "mappedType": "string"
         },
+        "storage_id": {
+          "name": "storage_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "comment": "文件系统 storageId",
+          "mappedType": "string"
+        },
         "user_default_quota": {
           "name": "user_default_quota",
           "type": "bigint",
@@ -2566,7 +3014,18 @@
           "primary": false,
           "nullable": false,
           "length": null,
-          "comment": "租户下用户默认的存储配额",
+          "comment": "租户下用户默认的存储配额（MB）",
+          "mappedType": "bigint"
+        },
+        "account_default_quota": {
+          "name": "account_default_quota",
+          "type": "bigint",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "comment": "租户下账户默认的存储配额，单位 MB，null 表示使用默认值",
           "mappedType": "bigint"
         }
       },
@@ -2601,6 +3060,27 @@
           "constraint": false,
           "primary": false,
           "unique": false
+        },
+        {
+          "columnNames": [
+            "storage_id"
+          ],
+          "composite": false,
+          "keyName": "idx_storage_id",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "tenant_storage_quota_tenant_id_storage_id_unique",
+          "columnNames": [
+            "tenant_id",
+            "storage_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
         },
         {
           "keyName": "PRIMARY",
@@ -2883,6 +3363,17 @@
           "comment": "存储挂载目录",
           "mappedType": "string"
         },
+        "storage_id": {
+          "name": "storage_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "comment": "文件系统 storageId",
+          "mappedType": "string"
+        },
         "storage_quota": {
           "name": "storage_quota",
           "type": "bigint",
@@ -2891,7 +3382,7 @@
           "primary": false,
           "nullable": true,
           "length": null,
-          "comment": "租户下用户的存储配额",
+          "comment": "租户下用户的存储配额（MB）",
           "mappedType": "bigint"
         },
         "usage": {
@@ -2902,7 +3393,7 @@
           "primary": false,
           "nullable": false,
           "length": null,
-          "comment": "租户下用户的存储使用量",
+          "comment": "租户下用户的存储使用量（MB）",
           "mappedType": "bigint"
         }
       },
@@ -2939,11 +3430,20 @@
           "unique": false
         },
         {
-          "keyName": "tenant_user_storage_quota_cluster_user_id_path_unique",
           "columnNames": [
-            "cluster",
+            "storage_id"
+          ],
+          "composite": false,
+          "keyName": "idx_storage_id",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "tenant_user_storage_quota_user_id_storage_id_unique",
+          "columnNames": [
             "user_id",
-            "path"
+            "storage_id"
           ],
           "composite": true,
           "constraint": true,

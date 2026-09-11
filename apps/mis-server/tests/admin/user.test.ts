@@ -123,6 +123,7 @@ it("cannot remove owner from account", async () => {
   const reply = await asyncClientCall(client, "removeUserFromAccount", {
     tenantName: data.tenant.name,
     accountName: data.accountA.accountName,
+    operatorId: data.userA.userId,
     userId: data.userA.userId,
     userIds: [],
   }).catch((e) => e);
@@ -136,6 +137,7 @@ it("cannot remove a user from account,when user has jobs running or pending", as
   const reply = await asyncClientCall(client, "removeUserFromAccount", {
     tenantName: data.anotherTenant.name,
     accountName: data.accountC.accountName,
+    operatorId: data.userC.userId,
     userId: data.userC.userId,
     userIds: [],
   }).catch((e) => e);
@@ -173,6 +175,7 @@ it("when removing a user from an account, the account and user cannot be deleted
   await asyncClientCall(client, "removeUserFromAccount", {
     tenantName: data.tenant.name,
     accountName: account.accountName,
+    operatorId: data.userB.userId,
     userId: data.userB.userId,
     userIds: [],
   });

@@ -13,14 +13,14 @@ import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
+import { hasStorageAccess } from "src/utils/storage";
 
 export const SetTenantUserDefaultQuotaSchema = typeboxRouteSchema({
   method: "PUT",
 
   body: Type.Object({
-    cluster: Type.String(),
-    path: Type.String(),
-    userQuotaBytes: Type.Number(),
+    storageId: Type.String(),
+    userQuotaMb: Type.Number({ exclusiveMinimum: 0 }),
   }),
 
   responses: {
@@ -39,8 +39,8 @@ export const SetTenantUserDefaultQuotaSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/ route(SetTenantUserDefaultQuotaSchema, async (req, res) => {
-  const { cluster, path, userQuotaBytes } = req.body;
+export default /* #__PURE__*/route(SetTenantUserDefaultQuotaSchema, async (req, res) => {
+  const { storageId, userQuotaMb } = req.body;
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -59,7 +59,7 @@ export default /* #__PURE__*/ route(SetTenantUserDefaultQuotaSchema, async (req,
         tenantName: info.tenant,
       });
 
-      if (!response.assignedClusterPartitions[cluster]) {
+      if (!hasStorageAccess(storageId, Object.keys(response.assignedClusterPartitions))) {
         return { 403: null };
       }
     } catch (e) {
@@ -77,21 +77,15 @@ export default /* #__PURE__*/ route(SetTenantUserDefaultQuotaSchema, async (req,
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.setTenantUserDefaultQuota,
-    operationTypePayload: {
-      tenantName: info.tenant,
-      cluster,
-      path,
-      storageQuota: userQuotaBytes,
+    operationTypePayload:{
+      tenantName: info.tenant, storageId, storageQuota: userQuotaMb,
     },
   };
 
   const client = getClient(StorageServiceClient);
 
   return await asyncClientCall(client, "setTenantUserDefaultQuota", {
-    tenantName: info.tenant,
-    cluster,
-    path,
-    userQuotaBytes,
+    tenantName: info.tenant, storageId, userQuotaMb,
   })
     .then(async (res) => {
       await callLog(logInfo, OperationResult.SUCCESS);

@@ -1,4 +1,3 @@
-import { ConnectError } from "@connectrpc/connect";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -15,14 +14,13 @@ import { AppScope } from "src/entities/AppScope";
 import { Cluster } from "src/entities/Cluster";
 import { Tenant } from "src/entities/Tenant";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
-import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo } from "src/utils/accountUserState";
 import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
 import { createUserInDatabase } from "src/utils/createUser";
-import { getScowdClient } from "src/utils/scowd";
+import { setNewUserStorageQuota } from "src/utils/storageQuota";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const tenantServiceServer = plugin((server) => {
@@ -32,7 +30,10 @@ export const tenantServiceServer = plugin((server) => {
 
       const tenant = await em.findOne(Tenant, { name: tenantName });
       if (!tenant) {
-        throw { code: status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
+        throw {
+          code: status.NOT_FOUND,
+          message: `Tenant ${tenantName} is not found.`,
+        } as ServiceError;
       }
       const accountCount = await em.count(Account, { tenant });
       const userCount = await em.count(User, { tenant });
@@ -131,7 +132,10 @@ export const tenantServiceServer = plugin((server) => {
               details: "TENANT_ALREADY_EXISTS",
             } as ServiceError;
           }
-          throw { code: Status.INTERNAL, message: "Error creating tenant in database." } as ServiceError;
+          throw {
+            code: Status.INTERNAL,
+            message: "Error creating tenant in database.",
+          } as ServiceError;
         });
 
         // 在所有集群下不添加应用到租户的默认授权应用
@@ -186,51 +190,20 @@ export const tenantServiceServer = plugin((server) => {
         // call auth
         const createdInAuth = await createUser(
           authUrl,
-          { identityId: user.userId, id: user.id, mail: user.email, name: user.name, password: userPassword },
+          {
+            identityId: user.userId,
+            id: user.id,
+            mail: user.email,
+            name: user.name,
+            password: userPassword,
+          },
           logger,
         )
-          .then(async () => {
-            // 设置用户的存储配额
-            for (const [cluster, config] of Object.entries(configClusters)) {
-              if (config.storage?.enabled) {
-                const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
-                const scowdClient = getScowdClient(cluster, userId);
-
-                const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
-                if (quotaBytes === undefined) {
-                  const totalStorageBytes = (
-                    await scowdClient.storageQuota.getFilesystemStorageUsage({
-                      path: config.storage.paths[0],
-                    })
-                  ).totalStorageBytes;
-
-                  await scowdClient.storageQuota.setUserStorageQuota({
-                    userId,
-                    path: config.storage.paths[0],
-                    quotaBytes: totalStorageBytes,
-                  });
-                } else {
-                  await scowdClient.storageQuota.setUserStorageQuota({
-                    userId,
-                    path: config.storage.paths[0],
-                    quotaBytes: BigInt(quotaBytes),
-                  });
-                }
-              }
-            }
-
-            return true;
-          })
+          .then(() => true)
           .catch(async (e) => {
             if (e.status === 409) {
               logger.warn("User exists in auth.");
               return false;
-            } else if (e instanceof ConnectError) {
-              server.logger.error("Failed to set user storage quota.", e);
-              throw {
-                code: Status.INTERNAL,
-                message: `Failed to set user ${userId} storage quota.`,
-              } as ServiceError;
             } else {
               logger.error("Error creating user in auth.", e);
               throw {
@@ -239,6 +212,7 @@ export const tenantServiceServer = plugin((server) => {
               } as ServiceError;
             }
           });
+        await setNewUserStorageQuota(em, tenantName, userId, logger);
         await callHook("userCreated", { tenantName, userId: user.userId }, logger);
         return [{ tenantId: newTenant.id, userId: user.id, createdInAuth: createdInAuth }];
       });
@@ -248,11 +222,16 @@ export const tenantServiceServer = plugin((server) => {
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "set tenant block threshold task");
 
-      const { tenantName, blockThresholdAmount } = ensureNotUndefined(request, ["blockThresholdAmount"]);
+      const { tenantName, blockThresholdAmount } = ensureNotUndefined(request, [
+        "blockThresholdAmount",
+      ]);
       const tenant = await em.findOne(Tenant, { name: tenantName });
 
       if (!tenant) {
-        throw { code: status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
+        throw {
+          code: status.NOT_FOUND,
+          message: `Tenant ${tenantName} is not found.`,
+        } as ServiceError;
       }
       tenant.defaultAccountBlockThreshold = new Decimal(moneyToNumber(blockThresholdAmount));
 
@@ -290,7 +269,7 @@ export const tenantServiceServer = plugin((server) => {
               );
 
               try {
-                await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
+                await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger, em);
                 blockedAccounts.push(account.accountName);
               } catch (error) {
                 logger.warn("Failed to block account %s in slurm: %o", account.accountName, error);
@@ -311,25 +290,41 @@ export const tenantServiceServer = plugin((server) => {
                   currentActivatedClusters,
                   server.ext.clusters,
                   logger,
-                  server.ext.resource,
+                  server.ext.resource, em,
                 );
                 unBlockedAccounts.push(account.accountName);
               } catch (error) {
-                logger.warn("Failed to unBlock account %s in slurm: %o", account.accountName, error);
+                logger.warn(
+                  "Failed to unBlock account %s in slurm: %o",
+                  account.accountName,
+                  error,
+                );
                 unBlockedFailedAccounts.push(account.accountName);
               }
             }
           }),
         ).catch((e) => {
-          logger.error("Block or unblock account failed when set a new default tenant threshold amount.", e);
+          logger.error(
+            "Block or unblock account failed when set a new default tenant threshold amount.",
+            e,
+          );
         });
       }
 
       logger.info("Updated block status in slurm of the following accounts: %o", blockedAccounts);
-      logger.info("Updated block status failed in slurm of the following accounts: %o", blockedFailedAccounts);
+      logger.info(
+        "Updated block status failed in slurm of the following accounts: %o",
+        blockedFailedAccounts,
+      );
 
-      logger.info("Updated unBlock status in slurm of the following accounts: %o", unBlockedAccounts);
-      logger.info("Updated unBlock status failed in slurm of the following accounts: %o", unBlockedFailedAccounts);
+      logger.info(
+        "Updated unBlock status in slurm of the following accounts: %o",
+        unBlockedAccounts,
+      );
+      logger.info(
+        "Updated unBlock status failed in slurm of the following accounts: %o",
+        unBlockedFailedAccounts,
+      );
 
       if (accounts.length > 0) {
         await em.persistAndFlush([...accounts, tenant]);

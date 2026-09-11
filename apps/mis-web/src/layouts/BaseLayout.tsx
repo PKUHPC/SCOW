@@ -5,11 +5,13 @@ import { AiIcon, HighComputingIcon, MisIcon, QuantumIcon } from "@scow/lib-web/b
 import { joinWithUrl } from "@scow/utils";
 import { theme } from "antd";
 import { join } from "path";
-import { PropsWithChildren, useMemo } from "react";
+import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { useStore } from "simstate";
+import { api } from "src/apis";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { getAvailableRoutes } from "src/layouts/routes";
+import { PlatformRole } from "src/models/User";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
@@ -29,9 +31,47 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
 
   const systemLanguageConfig = publicConfig.SYSTEM_LANGUAGE_CONFIG;
 
+  const isPlatformAdmin = userStore.user?.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
+  const [accountGroupInitConfirmed, setAccountGroupInitConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (!isPlatformAdmin) return;
+
+    // 账户用户组页面初始化是否确认，确认了则该路由就不展示
+    api
+      .getAccountGroupStatus({})
+      .then((data) => setAccountGroupInitConfirmed(data.accountGroupInitConfirmed))
+      .catch(() => undefined);
+
+    // 账户存储配额是否已确认开启，确认了则配置入口路由不展示
+    api.getAccountStorageQuotaState({}).then((data) => {
+      if (data.state === "ENABLED") {
+        clusterStore.setAccountStorageQuotaEnabled(true);
+        if (data.confirmed) {
+          clusterStore.setAccountStorageQuotaConfirmed(true);
+        }
+      }
+    });
+  }, [clusterStore, isPlatformAdmin]);
+
   const routes = useMemo(
-    () => getAvailableRoutes(userStore.user, clusterStore.storageEnabled, t),
-    [userStore.user, clusterStore.storageEnabled, t],
+    () =>
+      getAvailableRoutes(
+        userStore.user,
+        clusterStore.storageEnabled,
+        t,
+        accountGroupInitConfirmed,
+        clusterStore.accountStorageQuotaConfirmed,
+        clusterStore.accountStorageQuotaEnabled,
+      ),
+    [
+      userStore.user,
+      t,
+      clusterStore.storageEnabled,
+      accountGroupInitConfirmed,
+      clusterStore.accountStorageQuotaConfirmed,
+      clusterStore.accountStorageQuotaEnabled,
+    ],
   );
 
   const uiExtensionStore = useStore(UiExtensionStore);

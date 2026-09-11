@@ -14,6 +14,7 @@ import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { ClusterAccountInfo_ImportStatus } from "src/models/User";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { isAccountUserSyncRunningDetails } from "src/utils/syncAccountUser";
 
 const p = prefix("pageComp.admin.ImportUsersTable.");
 const pCommon = prefix("common.");
@@ -131,8 +132,20 @@ export const ImportUsersTable: React.FC = () => {
             .httpError(400, () => {
               message.error(t(p("incorrectFormat")));
             })
-            .httpError(409, () => {
-              message.error(t("common.accountUserSyncRunning"));
+            .httpError(409, (e) => {
+              if (e.code === "QUOTA_ENABLING") {
+                message.error(t(p("quotaEnabling")));
+              } else if (e.code === "MULTI_ACCOUNT_USERS") {
+                message.error(t(p("multiAccountUsers"), [e.targets ?? ""]));
+              } else if (e.code === "MULTI_GROUP_USERS") {
+                message.error(t(p("multiGroupUsers"), [e.targets ?? ""]));
+              } else if (e.code === "DEFAULT_GROUP_NOT_REMOVED") {
+                message.error(t(p("defaultGroupNotRemoved"), [e.targets ?? ""]));
+              } else if (e.code === "SYNC_RUNNING" || isAccountUserSyncRunningDetails(e.message)) {
+                message.error(t("common.accountUserSyncRunning"));
+              } else {
+                message.error(e.message || "Error occurred.");
+              }
             })
             .then(() => {
               setSelectedAccounts([]);

@@ -21,6 +21,7 @@ import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Money } from "src/models/UserSchemaModel";
 import { moneyNumberToString, moneyToString } from "src/utils/money";
+import { isAccountUserSyncRunningDetails } from "src/utils/syncAccountUser";
 
 interface Props {
   data: Static<(typeof GetWhitelistedAccountsSchema)["responses"]["200"]> | undefined;
@@ -219,8 +220,12 @@ export const AccountWhitelistTable: React.FC<Props> = ({ data, isLoading, reload
                               accountName: r.accountName,
                             },
                           })
-                          .httpError(409, () => {
-                            message.error(t("common.accountUserSyncRunning"));
+                          .httpError(409, (e) => {
+                            if (isAccountUserSyncRunningDetails(e.message)) {
+                              message.error(t("common.accountUserSyncRunning"));
+                            } else {
+                              message.error(e.message || "Error occurred.");
+                            }
                           })
                           .then(() => {
                             message.success(t(p("removeWhiteSuccess")));

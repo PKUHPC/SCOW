@@ -3,6 +3,9 @@
 import { apiClient } from "src/apis/client";
 
 
+import type { ConfirmAccountStorageQuotaSchema } from "src/pages/api/admin/accountStorageQuota/confirm";
+import type { EnableAccountStorageQuotaSchema } from "src/pages/api/admin/accountStorageQuota/enable";
+import type { GetAccountStorageQuotaStateSchema } from "src/pages/api/admin/accountStorageQuota/getState";
 import type { ActivateClusterSchema } from "src/pages/api/admin/activateCluster";
 import type { ActivateNodeSchema } from "src/pages/api/admin/activateNode";
 import type { AuthorizeAppSchema } from "src/pages/api/admin/authorization/authorizeApp";
@@ -16,6 +19,7 @@ import type { GetFetchJobInfoSchema } from "src/pages/api/admin/fetchJobs/getFet
 import type { SetFetchStateSchema } from "src/pages/api/admin/fetchJobs/setFetchState";
 import type { TenantFinancePaySchema } from "src/pages/api/admin/finance/pay";
 import type { GetTenantPaymentsSchema } from "src/pages/api/admin/finance/payments";
+import type { GetAccountGroupStatusSchema } from "src/pages/api/admin/getAccountGroupStatus";
 import type { GetActiveUserCountSchema } from "src/pages/api/admin/getActiveUserCount";
 import type { GetAllAccountsSchema } from "src/pages/api/admin/getAllAccounts";
 import type { GetAllTenantsSchema } from "src/pages/api/admin/getAllTenants";
@@ -40,11 +44,13 @@ import type { GetTopPayAccountSchema } from "src/pages/api/admin/getTopPayAccoun
 import type { GetTopSubmitJobUserSchema } from "src/pages/api/admin/getTopSubmitJobUser";
 import type { GetUsersWithMostJobSubmissionsSchema } from "src/pages/api/admin/getUsersWithMostJobSubmissions";
 import type { ImportUsersSchema } from "src/pages/api/admin/importUsers";
+import type { InitAccountGroupSchema } from "src/pages/api/admin/initAccountGroup";
 import type { AccountThresholdSchema } from "src/pages/api/admin/isAccountBelowBlockThreshold";
 import type { MigrateNodeSchema } from "src/pages/api/admin/migrateNode";
 import type { GetAlarmDbIdSchema } from "src/pages/api/admin/monitor/getAlarmDbId";
 import type { GetAlarmLogsSchema } from "src/pages/api/admin/monitor/getAlarmLogs";
 import type { GetAlarmLogsCountSchema } from "src/pages/api/admin/monitor/getAlarmLogsCount";
+import type { SetAccountGroupInitConfirmedSchema } from "src/pages/api/admin/setAccountGroupInitConfirmed";
 import type { SetPlatformRoleSchema } from "src/pages/api/admin/setPlatformRole";
 import type { SetTenantRoleSchema } from "src/pages/api/admin/setTenantRole";
 import type { GetSyncAccountUserHistorySchema } from "src/pages/api/admin/synchronize/getSyncAccountUserHistory";
@@ -108,11 +114,19 @@ import type { CheckPasswordSchema } from "src/pages/api/profile/checkPassword";
 import type { GetQuantumJobInfoSchema } from "src/pages/api/quantum/jobInfo";
 import type { GetSimpleClustersInfoFromConfigFilesSchema } from "src/pages/api//simpleClustersInfo";
 import type { BatchSetTenantUsersQuotaSchema } from "src/pages/api/storage/batchSetTenantUsersQuota";
+import type { GetAccountStorageSyncInfoSchema } from "src/pages/api/storage/getAccountStorageSyncInfo";
 import type { GetStorageSyncInfoSchema } from "src/pages/api/storage/getStorageSyncInfo";
 import type { GetTenantQuotaSchema } from "src/pages/api/storage/getTenantQuota";
+import type { GetTenantQuotaSummarySchema } from "src/pages/api/storage/getTenantQuotaSummary";
 import type { SetTenantUserDefaultQuotaSchema } from "src/pages/api/storage/setTenantUserDefaultQuota";
 import type { SetTenantUserQuotaSchema } from "src/pages/api/storage/setTenantUserQuota";
+import type { SyncTenantAccountsStorageUsageSchema } from "src/pages/api/storage/syncTenantAccountsStorageUsage";
 import type { SyncTenantUsersStorageUsageSchema } from "src/pages/api/storage/syncTenantUsersStorageUsage";
+import type { AddStorageBillingItemSchema } from "src/pages/api/storageBilling/addStorageBillingItem";
+import type { GetStorageBillingItemsSchema } from "src/pages/api/storageBilling/getStorageBillingItems";
+import type { BatchSetAccountQuotaSchema } from "src/pages/api/tenant/accountStorageQuota/batchSetAccountQuota";
+import type { GetAccountQuotaSchema } from "src/pages/api/tenant/accountStorageQuota/getAccountQuota";
+import type { SetAccountDefaultQuotaSchema } from "src/pages/api/tenant/accountStorageQuota/setAccountDefaultQuota";
 import type { DewhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/dewhitelistAccount";
 import type { GetWhitelistedAccountsSchema } from "src/pages/api/tenant/accountWhitelist/getWhitelistedAccounts";
 import type { WhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/whitelistAccount";
@@ -145,6 +159,9 @@ import type { UnsetAdminSchema } from "src/pages/api/users/unsetAdmin";
 
 
 export const api = {
+  confirmAccountStorageQuota: apiClient.fromTypeboxRoute<typeof ConfirmAccountStorageQuotaSchema>("POST", "/api/admin/accountStorageQuota/confirm"),
+  enableAccountStorageQuota: apiClient.fromTypeboxRoute<typeof EnableAccountStorageQuotaSchema>("POST", "/api/admin/accountStorageQuota/enable"),
+  getAccountStorageQuotaState: apiClient.fromTypeboxRoute<typeof GetAccountStorageQuotaStateSchema>("GET", "/api/admin/accountStorageQuota/getState"),
   activateCluster: apiClient.fromTypeboxRoute<typeof ActivateClusterSchema>("PUT", "/api/admin/activateCluster"),
   activateNode: apiClient.fromTypeboxRoute<typeof ActivateNodeSchema>("PATCH", "/api/admin/activateNode"),
   authorizeApp: apiClient.fromTypeboxRoute<typeof AuthorizeAppSchema>("PUT", "/api/admin/authorization/authorizeApp"),
@@ -158,6 +175,7 @@ export const api = {
   setFetchState: apiClient.fromTypeboxRoute<typeof SetFetchStateSchema>("POST", "/api/admin/fetchJobs/setFetchState"),
   tenantFinancePay: apiClient.fromTypeboxRoute<typeof TenantFinancePaySchema>("POST", "/api/admin/finance/pay"),
   getTenantPayments: apiClient.fromTypeboxRoute<typeof GetTenantPaymentsSchema>("GET", "/api/admin/finance/payments"),
+  getAccountGroupStatus: apiClient.fromTypeboxRoute<typeof GetAccountGroupStatusSchema>("GET", "/api/admin/getAccountGroupStatus"),
   getActiveUserCount: apiClient.fromTypeboxRoute<typeof GetActiveUserCountSchema>("GET", "/api/admin/getActiveUserCount"),
   getAllAccounts: apiClient.fromTypeboxRoute<typeof GetAllAccountsSchema>("GET", "/api/admin/getAllAccounts"),
   getAllTenants: apiClient.fromTypeboxRoute<typeof GetAllTenantsSchema>("GET", "/api/admin/getAllTenants"),
@@ -182,11 +200,13 @@ export const api = {
   getTopSubmitJobUser: apiClient.fromTypeboxRoute<typeof GetTopSubmitJobUserSchema>("GET", "/api/admin/getTopSubmitJobUser"),
   getUsersWithMostJobSubmissions: apiClient.fromTypeboxRoute<typeof GetUsersWithMostJobSubmissionsSchema>("GET", "/api/admin/getUsersWithMostJobSubmissions"),
   importUsers: apiClient.fromTypeboxRoute<typeof ImportUsersSchema>("POST", "/api/admin/importUsers"),
+  initAccountGroup: apiClient.fromTypeboxRoute<typeof InitAccountGroupSchema>("POST", "/api/admin/initAccountGroup"),
   accountThreshold: apiClient.fromTypeboxRoute<typeof AccountThresholdSchema>("GET", "/api/admin/isAccountBelowBlockThreshold"),
   migrateNode: apiClient.fromTypeboxRoute<typeof MigrateNodeSchema>("PATCH", "/api/admin/migrateNode"),
   getAlarmDbId: apiClient.fromTypeboxRoute<typeof GetAlarmDbIdSchema>("GET", "/api/admin/monitor/getAlarmDbId"),
   getAlarmLogs: apiClient.fromTypeboxRoute<typeof GetAlarmLogsSchema>("GET", "/api/admin/monitor/getAlarmLogs"),
   getAlarmLogsCount: apiClient.fromTypeboxRoute<typeof GetAlarmLogsCountSchema>("GET", "/api/admin/monitor/getAlarmLogsCount"),
+  setAccountGroupInitConfirmed: apiClient.fromTypeboxRoute<typeof SetAccountGroupInitConfirmedSchema>("POST", "/api/admin/setAccountGroupInitConfirmed"),
   setPlatformRole: apiClient.fromTypeboxRoute<typeof SetPlatformRoleSchema>("PUT", "/api/admin/setPlatformRole"),
   setTenantRole: apiClient.fromTypeboxRoute<typeof SetTenantRoleSchema>("PUT", "/api/admin/setTenantRole"),
   getSyncAccountUserHistory: apiClient.fromTypeboxRoute<typeof GetSyncAccountUserHistorySchema>("GET", "/api/admin/synchronize/getSyncAccountUserHistory"),
@@ -250,11 +270,19 @@ export const api = {
   getQuantumJobInfo: apiClient.fromTypeboxRoute<typeof GetQuantumJobInfoSchema>("GET", "/api/quantum/jobInfo"),
   getSimpleClustersInfoFromConfigFiles: apiClient.fromTypeboxRoute<typeof GetSimpleClustersInfoFromConfigFilesSchema>("GET", "/api//simpleClustersInfo"),
   batchSetTenantUsersQuota: apiClient.fromTypeboxRoute<typeof BatchSetTenantUsersQuotaSchema>("PUT", "/api/storage/batchSetTenantUsersQuota"),
+  getAccountStorageSyncInfo: apiClient.fromTypeboxRoute<typeof GetAccountStorageSyncInfoSchema>("GET", "/api/storage/getAccountStorageSyncInfo"),
   getStorageSyncInfo: apiClient.fromTypeboxRoute<typeof GetStorageSyncInfoSchema>("GET", "/api/storage/getStorageSyncInfo"),
   getTenantQuota: apiClient.fromTypeboxRoute<typeof GetTenantQuotaSchema>("GET", "/api/storage/getTenantQuota"),
+  getTenantQuotaSummary: apiClient.fromTypeboxRoute<typeof GetTenantQuotaSummarySchema>("GET", "/api/storage/getTenantQuotaSummary"),
   setTenantUserDefaultQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserDefaultQuotaSchema>("PUT", "/api/storage/setTenantUserDefaultQuota"),
   setTenantUserQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserQuotaSchema>("PUT", "/api/storage/setTenantUserQuota"),
+  syncTenantAccountsStorageUsage: apiClient.fromTypeboxRoute<typeof SyncTenantAccountsStorageUsageSchema>("POST", "/api/storage/syncTenantAccountsStorageUsage"),
   syncTenantUsersStorageUsage: apiClient.fromTypeboxRoute<typeof SyncTenantUsersStorageUsageSchema>("POST", "/api/storage/syncTenantUsersStorageUsage"),
+  addStorageBillingItem: apiClient.fromTypeboxRoute<typeof AddStorageBillingItemSchema>("POST", "/api/storageBilling/addStorageBillingItem"),
+  getStorageBillingItems: apiClient.fromTypeboxRoute<typeof GetStorageBillingItemsSchema>("GET", "/api/storageBilling/getStorageBillingItems"),
+  batchSetAccountQuota: apiClient.fromTypeboxRoute<typeof BatchSetAccountQuotaSchema>("PUT", "/api/tenant/accountStorageQuota/batchSetAccountQuota"),
+  getAccountQuota: apiClient.fromTypeboxRoute<typeof GetAccountQuotaSchema>("GET", "/api/tenant/accountStorageQuota/getAccountQuota"),
+  setAccountDefaultQuota: apiClient.fromTypeboxRoute<typeof SetAccountDefaultQuotaSchema>("PUT", "/api/tenant/accountStorageQuota/setAccountDefaultQuota"),
   dewhitelistAccount: apiClient.fromTypeboxRoute<typeof DewhitelistAccountSchema>("DELETE", "/api/tenant/accountWhitelist/dewhitelistAccount"),
   getWhitelistedAccounts: apiClient.fromTypeboxRoute<typeof GetWhitelistedAccountsSchema>("GET", "/api/tenant/accountWhitelist/getWhitelistedAccounts"),
   whitelistAccount: apiClient.fromTypeboxRoute<typeof WhitelistAccountSchema>("PUT", "/api/tenant/accountWhitelist/whitelistAccount"),

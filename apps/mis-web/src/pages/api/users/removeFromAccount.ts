@@ -86,6 +86,7 @@ export default /* #__PURE__*/ route(RemoveUserFromAccountSchema, async (req, res
     tenantName: info.tenant,
     accountName,
     userIds: uniqueUserIds,
+    operatorId: info.identityId,
   })
     .then(async (res) => {
       await Promise.all(

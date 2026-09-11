@@ -20,8 +20,13 @@ import { procedure } from "src/server/trpc/procedure/base";
 import { PlatformRole } from "src/server/trpc/route/auth";
 import { buildUserMap } from "src/server/trpc/route/utils/userMap";
 import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
-import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
-import { checkIsPublicPaths } from "src/server/utils/clusters";
+import {
+  checkClusterAvailable,
+  checkIsPublicPaths,
+  computeAssetVersionNoCheckPermission,
+  PermissionCheckMode,
+  shouldPathsSkipPermissionCheck,
+} from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
@@ -384,7 +389,20 @@ export const createAlgorithmVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, algorithm.clusterId);
 
-    const noCheckPermission = shouldPathsSkipPermissionCheck(algorithm.clusterId, [path], isPlatformOwned);
+    const noCheckPermission = computeAssetVersionNoCheckPermission(
+      algorithm.clusterId,
+      path,
+      user.identityId,
+      user.platformRoles,
+      isPlatformOwned,
+    );
+
+    if (isPlatformOwned && !noCheckPermission) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `${path} is outside the required PublicPath boundary`,
+      });
+    }
 
     // 检查目录是否存在
     await driver.withFileDriver(
@@ -660,6 +678,14 @@ export const deleteAlgorithmVersion = procedure
       checkClusterAvailable(currentClusterIds, algorithm.clusterId);
 
       if (!isPlatformOwned) {
+        const noCheckPermission = shouldPathsSkipPermissionCheck(
+          algorithm.clusterId,
+          [algorithmVersion.privatePath],
+          user.identityId,
+          user.platformRoles,
+          PermissionCheckMode.ENTRY_PATHS,
+        );
+
         try {
           await driver.withFileDriver(
             {
@@ -667,7 +693,7 @@ export const deleteAlgorithmVersion = procedure
               user: user.identityId,
             },
             async (fileDriver) => {
-              await fileDriver.checkSharePermission(algorithmVersion.privatePath);
+              await fileDriver.checkSharePermission(algorithmVersion.privatePath, noCheckPermission);
             },
             logger,
           );
@@ -815,13 +841,21 @@ export const shareAlgorithmVersion = procedure
       });
     }
 
+    const noCheckPermission = computeAssetVersionNoCheckPermission(
+      algorithm.clusterId,
+      algorithmVersion.privatePath,
+      user.identityId,
+      user.platformRoles,
+      !!isPlatformOwned,
+    );
+
     await driver.withFileDriver(
       {
         clusterId: algorithm.clusterId,
         user: user.identityId,
       },
       async (fileDriver) => {
-        await fileDriver.checkSharePermission(algorithmVersion.privatePath, isPlatformOwned);
+        await fileDriver.checkSharePermission(algorithmVersion.privatePath, noCheckPermission);
       },
       logger,
     );
@@ -905,6 +939,7 @@ export const shareAlgorithmVersion = procedure
             targetName: algorithm.name,
             targetSubName: algorithmVersion.versionName,
             sharedTopDir,
+            noCheckPermission,
           },
           successCallback,
           failureCallback,
@@ -1146,6 +1181,13 @@ export const copyPublicAlgorithmVersion = procedure
     checkClusterAvailable(currentClusterIds, algorithmVersion.algorithm.$.clusterId);
 
     // 3. 检查用户是否可以将源算法拷贝至目标目录
+    const noCheckPermissionForEntryPaths = shouldPathsSkipPermissionCheck(
+      algorithmVersion.algorithm.$.clusterId,
+      [input.path],
+      user.identityId,
+      user.platformRoles,
+      PermissionCheckMode.ENTRY_PATHS,
+    );
 
     await driver.withFileDriver(
       {
@@ -1153,7 +1195,11 @@ export const copyPublicAlgorithmVersion = procedure
         user: user.identityId,
       },
       async (fileDriver) => {
-        await fileDriver.checkCopyFilePath(input.path, path.basename(algorithmVersion.path));
+        await fileDriver.checkCopyFilePath(
+          input.path,
+          path.basename(algorithmVersion.path),
+          noCheckPermissionForEntryPaths,
+        );
       },
       logger,
     );
@@ -1192,7 +1238,12 @@ export const copyPublicAlgorithmVersion = procedure
         { clusterId: algorithmVersion.algorithm.$.clusterId, user: user.identityId },
         async (driver) => {
           // scowd复制需要再路径最后加上文件夹名
-          await driver.copyWithMode(algorithmVersion.path, targetCopiedPath, "0750", checkIsPublicPathsResult);
+          await driver.copyWithMode(
+            algorithmVersion.path,
+            targetCopiedPath,
+            "0750",
+            checkIsPublicPathsResult || noCheckPermissionForEntryPaths,
+          );
         },
         logger,
       );

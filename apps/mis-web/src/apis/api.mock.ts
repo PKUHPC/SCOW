@@ -1,6 +1,9 @@
 import type { AccountUserInfo, GetUserStatusResponse } from "@scow/protos/build/server/user";
 
-import { HttpError, JsonFetchResultPromiseLike } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
+import {
+  HttpError,
+  JsonFetchResultPromiseLike,
+} from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { numberToMoney } from "@scow/lib-decimal";
 import { type Account } from "@scow/protos/build/server/account";
@@ -22,13 +25,15 @@ import { JobInfo } from "src/pages/api/job/jobInfo";
 import { RunningJob } from "src/pages/api/job/runningJobs";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 
-export type MockApi<TApi extends Record<string, (...args: any[]) => JsonFetchResultPromiseLike<any>>> = {
-  [key in keyof TApi]:
+export type MockApi<
+  TApi extends Record<string, (...args: any[]) => JsonFetchResultPromiseLike<any>>,
+> = {
+    [key in keyof TApi]:
     | null
     | ((
-        ...args: Parameters<TApi[key]>
-      ) => Promise<ReturnType<TApi[key]> extends PromiseLike<infer TSuc> ? TSuc : never>);
-};
+      ...args: Parameters<TApi[key]>
+    ) => Promise<ReturnType<TApi[key]> extends PromiseLike<infer TSuc> ? TSuc : never>);
+  };
 
 const mockJobInfo: JobInfo = {
   biJobIndex: 3670368,
@@ -100,6 +105,10 @@ const mockAccounts: Required<Account>[] = [
     balance: numberToMoney(20),
     blockThresholdAmount: numberToMoney(0),
     defaultBlockThresholdAmount: numberToMoney(0),
+    storageQuotas: [{
+      storageId: "storageId1",
+      quotaMb: 11,
+    }],
   },
   {
     accountName: "hpc1234567",
@@ -115,6 +124,10 @@ const mockAccounts: Required<Account>[] = [
     balance: numberToMoney(30),
     blockThresholdAmount: numberToMoney(0),
     defaultBlockThresholdAmount: numberToMoney(0),
+    storageQuotas: [{
+      storageId: "storageId1",
+      quotaMb: 11,
+    }],
   },
 ];
 
@@ -266,7 +279,11 @@ export const mockApi: MockApi<typeof api> = {
         cluster: "hpc01",
         partition: "compute",
         qos: "low",
-        priceItem: { itemId: "HPC08", price: numberToMoney(0.01), amountStrategy: "max-cpusAlloc-mem" },
+        priceItem: {
+          itemId: "HPC08",
+          price: numberToMoney(0.01),
+          amountStrategy: "max-cpusAlloc-mem",
+        },
       },
       {
         cluster: "hpc01",
@@ -304,7 +321,11 @@ export const mockApi: MockApi<typeof api> = {
         cluster: "hpc01",
         partition: "compute",
         qos: "low",
-        priceItem: { itemId: "HPC01", price: numberToMoney(0.04), amountStrategy: "max-cpusAlloc-mem" },
+        priceItem: {
+          itemId: "HPC01",
+          price: numberToMoney(0.04),
+          amountStrategy: "max-cpusAlloc-mem",
+        },
       },
       {
         cluster: "hpc01",
@@ -328,6 +349,10 @@ export const mockApi: MockApi<typeof api> = {
   createInitAdmin: async () => ({ createdInAuth: false }),
 
   importUsers: async () => null,
+
+  getAccountGroupStatus: async () => ({ accountGroupInitialized: "", accountGroupInitConfirmed: false }),
+  initAccountGroup: async () => null,
+  setAccountGroupInitConfirmed: async () => null,
 
   getClusterUsers: async () => {
     return {
@@ -363,7 +388,11 @@ export const mockApi: MockApi<typeof api> = {
 
   completeInit: async () => null,
 
-  getFetchJobInfo: async () => ({ fetchStarted: true, schedule: "*", lastFetchTime: new Date().toISOString() }),
+  getFetchJobInfo: async () => ({
+    fetchStarted: true,
+    schedule: "*",
+    lastFetchTime: new Date().toISOString(),
+  }),
 
   setFetchState: async () => null,
   fetchJobs: async () => ({ newJobsCount: 200 }),
@@ -376,9 +405,13 @@ export const mockApi: MockApi<typeof api> = {
 
   getTopSubmitJobUser: async () => ({ results: [{ userId: "test", count: 10 }] }),
 
-  getUsersWithMostJobSubmissions: async () => ({ results: [{ userName: "name1", userId: "test1", count: 10 }] }),
+  getUsersWithMostJobSubmissions: async () => ({
+    results: [{ userName: "name1", userId: "test1", count: 10 }],
+  }),
 
-  getNewJobCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }] }),
+  getNewJobCount: async () => ({
+    results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }],
+  }),
 
   getTenantUsers: async () => ({ results: mockUsers }),
 
@@ -493,8 +526,12 @@ export const mockApi: MockApi<typeof api> = {
   unblockAccount: async () => ({ executed: true }),
   setBlockThreshold: async () => ({ executed: true }),
   setDefaultAccountBlockThreshold: async () => ({ executed: true }),
-  getNewUserCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }] }),
-  getActiveUserCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }] }),
+  getNewUserCount: async () => ({
+    results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }],
+  }),
+  getActiveUserCount: async () => ({
+    results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }],
+  }),
   getTopChargeAccount: async () => ({
     results: [
       {
@@ -504,11 +541,15 @@ export const mockApi: MockApi<typeof api> = {
       },
     ],
   }),
-  getDailyCharge: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }] }),
+  getDailyCharge: async () => ({
+    results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }],
+  }),
   getTopPayAccount: async () => ({
     results: [{ accountName: "test", userName: "user1", payAmount: numberToMoney(10) }],
   }),
-  getDailyPay: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }] }),
+  getDailyPay: async () => ({
+    results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }],
+  }),
   getPortalUsageCount: async () => ({ results: [{ operationType: "submitJob", count: 10 }] }),
   getMisUsageCount: async () => ({ results: [{ operationType: "createAccount", count: 10 }] }),
   getStatisticInfo: async () => ({
@@ -793,11 +834,16 @@ export const mockApi: MockApi<typeof api> = {
     },
   }),
   getTenantQuota: async () => ({
-    totalStorageBytes: 312,
-    remainingStorageBytes: 123,
-    userDefaultQuotaBytes: 12,
     totalUserCount: 0,
     usersQuotaInfo: [],
+  }),
+  getTenantQuotaSummary: async () => ({
+    totalStorageMb: 312,
+    remainingStorageMb: 123,
+    userDefaultQuotaMb: 12,
+    tenantAssignedQuotaMb: 12,
+    tenantUsedStorageMb: 0,
+    mountedClusters: ["hpc01"],
   }),
   setTenantUserDefaultQuota: null,
   setTenantUserQuota: null,
@@ -881,7 +927,13 @@ export const mockApi: MockApi<typeof api> = {
     schedule: "0 * * * *",
     syncStartTime: "2025-08-22T02:03:38.297Z",
   }),
+  getAccountStorageSyncInfo: async () => ({
+    syncStarted: false,
+    schedule: "0 * * * *",
+    syncStartTime: "2025-08-22T02:03:38.297Z",
+  }),
   batchSetTenantUsersQuota: null,
+  syncTenantAccountsStorageUsage: null,
   syncTenantUsersStorageUsage: null,
   getQuantumJobInfo: async () => ({
     totalCount: 0,
@@ -890,8 +942,41 @@ export const mockApi: MockApi<typeof api> = {
   getClusterConfig: async () => ({
     partitions: [],
   }),
+
+  getAccountStorageQuotaState: async () => ({
+    state: "DISABLED" as const,
+    confirmed: false,
+  }),
+  enableAccountStorageQuota: async () => ({}),
+  confirmAccountStorageQuota: async () => null,
+
+  getAccountQuota: async () => ({
+    totalStorageMb: 1024 ** 2,
+    remainingStorageMb: 512 * 1024,
+    accountDefaultQuotaMb: 100 * 1024,
+    mountedClusters: ["hpc01"],
+    accountsQuotaInfo: [
+      {
+        accountName: "hpc123456",
+        ownerId: "123",
+        ownerName: "testuser",
+        quotaMb: 100 * 1024,
+        usedStorageMb: 20 * 1024,
+        useDefault: true,
+      },
+    ],
+  }),
+  batchSetAccountQuota: async () => ({ failedAccountNames: [] }),
+  setAccountDefaultQuota: async () => ({ successes: 0, failures: 0, failedAccountNames: [] }),
   getUserAssociatedClusters: async () => ({ clusterIds: [] }),
   getAccountsAssociatedClusters: async () => ({ clusterIds: [] }),
+  getStorageBillingItems: async () => ({
+    activeItems: [],
+    historyItems: [],
+  }),
+  addStorageBillingItem: async () => ({
+    id: 1,
+  }),
 };
 
 export const MOCK_USER_INFO = {
@@ -920,7 +1005,11 @@ export const MOCK_USER_STATUS: GetUserStatusResponse = {
     WM1: 200,
   },
   accountStatuses: {
-    hpc1: { userStatus: UserStatus.BLOCKED, accountBlocked: false, accountState: AccountState.NORMAL },
+    hpc1: {
+      userStatus: UserStatus.BLOCKED,
+      accountBlocked: false,
+      accountState: AccountState.NORMAL,
+    },
     hpc2: {
       userStatus: UserStatus.BLOCKED,
       accountBlocked: true,

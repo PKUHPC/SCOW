@@ -1,9 +1,12 @@
+import { Code, ConnectError } from "@connectrpc/connect";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
+import { isUserPrivateEntryPath } from "@scow/lib-server";
 import { FileType as scowdFileType } from "@scow/scowd-protos/build/storage/file_pb";
 import { TRPCError } from "@trpc/server";
 import { NextApiResponse } from "next";
 import { NextResponse } from "next/server";
 import { basename, dirname, join } from "path";
+import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { FileMeta, ListDirectoryOutput } from "src/server/trpc/model/file";
 import { getScowdClient, mapConnectErrorToTRPCError, wrap } from "src/server/trpc/scowd/scowd";
@@ -136,40 +139,80 @@ export class ScowdFileDriver implements FileDriver {
   }
 
   async readDirectory(path: string, noCheckPermission?: boolean): Promise<ListDirectoryOutput[]> {
-    const resp = await wrap(
-      this.client.file.readDirectory({
+    const doReadDir = async (dirPath: string) => {
+      const resp = await this.client.file.readDirectory({
         userId: this.userId,
-        dirPath: path,
+        dirPath,
         noCheckPermission: noCheckPermission ?? false,
-      }),
-      this.logger,
-    );
+      });
+      return resp.filesInfo.map((info) => {
+        const type =
+          info.fileType === scowdFileType.DIR ? "DIR" : info.fileType === scowdFileType.SYMLINK ? "SYMLINK" : "FILE";
+        const linkTargetType =
+          info.linkTargetType === undefined
+            ? undefined
+            : info.linkTargetType === scowdFileType.DIR
+              ? "DIR"
+              : info.linkTargetType === scowdFileType.SYMLINK
+                ? "SYMLINK"
+                : "FILE";
+        return {
+          name: info.name,
+          type,
+          mtime: info.modTime,
+          mode: info.mode,
+          size: Number(info.sizeByte),
+          linkTargetPath: info.linkTargetPath,
+          linkTargetType,
+        } as ListDirectoryOutput;
+      });
+    };
 
-    const results = resp.filesInfo.map((info) => {
-      const type =
-        info.fileType === scowdFileType.DIR ? "DIR" : info.fileType === scowdFileType.SYMLINK ? "SYMLINK" : "FILE";
+    try {
+      return await doReadDir(path);
+    } catch (err) {
+      // scowd 在目录不存在时，不同版本/场景返回的错误码不一致：
+      //   - NotFound（[not_found] openat ...）
+      //   - InvalidArgument（[invalid_argument] stat ... no such file or directory）
+      // 统一通过 message 中是否包含 "no such file or directory" 来判断，同时兼容 NotFound code
+      const isDirMissing =
+        err instanceof ConnectError &&
+        (err.code === Code.NotFound || (err.message ?? "").includes("no such file or directory"));
 
-      const linkTargetType =
-        info.linkTargetType === undefined
-          ? undefined
-          : info.linkTargetType === scowdFileType.DIR
-            ? "DIR"
-            : info.linkTargetType === scowdFileType.SYMLINK
-              ? "SYMLINK"
-              : "FILE";
+      if (!isDirMissing || !isUserPrivateEntryPath(clusters[this.clusterId]?.entryPaths, this.userId, path)) {
+        this.logger.error(
+          `Failed to read directory ${path} for user ${this.userId} on cluster ${this.clusterId}.`,
+          err,
+        );
+        throw mapConnectErrorToTRPCError(err);
+      }
 
-      return {
-        name: info.name,
-        type,
-        mtime: info.modTime,
-        mode: info.mode,
-        size: Number(info.sizeByte),
-        linkTargetPath: info.linkTargetPath,
-        linkTargetType,
-      } as ListDirectoryOutput;
-    });
+      // 仅当完全匹配含 {{userId}} 的快捷路径时，自动创建用户私有目录（权限 700）
+      try {
+        await this.client.file.makeDirectory({ userId: this.userId, dirPath: path, mode: "0700" });
+      } catch (mkErr) {
+        this.logger.error(
+          `Failed to create user private entry path directory ${path} for user ${this.userId} on cluster ${this.clusterId}.`,
+          mkErr,
+        );
+        // 用固定 message 标识「快捷路径目录自动创建失败」，前端凭此显示友好提示。
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "ENTRY_PATH_CREATE_FAILED",
+          cause: mkErr,
+        });
+      }
 
-    return results;
+      try {
+        return await doReadDir(path);
+      } catch (retryErr) {
+        this.logger.error(
+          `Failed to read directory ${path} for user ${this.userId} on cluster ${this.clusterId} after retry.`,
+          retryErr,
+        );
+        throw mapConnectErrorToTRPCError(retryErr);
+      }
+    }
   }
 
   async exists(path: string, noCheckPermission?: boolean): Promise<boolean> {
@@ -356,13 +399,14 @@ export class ScowdFileDriver implements FileDriver {
     }
   }
 
-  async chmod(path: string, mode: string): Promise<void> {
+  async chmod(path: string, mode: string, noCheckPermission?: boolean): Promise<void> {
     await wrap(
       this.client.file.changeMode({
         userId: this.userId,
         path,
         mode,
         recursive: true,
+        noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
     );
@@ -410,7 +454,7 @@ export class ScowdFileDriver implements FileDriver {
 
   // 以root身份分享的文件夹
   async shareFileOrDir(
-    { sourceFilePath, sharedTarget, targetName, targetSubName, sharedTopDir }: ShareParams,
+    { sourceFilePath, sharedTarget, targetName, targetSubName, sharedTopDir, noCheckPermission }: ShareParams,
     successCallback?: shareOkCallback,
     failureCallback?: callback,
   ): Promise<void> {
@@ -423,18 +467,87 @@ export class ScowdFileDriver implements FileDriver {
     const sharedFilePath = join(targetFullDir, basename(sourceFilePath));
 
     try {
-      await wrap(
-        this.client.file.shareFileOrDir({
-          userId: this.userId,
-          sourceFilePath,
-          targetDirectory,
-          targetTopDir,
-          targetFullDir,
-          sharedFilePath,
-          mode: "555",
-        }),
-        this.logger,
-      );
+      // 原子分享接口暂不支持可信路径权限绕过，此类路径沿用原有流程。
+      if (noCheckPermission) {
+        const targetDirectoryExists = await wrap(
+          this.client.file.exists({
+            userId: this.userId,
+            path: targetDirectory,
+          }),
+          this.logger,
+        );
+
+        if (!targetDirectoryExists.exists) {
+          await wrap(
+            this.client.file.makeDirectory({
+              userId: this.userId,
+              dirPath: targetDirectory,
+            }),
+            this.logger,
+          );
+
+          await wrap(
+            this.client.file.changeMode({
+              userId: this.userId,
+              path: targetDirectory,
+              mode: "555",
+              recursive: true,
+            }),
+            this.logger,
+          );
+        }
+
+        const targetFullDirExists = await wrap(
+          this.client.file.exists({
+            userId: this.userId,
+            path: targetFullDir,
+          }),
+          this.logger,
+        );
+
+        if (!targetFullDirExists.exists) {
+          await wrap(
+            this.client.file.makeDirectory({
+              userId: this.userId,
+              dirPath: targetFullDir,
+            }),
+            this.logger,
+          );
+        }
+
+        await wrap(
+          this.client.file.copy({
+            userId: this.userId,
+            fromPath: sourceFilePath,
+            toPath: sharedFilePath,
+            noCheckPermission: true,
+          }),
+          this.logger,
+        );
+
+        await wrap(
+          this.client.file.changeMode({
+            userId: this.userId,
+            path: targetTopDir,
+            mode: "555",
+            recursive: true,
+          }),
+          this.logger,
+        );
+      } else {
+        await wrap(
+          this.client.file.shareFileOrDir({
+            userId: this.userId,
+            sourceFilePath,
+            targetDirectory,
+            targetTopDir,
+            targetFullDir,
+            sharedFilePath,
+            mode: "555",
+          }),
+          this.logger,
+        );
+      }
 
       successCallback?.(targetFullDir);
     } catch (e) {
@@ -471,11 +584,12 @@ export class ScowdFileDriver implements FileDriver {
     return newPath;
   }
 
-  async checkCopyFilePath(toPath: string, fileName: string): Promise<void> {
+  async checkCopyFilePath(toPath: string, fileName: string, noCheckPermission?: boolean): Promise<void> {
     const toPathExists = await wrap(
       this.client.file.exists({
         userId: this.userId,
         path: toPath,
+        noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
     );
@@ -492,6 +606,7 @@ export class ScowdFileDriver implements FileDriver {
       this.client.file.exists({
         userId: this.userId,
         path: join(toPath, fileName),
+        noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
     );
@@ -509,6 +624,7 @@ export class ScowdFileDriver implements FileDriver {
       this.client.file.getFileMetadata({
         userId: this.userId,
         filePath: toPath,
+        noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
     );

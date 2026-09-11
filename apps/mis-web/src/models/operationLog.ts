@@ -1,4 +1,6 @@
+import { PublicStorageItem } from "@scow/config/build/storage";
 import { OperationEvent, OperationType as LibOperationType } from "@scow/lib-operation-log";
+import { formatBytesToGBString, formatMBToGB } from "@scow/lib-web/build/utils/sizeFormatter";
 import {
   ExportBill,
   ExportChargeRecord,
@@ -18,6 +20,7 @@ import { getClusterName, getClusterNameWithUndefined } from "src/utils/cluster";
 import { Cluster } from "src/utils/cluster";
 import { safeGetStringProperty } from "src/utils/format";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
+import { getStorageDisplayName } from "src/utils/storageDisplay";
 
 export const OperationResult = {
   UNKNOWN: 0,
@@ -63,6 +66,21 @@ type OperationTextsTransType = (id: Lang<typeof en>, args?: React.ReactNode[]) =
 const pRes = prefix("operationLog.resultTexts.");
 const pTypes = prefix("operationLog.operationTypeTexts.");
 const pDetails = prefix("operationLog.operationDetails.");
+
+const formatStorageQuotaInGB = (storageQuota?: number | bigint | null) => {
+  if (storageQuota === null || storageQuota === undefined) {
+    return "-";
+  }
+
+  return `${formatBytesToGBString(storageQuota)} GB`;
+};
+
+const formatStorageMbInGB = (storageQuotaMb?: number | null) => {
+  if (storageQuotaMb === null || storageQuotaMb === undefined) {
+    return "-";
+  }
+  return `${formatMBToGB(storageQuotaMb).toFixed(2)} GB`;
+};
 
 const getAppScopeText = (appScope: string, t: OperationTextsTransType) =>
   appScope === "HPC"
@@ -201,6 +219,7 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): { [key in Lib
     addToDefaultApps: t(pTypes("addToDefaultApps")),
     removeFromDefaultApps: t(pTypes("removeFromDefaultApps")),
     syncTenantUsersStorageUsage: t(pTypes("syncTenantUsersStorageUsage")),
+    syncTenantAccountsStorageUsage: t(pTypes("syncTenantAccountsStorageUsage")),
     authorizeCluster: t(pTypes("authorizeCluster")),
     unauthorizeCluster: t(pTypes("unauthorizeCluster")),
     authorizePartition: t(pTypes("authorizePartition")),
@@ -210,6 +229,8 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): { [key in Lib
     addToDefaultPartitions: t(pTypes("addToDefaultPartitions")),
     removeFromDefaultPartitions: t(pTypes("removeFromDefaultPartitions")),
     changeJobPrice: t(pTypes("changeJobPrice")),
+    batchSetAccountStorageQuota: t(pTypes("batchSetAccountStorageQuota")),
+    setAccountDefaultStorageQuota: t(pTypes("setAccountDefaultStorageQuota")),
     changeJobPlatformPrice: t(pTypes("changeJobPlatformPrice")),
   };
 };
@@ -222,6 +243,7 @@ export const getOperationDetail = (
   tArgs: OperationTextsArgsTransType,
   languageId: string,
   publicConfigClusters: Record<string, Cluster>,
+  publicStorageConfigs: Record<string, PublicStorageItem> = {},
 ) => {
   try {
     if (!operationEvent) {
@@ -708,31 +730,25 @@ export const getOperationDetail = (
       case "setTenantUserQuota":
         return t(pDetails("setTenantUserQuota"), [
           operationEvent[logEvent].userId,
-          operationEvent[logEvent].cluster,
-          operationEvent[logEvent].path,
-          operationEvent[logEvent].storageQuota,
-          operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no",
+          getStorageDisplayName(operationEvent[logEvent].storageId, languageId, publicStorageConfigs),
+          formatStorageQuotaInGB(operationEvent[logEvent].storageQuota),
         ]);
       case "batchSetTenantUsersQuota":
-        return t(pDetails("setTenantUserQuota"), [
+        return t(pDetails("batchSetTenantUsersQuota"), [
           React.createElement(UserIdsDisplay, { userIds: operationEvent[logEvent].userIds }),
-          operationEvent[logEvent].cluster,
-          operationEvent[logEvent].path,
-          operationEvent[logEvent].storageQuota,
-          operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no",
+          getStorageDisplayName(operationEvent[logEvent].storageId, languageId, publicStorageConfigs),
+          formatStorageQuotaInGB(operationEvent[logEvent].storageQuota),
         ]);
       case "setTenantUserDefaultQuota":
         return t(pDetails("setTenantUserDefaultQuota"), [
           operationEvent[logEvent].tenantName,
-          operationEvent[logEvent].cluster,
-          operationEvent[logEvent].path,
-          operationEvent[logEvent].storageQuota,
+          getStorageDisplayName(operationEvent[logEvent].storageId, languageId, publicStorageConfigs),
+          formatStorageQuotaInGB(operationEvent[logEvent].storageQuota),
         ]);
       case "syncTenantUsersStorageUsage":
         return t(pDetails("syncTenantUsersStorageUsage"), [
           operationEvent[logEvent].tenant,
-          operationEvent[logEvent].cluster,
-          operationEvent[logEvent].path,
+          getStorageDisplayName(operationEvent[logEvent].storageId, languageId, publicStorageConfigs),
         ]);
       case "authorizeApp":
       case "unauthorizeApp": {
@@ -826,6 +842,23 @@ export const getOperationDetail = (
           clusterName,
           operationEvent[logEvent].jobId,
           nullableMoneyToString(operationEvent[logEvent].price),
+        ]);
+      }
+      case "batchSetAccountStorageQuota":
+        return t(pDetails("batchSetAccountStorageQuota"), [
+          operationEvent[logEvent].accountNames.join(", "),
+          getStorageDisplayName(operationEvent[logEvent].storageId, languageId, publicStorageConfigs),
+          formatStorageMbInGB(operationEvent[logEvent].storageQuotaMb),
+        ]);
+      case "setAccountDefaultStorageQuota":
+        return t(pDetails("setAccountDefaultStorageQuota"), [
+          getStorageDisplayName(operationEvent[logEvent].storageId, languageId, publicStorageConfigs),
+          formatStorageMbInGB(operationEvent[logEvent].storageQuotaMb),
+        ]);
+      case "syncTenantAccountsStorageUsage": {
+        return t(pDetails("syncTenantAccountsStorageUsage"), [
+          operationEvent[logEvent].tenant,
+          getStorageDisplayName(operationEvent[logEvent].storageId, languageId, publicStorageConfigs),
         ]);
       }
       case "changeJobPlatformPrice": {

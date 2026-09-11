@@ -21,7 +21,13 @@ import { procedure } from "src/server/trpc/procedure/base";
 import { PlatformRole } from "src/server/trpc/route/auth";
 import { buildUserMap } from "src/server/trpc/route/utils/userMap";
 import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
-import { checkClusterAvailable, checkIsPublicPaths, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
+import {
+  checkClusterAvailable,
+  checkIsPublicPaths,
+  computeAssetVersionNoCheckPermission,
+  PermissionCheckMode,
+  shouldPathsSkipPermissionCheck,
+} from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
@@ -371,7 +377,20 @@ export const createModelVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
 
-    const noCheckPermission = shouldPathsSkipPermissionCheck(model.clusterId, [input.path], isPlatformOwned ?? false);
+    const noCheckPermission = computeAssetVersionNoCheckPermission(
+      model.clusterId,
+      input.path,
+      user.identityId,
+      user.platformRoles,
+      isPlatformOwned,
+    );
+
+    if (isPlatformOwned && !noCheckPermission) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `${input.path} is outside the required PublicPath boundary`,
+      });
+    }
 
     // 检查目录是否存在
     const isPathExisted = await withFileDriver(
@@ -653,6 +672,14 @@ export const deleteModelVersion = procedure
       checkClusterAvailable(currentClusterIds, model.clusterId);
 
       if (!isPlatformOwned) {
+        const noCheckPermission = shouldPathsSkipPermissionCheck(
+          model.clusterId,
+          [modelVersion.privatePath],
+          user.identityId,
+          user.platformRoles,
+          PermissionCheckMode.ENTRY_PATHS,
+        );
+
         try {
           await driver.withFileDriver(
             {
@@ -660,7 +687,7 @@ export const deleteModelVersion = procedure
               user: user.identityId,
             },
             async (fileDriver) => {
-              await fileDriver.checkSharePermission(modelVersion.privatePath);
+              await fileDriver.checkSharePermission(modelVersion.privatePath, noCheckPermission);
             },
             logger,
           );
@@ -808,13 +835,21 @@ export const shareModelVersion = procedure
       });
     }
 
+    const noCheckPermission = computeAssetVersionNoCheckPermission(
+      model.clusterId,
+      modelVersion.privatePath,
+      user.identityId,
+      user.platformRoles,
+      !!isPlatformOwned,
+    );
+
     await driver.withFileDriver(
       {
         clusterId: model.clusterId,
         user: user.identityId,
       },
       async (fileDriver) => {
-        await fileDriver.checkSharePermission(modelVersion.privatePath, isPlatformOwned);
+        await fileDriver.checkSharePermission(modelVersion.privatePath, noCheckPermission);
       },
       logger,
     );
@@ -894,6 +929,7 @@ export const shareModelVersion = procedure
             targetName: model.name,
             targetSubName: modelVersion.versionName,
             sharedTopDir,
+            noCheckPermission,
           },
           successCallback,
           failureCallback,
@@ -1130,13 +1166,21 @@ export const copyPublicModelVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, modelVersion.model.$.clusterId);
     // 3. 检查用户是否能将源模型拷贝至目标目录
+    const noCheckPermissionForEntryPaths = shouldPathsSkipPermissionCheck(
+      modelVersion.model.$.clusterId,
+      [input.path],
+      user.identityId,
+      user.platformRoles,
+      PermissionCheckMode.ENTRY_PATHS,
+    );
+
     await driver.withFileDriver(
       {
         clusterId: modelVersion.model.$.clusterId,
         user: user.identityId,
       },
       async (fileDriver) => {
-        await fileDriver.checkCopyFilePath(input.path, path.basename(modelVersion.path));
+        await fileDriver.checkCopyFilePath(input.path, path.basename(modelVersion.path), noCheckPermissionForEntryPaths);
       },
       logger,
     );
@@ -1174,7 +1218,12 @@ export const copyPublicModelVersion = procedure
       await withFileDriver(
         { clusterId: modelVersion.model.$.clusterId, user: user.identityId },
         async (driver) => {
-          await driver.copyWithMode(modelVersion.path, targetCopiedPath, "0750", checkIsPublicPathsResult);
+          await driver.copyWithMode(
+            modelVersion.path,
+            targetCopiedPath,
+            "0750",
+            checkIsPublicPathsResult || noCheckPermissionForEntryPaths,
+          );
         },
         logger,
       );

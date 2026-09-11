@@ -2,6 +2,11 @@
 
 import { CloseOutlined } from "@ant-design/icons";
 import {
+  EllipsisNameWrapper,
+  type FileIconComponent,
+} from "@scow/lib-web/build/components/filemanager/FileTableWrapper";
+import { ConsistentBorderTable } from "@scow/lib-web/build/components/styledAntdCom/Table";
+import {
   ArchiveIcon,
   FolderIcon,
   ImageIcon,
@@ -10,7 +15,7 @@ import {
   UnrecognizedFileIcon,
 } from "@scow/lib-web/build/icons/FileIcon";
 import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
-import { Table, TableProps, Tooltip } from "antd";
+import { TableProps, Tooltip } from "antd";
 import { ColumnsType } from "antd/es/table";
 import React from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
@@ -36,9 +41,9 @@ export const baseTypeIcons = {
   DIR: FolderIcon,
   SYMLINK: SymlinkIcon,
   ERROR: CloseOutlined,
-} as Record<Exclude<FileType, "FILE">, React.ComponentType>;
+} as Record<Exclude<FileType, "FILE">, FileIconComponent>;
 
-const iconFor = (file: FileInfo, nonEditableFilenamePostfixes?: string[]): React.ComponentType => {
+const iconFor = (file: FileInfo, nonEditableFilenamePostfixes?: string[]): FileIconComponent => {
   if (file.type === "FILE") {
     const name = file.name || "";
     if (isDecompressibleFile(name)) {
@@ -62,6 +67,7 @@ export const FileTable: React.FC<Props> = ({
   actionRender,
   filesFilter,
   hiddenColumns,
+  rowSelection,
   ...otherProps
 }) => {
   const t = useI18nTranslateToString();
@@ -73,8 +79,22 @@ export const FileTable: React.FC<Props> = ({
       key: "type",
       dataIndex: "type",
       title: "",
-      width: "32px",
-      render: (_, r) => React.createElement(iconFor(r, publicConfig.NON_EDITABLE_FILENAME_POSTFIXES)),
+      className: "file-type-column",
+      width: 42,
+      align: "center",
+      render: (_, r) => (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-start",
+            alignItems: "center",
+          }}
+        >
+          {React.createElement(iconFor(r, publicConfig.NON_EDITABLE_FILENAME_POSTFIXES), {
+            style: { width: 18, height: 18, fontSize: 18 },
+          })}
+        </div>
+      ),
     },
     {
       key: "name",
@@ -84,13 +104,20 @@ export const FileTable: React.FC<Props> = ({
       sorter: (a, b) =>
         a.type.localeCompare(b.type) === 0 ? a.name.localeCompare(b.name) : a.type.localeCompare(b.type),
       sortDirections: ["ascend", "descend"],
-      render: fileNameRender,
+      render: (text: string, record: FileInfo) => {
+        const renderedNode = fileNameRender ? fileNameRender(text, record) : text;
+        return <EllipsisNameWrapper title={text}>{renderedNode}</EllipsisNameWrapper>;
+      },
     },
     {
       key: "mtime",
       dataIndex: "mtime",
       title: t(p("mtime")),
-      render: (mtime: string | undefined) => (mtime ? formatDateTime(mtime) : ""),
+      width: hiddenColumns ? 240 : "26%",
+      render: (mtime: string | undefined) => {
+        const formattedMtime = mtime ? formatDateTime(mtime) : "";
+        return <span title={formattedMtime}>{formattedMtime}</span>;
+      },
       sorter: (a, b) =>
         a.type.localeCompare(b.type) === 0
           ? compareDateTime(a.mtime, b.mtime) === 0
@@ -102,6 +129,7 @@ export const FileTable: React.FC<Props> = ({
       key: "size",
       dataIndex: "size",
       title: t(p("size")),
+      width: hiddenColumns ? 100 : "16%",
       render: (size: number | undefined, file: FileInfo) =>
         size === undefined || file.type === "DIR" ? (
           ""
@@ -124,6 +152,7 @@ export const FileTable: React.FC<Props> = ({
             key: "action",
             dataIndex: "action",
             title: t(p("action")),
+            width: "16%",
             render: actionRender,
           },
         ]
@@ -131,8 +160,9 @@ export const FileTable: React.FC<Props> = ({
   ];
 
   return (
-    <Table
+    <ConsistentBorderTable
       {...otherProps}
+      rowSelection={rowSelection ? { ...rowSelection, columnWidth: 56 } : rowSelection}
       dataSource={filesFilter ? filesFilter(files) : files}
       columns={
         hiddenColumns
@@ -140,6 +170,8 @@ export const FileTable: React.FC<Props> = ({
           : columns
       }
       size="small"
+      tableLayout="fixed"
+      scroll={{ ...otherProps.scroll, x: hiddenColumns ? 560 : 840 }}
     />
   );
 };

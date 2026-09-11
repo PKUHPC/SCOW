@@ -3,7 +3,12 @@ import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { DEFAULT_CONFIG_BASE_PATH } from "@scow/config/build/constants";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
-import { normalizePathForValidation, validateContainerMountTargetPath, validateHomeScopedPath } from "@scow/utils";
+import {
+  normalizePathForValidation,
+  validateContainerMountTargetPath,
+  validateHomeScopedPath,
+  validateLinuxAbsolutePath,
+} from "@scow/utils";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
 import { PREDEFINED_ENV_VAR, shouldOmitEnvFromPayload } from "src/models/envVars";
@@ -422,12 +427,33 @@ const throwPathValidationError = (message: string) => {
   });
 };
 
-export const validateMountPoints = (mountPoints: { path: string; target: string }[], homeDir: string) => {
+const validateHomeOrAdditionalPath = (
+  path: string,
+  homeDir: string,
+  isAdditionalPathAllowed: (path: string) => boolean,
+) => {
+  const safetyError = validateLinuxAbsolutePath(path, {}, { rootAllowed: true });
+  if (safetyError) {
+    throwPathValidationError(safetyError);
+  }
+
+  if (isAdditionalPathAllowed(path)) {
+    return;
+  }
+
+  const scopeError = validateHomeScopedPath(path, homeDir);
+  if (scopeError) {
+    throwPathValidationError(scopeError);
+  }
+};
+
+export const validateMountPoints = (
+  mountPoints: { path: string; target: string }[],
+  homeDir: string,
+  isAdditionalPathAllowed: (path: string) => boolean = () => false,
+) => {
   mountPoints.forEach(({ path, target }) => {
-    const sourceError = validateHomeScopedPath(path, homeDir);
-    if (sourceError) {
-      throwPathValidationError(sourceError);
-    }
+    validateHomeOrAdditionalPath(path, homeDir, isAdditionalPathAllowed);
 
     const targetError = validateContainerMountTargetPath(target);
     if (targetError) {
@@ -466,15 +492,16 @@ export const validateUniqueMountTargets = (targets: (string | undefined)[]) => {
   });
 };
 
-export const validateOptionalHomeScopedPath = (path: string | undefined, homeDir: string) => {
+export const validateOptionalHomeScopedPath = (
+  path: string | undefined,
+  homeDir: string,
+  isAdditionalPathAllowed: (path: string) => boolean = () => false,
+) => {
   if (!path) {
     return;
   }
 
-  const error = validateHomeScopedPath(path, homeDir);
-  if (error) {
-    throwPathValidationError(error);
-  }
+  validateHomeOrAdditionalPath(path, homeDir, isAdditionalPathAllowed);
 };
 
 export const validateRemoteImageUrl = (remoteImageUrl: string | undefined) => {
@@ -506,10 +533,14 @@ export const validateRemoteImageUrl = (remoteImageUrl: string | undefined) => {
 };
 
 /**
- * 从 envVariables 中提取 WORK_DIR，并校验其必须存在且位于 homeDir 下。
+ * 从 envVariables 中提取 WORK_DIR，并校验其必须存在且位于 homeDir 或额外允许的路径下。
  * 不满足条件时直接抛出 TRPCError，调用方无需额外处理。
  */
-export const extractAndValidateWorkDir = (envVariables: { key: string; value: string }[], homeDir: string): string => {
+export const extractAndValidateWorkDir = (
+  envVariables: { key: string; value: string }[],
+  homeDir: string,
+  isAdditionalPathAllowed: (path: string) => boolean = () => false,
+): string => {
   const workingDirectory = envVariables.find((e) => e.key === PREDEFINED_ENV_VAR.WORK_DIR)?.value;
 
   if (!workingDirectory) {
@@ -519,10 +550,7 @@ export const extractAndValidateWorkDir = (envVariables: { key: string; value: st
     });
   }
 
-  const error = validateHomeScopedPath(workingDirectory, homeDir);
-  if (error) {
-    throwPathValidationError(error);
-  }
+  validateHomeOrAdditionalPath(workingDirectory, homeDir, isAdditionalPathAllowed);
 
   return workingDirectory;
 };

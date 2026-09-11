@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PlatformRole } from "src/models/User";
 import { getUserInfo } from "src/server/auth/server";
 import { withFileDriver } from "src/server/trpc/Driver/fileDriver/fileDriver";
 import { shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
@@ -38,8 +37,7 @@ export async function POST(request: NextRequest) {
     { clusterId, user: user.identityId },
     async (driver) => {
       try {
-        const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-        const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+        const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], user.identityId, user.platformRoles);
         return await driver.upload(path, uploadedFile, chunkIdx ? Number(chunkIdx) : undefined, noCheckPermission);
       } catch (error: any) {
         const rawMessage = error?.message || "Unknown error";

@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useContext } from "react";
+import { ClusterEntryPath } from "src/models/ClusterStorage";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { Cluster, LoginNodeConfig, PublicConfig } from "src/server/trpc/route/config";
 
 export type ScowClusterConfigs = Record<
   string,
   {
-    storage: { enabled: boolean; replicaExist: boolean; paths: string[] };
+    entryPaths?: ClusterEntryPath[];
     loginNodes: LoginNodeConfig;
     ai: {
       app?: { maxRunningTimeHours?: number };

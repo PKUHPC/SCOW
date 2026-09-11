@@ -1,14 +1,21 @@
-import { ClusterConfigSchema, LoginNodeConfigSchema } from "@scow/config/build/cluster";
+import {
+  ClusterConfigSchema,
+  LoginNodeConfigSchema,
+  StorageEntrySchema,
+} from "@scow/config/build/cluster";
 import { I18nObject_I18n, I18nStringType } from "@scow/config/build/i18n";
 import {
   ClusterConfigSchemaProto,
   ClusterConfigSchemaProto_LoginNodesProtoType,
+  ClusterConfigSchemaProto_StorageEntry,
 } from "@scow/protos/build/common/config";
 import { I18nStringProtoType } from "@scow/protos/build/common/i18n";
 import { camelToUnderscore } from "@scow/utils/build/i18n";
 
 // protobuf中定义的grpc返回值的类型映射到前端I18nStringType
-export const getI18nTypeFormat = (i18nProtoType: I18nStringProtoType | undefined): I18nStringType => {
+export const getI18nTypeFormat = (
+  i18nProtoType: I18nStringProtoType | undefined,
+): I18nStringType => {
   if (!i18nProtoType?.value) return "";
 
   if (i18nProtoType.value.$case === "directString") {
@@ -48,6 +55,21 @@ export const getLoginNodesTypeFormat = (
   });
 };
 
+// protobuf中定义的grpc返回值的EntryPaths类型映射到前端EntryPaths
+export const getEntryPathsTypeFormat = (
+  entryPaths: ClusterConfigSchemaProto_StorageEntry[] | undefined,
+): StorageEntrySchema[] | undefined => {
+  return entryPaths?.map((entryPath) => ({
+    storageId: entryPath.storageId,
+    mountPath: entryPath.mountPath,
+    paths:
+      entryPath.paths?.map((pathEntry) => ({
+        displayName: getI18nTypeFormat(pathEntry.displayName),
+        pathTemplate: pathEntry.pathTemplate,
+      })) ?? [],
+  }));
+};
+
 // protobuf中定义的grpc返回值的 ClusterConfigs 类型映射到前端
 export const getClusterConfigsTypeFormat = (
   protoType: ClusterConfigSchemaProto[],
@@ -60,6 +82,7 @@ export const getClusterConfigsTypeFormat = (
       displayName: getI18nTypeFormat(cluster.displayName),
       loginNodes: getLoginNodesTypeFormat(cluster.loginNodes),
       description: cluster.description ? getI18nTypeFormat(cluster.description) : undefined,
+      entryPaths: cluster.entryPaths ? getEntryPathsTypeFormat(cluster.entryPaths) : undefined,
     };
     modifiedClusters[cluster.clusterId] = newCluster as ClusterConfigSchema;
   });

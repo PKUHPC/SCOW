@@ -183,6 +183,7 @@ export default {
         permission: "Permissions",
         notShowHiddenItem: "Ne pas afficher les éléments cachés",
         showHiddenItem: "Afficher les éléments cachés",
+        homeDirectory: "Répertoire personnel",
       },
       singleCrossClusterTransferSelector: {
         placeholder: "Veuillez sélectionner un cluster",
@@ -266,6 +267,13 @@ export default {
           "Le système de fichiers actuel a des sauvegardes," +
           " ce qui utilise de l'espace supplémentaire ;" +
           " l'utilisation peut être supérieure à la taille réelle des fichiers",
+        accountStorageQuotaTooltip:
+          "Lorsque le compte est bloqué ou en impayé, les données ne peuvent pas être écrites. " +
+          "Même si le quota de stockage du compte n'est pas épuisé, un quota insuffisant sera signalé.",
+        userStorageQuota: "Stockage utilisateur",
+        accountStorageQuota: "Stockage du compte",
+        homeDirectory: "Répertoire personnel",
+        entryPathCreateFailed: "Échec de la création du répertoire de chemin rapide, veuillez contacter l'administrateur",
         failedResolveSymlink: "Échec de la résolution du lien symbolique",
         noAccessPermission: "Permission d'accès refusée",
         noPath: "Chemin introuvable, veuillez vérifier",

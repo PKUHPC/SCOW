@@ -1,6 +1,6 @@
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { Loaded } from "@mikro-orm/core";
-import { SqlEntityManager } from "@mikro-orm/mysql";
+import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
 import { ScowResourcePlugin } from "@scow/lib-scow-resource";
@@ -56,7 +56,7 @@ export function checkShouldUnblockAccount(account: Loaded<Account, "tenant">) {
 
 export async function pay(
   request: PayRequest,
-  em: SqlEntityManager,
+  em: SqlEntityManager<MySqlDriver>,
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
   logger: Logger,
   clusterPlugin: ClusterPlugin,
@@ -119,12 +119,13 @@ export async function pay(
       clusterPlugin.clusters,
       logger,
       scowResourcePlugin.resource,
+      em,
     );
   }
 
   if (target instanceof Account && checkShouldBlockAccount(target)) {
     logger.info("Block account %s", target.accountName);
-    await blockAccount(target, currentActivatedClusters, clusterPlugin.clusters, logger);
+    await blockAccount(target, currentActivatedClusters, clusterPlugin.clusters, logger, em);
   }
 
   return {
@@ -144,7 +145,7 @@ interface ChargeRequest {
 
 export async function charge(
   request: ChargeRequest,
-  em: SqlEntityManager,
+  em: SqlEntityManager<MySqlDriver>,
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
   logger: Logger,
   clusterPlugin: ClusterPlugin,
@@ -219,7 +220,7 @@ export async function charge(
 
   if (target instanceof Account && checkShouldBlockAccount(target)) {
     logger.info("Block account %s due to out of balance.", target.accountName);
-    await blockAccount(target, currentActivatedClusters, clusterPlugin.clusters, logger);
+    await blockAccount(target, currentActivatedClusters, clusterPlugin.clusters, logger, em);
   }
 
   return {

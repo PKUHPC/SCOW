@@ -25,6 +25,7 @@ interface CreateAccountFormProps {
 }
 
 const p = prefix("page.tenant.accounts.create.");
+const pCommon = prefix("common.");
 
 const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => {
   const languageId = useI18n().currentLanguage.id;
@@ -60,8 +61,16 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       .httpError(409, (e) => {
         if (e.code === "ALREADY_EXISTS") {
           message.error(t(p("accountNameOccupied")));
-        } else if (e.code === "FAILED_PRECONDITION") {
+        } else if (e.code === "DIRECTORY_GROUP_ALREADY_EXISTS") {
+          message.error(t(p("directoryGroupNameOccupied")));
+        } else if (e.code === "OWNER_ALREADY_IN_ANOTHER_ACCOUNT") {
+          message.error(t(p("ownerAlreadyInAnotherAccount")));
+        } else if (e.code === "SYNC_ACCOUNT_USER_IS_RUNNING") {
           message.error(t("common.accountUserSyncRunning"));
+        } else if (e.code === "FAILED_PRECONDITION") {
+          message.error(e.message || t(p("createAccountFailed")));
+        } else if (e.code === "DIRECTORY_SERVICE_NOT_CONFIGURED") {
+          message.error(t(pCommon("directoryServiceNotConfigured")));
         } else {
           message.error(t(p("createAccountFailed")));
         }
@@ -70,10 +79,10 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
         message.error(t(p("userIdAndNameNotMatch")));
       })
       .httpError(401, (e) => {
-        message.error(e.message);
+        message.error(e.message || "Error occurred.");
       })
       .httpError(500, (e) => {
-        if (e.code === "CLUSTEROPS_ERROR") {
+        if (e?.code === "CLUSTEROPS_ERROR") {
           if (hasSchedulerAdapterTimeoutError(e)) {
             modal.error({
               title: t(p("createAccountTimeoutTitle")),

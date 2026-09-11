@@ -1,8 +1,13 @@
-import { ClusterConfigSchema, LoginNodeConfigSchema } from "@scow/config/build/cluster";
+import {
+  ClusterConfigSchema,
+  LoginNodeConfigSchema,
+  StorageEntrySchema,
+} from "@scow/config/build/cluster";
 import { I18nStringType } from "@scow/config/build/i18n";
 import {
   ClusterConfigSchemaProto,
   ClusterConfigSchemaProto_LoginNodesProtoType,
+  ClusterConfigSchemaProto_StorageEntry,
 } from "@scow/protos/build/common/config";
 import { I18nObject_I18n, I18nStringProtoType } from "@scow/protos/build/common/i18n";
 import { underscoreNamingToCamelCase } from "@scow/utils/build/i18n";
@@ -44,6 +49,20 @@ export const getLoginNodesSeverTypeFormat = (
       },
     },
   };
+};
+
+export const getEntryPathsSeverTypeFormat = (
+  entryPaths: StorageEntrySchema[] | undefined,
+): ClusterConfigSchemaProto_StorageEntry[] | undefined => {
+  return entryPaths?.map((entryPath) => ({
+    storageId: entryPath.storageId,
+    mountPath: entryPath.mountPath,
+    paths:
+      entryPath.paths?.map((pathEntry) => ({
+        displayName: getI18nSeverTypeFormat(pathEntry.displayName),
+        pathTemplate: pathEntry.pathTemplate,
+      })) ?? [],
+  }));
 };
 
 export const convertClusterConfigsToServerProtoType = (
@@ -98,7 +117,7 @@ export const convertClusterConfigsToServerProtoType = (
       ai: {
         enabled: item.ai.enabled,
       },
-      storage: item.storage,
+      entryPaths: getEntryPathsSeverTypeFormat(item.entryPaths) ?? [],
       description: item.description ? getI18nSeverTypeFormat(item.description) : undefined,
     };
 

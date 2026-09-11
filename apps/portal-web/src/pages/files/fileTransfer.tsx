@@ -1,6 +1,6 @@
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Col, Row } from "antd";
+import { App, Button } from "antd";
 import { GetServerSideProps, NextPage } from "next";
 import { useState } from "react";
 import { useStore } from "simstate";
@@ -15,6 +15,7 @@ import { ClusterFileTable } from "src/pageComponents/filemanager/ClusterFileTabl
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
 import { Head } from "src/utils/head";
+import { useTheme } from "styled-components";
 
 type FileInfoKey = React.Key;
 
@@ -37,16 +38,22 @@ interface ButtonProps {
 
 const p = prefix("pages.files.fileTransfer.");
 
+/** 文件传输页面顶部固定元素（导航栏 + 页面标题）占用的像素高度 */
+const TRANSFER_PAGE_OFFSET_PX = 110 + 30;
+
 const OperationButton: React.FC<ButtonProps> = (props) => {
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
   const { message, modal } = App.useApp();
 
   const { icon, disabled, srcCluster, dstCluster, selectedKeys, toPath } = props;
+  const { token } = useTheme();
 
   return (
     <Button
-      icon={icon}
+      icon={<span style={{ color: disabled ? undefined : token.colorPrimary }}>{icon}</span>}
+      size="small"
+      style={{ width: 36, height: 36, padding: "0 12px", boxSizing: "border-box" }}
       disabled={disabled}
       onClick={async () => {
         if (srcCluster && dstCluster) {
@@ -107,8 +114,17 @@ export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props:
     <>
       <Head title={t(p("transferTitle"))} />
       <PageTitle titleText={t(p("transferTitle"))} />
-      <Row justify="space-around" align="top">
-        <Col span={11}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          height: `calc(100vh - ${TRANSFER_PAGE_OFFSET_PX}px)`,
+          marginBottom: 29,
+          overflow: "hidden",
+          gap: 8,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <ClusterFileTable
             selectedCluster={clusterLeft}
             setSelectedCluster={setClusterLeft}
@@ -118,33 +134,38 @@ export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props:
             setSelectedKeys={setSelectedKeysLeft}
             excludeCluster={clusterRight}
           />
-        </Col>
+        </div>
 
-        <Col span={0.5}>
-          <Row justify="center">
-            <OperationButton
-              icon={<ArrowRightOutlined />}
-              disabled={!clusterLeft || !clusterRight || selectedKeysLeft.length === 0}
-              srcCluster={clusterLeft}
-              dstCluster={clusterRight}
-              selectedKeys={selectedKeysLeft}
-              toPath={pathRight}
-            />
-          </Row>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 8,
+            flexShrink: 0,
+            padding: "0 4px",
+          }}
+        >
+          <OperationButton
+            icon={<ArrowRightOutlined />}
+            disabled={!clusterLeft || !clusterRight || selectedKeysLeft.length === 0}
+            srcCluster={clusterLeft}
+            dstCluster={clusterRight}
+            selectedKeys={selectedKeysLeft}
+            toPath={pathRight}
+          />
+          <OperationButton
+            icon={<ArrowLeftOutlined />}
+            disabled={!clusterLeft || !clusterRight || selectedKeysRight.length === 0}
+            srcCluster={clusterRight}
+            dstCluster={clusterLeft}
+            selectedKeys={selectedKeysRight}
+            toPath={pathLeft}
+          />
+        </div>
 
-          <Row justify="center">
-            <OperationButton
-              icon={<ArrowLeftOutlined />}
-              disabled={!clusterLeft || !clusterRight || selectedKeysRight.length === 0}
-              srcCluster={clusterRight}
-              dstCluster={clusterLeft}
-              selectedKeys={selectedKeysRight}
-              toPath={pathLeft}
-            />
-          </Row>
-        </Col>
-
-        <Col span={11}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <ClusterFileTable
             selectedCluster={clusterRight}
             setSelectedCluster={setClusterRight}
@@ -154,8 +175,8 @@ export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props:
             setSelectedKeys={setSelectedKeysRight}
             excludeCluster={clusterLeft}
           />
-        </Col>
-      </Row>
+        </div>
+      </div>
     </>
   );
 });

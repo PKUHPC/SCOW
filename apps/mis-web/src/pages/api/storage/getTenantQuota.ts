@@ -15,19 +15,18 @@ import { TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
+import { handlegRPCError } from "src/utils/server";
+import { hasStorageAccess } from "src/utils/storage";
 
 export const UserQuotaInfo = Type.Object({
   userId: Type.String(),
   userName: Type.String(),
-  quotaBytes: Type.Number(),
-  usedStorageBytes: Type.Number(),
+  quotaMb: Type.Number(),
+  usedStorageMb: Type.Number(),
   useDefault: Type.Boolean(),
 });
 
 export const TenantQuotaInfo = Type.Object({
-  totalStorageBytes: Type.Number(),
-  remainingStorageBytes: Type.Number(),
-  userDefaultQuotaBytes: Type.Number(),
   totalUserCount: Type.Number(),
   usersQuotaInfo: Type.Array(UserQuotaInfo),
 });
@@ -39,8 +38,7 @@ export const GetTenantQuotaSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-    cluster: Type.String(),
-    path: Type.String(),
+    storageId: Type.String(),
     idOrName: Type.Optional(Type.String()),
     page: Type.Number(),
     pageSize: Type.Optional(Type.Number()),
@@ -59,7 +57,7 @@ export const GetTenantQuotaSchema = typeboxRouteSchema({
 });
 
 export default route(GetTenantQuotaSchema, async (req, res) => {
-  const { cluster, path, idOrName, page, pageSize, sortField, sortOrder } = req.query;
+  const { storageId, idOrName, page, pageSize, sortField, sortOrder } = req.query;
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -77,7 +75,7 @@ export default route(GetTenantQuotaSchema, async (req, res) => {
         tenantName: info.tenant,
       });
 
-      if (!response.assignedClusterPartitions[cluster]) {
+      if (!hasStorageAccess(storageId, Object.keys(response.assignedClusterPartitions))) {
         return { 403: null };
       }
     } catch (e) {
@@ -98,8 +96,7 @@ export default route(GetTenantQuotaSchema, async (req, res) => {
 
   return asyncUnaryCall(client, "getTenantQuota", {
     tenantName: info.tenant,
-    cluster,
-    path,
+    storageId,
     idOrName,
     page,
     pageSize,
@@ -107,5 +104,5 @@ export default route(GetTenantQuotaSchema, async (req, res) => {
     sortOrder: mappedSortOrder,
   })
     .then((res) => ({ 200: { ...res } }))
-    .catch((e) => console.log("getTenantQuota error", e));
+    .catch(handlegRPCError({}));
 });

@@ -137,6 +137,7 @@ export default {
       imagePulling: "Récupération de l'image",
       insufficientResources: "Ressources insuffisantes",
     },
+    directoryServiceNotConfigured: "Le service d'annuaire n'est pas configuré. Veuillez contacter l'administrateur.",
   },
   dashboard: {
     title: "Tableau de bord",
@@ -210,6 +211,7 @@ export default {
         systemDebug: "Opérations de la plateforme",
         statusSynchronization: "Synchronisation Compte/Utilisateur",
         jobSynchronization: "Synchronisation des jobs",
+        userGroup: "Groupe d'utilisateurs",
         resourceManagement: "Gestion des ressources",
         clusterManagement: "Gestion des clusters",
         accountList: "Comptes",
@@ -244,6 +246,7 @@ export default {
         accountChargeRecords: "Historique des dépenses du compte",
         accountBills: "Détails de la facture du compte",
         storageManager: "Gestion du stockage",
+        userBaseStorageQuota: "Quota de stockage de base utilisateur",
         permissionManagement: "Gestion des permissions",
         defaultAuthorizedApp: "Application autorisée par défaut",
         appAuthorization: "Autoriser l'application",
@@ -316,6 +319,7 @@ export default {
         delete: "Supprimer",
         deleteSuccess: "Suppression du compte réussie !",
         deleteFail: "Échec de la suppression du compte. Veuillez contacter l'administrateur.",
+        deleteDirectoryGroupFailed: "Échec de l'opération du service d'annuaire lors de la suppression du compte. Veuillez contacter l'administrateur.",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "Définition réussie",
@@ -394,6 +398,12 @@ export default {
         selectAccount: "Veuillez sélectionner un compte !",
         specifyOwner: "Indiquez un administrateur principal pour chaque compte.",
         incorrectFormat: "Format de données incorrect.",
+        quotaEnabling: "Account storage quota is being enabled. Please import again later.",
+        multiAccountUsers: "The following users would belong to multiple accounts and cannot be imported: {}",
+        multiGroupUsers:
+          "The following users belong to multiple groups. Please ensure all users belong to only one group before importing: {}",
+        defaultGroupNotRemoved:
+          "The following users could not have their default group determined. Import failed. Please check the directory service configuration and try again: {}",
         importSuccess: "Importation réussie.",
         selectCluster: "Cluster :",
         alreadyExist: "Le compte existe déjà dans SCOW.",
@@ -923,6 +933,7 @@ export default {
         blockAccount: "L'utilisateur a été bloqué. Veuillez d'abord le débloquer",
         arrearsAccount: "Échec de l'obtention de l'état d'arriérés de l'utilisateur",
         addSuccess: "Ajout réussi !",
+        directoryGroupAddFailed: "Échec de l'ajout de l'utilisateur au groupe de service d'annuaire. Veuillez réessayer plus tard.",
         userDeleted: "L'utilisateur a été supprimé et ne peut pas être ajouté",
       },
       createUserForm: {
@@ -1018,6 +1029,7 @@ export default {
         cannotRemoverUserWhoHaveRunningJobFromAccount:
           "L'utilisateur a encore un job en cours. Veuillez attendre la fin du job ou le terminer manuellement avant de le retirer." +
           " Ou une synchronisation Compte/Utilisateur est en cours. Veuillez réessayer après la fin de la synchronisation.",
+        directoryServiceOperationFailed: "L'opération du service d'annuaire a échoué. Veuillez contacter l'administrateur.",
 
         blockUserInAccountFailed: "Échec du blocage de l'utilisateur dans le compte.",
         unblockUserInAccountFailed: "Échec du déblocage de l'utilisateur dans le compte.",
@@ -1054,7 +1066,13 @@ export default {
         notFoundStorageConfig: "Erreur système, aucune configuration de stockage correspondante trouvée",
         totalStorage: "Stockage total",
         remainingStorage: "Stockage restant",
+        storageSystem: "Système de fichiers",
         userDefaultQuota: "Quota de stockage par défaut de l'utilisateur",
+        tenantAssignedQuota: "Quota attribué au locataire",
+        tenantAssignedQuotaTooltip: "Somme des quotas de stockage attribués à tous les utilisateurs de ce locataire",
+        tenantUsedStorage: "Utilisation du locataire",
+        tenantUsedStorageTooltip: "Somme de l'utilisation de stockage de tous les utilisateurs de ce locataire",
+        mountedClusters: "Clusters montés",
         edit: "Modifier",
         user: "Utilisateur",
         storageQuota: "Quota de stockage",
@@ -1075,15 +1093,13 @@ export default {
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "Modifier le quota de stockage par défaut",
         confirm: "Confirmer",
-        modifyUserDeulatQuotaSuccess: "Quota de stockage par défaut de l'utilisateur modifié avec succès",
-        modifyPartialSuccess:
-          "Quota de stockage par défaut modifié avec succès ; une exception s'est produite " +
+        modifyUserDefaultQuotaSuccess: "Quota de stockage par défaut de l'utilisateur modifié avec succès",
+        modifyPartialSuccess: "Quota de stockage par défaut modifié avec succès ; une exception s'est produite " +
           "lors de l'ajustement du quota pour {}, pour un total de {} utilisateurs.",
-        cluster: "Cluster",
-        tip:
-          "Les modifications prennent effet immédiatement. " +
-          "La réduction des quotas peut entraîner le dépassement des limites de stockage par les utilisateurs et empêcher les jobs en cours d'écrire des données. " +
-          "Veuillez procéder avec prudence",
+        fileSystem: "Système de fichiers",
+        tip: "Les modifications prennent effet immédiatement. "
+          + "La réduction des quotas peut entraîner le dépassement des limites de stockage par les utilisateurs et empêcher les jobs en cours d'écrire des données. "
+          + "Veuillez procéder avec prudence",
       },
       userQuotaChangeModal: {
         modifyStorageQuota: "Modifier le quota de stockage",
@@ -1097,7 +1113,7 @@ export default {
           "La modification par lot des quotas de stockage des utilisateurs a réussi pour {} éléments" +
           " et échoué pour {} éléments.",
         batchModifyUserQuotaFailed: "Échec de la modification par lot des quotas de stockage des utilisateurs",
-        cluster: "Cluster",
+        fileSystem: "Système de fichiers",
         user: "Utilisateur",
         selectedUsers: "Utilisateurs sélectionnés",
         defaultStorageQuota: "Quota de stockage par défaut",
@@ -1278,6 +1294,7 @@ export default {
           "Échec de la récupération des informations de cluster et de partition. " +
           "Veuillez contacter l'administrateur.",
         partitionInfo: "Informations de la partition",
+        billingStandard: "Billing Standard",
         loading: "Chargement des partitions...",
       },
       operationLogs: {
@@ -1286,6 +1303,42 @@ export default {
       historyJobs: {
         userCompletedJob: "Jobs terminés",
       },
+    },
+    storageBilling: {
+      storageResource: "Storage Resource",
+      computeResource: "Compute Resource",
+      noAvailableBillingData: "No billing data available",
+      fileSystem: "File System:",
+      fileSystemTitle: "File System",
+      all: "All",
+      setStoragePrice: "Set Storage Price",
+      newBillingId: "New Billing ID:",
+      generatedAfterSave: "Generated after saving",
+      billingMode: "Billing Mode",
+      billingId: "Billing ID",
+      selectBillingMode: "Please select a billing mode",
+      usage: "Usage",
+      quota: "Quota",
+      quotaModeRequiresAccountStorageQuota:
+        "Account storage quota is not enabled. Quota-based billing cannot be selected.",
+      unknown: "Unknown",
+      startValue: "Start Value",
+      endValue: "End Value",
+      unitPrice: "Unit Price (CNY/TB/Day)",
+      required: "Required",
+      setLastTierEndFirst: "Please set the end value of the current last tier first",
+      endMustGreaterThanStart: "The end value must be greater than the start value",
+      lastTierMustBeNoLimit: "The last tier must be unlimited",
+      add: "Add",
+      setPriceSuccess: "Price set successfully",
+      saveFailed: "Save failed",
+      save: "Save",
+      collapseHistory: "Collapse History",
+      expandHistory: "Expand History",
+      historyBillingId: "Historical Billing ID",
+      effectiveDate: "Effective Date",
+      validPeriod: "Valid Period",
+      timeRange: "{} to {}",
     },
     tenant: {
       info: {
@@ -1366,6 +1419,7 @@ export default {
         create: {
           tenantNotExistUser: "L'utilisateur {1} n'existe pas dans le locataire {0}.",
           accountNameOccupied: "Le nom de compte est déjà utilisé",
+          directoryGroupNameOccupied: "Un groupe du service d'annuaire portant ce nom de compte existe déjà. Veuillez utiliser un autre nom.",
           userIdAndNameNotMatch: "L'ID utilisateur et le nom ne correspondent pas.",
           createSuccess: "Création réussie !",
           ownerUserId: "ID de l'administrateur principal",
@@ -1392,6 +1446,7 @@ export default {
       },
       storageManager: {
         storageManager: "Gestionnaire de stockage",
+        userBaseStorageQuota: "Quota de stockage de base utilisateur",
       },
       permissionManagement: {
         defaultApps: {
@@ -1607,6 +1662,25 @@ export default {
           accountUserSyncRunning:
             "La synchronisation des comptes/utilisateurs est en cours. " +
             "Veuillez attendre sa fin avant de démarrer une synchronisation des jobs.",
+        },
+        userGroup: {
+          title: "Groupe d'utilisateurs",
+          alertLine1: "Après l'activation de la fonctionnalité de groupe d'utilisateurs, le système initialisera automatiquement les données existantes, "
+          + "en attribuant un groupe d'utilisateurs indépendant à chaque compte, et tous les utilisateurs du compte appartiendront au groupe correspondant.",
+          alertLine2: "Il s'agit d'une fonctionnalité de base fondamentale. Une fois activée, elle ne peut pas être désactivée et les données ne peuvent pas être restaurées. "
+          + "Veuillez vous assurer d'avoir pleinement évalué l'impact commercial avant de continuer.",
+          featureLabel: "Fonctionnalité de groupe d'utilisateurs",
+          confirmTitle: "Confirmer l'activation de la fonctionnalité de groupe d'utilisateurs",
+          confirmContent: "Cette opération activera la fonctionnalité de groupe d'utilisateurs. Une fois activée, elle ne peut pas être désactivée et les données ne peuvent pas être restaurées. "
+          + "Veuillez confirmer que vous avez pleinement évalué l'impact commercial.",
+          confirmOk: "Confirmer l'activation",
+          confirmCancel: "Annuler",
+          successTitle: "Fonctionnalité de groupe d'utilisateurs activée avec succès",
+          successContent: "La fonctionnalité de groupe d'utilisateurs est maintenant active. Après avoir cliqué sur confirmer, cette page de configuration sera automatiquement masquée "
+          + "et aucune autre configuration n'est nécessaire.",
+          successOk: "Confirmer",
+          initializingMessage: "Initialisation des données, veuillez patienter...",
+          initFailedMessage: "Échec de l'initialisation, veuillez réessayer plus tard",
         },
       },
       resourceManagement: {
@@ -1882,6 +1956,7 @@ export default {
       setTenantUserQuota: "Modifier le quota de stockage d'un utilisateur",
       batchSetTenantUsersQuota: "Modifier par lot le quota de stockage des utilisateurs du locataire",
       syncTenantUsersStorageUsage: "Synchroniser l'utilisation du stockage des utilisateurs du locataire",
+      syncTenantAccountsStorageUsage: "Sync the storage usage of accounts under a tenant",
       authorizeApp: "Autoriser l'application",
       unauthorizeApp: "Révoquer l'autorisation de l'application",
       migrateNode: "Migrer le nœud",
@@ -2023,10 +2098,11 @@ export default {
       changeEmail: "User: {}",
       editUserProfile: "User: {}",
       decompressFile: "Path: {0} , File {1}",
-      setTenantUserQuota: "User: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}, Use Tenant Default: {4}",
-      batchSetTenantUsersQuota: "Users: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}, Use Tenant Default: {4}",
-      setTenantUserDefaultQuota: "Tenant: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}",
-      syncTenantUsersStorageUsage: "Tenant: {0}, Cluster: {1}, Path: {2}",
+      setTenantUserQuota: "Utilisateur: {0}, Système de fichiers: {1}, Quota de stockage: {2}",
+      batchSetTenantUsersQuota: "Utilisateurs: {0}, Système de fichiers: {1}, Quota de stockage: {2}",
+      setTenantUserDefaultQuota: "Locataire: {0}, Système de fichiers: {1}, Quota de stockage: {2}",
+      syncTenantUsersStorageUsage: "Locataire: {0}, Système de fichiers: {1}",
+      syncTenantAccountsStorageUsage: "Tenant: {0}, File system: {1}",
       hpcAppScope: "HPC",
       aiAppScope: "AI",
       tenantAppAuthorizationLog: "Cluster: {0}, Application: {1} ({3}), Tenant: {2}",

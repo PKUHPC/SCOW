@@ -6,19 +6,19 @@ import { UniqueConstraintViolationException } from "@mikro-orm/core";
 import { createUser } from "@scow/lib-auth";
 import { InitServiceServer, InitServiceService } from "@scow/protos/build/server/init";
 import { authUrl } from "src/config";
-import { configClusters } from "src/config/clusters";
 import { SystemState } from "src/entities/SystemState";
-import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { createUserInDatabase } from "src/utils/createUser";
-import { getScowdClient } from "src/utils/scowd";
+import { setNewUserStorageQuota } from "src/utils/storageQuota";
 import { userExists } from "src/utils/userExists";
 
 export const initServiceServer = plugin((server) => {
   server.addService<InitServiceServer>(InitServiceService, {
     querySystemInitialized: async ({ em }) => {
-      const initializationTime = await em.findOne(SystemState, { key: SystemState.KEYS.INITIALIZATION_TIME });
+      const initializationTime = await em.findOne(SystemState, {
+        key: SystemState.KEYS.INITIALIZATION_TIME,
+      });
 
       return [{ initialized: initializationTime !== null }];
     },
@@ -34,26 +34,31 @@ export const initServiceServer = plugin((server) => {
       ];
     },
 
-    createInitAdmin: async ({ request, em }) => {
+    createInitAdmin: async ({ request, em, logger }) => {
       const { userId, email, name, password } = request;
       // 需要注意，如果扔出异常，前端会根据异常结果显示不同提示
       // 显示两种情况，认证系统中创建失败的原因ALREADY_EXISTS_IN_AUTH=>成功
       // 显示两种情况，其他错误=>失败
-      const user = await createUserInDatabase(userId, name, email, DEFAULT_TENANT_NAME, server.logger, em).catch(
-        (e) => {
-          if (e.code === Status.ALREADY_EXISTS) {
-            throw {
-              code: Status.ALREADY_EXISTS,
-              message: `User with userId ${userId} already exists in scow.`,
-              details: "EXISTS_IN_SCOW",
-            } as ServiceError;
-          }
+      const user = await createUserInDatabase(
+        userId,
+        name,
+        email,
+        DEFAULT_TENANT_NAME,
+        server.logger,
+        em,
+      ).catch((e) => {
+        if (e.code === Status.ALREADY_EXISTS) {
           throw {
-            code: Status.INTERNAL,
-            message: `Error creating user with userId ${userId} in database.`,
+            code: Status.ALREADY_EXISTS,
+            message: `User with userId ${userId} already exists in scow.`,
+            details: "EXISTS_IN_SCOW",
           } as ServiceError;
-        },
-      );
+        }
+        throw {
+          code: Status.INTERNAL,
+          message: `Error creating user with userId ${userId} in database.`,
+        } as ServiceError;
+      });
 
       user.platformRoles.push(PlatformRole.PLATFORM_ADMIN);
       user.tenantRoles.push(TenantRole.TENANT_ADMIN);
@@ -65,38 +70,7 @@ export const initServiceServer = plugin((server) => {
         { identityId: user.userId, id: user.id, mail: user.email, name: user.name, password },
         server.logger,
       )
-        .then(async () => {
-          // 设置用户的存储配额
-          for (const [cluster, config] of Object.entries(configClusters)) {
-            if (config.storage?.enabled) {
-              const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
-              const scowdClient = getScowdClient(cluster);
-
-              const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
-              if (quotaBytes === undefined) {
-                const totalStorageBytes = (
-                  await scowdClient.storageQuota.getFilesystemStorageUsage({
-                    path: config.storage.paths[0],
-                  })
-                ).totalStorageBytes;
-
-                await scowdClient.storageQuota.setUserStorageQuota({
-                  userId,
-                  path: config.storage.paths[0],
-                  quotaBytes: totalStorageBytes,
-                });
-              } else {
-                await scowdClient.storageQuota.setUserStorageQuota({
-                  userId,
-                  path: config.storage.paths[0],
-                  quotaBytes: BigInt(quotaBytes),
-                });
-              }
-            }
-          }
-
-          return true;
-        })
+        .then(() => true)
         // If the call of creating user of auth fails,  delete the user created in the database.
         .catch(async (e) => {
           if (e.status === 409) {
@@ -105,13 +79,24 @@ export const initServiceServer = plugin((server) => {
           }
 
           if (e instanceof ConnectError) {
-            server.logger.error("Failed to set user storage quota.", e);
+            server.logger.error("Error creating user in auth.", e);
           }
           // 回滚数据库
           await em.removeAndFlush(user);
           server.logger.error("Error creating user in auth.", e);
-          throw { code: Status.INTERNAL, message: `Error creating user ${user.id} in auth.` } as ServiceError;
+          throw {
+            code: Status.INTERNAL,
+            message: `Error creating user ${user.id} in auth.`,
+          } as ServiceError;
         });
+      await setNewUserStorageQuota(em, DEFAULT_TENANT_NAME, userId, logger).catch(async (e) => {
+        await em.removeAndFlush(user);
+        server.logger.error("Failed to set user storage quota.", e);
+        throw {
+          code: Status.INTERNAL,
+          message: `Failed to set user ${userId} storage quota.`,
+        } as ServiceError;
+      });
 
       return [{ createdInAuth: createdInAuth }];
     },
@@ -164,7 +149,10 @@ export const initServiceServer = plugin((server) => {
     },
 
     completeInit: async ({ em }) => {
-      const initializationTime = new SystemState(SystemState.KEYS.INITIALIZATION_TIME, new Date().toISOString());
+      const initializationTime = new SystemState(
+        SystemState.KEYS.INITIALIZATION_TIME,
+        new Date().toISOString(),
+      );
 
       try {
         await em.persistAndFlush(initializationTime);

@@ -1,15 +1,24 @@
-import { ConnectError } from "@connectrpc/connect";
+import { Code, ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
+import { isUserPrivateEntryPath } from "@scow/lib-server";
 import { FileInfo, fileTypeFromJSON } from "@scow/protos/build/portal/file";
-import { DownloadResponse } from "@scow/scowd-protos/build/storage/file_pb";
+import { DownloadResponse, ReadDirectoryResponse } from "@scow/scowd-protos/build/storage/file_pb";
 import { FileOps } from "src/clusterops/api/file";
 import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
+import { logger } from "src/utils/logger";
 import { generateScowdUrl, getScowdClientByUrl, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { getClusterTransferNode, tryGetClusterTransferNode } from "src/utils/clusterNodes";
 
-export const scowdFileServices = (getClient: (userId: string) => ScowdClient): FileOps => ({
+const throwAsServiceError = (err: unknown): never => {
+  if (err instanceof ConnectError) {
+    throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+  }
+  throw err;
+};
+
+export const scowdFileServices = (getClient: (userId: string) => ScowdClient, clusterId: string): FileOps => ({
   copy: async (request, logger) => {
     const { userId, fromPath, toPath } = request;
     const client = getClient(userId);
@@ -133,15 +142,13 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
     }
   },
 
-  readDirectory: async (request) => {
+  readDirectory: async (request, _logger) => {
     const { userId, path } = request;
     const client = getClient(userId);
 
-    try {
-      const res = await client.file.readDirectory({ userId, dirPath: path });
-
-      const results: FileInfo[] = res.filesInfo.map((info): FileInfo => {
-        return {
+    const parseReadDirResponse = (res: ReadDirectoryResponse): { results: FileInfo[] } => {
+      const results: FileInfo[] = res.filesInfo.map(
+        (info): FileInfo => ({
           name: info.name,
           type: fileTypeFromJSON(info.fileType),
           mtime: info.modTime,
@@ -149,14 +156,60 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
           size: Number(info.sizeByte),
           linkTargetPath: info.linkTargetPath,
           linkTargetType: info.linkTargetType !== undefined ? fileTypeFromJSON(info.linkTargetType) : undefined,
-        };
-      });
+        }),
+      );
       return { results };
+    };
+
+    try {
+      const res = await client.file.readDirectory({ userId, dirPath: path });
+      return parseReadDirResponse(res);
     } catch (err) {
-      if (err instanceof ConnectError) {
-        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      // scowd 在目录不存在时，不同版本/场景返回的错误码不一致：
+      //   - NotFound（[not_found] openat ...）
+      //   - InvalidArgument（[invalid_argument] stat ... no such file or directory）
+      //   - Aborted（[aborted] read ECONNRESET）
+      // 统一通过 message 中是否包含 "no such file or directory" 来判断，
+      // 同时兼容 NotFound code
+      const isDirMissingError =
+        err instanceof ConnectError &&
+        (err.code === Code.NotFound || (err.message || "").includes("no such file or directory"));
+
+      if (!isDirMissingError) {
+        logger.error(`Failed to read directory ${path} for user ${userId}:`, err);
+        throw throwAsServiceError(err);
       }
-      throw err;
+
+      // 仅当完全匹配含 {{userId}} 的快捷路径时，自动创建用户私有目录
+      if (!isUserPrivateEntryPath(configClusters[clusterId]?.entryPaths, userId, path)) {
+        logger.error(
+          `Directory ${path} not found for user ${userId}, and it does not match any user private entry path.`,
+          err,
+        );
+        throw throwAsServiceError(err);
+      }
+
+      try {
+        // portal-server 的 scowd 侧尚未实现 noCheckPermission 的提权行为，不传递该参数。
+        await client.file.makeDirectory({ userId, dirPath: path, mode: "0700" });
+      } catch (mkErr) {
+        // 用 FAILED_PRECONDITION 统一标识「快捷路径目录自动创建失败」，
+        // 前端 list.ts 将其映射为 HTTP 503 / ENTRY_PATH_CREATE_FAILED。
+        logger.error(`Failed to create user private entry path directory ${path} for user ${userId}.`, mkErr);
+        throw {
+          code: status.FAILED_PRECONDITION,
+          details: mkErr instanceof ConnectError ? mkErr.message : String(mkErr),
+        } as ServiceError;
+      }
+
+      // 重试读取
+      try {
+        const res = await client.file.readDirectory({ userId, dirPath: path });
+        return parseReadDirResponse(res);
+      } catch (retryErr) {
+        logger.error(`Failed to read directory ${path} for user ${userId} after retry:`, retryErr);
+        throw throwAsServiceError(retryErr);
+      }
     }
   },
 

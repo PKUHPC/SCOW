@@ -9,6 +9,57 @@ export enum JobTableType {
   mysql = "mysql",
 }
 
+export enum NewUserGroupStrategy {
+  "newGroupPerUser" = "newGroupPerUser",
+  "oneGroupForAllUsers" = "oneGroupForAllUsers",
+}
+
+export const LdapDirectoryServiceSchema = Type.Object(
+  {
+    url: Type.String({ description: "LDAP地址" }),
+    searchBase: Type.String({ description: "从哪个节点搜索登录用户对应的LDAP节点" }),
+    bindDN: Type.String({ description: "操作LDAP时以什么用户操作，默认为空字符串", default: "" }),
+    bindPassword: Type.String({ description: "操作LDAP的用户的密码，默认为空字符串", default: "" }),
+    groupBase: Type.String({ description: "LDAP组的搜索基点（如 ou=groups,dc=example,dc=com）" }),
+    gidStart: Type.Integer({ description: "创建组时 gidNumber 的最小起始值，默认 666000", default: 666000 }),
+    attrs: Type.Object({
+      uid: Type.String({ description: "LDAP中对应用户的id的属性名" }),
+    }),
+    addUser: Type.Object(
+      {
+        groupStrategy: Type.Enum(NewUserGroupStrategy, {
+          description: `
+      如何确定新用户的组。
+      ${NewUserGroupStrategy.newGroupPerUser}: 给每个用户创建一个新的组
+      ${NewUserGroupStrategy.oneGroupForAllUsers}: 将所有用户加入某个已有的组
+    `,
+        }),
+
+        oneGroupForAllUsers: Type.Optional(
+          Type.Object(
+            {
+              gidNumber: Type.Integer({ description: "新用户将会加入的组的gidNumber属性值" }),
+            },
+            { description: "如果groupStrategy采用oneGroupForAllUsers，填写原有组的信息" },
+          ),
+        ),
+      },
+      { description: "添加用户的配置" },
+    ),
+  },
+  { description: "LDAP连接配置" },
+);
+
+export type LdapDirectoryServiceSchema = Static<typeof LdapDirectoryServiceSchema>;
+
+const DirectoryServiceSchema = Type.Object(
+  {
+    type: Type.Literal("ldap", { description: "目录服务类型，当前支持 ldap" }),
+    ldap: LdapDirectoryServiceSchema,
+  },
+  { description: "用户组管理使用的目录服务配置" },
+);
+
 export const MisConfigSchema = Type.Object({
   db: Type.Object({
     host: Type.String({ description: "数据库地址" }),
@@ -20,6 +71,12 @@ export const MisConfigSchema = Type.Object({
   }),
 
   authUrl: Type.String({ description: "认证服务的地址。一定要加协议(http://)", default: "http://auth:5000" }),
+
+  storageOperationTimeoutSeconds: Type.Optional(Type.Integer({
+    description: "存储操作故障转移时等待单个集群响应的超时时间（秒）",
+    default: 10,
+    minimum: 1,
+  })),
 
   portalUrl: Type.Optional(Type.String({ description: "如果部署了门户系统，设置门户系统的部署URL或者pathname" })),
 
@@ -385,6 +442,22 @@ export const MisConfigSchema = Type.Object({
       description: "导出数据最大数量限制，默认1000000",
       default: 1000000,
     }),
+  ),
+
+  directoryService: Type.Optional(DirectoryServiceSchema),
+
+  accountGroupNamePrefix: Type.String({ description: "账户关联的用户组名称前缀，拼接在账户名前", default: "" }),
+
+  storageBilling: Type.Optional(
+    Type.Object(
+      {
+        enabled: Type.Boolean({ description: "是否启用存储计费", default: false }),
+        cron: Type.String({ description: "计费周期cron表达式，默认每天凌晨2点执行", default: "0 2 * * *" }),
+        chargeType: Type.String({ description: "存储费用的扣费类型", default: "存储费用" }),
+        chargeWhenBlocked: Type.Boolean({ description: "封锁时是否继续计费", default: false }),
+      },
+      { description: "存储计费配置" },
+    ),
   ),
 
   rootShell: Type.Optional(

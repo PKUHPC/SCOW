@@ -29,6 +29,8 @@ export const DeleteAccountSchema = typeboxRouteSchema({
     409: Type.Object({ message: Type.String() }),
     /** 本功能在当前配置下不可用 */
     501: Type.Object({ message: Type.String() }),
+    /** 目录服务操作失败 */
+    500: Type.Object({ message: Type.String() }),
   },
 });
 
@@ -62,14 +64,14 @@ export default /* #__PURE__*/ route(DeleteAccountSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
     })
-    .catch(
-      handlegRPCError(
-        {
-          [status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
-          [status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
-          [status.UNIMPLEMENTED]: (e) => ({ 501: { message: e.details } }),
-        },
-        async () => await callLog(logInfo, OperationResult.FAIL),
-      ),
-    );
+    .catch(handlegRPCError({
+      [status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
+      [status.FAILED_PRECONDITION]: (e) => e.details === "DIRECTORY_SERVICE_NOT_CONFIGURED"
+        ? ({ 500: { message: e.details } })
+        : ({ 409: { message: e.details } }),
+      [status.UNIMPLEMENTED]: (e) => ({ 501: { message: e.details } }),
+      [status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
+    },
+    async () => await callLog(logInfo, OperationResult.FAIL),
+    ));
 });

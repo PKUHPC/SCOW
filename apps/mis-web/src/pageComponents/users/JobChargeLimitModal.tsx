@@ -112,8 +112,12 @@ export const JobChargeLimitModal: React.FC<Props> = ({
     setLoading(true);
     await api
       .setJobChargeLimit({ body: { userIds: formalUserInfo.userIds, accountName, limit } })
-      .httpError(409, () => {
-        message.error(t("common.accountUserSyncRunning"));
+      .httpError(409, (e) => {
+        if (e.code === "SYNC_ACCOUNT_USER_IS_RUNNING") {
+          message.error(t("common.accountUserSyncRunning"));
+        } else {
+          message.error(e.message || "Error occurred.");
+        }
       })
       .httpError(500, () => {
         message.error(batchFlag ? t(p("batchChangeLimiteFailed")) : t(p("changeLimiteFailed")));
@@ -188,8 +192,12 @@ export const JobChargeLimitModal: React.FC<Props> = ({
 
                         await api
                           .cancelJobChargeLimit({ query: { accountName, userIds: filterUserIds } })
-                          .httpError(409, () => {
-                            message.error(t("common.accountUserSyncRunning"));
+                          .httpError(409, (e) => {
+                            if (e.code === "SYNC_ACCOUNT_USER_IS_RUNNING") {
+                              message.error(t("common.accountUserSyncRunning"));
+                            } else {
+                              message.error(e.message || e.code || "Error occurred.");
+                            }
                           })
                           .httpError(500, () => {
                             message.error(batchFlag ? t(p("batchCleLimiteFailed")) : t(p("cancleLimiteFailed")));

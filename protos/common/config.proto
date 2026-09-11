@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package scow.common;
+
 import "common/i18n.proto";
 
 message GetClusterConfigRequest {
@@ -130,6 +131,24 @@ message ClusterConfigSchemaProto {
     bool replica_exist = 3;
   }
 
+  // 快捷路径入口定义
+  message PathEntry {
+    // 快捷路径入口显示名称（i18n）
+    I18nStringProtoType display_name = 1;
+    // 路径模板，支持 {{mountPath}} 和 {{userId}}
+    string path_template = 2;
+  }
+
+  // 单个快捷入口定义
+  message StorageEntry {
+    // 对应 storage.yaml 中的 storageId
+    string storage_id = 1;
+    // 当前存储在此集群的挂载路径
+    string mount_path = 2;
+    // 快捷路径入口列表
+    repeated PathEntry paths = 3;
+  }
+
   // 集群ID
   string cluster_id = 1;
   // 集群的显示名称
@@ -151,19 +170,16 @@ message ClusterConfigSchemaProto {
   reserved "scowd";
   optional Storage storage = 14;
   optional I18nStringProtoType description = 15;
+  repeated StorageEntry entry_paths = 16;
 }
 
-message GetClusterConfigFilesRequest {
-
-}
+message GetClusterConfigFilesRequest {}
 
 message GetClusterConfigFilesResponse {
   repeated ClusterConfigSchemaProto cluster_configs = 1;
 }
 
-message GetApiVersionRequest {
-
-}
+message GetApiVersionRequest {}
 
 message GetApiVersionResponse {
   uint32 major = 1;
@@ -172,7 +188,6 @@ message GetApiVersionResponse {
 }
 
 message NodeInfo {
-
   enum NodeState {
     UNKNOWN = 0;
     IDLE = 1;
@@ -195,7 +210,6 @@ message NodeInfo {
   // node migration flag
   bool removable = 13;
 }
-
 
 message GetClusterNodesInfoRequest {
   // if the value of node_names = [], request all nodes info

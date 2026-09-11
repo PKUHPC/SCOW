@@ -30,6 +30,7 @@ import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
+import { NUMERIC_GROUP_NAME_RESOLUTION_FAILED } from "src/utils/constants";
 import { moneyToString } from "src/utils/money";
 
 import { SetBlockThresholdAmountLink } from "./SetBlockThresholdAmountModal";
@@ -436,7 +437,11 @@ export const AccountTable: React.FC<Props> = ({ data, isLoading, showedTab, relo
                               message.success(t(p("unblockSuccess")));
                               reload();
                             } else {
-                              message.error(res.reason || t(p("unblockFail")));
+                              message.error(
+                                res.reason?.startsWith(NUMERIC_GROUP_NAME_RESOLUTION_FAILED)
+                                  ? `${t(p("unblockFail"))} ${t("common.groupNameResolutionFailed")} ${res.reason}`
+                                  : res.reason || t(p("unblockFail")),
+                              );
                             }
                           });
                       },
@@ -466,7 +471,11 @@ export const AccountTable: React.FC<Props> = ({ data, isLoading, showedTab, relo
                               message.success(t(p("blockSuccess")));
                               reload();
                             } else {
-                              message.error(res.reason || t(p("blockFail")));
+                              message.error(
+                                res.reason?.startsWith(NUMERIC_GROUP_NAME_RESOLUTION_FAILED)
+                                  ? `${t(p("blockFail"))} ${t("common.groupNameResolutionFailed")} ${res.reason}`
+                                  : res.reason || t(p("blockFail")),
+                              );
                             }
                           });
                       },
@@ -522,6 +531,13 @@ export const AccountTable: React.FC<Props> = ({ data, isLoading, showedTab, relo
                           message.destroy("deleteAccount");
                           message.error({
                             content: e.message,
+                            duration: 4,
+                          });
+                        })
+                        .httpError(500, () => {
+                          message.destroy("deleteAccount");
+                          message.error({
+                            content: t(p("deleteDirectoryGroupFailed")),
                             duration: 4,
                           });
                         })

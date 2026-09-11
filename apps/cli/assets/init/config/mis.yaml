@@ -19,3 +19,19 @@ fetchJobs:
 # 预定义的充值类型
 predefinedChargingTypes:
   - test
+
+# 存储计费相关配置
+# storageBilling:
+#   # 是否启用存储计费功能，默认 false
+#   enabled: false
+#
+#   # 存储计费周期 cron 表达式，默认每天凌晨2点执行
+#   cron: "0 2 * * *"
+#
+#   # 存储费用的扣费类型名称（写入 ChargeRecord.type）
+#   chargeType: "存储费用"
+#
+#   # 账户封锁/欠费或用户被封锁时是否继续计费，如果冲突，以 chargeWhenBlocked 优先
+#   # true：继续计费（按使用量时按实际使用量，按配额时因配额已清除而停止）
+#   # false：停止计费
+#   chargeWhenBlocked: false

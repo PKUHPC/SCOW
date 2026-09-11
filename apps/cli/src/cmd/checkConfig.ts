@@ -2,6 +2,7 @@ import { getAiConfig } from "@scow/config/build/ai";
 import { getAppConfigs } from "@scow/config/build/app";
 import { getAuditConfig } from "@scow/config/build/audit";
 import { getClusterConfigs } from "@scow/config/build/cluster";
+import { getServerStorageConfig } from "@scow/config/build/storage";
 import { getClusterTextsConfig } from "@scow/config/build/clusterTexts";
 import { getCommonConfig } from "@scow/config/build/common";
 import { getMisConfig } from "@scow/config/build/mis";
@@ -40,6 +41,9 @@ export const checkConfig = ({ configPath, continueOnError, scowConfigPath }: Opt
 
   logger.debug("Checking cluster config files");
   const clusterConfigs = tryRead(getClusterConfigs);
+
+  logger.debug("Checking storage config");
+  tryRead(getServerStorageConfig);
 
   logger.debug("Checking clusterTexts config");
   tryRead(getClusterTextsConfig);

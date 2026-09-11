@@ -87,6 +87,7 @@ export const getTypesToSearch = () => {
     misConfig.jobChargeType,
     misConfig.changeJobPriceType,
     ...(config.QUANTUM_DEPLOYED ? [misConfig.quantumJobChargeType] : []),
+    ...(misConfig.storageBilling?.enabled ? [misConfig.storageBilling.chargeType] : []),
     ...(misConfig.customChargeTypes || []),
   ];
 };

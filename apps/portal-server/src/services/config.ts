@@ -2,7 +2,8 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
-import { getClusterConfigs } from "@scow/config/build/cluster";
+import { ClusterEntryPathsConfigError, getClusterConfigs } from "@scow/config/build/cluster";
+import { StorageConfigValidationError } from "@scow/config/build/storage";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { getUserAccountsClusterIds } from "@scow/lib-scow-resource/build/utils";
 import {
@@ -12,7 +13,11 @@ import {
   libGetUserInfo,
   NO_CLUSTERS,
 } from "@scow/lib-server";
-import { scowErrorMetadata } from "@scow/lib-server/build/error";
+import {
+  CLUSTER_CONFIG_VALIDATION_ERROR,
+  scowErrorMetadata,
+  STORAGE_CONFIG_VALIDATION_ERROR,
+} from "@scow/lib-server/build/error";
 import { ConfigServiceServer, ConfigServiceService, Partition } from "@scow/protos/build/common/config";
 import {
   AccountUnavailableReason,
@@ -117,7 +122,27 @@ export const staticConfigServiceServer = plugin((server) => {
     },
 
     getClusterConfigFiles: async ({ logger }) => {
-      const clusterConfigs = getClusterConfigs(undefined, logger, ["hpc"]);
+      let clusterConfigs: ReturnType<typeof getClusterConfigs>;
+      try {
+        clusterConfigs = getClusterConfigs(undefined, logger, ["hpc"]);
+      } catch (e) {
+        if (e instanceof ClusterEntryPathsConfigError) {
+          throw new ServiceError({
+            code: status.INVALID_ARGUMENT,
+            details: e.message,
+            metadata: scowErrorMetadata(CLUSTER_CONFIG_VALIDATION_ERROR),
+          });
+        }
+        if (e instanceof StorageConfigValidationError) {
+          throw new ServiceError({
+            code: status.INVALID_ARGUMENT,
+            details: e.message,
+            metadata: scowErrorMetadata(STORAGE_CONFIG_VALIDATION_ERROR),
+          });
+        }
+        throw e;
+      }
+
       const currentConfigClusterIds = Object.keys(clusterConfigs);
       if (currentConfigClusterIds.length === 0) {
         throw new ServiceError({

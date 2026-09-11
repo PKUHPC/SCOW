@@ -10,6 +10,7 @@ import { styled, useTheme } from "styled-components";
 
 import { createMountTargetRules, validateMountPoints } from "./common";
 import { AddButton, RemoveButton } from "./ResourceSelectorList";
+import { useClusterEntryPathRoots } from "./useClusterEntryPathRoots";
 
 const MountListContainer = styled.div`
   display: flex;
@@ -45,6 +46,7 @@ export const MountPointList = ({ clusterId, homeDir }: Props) => {
   const theme = useTheme();
   const form = Form.useFormInstance();
   const t = useI18nTranslateToString();
+  const trustedRootPaths = useClusterEntryPathRoots(clusterId);
 
   return (
     <Form.List name="mountPoints">
@@ -59,14 +61,18 @@ export const MountPointList = ({ clusterId, homeDir }: Props) => {
                   style={{ flex: 1, marginBottom: 0 }}
                   rules={[
                     { required: true, message: t(p("sourceRequired")) },
-                    createHomeScopedPathValidator(homeDir, {
-                      unsafeCharacter: t(pPathValidation("unsafeCharacter")),
-                      pathTraversal: t(pPathValidation("pathTraversal")),
-                      currentDirectory: t(pPathValidation("currentDirectory")),
-                      absoluteRequired: t(pPathValidation("absoluteRequired")),
-                      homeDirRequired: t(pPathValidation("homeDirRequired")),
-                      notInHomeDir: t(p("notInHomeDir")),
-                    }),
+                    createHomeScopedPathValidator(
+                      homeDir,
+                      {
+                        unsafeCharacter: t(pPathValidation("unsafeCharacter")),
+                        pathTraversal: t(pPathValidation("pathTraversal")),
+                        currentDirectory: t(pPathValidation("currentDirectory")),
+                        absoluteRequired: t(pPathValidation("absoluteRequired")),
+                        homeDirRequired: t(pPathValidation("homeDirRequired")),
+                        notInHomeDir: t(p("notInHomeDir")),
+                      },
+                      trustedRootPaths,
+                    ),
                     // 添加的自定义校验器以确保挂载点不重复
                     validateMountPoints(t(p("duplicateSource")), t(p("sourceConflictsWithWorkingDir"))),
                   ]}

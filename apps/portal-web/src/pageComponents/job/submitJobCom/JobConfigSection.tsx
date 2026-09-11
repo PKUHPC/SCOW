@@ -5,13 +5,17 @@ import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { createRelativeToHomePathValidator } from "@scow/lib-web/build/utils/form";
+import { buildEnrichedEntryPaths } from "@scow/lib-web/build/utils/storageClusterHelper";
 import { Form, type FormInstance } from "antd";
 import { join } from "path";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useAsync } from "react-async";
+import { useStore } from "simstate";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { FileSelectModal } from "src/pageComponents/job/FileSelectModal";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { UserStore } from "src/stores/UserStore";
 import { Cluster } from "src/utils/cluster";
 
 import { JobFormValues } from "./SubmitJobForm.types";
@@ -46,6 +50,12 @@ export const JobConfigSection = ({
   homePath,
 }: JobConfigSectionProps) => {
   const t = useI18nTranslateToString();
+  const { fullClusterConfigs } = useStore(ClusterInfoStore);
+  const { user } = useStore(UserStore);
+  const trustedRootPaths = useMemo(() => {
+    const entryPaths = cluster ? fullClusterConfigs[cluster.id]?.entryPaths : undefined;
+    return buildEnrichedEntryPaths(entryPaths, user?.identityId).map(({ resolvedPath }) => resolvedPath);
+  }, [cluster?.id, fullClusterConfigs, user?.identityId]);
   const calculateWorkingDirectory = (template: string, homePath: string = "") =>
     join(homePath + "/", parsePlaceholder(template, { name: jobName }));
 
@@ -83,13 +93,17 @@ export const JobConfigSection = ({
           }
           rules={[
             { required: true },
-            createRelativeToHomePathValidator(homePath, {
-              unsafeCharacter: t(p("pathUnsafeCharacter")),
-              pathTraversal: t(p("pathTraversal")),
-              currentDirectory: t(p("pathCurrentDirectory")),
-              homeDirRequired: t(p("homeDirRequired")),
-              notInHomeDir: t(p("notInHomeDir")),
-            }),
+            createRelativeToHomePathValidator(
+              homePath,
+              {
+                unsafeCharacter: t(p("pathUnsafeCharacter")),
+                pathTraversal: t(p("pathTraversal")),
+                currentDirectory: t(p("pathCurrentDirectory")),
+                homeDirRequired: t(p("homeDirRequired")),
+                notInHomeDir: t(p("notInHomeDir")),
+              },
+              trustedRootPaths,
+            ),
           ]}
         >
           <RoundedInput

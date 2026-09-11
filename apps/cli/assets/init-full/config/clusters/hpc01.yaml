@@ -101,16 +101,6 @@ ai:
   #   # 可选值：notSet、plain、idmap、bindfs。未配置时默认为 notSet。
   #   mode: notSet
 
-# # 可选，默认不开启
-# storage:
-#   # 必填，bool 类型
-#   enabled: true
-#   # 必填，字符串数组，代表当前需要被管理的文件系统挂载点
-#   # 当前 SCOW 仅支持一个挂载点
-#   paths: ["/data"]
-#   # 可选，默认未开启副本备份
-#   replicaExist: true
-
 # 集群描述, 可选
 # 此文本支持国际化
 description: 集群描述
@@ -138,3 +128,51 @@ jobMonitor:
     cpu: 24
     memory: 26
     network: 46
+
+entryPaths:
+  - storageId: nfs1
+    # 必填，字符串，当前存储在这个集群上的挂载点
+    # 当前 SCOW 一个存储系统仅支持一个挂载点
+    mountPath: "/nfs1"
+
+    # 当前存储在集群下指定的快捷路径入口，一个存储系统在集群下可以对应多个自定义的快捷入口
+    paths:
+      # string | i18n 快捷路径入口在文件管理相关页面展示的名称
+      - displayName:
+        i18n:
+          default: 个人空间
+          en: Private
+          zh_cn: 个人空间
+        # 快捷路径入口对应的路径，前缀需为当前存储系统在集群下的挂载点
+        # 如隔离用户目录需指定用户ID
+        pathTemplate: "/{{mountPath}}/{{userId}}"
+      - displayName:
+        i18n:
+          default: 个人备份空间
+          en: Private Archive
+          zh_cn: 个人备份空间
+        pathTemplate: "/{{mountPath}}/archive/{{userId}}"
+      - displayName:
+        i18n:
+          default: 公共空间
+          en: Public
+          zh_cn: 公共空间
+        pathTemplate: "/{{mountPath}}/public"
+  - storageId: "nfs2"
+    mountPath: "/nfs2"
+    paths:
+      - displayName:
+        i18n:
+          default: AI个人空间
+          en: Private AI
+          zh_cn: AI个人空间
+        pathTemplate: "/{{mountPath}}/{{userId}}"
+  - storageId: "nfs3"
+    mountPath: "/nfs3"
+    paths:
+      - displayName:
+        i18n:
+          default: AI个人空间
+          en: Private AI
+          zh_cn: AI个人空间
+        pathTemplate: "/{{mountPath}}/{{userId}}"

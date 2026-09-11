@@ -12,11 +12,13 @@ import { checkCookie } from "src/auth/server";
 import { JobBillingTable } from "src/components/JobBillingTable";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { StorageBillingTable } from "src/pageComponents/storageBilling/StorageBillingTable";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { getSortedClusterValues } from "src/utils/cluster";
-import { runtimeConfig } from "src/utils/config";
+import { publicConfig, runtimeConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
+import { fetchStorageBillingItems } from "src/utils/storageBilling";
 import { styled } from "styled-components";
 
 import { JobBillingTableItem } from "../api/job/getAvailableBillingTable";
@@ -40,6 +42,7 @@ interface Props {
 }
 
 const p = prefix("page.user.partitions.");
+const pStorageBilling = prefix("page.storageBilling.");
 
 const { Panel } = Collapse;
 
@@ -54,7 +57,24 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
   const [completedRequestCount, setCompletedRequestCount] = useState<number>(0);
   const [renderData, setRenderData] = useState<Record<string, JobBillingTableItem[]>>({});
 
-  const { publicConfigClusters, clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
+  const { publicConfigClusters, clusterSortedIdList, activatedClusters, publicStorageConfigs } =
+    useStore(ClusterInfoStore);
+
+  const storageIds = useMemo(() => Object.keys(publicStorageConfigs), [publicStorageConfigs]);
+
+  const fetchStorageBillingData = useCallback(async () => {
+    if (!publicConfig.STORAGE_BILLING_ENABLED) return [];
+    return fetchStorageBillingItems(storageIds, user?.tenant, false);
+  }, [storageIds, user?.tenant]);
+
+  const {
+    data: storageBillingData,
+    isLoading: storageLoading,
+    reload: storageReload,
+  } = useAsync({
+    promiseFn: fetchStorageBillingData,
+    watch: `${user?.tenant ?? ""}:${storageIds.join(",")}`,
+  });
 
   const currentUserAssignedClusters = useMemo(
     () =>
@@ -68,6 +88,7 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
     Object.keys(currentUserAssignedClusters).includes(x.id),
   );
   const sortedIds = clusterSortedIdList.filter((id) => currentUserAssignedClusters[id]);
+  const hasBillingData = clusters.some((cluster) => (renderData[cluster.id]?.length ?? 0) > 0);
 
   sortedIds.forEach((clusterId) => {
     useAsync({
@@ -90,8 +111,12 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
 
   return (
     <div>
-      <Head title={t(p("partitionInfo"))} />
-      <PageTitle titleText={t(p("partitionInfo"))} />
+      <Head title={t(p("billingStandard"))} />
+      <PageTitle titleText={t(p("billingStandard"))} />
+
+      <Typography.Title level={5} style={{ marginTop: 24, fontWeight: 400 }}>
+        {t(pStorageBilling("computeResource"))}
+      </Typography.Title>
       <div>
         {completedRequestCount < clusters.length ? (
           <Spin spinning={completedRequestCount < clusters.length} tip={t(p("loading"))}>
@@ -99,6 +124,8 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
           </Spin>
         ) : clusters.length === 0 ? (
           <>{t("common.noAvailableClusters")}</>
+        ) : !hasBillingData ? (
+          <>{t(pStorageBilling("noAvailableBillingData"))}</>
         ) : null}
       </div>
       <div
@@ -128,10 +155,24 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
         </Space>
       </div>
 
+      {publicConfig.STORAGE_BILLING_ENABLED && storageIds.length > 0 && (
+        <>
+          <Typography.Title level={5} style={{ marginTop: 24, fontWeight: 400 }}>
+            {t(pStorageBilling("storageResource"))}
+          </Typography.Title>
+          <StorageBillingTable
+            data={storageBillingData ?? []}
+            loading={storageLoading}
+            reload={storageReload}
+            canEdit={false}
+          />
+        </>
+      )}
+
       <div>
         {text?.clusterComment ? (
-          <div>
-            <ClusterCommentTitle level={2}>{t("common.illustrate")}</ClusterCommentTitle>
+          <div style={{ marginTop: "48px" }}>
+            <ClusterCommentTitle level={4}>{t("common.illustrate")}</ClusterCommentTitle>
             <ContentContainer>{getI18nConfigCurrentText(text?.clusterComment, languageId)}</ContentContainer>
           </div>
         ) : undefined}
@@ -152,6 +193,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   const clusterTexts = runtimeConfig.CLUSTER_TEXTS_CONFIG;
 
+  // Get authorized clusters for accounts associated with the user.
   let assignedClusterIds: string[] = [];
   if (typeof user !== "number") {
     const userAccounts = user.accountAffiliations.map((aff) => aff.accountName);

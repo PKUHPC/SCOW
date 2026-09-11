@@ -12,6 +12,11 @@ import { UserAccount, UserStatus } from "src/entities/UserAccount";
 import { ClusterPlugin } from "src/plugins/clusters";
 import { callHook } from "src/plugins/hookClient";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
+import {
+  blockAccountStorageQuotas,
+  isAccountStorageQuotaEnabled,
+  restoreBlockedAccountStorageQuotas,
+} from "src/utils/storageQuota";
 
 import { getActivatedClusters } from "./clustersUtils";
 
@@ -208,6 +213,7 @@ export async function blockAccount(
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
   clusterPlugin: ClusterPlugin["clusters"],
   logger: Logger,
+  em: SqlEntityManager<MySqlDriver>,
 ): Promise<"AlreadyBlocked" | "Whitelisted" | "OK"> {
   if (account.blockedInCluster) {
     return "AlreadyBlocked";
@@ -225,6 +231,24 @@ export async function blockAccount(
   });
 
   account.blockedInCluster = true;
+
+  if (await isAccountStorageQuotaEnabled(em)) {
+    try {
+      await blockAccountStorageQuotas(em, account, logger);
+    } catch (e) {
+      logger.error("Storage quota blocking failed for account %s, rolling back Slurm block", account.accountName);
+      try {
+        await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client) => {
+          await asyncClientCall(client.account, "unblockAccount", {
+            accountName: account.accountName,
+          });
+        });
+      } catch (rollbackErr) {
+        logger.error("Failed to rollback Slurm block for account %s: %o", account.accountName, rollbackErr);
+      }
+      throw e;
+    }
+  }
 
   await callHook("accountBlocked", { accountName: account.accountName, tenantName: account.tenant.$.name }, logger);
 
@@ -248,6 +272,7 @@ export async function unblockAccount(
   clusterPlugin: ClusterPlugin["clusters"],
   logger: Logger,
   scowResourcePlugin: ScowResourcePlugin["resource"],
+  em: SqlEntityManager<MySqlDriver>,
   reconcileAssignedPartitions = false,
 ): Promise<"OK" | "ALREADY_UNBLOCKED"> {
   const wasBlockedInCluster = account.blockedInCluster;
@@ -295,6 +320,25 @@ export async function unblockAccount(
   }
 
   account.blockedInCluster = false;
+
+  if (await isAccountStorageQuotaEnabled(em)) {
+    try {
+      await restoreBlockedAccountStorageQuotas(em, account, logger);
+    } catch (e) {
+      logger.error("Storage quota restoring failed for account %s, rolling back Slurm unblock", account.accountName);
+      try {
+        await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client) => {
+          await asyncClientCall(client.account, "blockAccount", {
+            accountName: account.accountName,
+          });
+        });
+      } catch (rollbackErr) {
+        logger.error("Failed to rollback Slurm unblock for account %s: %o", account.accountName, rollbackErr);
+      }
+      throw e;
+    }
+  }
+
   await callHook("accountUnblocked", { accountName: account.accountName, tenantName: account.tenant.$.name }, logger);
 
   return "OK";

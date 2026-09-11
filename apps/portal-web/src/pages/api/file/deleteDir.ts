@@ -22,7 +22,8 @@ export const DeleteDirSchema = typeboxRouteSchema({
   responses: {
     204: Type.Null(),
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
-    500: Type.Object({ code: Type.Literal("CANT_DELETE") }),
+    500: Type.Object({ code: Type.Literal("CANT_DELETE"), }),
+    403: Type.Object({ code: Type.Literal("FORBIDDEN"), error: Type.String() }),
   },
 });
 
@@ -50,20 +51,17 @@ export default route(DeleteDirSchema, async (req, res) => {
   };
 
   return asyncUnaryCall(client, "deleteDirectory", {
-    cluster,
-    path,
-    userId: info.identityId,
-  }).then(
-    async () => {
-      await callLog(logInfo, OperationResult.SUCCESS);
-      return { 204: null };
-    },
-    handlegRPCError(
-      {
-        [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
-        [status.INTERNAL]: () => ({ 500: { code: "CANT_DELETE" as const } }),
-      },
-      async () => await callLog(logInfo, OperationResult.FAIL),
-    ),
-  );
+    cluster, path, userId: info.identityId,
+  }).then(async () => {
+    await callLog(logInfo, OperationResult.SUCCESS);
+    return { 204: null };
+  }, handlegRPCError({
+    [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+    [status.INTERNAL]: () => ({ 500: { code: "CANT_DELETE" as const } }),
+    [status.PERMISSION_DENIED]: (e) => ({ 403: { code: "FORBIDDEN" as const, error: e.details } }),
+  },
+    async () => await callLog(logInfo, OperationResult.FAIL),
+  ));
+
+
 });

@@ -14,16 +14,16 @@ import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
+import { hasStorageAccess } from "src/utils/storage";
 
 export const SetTenantUserQuotaSchema = typeboxRouteSchema({
   method: "PUT",
 
   body: Type.Object({
-    cluster: Type.String(),
-    path: Type.String(),
+    storageId: Type.String(),
     userId: Type.String(),
     // 使用租户默认值时，该值传入租户默认值用于日志记录
-    userQuotaBytes: Type.Number(),
+    userQuotaMb: Type.Number({ exclusiveMinimum: 0 }),
     useTenantDefaultUserQuota: Type.Optional(Type.Boolean()),
   }),
 
@@ -43,8 +43,8 @@ export const SetTenantUserQuotaSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/ route(SetTenantUserQuotaSchema, async (req, res) => {
-  const { cluster, path, userId, userQuotaBytes, useTenantDefaultUserQuota } = req.body;
+export default /* #__PURE__*/route(SetTenantUserQuotaSchema, async (req, res) => {
+  const { storageId, userId, userQuotaMb, useTenantDefaultUserQuota } = req.body;
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -73,7 +73,7 @@ export default /* #__PURE__*/ route(SetTenantUserQuotaSchema, async (req, res) =
         tenantName: info.tenant,
       });
 
-      if (!response.assignedClusterPartitions[cluster]) {
+      if (!hasStorageAccess(storageId, Object.keys(response.assignedClusterPartitions))) {
         return { 403: null };
       }
     } catch (e) {
@@ -91,11 +91,8 @@ export default /* #__PURE__*/ route(SetTenantUserQuotaSchema, async (req, res) =
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.setTenantUserQuota,
-    operationTypePayload: {
-      userId,
-      cluster,
-      path,
-      storageQuota: userQuotaBytes,
+    operationTypePayload:{
+      userId, storageId, storageQuota: userQuotaMb,
       useTenantDefaultUserQuota: useTenantDefaultUserQuota ?? false,
     },
   };
@@ -103,11 +100,10 @@ export default /* #__PURE__*/ route(SetTenantUserQuotaSchema, async (req, res) =
   const client = getClient(StorageServiceClient);
 
   return await asyncClientCall(client, "setTenantUserQuota", {
-    cluster,
-    path,
-    userId,
     tenantName: info.tenant,
-    userQuotaBytes,
+    storageId,
+    userId,
+    userQuotaMb,
     useTenantDefaultUserQuota,
   })
     .then(async () => {

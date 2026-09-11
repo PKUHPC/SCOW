@@ -1,5 +1,6 @@
 import { ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
 import { I18nStringType } from "@scow/config/build/i18n";
+import { PublicStorageItem } from "@scow/config/build/storage";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 
 export interface Cluster {
@@ -24,16 +25,26 @@ export function getClusterNameWithUndefined(
 }
 
 /**
- * 有一个启用了的集群启用存储管理，则认为开启了存储管理功能
- * @param {Record<String, import("@scow/config/build/cluster").ClusterConfigSchema>} clusters
+ * 只要存在一个已激活集群挂载了 quotaEnabled 的文件系统，就认为存储管理功能可用。
+ * 新多存储方案下不再依赖旧 storage.enabled 配置。
  * @returns {boolean} storageEnabled
  */
-export function getStorageEnabled(clusterConfigs: Record<string, ClusterConfigSchema>, activatedClusterIds: string[]) {
-  return (
-    Object.entries(clusterConfigs).filter(
-      ([cluster, config]) => config.storage?.enabled && activatedClusterIds.includes(cluster),
-    ).length > 0
-  );
+export function getStorageEnabled(
+  clusterConfigs: Record<string, ClusterConfigSchema>,
+  activatedClusterIds: string[],
+  publicStorageConfigs: Record<string, PublicStorageItem>,
+) {
+  const activatedClusterIdSet = new Set(activatedClusterIds);
+
+  return Object.entries(clusterConfigs).some(([clusterId, config]) => {
+    if (!activatedClusterIdSet.has(clusterId)) {
+      return false;
+    }
+
+    return (config.entryPaths ?? []).some(
+      (entryPath) => publicStorageConfigs[entryPath.storageId]?.quotaEnabled,
+    );
+  });
 }
 
 export const getSortedClusterValues = (

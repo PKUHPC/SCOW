@@ -1,0 +1,5 @@
+export const AccountGroupInitStatus = {
+  INITIALIZING: "INITIALIZING",
+  INITIALIZED: "INITIALIZED",
+  NOT_INITIALIZED: "NOT_INITIALIZED",
+};

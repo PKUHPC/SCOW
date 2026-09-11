@@ -57,7 +57,7 @@ export async function processExpiredWhitelist(
 
       if (Object.keys(currentActivatedClusters).length > 0) {
         try {
-          await blockAccount(account as Loaded<Account, "tenant">, currentActivatedClusters, clusterPlugin, logger);
+          await blockAccount(account as Loaded<Account, "tenant">, currentActivatedClusters, clusterPlugin, logger, em);
         } catch (e) {
           logger.error("Failed to block account %s: %s", account.accountName, e);
           throw e;
