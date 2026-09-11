@@ -5,7 +5,6 @@
 **/db
 apps/scow-adapters/gen/go
 !apps/scow-adapters/**/db
-!apps/scowd/pkg/libs/db
 **/build/
 **/coverage/
 .eslintcache

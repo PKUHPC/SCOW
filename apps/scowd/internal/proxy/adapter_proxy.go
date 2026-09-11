@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"scowd/pkg/config"
-	tlsUtil "scowd/pkg/tls"
+	"scowd/internal/config"
+	tlsUtil "scowd/internal/tls"
 	"time"
 
 	"github.com/sirupsen/logrus"

@@ -8,7 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
-	"scowd/pkg/config"
+	"scowd/internal/config"
 	"strings"
 	"time"
 
