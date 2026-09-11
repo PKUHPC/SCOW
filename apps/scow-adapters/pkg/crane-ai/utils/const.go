@@ -13,8 +13,6 @@ const (
 	MaxPort = 65535
 
 	NetworkMode = "default"
-	//UserNs      = false
-	UserNs = true
 
 	StepToPodNameEscape = "-"
 
@@ -61,6 +59,10 @@ const (
 
 	DefaultAdapterPath = "/adapter"
 )
+
+// UserNs controls whether container jobs use a user namespace. It defaults to
+// true and is overridden by the adapter configuration at startup.
+var UserNs = true
 
 var (
 	AdapterPath      = resolveAdapterPath()

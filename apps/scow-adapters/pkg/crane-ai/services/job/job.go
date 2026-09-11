@@ -1032,7 +1032,7 @@ func (s *ServerJob) SubmitJob(ctx context.Context, in *protos.SubmitJobRequest) 
 		scriptString += "#CBATCH " + "--get-user-env" + "\n"
 		// 表示运行容器任务，此处通过容器来运行训练任务
 		scriptString += "#CBATCH " + "--pod" + "\n"
-		scriptString += "#CBATCH " + "--pod-userns true" + "\n"
+		scriptString += "#CBATCH " + "--pod-userns " + strconv.FormatBool(utils.UserNs) + "\n"
 		if tensorBoardEnabled(in) {
 			scriptString += "#CBATCH " + "--pod-port " + fmt.Sprintf("%d:%d", utils.TensorBoardPort, utils.TensorBoardPort) + "\n"
 		}

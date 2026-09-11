@@ -1,6 +1,8 @@
 bind-port: 8972
 log-level: trace
 log-stdout: true
+# 是否为容器作业启用 user namespace，默认为 true
+userns: true
 tensorboardImage: "crpi-u0hdpwcobdb87rnx.cn-beijing.personal.cr.aliyuncs.com/qsx/tensorboard:latest"
 
 ssl:

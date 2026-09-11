@@ -69,15 +69,18 @@ func NewAdapterCommand() *cobra.Command {
 
 		// Read and parse config file
 		viper.ReadInConfig()
+		// Keep user namespaces enabled when the option is omitted from older config files.
+		GConfig = config.CraneConfig{UserNs: true}
 		// Initialize logger
 		log.InitLogger(log.ParseLogLevel(viper.GetString("log-level")), viper.GetString("log-file"), viper.GetBool("log-stdout"))
 		if err := unmarshalWithYamlTag(viper.AllSettings(), &GConfig); err != nil {
 			logrus.Fatalf("Error parsing config file: %s", err)
 		}
 		utils.TensorboardImage = GConfig.TensorboardImage
+		utils.UserNs = GConfig.UserNs
 
-		logrus.Infof("Crane AI adapter configuration loaded: bind_port=%d, monitor_port=%d, tls_enabled=%t, log_level=%s",
-			GConfig.BindPort, GConfig.Monitor.Port, GConfig.Ssl.Enabled, GConfig.LogLevel)
+		logrus.Infof("Crane AI adapter configuration loaded: bind_port=%d, monitor_port=%d, tls_enabled=%t, userns=%t, log_level=%s",
+			GConfig.BindPort, GConfig.Monitor.Port, GConfig.Ssl.Enabled, GConfig.UserNs, GConfig.LogLevel)
 	})
 
 	rootCmd.SetVersionTemplate(ce.VersionTemplate())
