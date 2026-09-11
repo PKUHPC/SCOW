@@ -5,11 +5,13 @@
 **/db
 apps/scow-adapters/gen/go
 !apps/scow-adapters/**/db
+!apps/scowd/pkg/libs/db
 **/build/
 **/coverage/
 .eslintcache
 internal
 !apps/scow-adapters/**/internal
+!apps/scowd/internal
 .turbo
 out
 dist
@@ -20,4 +22,3 @@ version.json
 
 .next.backup
 .idea
-
