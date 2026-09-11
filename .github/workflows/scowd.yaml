@@ -32,7 +32,8 @@ jobs:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
     strategy:
       matrix:
-        arch: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.build_arm64 && '["amd64", "arm64"]' || '["amd64"]') }}
+        # 与适配器发布策略一致：日常构建 amd64，tag 发版默认同时产出 arm64；手动构建可显式启用 arm64。
+        arch: ${{ fromJSON((github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) && '["amd64", "arm64"]' || (github.event_name == 'workflow_dispatch' && inputs.build_arm64) && '["amd64", "arm64"]' || '["amd64"]') }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
