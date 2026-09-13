@@ -1,0 +1,8 @@
+{
+  "label": "SCOWD",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "SCOWD 的安装、配置、子进程资源限制和集群验证。"
+  }
+}
