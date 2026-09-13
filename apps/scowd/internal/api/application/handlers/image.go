@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -27,7 +28,7 @@ func execOciCommand(command string, args []string) (string, error) {
 		return "", buildErr
 	}
 
-	logrus.Infof("Executing command: %s %s", baseCmd, strings.Join(finalArgs, " "))
+	logrus.Infof("Executing command: %s %s", baseCmd, image.RedactSensitiveArgs(finalArgs))
 
 	cmd := exec.Command(baseCmd, finalArgs...)
 
@@ -40,7 +41,7 @@ func execOciCommand(command string, args []string) (string, error) {
 	errStr := stderr.String()
 
 	if err != nil {
-		logrus.Errorf("Command failed: %s %s", baseCmd, strings.Join(finalArgs, " "))
+		logrus.Errorf("Command failed: %s %s", baseCmd, image.RedactSensitiveArgs(finalArgs))
 		logrus.Errorf("stderr: %s", errStr)
 		return outStr, fmt.Errorf("command failed: %w - stderr: %s", err, errStr)
 	}
@@ -51,14 +52,20 @@ func execOciCommand(command string, args []string) (string, error) {
 
 // execOciCommandWithOutput 执行 oci command并获得输出，使得结果可以通过流式返回
 func execOciCommandWithOutput(command string, args []string) (string, error) {
+	return execOciCommandWithInput(command, args, nil)
+}
+
+func execOciCommandWithInput(command string, args []string, input io.Reader) (string, error) {
 	baseCmd, finalArgs, buildErr := image.BuildOciCommand(command, args)
 	if buildErr != nil {
 		return "", buildErr
 	}
 	cmd := exec.Command(baseCmd, finalArgs...)
+	cmd.Stdin = input
 	output, err := cmd.CombinedOutput()
-	logrus.Infof("Command output: %s", output)
-	return string(output), err
+	outputStr := string(output)
+	logrus.Infof("Command output: %s", outputStr)
+	return outputStr, err
 }
 
 func (f *ImageServer) LoadImage(ctx context.Context,
@@ -132,6 +139,7 @@ func (f *ImageServer) execRemoteCommandStreamingForPush(
 	userHomeDir string,
 	command string,
 	args []string,
+	stdin string,
 	streamConn *connect.ServerStream[apiv1.PushImageToHarborResponse],
 ) (int, error) {
 	cmdStr := fmt.Sprintf("%s %s", command, strings.Join(args, " "))
@@ -140,7 +148,7 @@ func (f *ImageServer) execRemoteCommandStreamingForPush(
 	sender := stream.NewPushSender(streamConn)
 
 	// 先使用同步方式获取输出，然后流式发送
-	stdout, stderr, err := utils.ExecuteCommand(config, userHomeDir, cmdStr)
+	stdout, stderr, err := utils.ExecuteCommandWithStdin(config, userHomeDir, cmdStr, strings.NewReader(stdin))
 
 	// 发送stdout
 	if stdout != "" {
@@ -180,10 +188,11 @@ func (f *ImageServer) PullImage(ctx context.Context,
 	if loginInfo != nil && loginInfo.UserName != "" && loginInfo.Password != "" {
 		logrus.Infof("Logging in to registry: %s", registryMirror)
 
-		loginOutput, err := execOciCommandWithOutput(runtimeCommand, []string{"login", registryMirror,
+		loginOutput, err := execOciCommandWithInput(runtimeCommand, []string{"login", registryMirror,
 			"-u", loginInfo.UserName,
-			"-p", loginInfo.Password,
-		})
+			"--password-stdin",
+		}, strings.NewReader(loginInfo.Password+"\n"))
+		loginOutput = strings.ReplaceAll(loginOutput, loginInfo.Password, "[REDACTED]")
 
 		if err != nil {
 			// 发送登录失败的输出
@@ -273,14 +282,17 @@ func (f *ImageServer) PushImageToHarbor(ctx context.Context,
 	logrus.Infof("Get push image to harbor request of %s from user %s, node: %s", req.Msg.LocalImageUrl, req.Msg.UserId, req.Msg.Node)
 	runtimeCommand := container.GetRuntimeCommand(container.GetContainerRuntime())
 
-	var exec func(ctx context.Context, stream *connect.ServerStream[apiv1.PushImageToHarborResponse], args ...string) (int, error)
+	var exec func(ctx context.Context, streamConn *connect.ServerStream[apiv1.PushImageToHarborResponse], stdin string, args ...string) (int, error)
 
 	sender := stream.NewPushSender(streamConn)
 
 	if req.Msg.Node == "" {
 		// 本地执行
-		exec = func(ctx context.Context, stream *connect.ServerStream[apiv1.PushImageToHarborResponse], args ...string) (int, error) {
-			return f.execOciCommandStreamingForPush(ctx, runtimeCommand, args, stream)
+		exec = func(ctx context.Context, streamConn *connect.ServerStream[apiv1.PushImageToHarborResponse], stdin string, args ...string) (int, error) {
+			if stdin != "" {
+				return image.ExecOciCommandStreamingBuffered(ctx, runtimeCommand, args, stream.NewPushSender(streamConn), strings.NewReader(stdin))
+			}
+			return f.execOciCommandStreamingForPush(ctx, runtimeCommand, args, streamConn)
 		}
 	} else {
 		// 远程执行
@@ -306,8 +318,8 @@ func (f *ImageServer) PushImageToHarbor(ctx context.Context,
 			Username: req.Msg.UserId,
 		}
 
-		exec = func(ctx context.Context, stream *connect.ServerStream[apiv1.PushImageToHarborResponse], args ...string) (int, error) {
-			return f.execRemoteCommandStreamingForPush(ctx, config, userHomeDir, runtimeCommand, args, stream)
+		exec = func(ctx context.Context, streamConn *connect.ServerStream[apiv1.PushImageToHarborResponse], stdin string, args ...string) (int, error) {
+			return f.execRemoteCommandStreamingForPush(ctx, config, userHomeDir, runtimeCommand, args, stdin, streamConn)
 		}
 	}
 
@@ -317,7 +329,8 @@ func (f *ImageServer) PushImageToHarbor(ctx context.Context,
 		return err
 	}
 
-	loginExitCode, err := exec(ctx, streamConn, "login", req.Msg.HarborInfo.Url, "-u", req.Msg.HarborInfo.User, "-p", req.Msg.HarborInfo.Password)
+	loginArgs := []string{"login", req.Msg.HarborInfo.Url, "-u", req.Msg.HarborInfo.User, "--password-stdin"}
+	loginExitCode, err := exec(ctx, streamConn, req.Msg.HarborInfo.Password+"\n", loginArgs...)
 	if err != nil || loginExitCode != 0 {
 		if ctx.Err() != nil {
 			return nil
@@ -347,7 +360,7 @@ func (f *ImageServer) PushImageToHarbor(ctx context.Context,
 		return err
 	}
 
-	tagExitCode, err := exec(ctx, streamConn, "tag", req.Msg.LocalImageUrl, req.Msg.HarborImageUrl)
+	tagExitCode, err := exec(ctx, streamConn, "", "tag", req.Msg.LocalImageUrl, req.Msg.HarborImageUrl)
 	if err != nil || tagExitCode != 0 {
 		if ctx.Err() != nil {
 			return nil
@@ -377,7 +390,7 @@ func (f *ImageServer) PushImageToHarbor(ctx context.Context,
 		return err
 	}
 
-	pushExitCode, err := exec(ctx, streamConn, "push", req.Msg.HarborImageUrl)
+	pushExitCode, err := exec(ctx, streamConn, "", "push", req.Msg.HarborImageUrl)
 	if err != nil || pushExitCode != 0 {
 		if ctx.Err() != nil {
 			return nil
@@ -391,7 +404,9 @@ func (f *ImageServer) PushImageToHarbor(ctx context.Context,
 		}
 
 		// 清理失败的镜像
-		if cleanupErr := f.cleanupImagesStreaming(ctx, exec, streamConn, req.Msg.HarborImageUrl, req.Msg.LocalImageUrl); cleanupErr != nil {
+		if cleanupErr := f.cleanupImagesStreaming(ctx, func(ctx context.Context, streamConn *connect.ServerStream[apiv1.PushImageToHarborResponse], args ...string) (int, error) {
+			return exec(ctx, streamConn, "", args...)
+		}, streamConn, req.Msg.HarborImageUrl, req.Msg.LocalImageUrl); cleanupErr != nil {
 			logrus.Errorf("Cleanup failed after pushing image from local image %s: %v", req.Msg.LocalImageUrl, cleanupErr)
 		}
 
@@ -411,7 +426,9 @@ func (f *ImageServer) PushImageToHarbor(ctx context.Context,
 		return err
 	}
 
-	if cleanupErr := f.cleanupImagesStreaming(ctx, exec, streamConn, req.Msg.HarborImageUrl, req.Msg.LocalImageUrl); cleanupErr != nil {
+	if cleanupErr := f.cleanupImagesStreaming(ctx, func(ctx context.Context, streamConn *connect.ServerStream[apiv1.PushImageToHarborResponse], args ...string) (int, error) {
+		return exec(ctx, streamConn, "", args...)
+	}, streamConn, req.Msg.HarborImageUrl, req.Msg.LocalImageUrl); cleanupErr != nil {
 		// 清理失败不影响整体成功
 		logrus.Errorf("Cleanup failed during pushing image %s from user %s: %v", req.Msg.LocalImageUrl, req.Msg.UserId, cleanupErr)
 	}
@@ -487,7 +504,7 @@ func (f *ImageServer) cleanupImagesStreaming(
 			return err
 		}
 		// 流式执行清理命令
-		exitCode, err := exec(ctx, streamConn, "rmi", harborImageUrl)
+		exitCode, err := exec(ctx, streamConn, "", "rmi", harborImageUrl)
 		if err != nil || exitCode != 0 {
 			logrus.Errorf("rmi HarborImageUrl failed: %v, exit code: %d", err, exitCode)
 			errMsg := fmt.Sprintf("Failed to remove harbor image (exit code: %d): %v", exitCode, err)
@@ -510,7 +527,7 @@ func (f *ImageServer) cleanupImagesStreaming(
 			return err
 		}
 		// 流式执行清理命令
-		exitCode, err := exec(ctx, streamConn, "rmi", localImageUrl)
+		exitCode, err := exec(ctx, streamConn, "", "rmi", localImageUrl)
 		if err != nil || exitCode != 0 {
 			logrus.Errorf("rmi LocalImageUrl failed: %v, exit code: %d", err, exitCode)
 			errMsg := fmt.Sprintf("Failed to remove local image (exit code: %d): %v\n", exitCode, err)

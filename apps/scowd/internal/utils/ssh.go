@@ -103,6 +103,14 @@ func addSSHConfig(userHomeDir string) error {
 
 // ExecuteCommand 执行 SSH 命令并返回结果
 func ExecuteCommand(config SSHConfig, userHomeDir string, command string) (string, string, error) {
+	return executeCommand(config, userHomeDir, command, nil)
+}
+
+func ExecuteCommandWithStdin(config SSHConfig, userHomeDir string, command string, stdin io.Reader) (string, string, error) {
+	return executeCommand(config, userHomeDir, command, stdin)
+}
+
+func executeCommand(config SSHConfig, userHomeDir string, command string, stdin io.Reader) (string, string, error) {
 	// 执行命令前确保免密
 	err := ensureSSHKey(userHomeDir)
 	if err != nil {
@@ -160,6 +168,9 @@ func ExecuteCommand(config SSHConfig, userHomeDir string, command string) (strin
 	if err != nil {
 		logrus.Infof("failed to get stderr pipe: %v", err)
 		return "", "", ErrorRunSSHCommand
+	}
+	if stdin != nil {
+		session.Stdin = stdin
 	}
 
 	logrus.Infof("exec command %s on %s", command, config.Host)

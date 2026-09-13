@@ -144,14 +144,18 @@ func ExecOciCommandStreamingBuffered(
 	command string,
 	args []string,
 	sender StreamingSender,
+	stdin ...io.Reader,
 ) (int, error) {
 	baseCmd, finalArgs, buildErr := BuildOciCommand(command, args)
 	if buildErr != nil {
 		return 1, buildErr
 	}
-	logrus.Infof("Executing buffered command: %s %s", baseCmd, strings.Join(finalArgs, " "))
+	logrus.Infof("Executing buffered command: %s %s", baseCmd, RedactSensitiveArgs(finalArgs))
 
 	cmd := exec.CommandContext(ctx, baseCmd, finalArgs...)
+	if len(stdin) > 0 {
+		cmd.Stdin = stdin[0]
+	}
 
 	// 创建管道
 	stdoutPipe, err := cmd.StdoutPipe()
@@ -201,4 +205,15 @@ func ExecOciCommandStreamingBuffered(
 
 	logrus.Infof("Command completed with exit code: %d", exitCode)
 	return exitCode, nil
+}
+
+// RedactSensitiveArgs removes values passed to password options before logging.
+func RedactSensitiveArgs(args []string) string {
+	redacted := append([]string(nil), args...)
+	for i := range redacted {
+		if (redacted[i] == "-p" || redacted[i] == "--password") && i+1 < len(redacted) {
+			redacted[i+1] = "[REDACTED]"
+		}
+	}
+	return strings.Join(redacted, " ")
 }
