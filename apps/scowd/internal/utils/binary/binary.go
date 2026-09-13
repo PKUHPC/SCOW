@@ -30,18 +30,29 @@ func CheckExpireTime() error {
 	return nil
 }
 
-// StartExpirationCheck 启动过期检查协程
-func StartExpirationCheck(shutdown chan struct{}) {
+// StartExpirationCheck 在 stop 关闭时停止检查，仅在过期检查失败时关闭返回的通知通道。
+func StartExpirationCheck(stop <-chan struct{}) <-chan struct{} {
+	expired := make(chan struct{})
 	go func() {
 		ticker := time.NewTicker(30 * time.Minute)
 		defer ticker.Stop()
+		checkExpiration(stop, ticker.C, expired)
+	}()
+	return expired
+}
 
-		for range ticker.C {
+func checkExpiration(stop <-chan struct{}, ticks <-chan time.Time, expired chan<- struct{}) {
+	for {
+		select {
+		case <-stop:
+			return
+		case <-ticks:
 			if err := CheckExpireTime(); err != nil {
 				logrus.Errorf("Binary expiration check failed: %v", err)
-				shutdown <- struct{}{}
+				// 只有检查协程关闭通知通道，不依赖主进程是否仍在接收。
+				close(expired)
 				return
 			}
 		}
-	}()
+	}
 }

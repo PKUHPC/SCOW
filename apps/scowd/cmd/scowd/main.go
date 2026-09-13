@@ -33,9 +33,6 @@ func initDBSchemas() error {
 }
 
 func main() {
-	// 创建一个通道用于程序退出信号
-	shutdown := make(chan struct{})
-
 	// 处理命令行参数
 	if len(os.Args) > 1 {
 		// 处理版本号查询
@@ -65,7 +62,8 @@ func main() {
 	}
 
 	// 启动过期检查协程
-	binary.StartExpirationCheck(shutdown)
+	stopExpirationCheck := make(chan struct{})
+	expired := binary.StartExpirationCheck(stopExpirationCheck)
 
 	scowdConfig, err := config.GetScowdConfig()
 	if err != nil {
@@ -134,12 +132,12 @@ func main() {
 		select {
 		case <-sigChan:
 			logrus.Println("Received shutdown signal. Initiating graceful shutdown...")
-		case <-shutdown:
+		case <-expired:
 			logrus.Println("Received expiration shutdown signal. Initiating graceful shutdown...")
 		}
 
-		// 关闭shutdown通道，通知过期检查协程退出
-		close(shutdown)
+		// 停止检查与过期通知使用独立通道，各自只有一个关闭方。
+		close(stopExpirationCheck)
 
 		// 取消上下文，通知所有相关的服务关闭
 		logrus.Info("Canceling context to notify all services...")
