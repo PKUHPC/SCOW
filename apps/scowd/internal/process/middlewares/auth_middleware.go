@@ -12,32 +12,40 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func AuthInterceptor() connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return connect.UnaryFunc(func(
-			ctx context.Context,
-			req connect.AnyRequest,
-		) (connect.AnyResponse, error) {
+type authInterceptor struct{}
 
-			// 检查自定义请求头
-			secretKey, err := base64.StdEncoding.DecodeString(req.Header().Get("X-Custom-Secret-Key"))
-			if err != nil {
-				logrus.Errorf("Decoding token failed: %v", err)
-				return nil, connect.NewError(
-					connect.CodeUnauthenticated,
-					errors.New("INVALID_TOKEN"),
-				)
-			}
+func AuthInterceptor() connect.Interceptor { return authInterceptor{} }
 
-			if !security.VerifySignatureWithPublicKey(child.PublicKey, []byte(common.SecureToken), secretKey) {
-				return nil, connect.NewError(
-					connect.CodeUnauthenticated,
-					errors.New("INVALID_TOKEN"),
-				)
-			}
-
-			return next(ctx, req)
-		})
+func authenticate(header string) error {
+	secretKey, err := base64.StdEncoding.DecodeString(header)
+	if err != nil {
+		logrus.Errorf("Decoding token failed: %v", err)
+		return connect.NewError(connect.CodeUnauthenticated, errors.New("INVALID_TOKEN"))
 	}
-	return connect.UnaryInterceptorFunc(interceptor)
+	if !security.VerifySignatureWithPublicKey(child.PublicKey, []byte(common.SecureToken), secretKey) {
+		return connect.NewError(connect.CodeUnauthenticated, errors.New("INVALID_TOKEN"))
+	}
+	return nil
+}
+
+func (authInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
+	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		if err := authenticate(req.Header().Get("X-Custom-Secret-Key")); err != nil {
+			return nil, err
+		}
+		return next(ctx, req)
+	}
+}
+
+func (authInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return func(ctx context.Context, stream connect.StreamingHandlerConn) error {
+		if err := authenticate(stream.RequestHeader().Get("X-Custom-Secret-Key")); err != nil {
+			return err
+		}
+		return next(ctx, stream)
+	}
+}
+
+func (authInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return next
 }

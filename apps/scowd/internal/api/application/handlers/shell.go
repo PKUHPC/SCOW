@@ -7,6 +7,7 @@ import (
 	customError "github.com/PKUHPC/private-scow/apps/scowd/internal/api/rpcerror"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/process"
+	requestutil "github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/request"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
 	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
 	"io"
@@ -86,6 +87,9 @@ func (d *ShellServer) Shell(
 
 			childClient = process.GetChildProcessClient(NewShellServiceClient, childProcess)
 			childStream = childClient.Shell(ctx)
+			if err := requestutil.SetSecretHeaderValue(childStream.RequestHeader(), childProcess.GetPort()); err != nil {
+				return connect.NewError(connect.CodeInternal, err)
+			}
 
 			// Start bidirectional forwarding goroutine
 			wg.Add(1)

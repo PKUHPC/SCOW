@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -42,7 +43,7 @@ func InitChildHttpService(port string) *http.Server {
 	globalChild.SetLastRequestTime(time.Now())
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%s", "", port),
+		Addr:    net.JoinHostPort("127.0.0.1", port),
 		Handler: h2c.NewHandler(r, &http2.Server{}),
 	}
 

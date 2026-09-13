@@ -13,6 +13,7 @@ import (
 	customError "github.com/PKUHPC/private-scow/apps/scowd/internal/api/rpcerror"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/process"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/request"
+	requestutil "github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/request"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
 	fileUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/file"
@@ -231,6 +232,9 @@ func (f *FileServer) Upload(ctx context.Context,
 			childClient = process.GetChildProcessClient(NewFileServiceClient, childProcess)
 
 			childStream = childClient.Upload(ctx)
+			if err := requestutil.SetSecretHeaderValue(childStream.RequestHeader(), childProcess.GetPort()); err != nil {
+				return nil, connect.NewError(connect.CodeInternal, err)
+			}
 
 			if err := childStream.Send(&apiv1.UploadRequest{
 				Message: &apiv1.UploadRequest_Info_{

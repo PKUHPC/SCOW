@@ -11,6 +11,7 @@ import (
 	customError "github.com/PKUHPC/private-scow/apps/scowd/internal/api/rpcerror"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/process"
+	requestutil "github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/request"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/filetransfer"
 
@@ -186,6 +187,9 @@ func (s *FileTransferServer) FileTransfer(
 			childStream = childClient.FileTransfer(ctx)
 			if childStream == nil {
 				return connect.NewError(connect.CodeUnavailable, errors.New("failed to create child stream"))
+			}
+			if err := requestutil.SetSecretHeaderValue(childStream.RequestHeader(), childProcess.GetPort()); err != nil {
+				return connect.NewError(connect.CodeInternal, err)
 			}
 
 			// Start bidirectional forwarding goroutine
