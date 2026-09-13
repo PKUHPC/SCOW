@@ -62,7 +62,7 @@ func (tm *TaskManager) AddTask(task *FileTransferTask, priority int) error {
 	}
 
 	// 检查是否存在相同的运行中或等待中的任务
-	tm.taskMapLock.RLock()
+	tm.taskMapLock.Lock()
 	for _, existingTask := range tm.taskMap {
 		if existingTask.userID == task.userID &&
 			existingTask.sourcePath == task.sourcePath &&
@@ -70,7 +70,7 @@ func (tm *TaskManager) AddTask(task *FileTransferTask, priority int) error {
 			// 即一个文件或目录只能不能并发传输到一个集群不同位置
 			// existingTask.destPath == task.destPath &&
 			existingTask.destAddress == task.destAddress {
-			tm.taskMapLock.RUnlock()
+			tm.taskMapLock.Unlock()
 			logrus.WithFields(logrus.Fields{
 				"user_id":      task.userID,
 				"source_path":  task.sourcePath,
@@ -81,18 +81,13 @@ func (tm *TaskManager) AddTask(task *FileTransferTask, priority int) error {
 			return fmt.Errorf("task already exists, please do not submit duplicate. Source file: %s, Target path: %s, Target cluster: %s", task.sourcePath, task.destPath, task.destAddress)
 		}
 	}
-	tm.taskMapLock.RUnlock()
-
 	task.priority = priority
 
-	// 分离锁操作，减少锁竞争
 	tm.queueLock.Lock()
 	tm.taskQueue = append(tm.taskQueue, task)
 	tm.priorityQueue.Push(task)
-	tm.queueLock.Unlock()
-
-	tm.taskMapLock.Lock()
 	tm.taskMap[task.id] = task
+	tm.queueLock.Unlock()
 	tm.taskMapLock.Unlock()
 
 	// 保存任务记录
