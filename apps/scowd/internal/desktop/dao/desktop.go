@@ -4,12 +4,18 @@ import (
 	"database/sql"
 )
 
+// DBTX 让迁移中的计数和插入使用同一事务，同时兼容普通数据库连接。
+type DBTX interface {
+	Exec(query string, args ...any) (sql.Result, error)
+	QueryRow(query string, args ...any) *sql.Row
+}
+
 type DesktopDAO interface {
 	CreateDesktopsTable(db *sql.DB) error
-	InsertDesktop(db *sql.DB, username string, host string, displayID int, desktopName string, wm string, createTime string) error
+	InsertDesktop(db DBTX, username string, host string, displayID int, desktopName string, wm string, createTime string) error
 	SelectDesktopByID(db *sql.DB, id int) *sql.Row
 	SelectDesktopsByUser(db *sql.DB, username string) (*sql.Rows, error)
-	CountDesktopsByUser(db *sql.DB, username string) (int, error)
+	CountDesktopsByUser(db DBTX, username string) (int, error)
 	UpdateDesktopActiveStatus(db *sql.DB, id int, active int) error
 	UpdateLastConnectTime(db *sql.DB, username string, displayID int, t string) error
 	UpdateLastConnectTimeByID(db *sql.DB, id int, t string) error
@@ -25,7 +31,7 @@ func (d *desktopDAO) CreateDesktopsTable(db *sql.DB) error {
 	return err
 }
 
-func (d *desktopDAO) InsertDesktop(db *sql.DB, username string, host string, displayID int, desktopName string, wm string, createTime string) error {
+func (d *desktopDAO) InsertDesktop(db DBTX, username string, host string, displayID int, desktopName string, wm string, createTime string) error {
 	_, err := db.Exec("INSERT OR REPLACE INTO desktops(username, host, display_id, desktop_name, wm, create_time, last_connect_time) VALUES (?,?,?,?,?,?,?)",
 		username, host, displayID, desktopName, wm, createTime, createTime,
 	)
@@ -40,7 +46,7 @@ func (d *desktopDAO) SelectDesktopsByUser(db *sql.DB, username string) (*sql.Row
 	return db.Query("SELECT id, host, display_id, desktop_name, wm, create_time, is_active FROM desktops WHERE username= ?", username)
 }
 
-func (d *desktopDAO) CountDesktopsByUser(db *sql.DB, username string) (int, error) {
+func (d *desktopDAO) CountDesktopsByUser(db DBTX, username string) (int, error) {
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM desktops WHERE username= ?", username)
 	err := row.Scan(&count)

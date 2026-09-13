@@ -2,7 +2,9 @@ package repository
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
@@ -125,39 +127,8 @@ func (r *desktopRepository) ListUserDesktops(desktopDir, vncServerBinPath, usern
 			return nil, fmt.Errorf("can't get user desktops file path: %v", err)
 		}
 
-		desktops, err := readDesktopFile(desktopFilePath)
-		if err != nil {
-			logrus.Errorf("can't read user desktops file: %v", err)
-			return nil, fmt.Errorf("can't read user desktops file: %v", err)
-		}
-		logrus.Debugf("Read %d desktops from file %s", len(desktops), desktopFilePath)
-
-		if len(desktops) > 0 {
-			// deduplicate desktops by displayID, keeping the newest one
-			desktopMap := make(map[int]*model.DesktopInfo)
-			for _, d := range desktops {
-				if existing, ok := desktopMap[d.DisplayID]; ok {
-					existingTime, err1 := time.Parse(time.RFC3339Nano, existing.CreateTime)
-					newTime, err2 := time.Parse(time.RFC3339Nano, d.CreateTime)
-					if err1 == nil && err2 == nil && !newTime.After(existingTime) {
-						continue
-					}
-				}
-				desktopMap[d.DisplayID] = d
-			}
-
-			for _, d := range desktopMap {
-				if err := r.dao.InsertDesktop(conn, username, d.Host, d.DisplayID, d.DesktopName, d.Wm, d.CreateTime); err != nil {
-					logrus.Errorf("migrate desktop error: %v", err)
-					return nil, fmt.Errorf("migrate desktop error: %v", err)
-				}
-			}
-			logrus.Debugf("Migrated %d desktops from file for user %s", len(desktopMap), username)
-		}
-
-		if err := os.Remove(desktopFilePath); err != nil && !os.IsNotExist(err) {
-			logrus.Errorf("remove desktops.json error: %v", err)
-			return nil, fmt.Errorf("remove desktops.json error: %v", err)
+		if err := r.migrateDesktopFile(conn, desktopFilePath, username); err != nil {
+			return nil, err
 		}
 	}
 
@@ -215,6 +186,69 @@ func (r *desktopRepository) ListUserDesktops(desktopDir, vncServerBinPath, usern
 	}
 
 	return desktops, nil
+}
+
+// migrateDesktopFile 全部记录提交成功后才删除旧文件，失败时回滚以便后续请求重试。
+func (r *desktopRepository) migrateDesktopFile(conn *sql.DB, desktopFilePath, username string) error {
+	ctx := context.Background()
+	migrationConn, err := conn.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("open desktop migration connection: %w", err)
+	}
+	defer func() { _ = migrationConn.Close() }()
+	tx, err := migrationConn.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin desktop migration: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// 在事务内复查，避免另一个请求完成迁移后重复导入。
+	count, err := r.dao.CountDesktopsByUser(tx, username)
+	if err != nil {
+		return fmt.Errorf("count desktops during migration: %w", err)
+	}
+	if count != 0 {
+		return nil
+	}
+
+	desktops, err := readDesktopFile(desktopFilePath)
+	if err != nil {
+		return fmt.Errorf("can't read user desktops file: %w", err)
+	}
+
+	// 按 displayID 去重，保留创建时间最新的记录，沿用原迁移规则。
+	desktopMap := make(map[int]*model.DesktopInfo)
+	for _, d := range desktops {
+		if existing, ok := desktopMap[d.DisplayID]; ok {
+			existingTime, err1 := time.Parse(time.RFC3339Nano, existing.CreateTime)
+			newTime, err2 := time.Parse(time.RFC3339Nano, d.CreateTime)
+			if err1 == nil && err2 == nil && !newTime.After(existingTime) {
+				continue
+			}
+		}
+		desktopMap[d.DisplayID] = d
+	}
+
+	for _, d := range desktopMap {
+		if err := r.dao.InsertDesktop(tx, username, d.Host, d.DisplayID, d.DesktopName, d.Wm, d.CreateTime); err != nil {
+			return fmt.Errorf("migrate desktop error: %w", err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		// SQLite 提交失败可能保留事务，但 sql.Tx 已结束；在原连接上显式回滚。
+		if _, rollbackErr := migrationConn.ExecContext(ctx, "ROLLBACK"); rollbackErr != nil {
+			// 回滚失败时丢弃连接，避免把未知事务状态带回连接池。
+			_ = migrationConn.Raw(func(any) error { return driver.ErrBadConn })
+			return fmt.Errorf("commit desktop migration: %w (rollback failed: %v)", err, rollbackErr)
+		}
+		return fmt.Errorf("commit desktop migration: %w", err)
+	}
+	logrus.Debugf("Migrated %d desktops from file for user %s", len(desktopMap), username)
+
+	if err := os.Remove(desktopFilePath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remove desktops.json error: %w", err)
+	}
+	return nil
 }
 
 func (r *desktopRepository) UpdateLastConnectTime(username string, displayID int, t string) error {
