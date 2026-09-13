@@ -60,6 +60,9 @@ func (d *DesktopServer) CreateDesktop(
 	ctx context.Context,
 	req *connect.Request[apiv1.CreateDesktopRequest],
 ) (*connect.Response[apiv1.CreateDesktopResponse], error) {
+	unlock := desktopCreateLocks.lock(req.Msg.UserId)
+	defer unlock()
+
 	// Sync DB with machine state first, then use DB count for quota check
 	synced, err := d.repo.ListUserDesktops(req.Msg.DesktopDir, req.Msg.VncServerBinPath, req.Msg.UserId)
 	if err != nil {
@@ -95,6 +98,18 @@ func (d *DesktopServer) CreateDesktop(
 	err = d.repo.Add(req.Msg.UserId, &desktopInfo)
 	if err != nil {
 		logrus.Errorf("CreateDesktop: AddDesktopToDB error: %v", err)
+		// VNC has already been started; best-effort cleanup prevents an
+		// untracked desktop from consuming a future quota slot.
+		cleanupReq := &apiv1.KillDesktopRequest{
+			UserId:           req.Msg.UserId,
+			VncServerBinPath: req.Msg.VncServerBinPath,
+			DisplayId:        uint32(childRes.Msg.DisplayId),
+			LoginNode:        req.Msg.LoginNode,
+			DesktopDir:       req.Msg.DesktopDir,
+		}
+		if _, cleanupErr := handleDesktopRequest(ctx, connect.NewRequest(cleanupReq), req.Msg.UserId, apiv1connect.DesktopServiceClient.KillDesktop); cleanupErr != nil {
+			logrus.Errorf("CreateDesktop: failed to clean up VNC desktop %d after DB error: %v", childRes.Msg.DisplayId, cleanupErr)
+		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
