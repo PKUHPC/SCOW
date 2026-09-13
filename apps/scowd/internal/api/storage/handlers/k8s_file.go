@@ -3260,6 +3260,16 @@ func (k *K8sFileServer) InitMultipartUpload(
 					uploadedIndices = fileUtils.ConvertBitsetToIndexes(bitset, totalChunks)
 				}
 			}
+		} else {
+			if closeErr := file.Close(); closeErr != nil {
+				logrus.Warnf("Failed to close invalid uploading file: %v", closeErr)
+			}
+			closed = true
+			if removeErr := root.Remove(uploadingRelativePath); removeErr != nil && !os.IsNotExist(removeErr) {
+				return nil, connect.NewError(connect.CodeInternal, removeErr)
+			}
+			needRecreate = true
+
 		}
 	} else if !os.IsNotExist(err) {
 		// 步骤 3.3：其他错误（非“文件不存在”）直接返回
