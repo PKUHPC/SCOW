@@ -1,224 +1,23 @@
 ---
-title: SCOWD 资源限制技术方案
+title: SCOWD 子进程资源限制
 sidebar_position: 2
 ---
 
-# SCOWD 资源限制技术方案
+# SCOWD 子进程资源限制
 
-本文复制自 `apps/scowd/SCOWD_资源限制技术方案.md`，并按迁入 monorepo 后的目录与实现校正。安装与完整配置见 [SCOWD 介绍及配置](configuration.md)。
+SCOWD 可通过 `systemd-run` 创建 scope，使用 cgroup 限制用户子进程的 CPU 和内存。安装与完整配置见 [SCOWD 介绍及配置](configuration.md)。
 
-## 概述
+## 生效范围
 
-SCOWD (SCOW Daemon) 的资源限制方案是一个基于 systemd-run 的子进程资源管理系统，用于限制单个用户子进程的 CPU 和内存用量；具体是否生效需要在部署节点验证。
+SCOWD 按用户创建并复用子进程。限制作用于该子进程所在的 scope，包括留在同一 cgroup 中的后代进程；同一用户的请求共享这份额度。它不限制 SCOWD 主进程，也不提供跨节点配额或调度器作业资源管理。
 
-## 技术架构
+当前仅支持 CPU 和内存限制，没有磁盘 I/O、网络带宽限制或运行中动态调整能力。
 
-### 1. 核心组件
+## 配置
 
-#### 1.1 子进程管理器 (ChildProcessManager)
-- **位置**: `apps/scowd/internal/process/parent/manager.go`
-- **功能**: 统一管理所有用户的子进程实例
-- **特性**:
-  - 线程安全的进程映射管理
-  - 端口池管理，避免端口冲突
-  - 自动清理空闲进程（非 Shell 默认 10 分钟，使用过 Shell 的进程默认 60 分钟，存在 Shell 连接时不按空闲回收）
-  - 分批处理机制，避免长时间锁定
-
-#### 1.2 子进程实例 (ChildProcess)
-- **位置**: `apps/scowd/internal/process/parent/child_process.go`
-- **功能**: 单个用户子进程的生命周期管理
-- **特性**:
-  - 进程状态跟踪和健康检查
-  - 优雅关闭机制（SIGTERM → SIGKILL）
-  - 资源自动回收
-
-#### 1.3 进程启动器 (Starter)
-- **位置**: `apps/scowd/internal/process/parent/starter.go`
-- **功能**: 负责子进程的创建和启动
-- **特性**:
-  - 智能启动策略选择
-  - 环境变量配置
-  - 错误处理和诊断
-
-#### 1.4 Systemd 集成 (Systemd)
-- **位置**: `apps/scowd/internal/process/parent/systemd.go`
-- **功能**: systemd-run 命令构建和管理
-- **特性**:
-  - 版本兼容性检测
-  - 用户会话支持检查
-  - 动态参数构建
-
-#### 1.5 进程监控 (Monitor)
-- **位置**: `apps/scowd/internal/process/parent/monitor.go`
-- **功能**: 子进程运行状态监控
-- **特性**:
-  - 退出代码分析
-  - 资源使用统计
-  - 异常检测和报告
-
-### 2. 配置系统
-
-#### 2.1 配置结构
-```yaml
-childProcess:
-  resourceLimits:
-    enabled: true      # 是否启用资源限制
-    cpuCores: 2        # CPU核数限制
-    memoryMB: 1024     # 内存限制（MB）
-```
-
-#### 2.2 配置文件位置
-- **路径**: 可执行文件所在目录下的 `configs/scowd.yaml`。
-- **加载**: 按文件修改时间缓存；修改配置会在后续读取时加载，不会自动修改已经启动的子进程资源限制。
-- **回退**: 文件无法访问时可复用已有缓存；子进程命令构造阶段读取配置失败会使用标准 exec。主进程首次启动读取配置失败则退出。
-
-## 技术实现
-
-### 1. 资源限制实现
-
-#### 1.1 Systemd-run 集成
-
-**优势**:
-- 利用 systemd 的 cgroup 机制进行资源限制
-- 支持精确的 CPU 和内存控制
-- 自动进程清理和资源回收
-- 与系统资源管理器深度集成
-
-**实现细节**:
-```bash
-# 以下为命令结构示意，实际参数由程序构造。
-systemd-run \
-  --scope --collect \
-  --property=CPUQuota=200% \
-  --property=MemoryMax=1024M \
-  --setenv=HOME=/home/example \
-  --setenv=USER=example \
-  --setenv=LOGNAME=example \
-  --setenv=XDG_RUNTIME_DIR=/run/user/1000 \
-  --setenv=PORT=10000 \
-  --setenv=PUBLIC_KEY=... \
-  --setenv=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-  --setenv=TERM=xterm-256color \
-  -- /scowd/scowd --child example
-```
-
-程序根据用户会话检查结果决定是否增加 `--user`。当前命令不传 `--uid/--gid`，子进程启动后的身份切换由 `apps/scowd/internal/process/child/child.go` 完成。
-
-#### 1.2 版本兼容性
-
-**内存参数选择**:
-- systemd >= 230: 使用 `MemoryMax`
-- systemd < 230: 使用 `MemoryLimit`
-- 自动检测版本并选择合适参数
-
-**检测机制**:
-```go
-func getMemoryLimitParameter() string {
-    // 1. 执行 systemctl --version
-    // 2. 解析版本号
-    // 3. 根据版本选择参数
-    // 4. 错误时回退到 MemoryLimit
-}
-```
-
-#### 1.3 用户会话支持
-
-**检查条件**:
-当前实现通过 `systemctl --user is-active default.target` 的返回状态判断会话是否可用。
-
-**会话选择逻辑**:
-- 检查成功: 使用 `--user` 参数
-- 检查失败: 使用系统会话
-- 自动记录选择结果到日志
-
-### 2. 启动策略
-
-#### 2.1 智能回退机制
-
-```
-配置启用资源限制?
-├─ 是 → systemd-run可用?
-│   ├─ 是 → 使用systemd-run启动
-│   └─ 否 → 回退到标准exec启动
-└─ 否 → 直接使用标准exec启动
-```
-
-#### 2.2 可用性测试
-
-**测试步骤**:
-1. 检查 `systemd-run` 命令是否存在
-2. 执行 `systemd-run --version` 验证功能
-3. 可选检查 `--user` 参数支持
-
-**安全性考虑**:
-- 避免执行可能影响系统的测试命令
-- 使用轻量级检查方法
-- 失败时提供详细错误信息
-
-可用性预检查失败会回退到 exec；如果命令已经启动但随后失败，当前实现不会自动重新以 exec 启动。应根据日志处理 systemd、用户会话或权限问题。
-
-### 3. 进程生命周期管理
-
-#### 3.1 启动流程
-
-```
-1. 端口获取 → 2. 用户认证 → 3. 目录创建 → 4. 密钥生成
-     ↓
-5. 命令构建 → 6. 环境配置 → 7. 进程启动 → 8. 监控启动
-     ↓
-9. 健康检查 → 10. 服务就绪
-```
-
-#### 3.2 监控机制
-
-**健康检查**:
-- HTTP 服务就绪检查
-- 最小检查间隔限制（1秒）
-- 自动重试机制
-
-**状态监控**:
-- 进程退出代码分析
-- 资源使用统计
-- 异常情况报告
-
-#### 3.3 清理机制
-
-**优雅关闭**:
-0. 拒绝新请求并等待已有请求结束（有超时限制）
-1. 发送 SIGTERM 信号
-2. 等待 5 秒
-3. 发送 SIGKILL 信号
-4. 等待 2 秒
-5. 清理资源
-
-**自动清理**:
-- 空闲超时检查（非 Shell 默认 10 分钟；Shell 默认 60 分钟，可通过 `childProcess.shellIdleTimeoutMinutes` 配置）
-- 分批处理避免系统负载
-- 并发清理提高效率
-
-### 4. 安全性设计
-
-#### 4.1 权限控制
-- 子进程以目标用户身份运行
-- 严格的 UID/GID 设置
-- 环境变量隔离
-
-#### 4.2 资源隔离
-- 基于 cgroup 的资源限制
-- 独立的运行时目录
-- 端口池管理避免冲突
-
-#### 4.3 日志安全
-- 敏感信息（公钥/私钥）使用 Debug 级别
-- 详细的错误诊断信息
-- 结构化日志记录
-
-## 配置示例
-
-### 1. 基础配置
+修改 **SCOWD 可执行文件所在目录** 下的 `configs/scowd.yaml`，合并以下配置：
 
 ```yaml
-# scowd.yaml
 childProcess:
   resourceLimits:
     enabled: true
@@ -226,122 +25,69 @@ childProcess:
     memoryMB: 1024
 ```
 
-### 2. 高级配置
+| 配置项 | 默认值 | 当前行为 |
+| --- | --- | --- |
+| `enabled` | `false` | 为 `true` 时尝试通过 systemd 应用限制 |
+| `cpuCores` | `0` | 整数，大于 0 时设置 `CPUQuota=核数 × 100%`；例如 2 对应 `200%`，不绑定特定 CPU 核心 |
+| `memoryMB` | `0` | 整数，大于 0 时设置内存上限；例如 1024 转为 systemd 的 `1024M`（1 GiB） |
 
-```yaml
-childProcess:
-  resourceLimits:
-    enabled: true
-    cpuCores: 4        # 4核CPU限制
-    memoryMB: 2048     # 2GB内存限制
-```
+`cpuCores` 或 `memoryMB` 小于等于 0 时，不设置对应限制；仍可能受上级 cgroup 的限制。禁用时将 `enabled` 设为 `false`。
 
-### 3. 禁用资源限制
+配置按文件修改时间重新加载，资源限制只在**新建子进程**时应用。已有子进程继续使用启动时的设置，需在其退出并重新创建后验证新配置。修改或禁用配置不会立即调整已有 scope。
 
-```yaml
-childProcess:
-  resourceLimits:
-    enabled: false
-```
+## 启动与回退行为
 
-## 运维指南
+1. 未启用限制，或构造子进程命令时读取配置失败：使用普通 exec 启动，不设置上述资源限制。配置文件无法访问时可能复用已有缓存；主进程首次启动读取配置失败则退出。
+2. 启用限制：检查 `systemd-run` 是否存在及 `--version` 输出。检查失败则记录 `falling back to standard exec`，改用普通启动。
+3. 检查通过：使用 `systemd-run --scope --collect` 启动子进程。程序在 SCOWD 主进程的执行环境中运行 `systemctl --user is-active default.target`，成功时增加 `--user`，否则使用系统级 scope。此检查不代表目标用户已建立登录会话。
+4. 内存参数依据 `systemctl --version` 选择：版本至少为 230 时使用 `MemoryMax`，更旧版本或版本检测失败时使用 `MemoryLimit`。这只是内存参数选择，不保证其他参数与旧版本兼容。
 
-### 1. 系统要求
+子进程启动后自行切换到目标用户的 UID、GID 和附加组，`systemd-run` 命令不传 `--uid/--gid`。
 
-**必需组件**:
-- systemd (推荐 >= 230)
-- systemd-run 命令
-- 用户会话支持（可选）
+**可用性检查不会实际创建 scope。** 即使检查通过，仍可能因 bus 连接、权限或参数兼容性问题启动失败；实际启动失败或随后退出时，当前实现不会自动改用 exec 重试。因此，不能仅凭配置或版本检查判断限制已生效。
 
-**检查命令**:
+## 部署验证与排查
+
+在部署节点、SCOWD 服务对应的执行身份和环境中检查：
+
 ```bash
-# 检查systemd版本
 systemctl --version
-
-# 检查systemd-run可用性
 systemd-run --version
-
-# 检查用户会话支持
 systemctl --user is-active default.target
 ```
 
-### 2. 故障排查
+启用配置后，通过 SCOW 发起一次需要用户子进程处理的请求，确认新子进程启动成功，再检查：
 
-#### 2.1 常见问题
+- **启动日志**：有无 `falling back to standard exec`，选择了用户会话还是系统会话，CPU 和内存参数是否符合预期。`Setting CPU limit` / `Setting memory limit` 在命令构造阶段输出，不能作为生效证明。
+- **实际 cgroup**：找到 `scowd --child <用户>` 的 PID，查看其 cgroup 路径，并找到对应 scope：
 
-**问题**: "Failed to create bus connection: Connection refused"
-- **原因**: 用户会话不可用
-- **排查**: 会话预检查失败时不使用 `--user`；命令运行期间的 bus 连接错误不会触发自动重试。检查实际启动命令及会话状态。
-- **检查**: 查看日志中的会话选择信息
+  ```bash
+  # 将 12345 替换为实际子进程 PID
+  child_pid=12345
+  cat "/proc/$child_pid/cgroup"
+  ```
 
-**问题**: 资源限制不生效
-- **检查**: 配置文件中 `enabled` 是否为 `true`
-- **检查**: systemd-run 是否可用
-- **检查**: 日志中的启动命令
+- **scope 属性**：用实际 scope 名称替换下例，核对 CPU 配额与内存上限。若使用用户级 scope，应在对应用户管理器的环境中给 `systemctl` 加 `--user`。
 
-#### 2.2 日志分析
+  ```bash
+  systemctl show run-xxxx.scope \
+    -p ControlGroup -p CPUQuotaPerSecUSec -p MemoryMax -p MemoryLimit
+  ```
 
-**关键日志**:
-```
-# 启动方式选择
-"Using systemd user session for user xxx"
-"User session not available, using system session for user xxx"
+  示例配置通常对应 `CPUQuotaPerSecUSec=2s` 和内存上限 `1073741824` 字节。以当前 systemd 支持的属性及实际 cgroup 为准；cgroup v2 可进一步核对该路径下的 `cpu.max` 和 `memory.max`。
 
-# 资源限制设置
-"Setting CPU limit: X cores (Y% quota)"
-"Setting memory limit: XMB (using MemoryMax/MemoryLimit)"
+- **实际负载**：在测试环境确认 CPU 限流与内存上限行为。内存达到上限可能触发 cgroup OOM，应结合内核日志和 cgroup 事件判断，不能仅凭退出码认定 OOM。
 
-# 回退机制
-"systemd-run test failed, falling back to standard exec"
-```
+若出现 bus 连接或权限错误，检查 SCOWD 服务环境、所选 systemd 管理器及创建 scope 的权限；若限制与预期不符，先确认检查的是配置更新后新建的子进程，且没有回退到普通启动。
 
-### 3. 性能调优
+## 实现位置
 
-#### 3.1 资源配置建议
+以下路径均相对于 `apps/scowd/`：
 
-**CPU 配置**:
-- 轻量级应用: 1-2 核
-- 计算密集型: 2-4 核
-- 根据系统总核数合理分配
-
-**内存配置**:
-- 基础应用: 512MB - 1GB
-- 数据处理: 1GB - 4GB
-- 预留系统内存，避免 OOM
-
-#### 3.2 监控指标
-
-**关键指标**:
-- 子进程数量
-- 资源使用率
-- 启动成功率
-- 异常退出率
-
-## 扩展方向（尚未实现）
-
-### 1. 新资源类型支持
-- 磁盘 I/O 限制
-- 网络带宽限制
-- 文件描述符限制
-
-### 2. 动态资源调整
-- 运行时资源修改
-- 基于负载的自动调整
-- 资源配额管理
-
-### 3. 集群支持
-- 跨节点资源协调
-- 分布式资源池
-- 负载均衡
-
-## 总结
-
-SCOWD 资源限制方案通过 systemd-run 集成提供了强大而灵活的资源管理能力。该方案具有以下优势：
-
-1. **可靠性**: 基于成熟的 systemd 技术栈
-2. **兼容性**: 支持多版本 systemd，自动回退机制
-3. **安全性**: 严格的权限控制和资源隔离
-4. **可维护性**: 清晰的模块化设计和详细的日志记录
-5. **扩展性**: 支持未来功能扩展和性能优化
-
-该方案为 SCOW 系统提供了企业级的资源管理能力，确保多用户环境下的系统稳定性和资源公平性。
+| 文件 | 职责 |
+| --- | --- |
+| `internal/config/config.go` | 配置字段及加载缓存 |
+| `internal/process/parent/starter.go` | 启动方式选择与回退 |
+| `internal/process/parent/systemd.go` | scope 参数、版本和会话检查 |
+| `internal/process/parent/manager.go` | 按用户复用与回收子进程 |
+| `internal/process/child/child.go` | 子进程身份切换 |

@@ -211,7 +211,7 @@ childProcess:
   shellIdleTimeoutMinutes: 60
 ```
 
-资源限制作用于用户子进程，使用 systemd/cgroup；部署节点需支持 `systemd-run`。不可用时可能回退到无资源限制的 exec 模式，须通过日志和实际 cgroup 验证，详见 [资源限制技术方案](resource-limits.md)。
+资源限制作用于用户子进程，使用 systemd/cgroup；部署节点需支持 `systemd-run`。不可用时可能回退到无资源限制的 exec 模式，须通过日志和实际 cgroup 验证，详见 [子进程资源限制](resource-limits.md)。
 
 非 Shell 子进程默认空闲 10 分钟回收。使用过 Shell 的子进程在无连接后按 `shellIdleTimeoutMinutes` 回收，配置小于等于 0 时使用默认 60 分钟；有 Shell 连接时不会按该空闲策略回收。
 

@@ -3,7 +3,7 @@
 SCOWD（SCOW Daemon）部署在集群登录节点，向 SCOW 提供文件操作、存储配额、跨集群文件传输、交互式应用、桌面、Shell 和代理服务。当前 SCOW 要求每个集群登录节点配置 SCOWD 端口。
 
 - [介绍、安装与配置](../../docs/docs/deploy/scowd/configuration.md)
-- [子进程资源限制技术方案](../../docs/docs/deploy/scowd/resource-limits.md)
+- [子进程资源限制](../../docs/docs/deploy/scowd/resource-limits.md)
 
 ## 代码与依赖
 
