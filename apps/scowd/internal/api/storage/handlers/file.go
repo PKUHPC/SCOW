@@ -299,6 +299,10 @@ func (f *FileServer) Download(ctx context.Context,
 	req *connect.Request[apiv1.DownloadRequest],
 	stream *connect.ServerStream[apiv1.DownloadResponse],
 ) error {
+	if err := fileUtils.ValidateDownloadChunkSize(req.Msg.ChunkSizeByte); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
 	childProcess, connectErr := process.GetChildProcess(req.Msg.UserId)
 	if connectErr != nil {
 		return connect.NewError(connect.CodeInvalidArgument, connectErr)
@@ -393,6 +397,10 @@ func (f *FileServer) CompressAndDownload(ctx context.Context,
 	req *connect.Request[apiv1.CompressAndDownloadRequest],
 	stream *connect.ServerStream[apiv1.CompressAndDownloadResponse],
 ) error {
+	if err := fileUtils.ValidateDownloadChunkSize(req.Msg.ChunkSizeByte); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
 	childProcess, connectErr := process.GetChildProcess(req.Msg.UserId)
 	if connectErr != nil {
 		return connect.NewError(connect.CodeInvalidArgument, connectErr)

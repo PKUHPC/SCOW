@@ -2757,6 +2757,10 @@ func (k *K8sFileServer) Download(
 	req *connect.Request[apiv1.DownloadRequest],
 	stream *connect.ServerStream[apiv1.DownloadResponse],
 ) error {
+	if err := fileUtils.ValidateDownloadChunkSize(req.Msg.ChunkSizeByte); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
 	noCheckPermission := req.Msg.GetNoCheckPermission()
 
 	userID := req.Msg.UserId
@@ -2955,6 +2959,10 @@ func (k *K8sFileServer) CompressAndDownload(ctx context.Context,
 	req *connect.Request[apiv1.CompressAndDownloadRequest],
 	stream *connect.ServerStream[apiv1.CompressAndDownloadResponse],
 ) error {
+	if err := fileUtils.ValidateDownloadChunkSize(req.Msg.ChunkSizeByte); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
 	// 获取用户家目录实例
 	root, err := getUserHomeRoot(req.Msg.UserId)
 	if err != nil {

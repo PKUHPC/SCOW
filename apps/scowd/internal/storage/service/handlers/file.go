@@ -1199,6 +1199,9 @@ func (f *FileServer) Download(ctx context.Context,
 	req *connect.Request[apiv1.DownloadRequest],
 	stream *connect.ServerStream[apiv1.DownloadResponse],
 ) error {
+	if err := fileUtils.ValidateDownloadChunkSize(req.Msg.ChunkSizeByte); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
 
 	// 验证limit参数, 不传LimitBytes时，LimitBytes为nil
 	if req.Msg.LimitBytes != nil && *req.Msg.LimitBytes <= 0 {
@@ -1303,6 +1306,10 @@ func (f *FileServer) CompressAndDownload(ctx context.Context,
 	req *connect.Request[apiv1.CompressAndDownloadRequest],
 	stream *connect.ServerStream[apiv1.CompressAndDownloadResponse],
 ) error {
+	if err := fileUtils.ValidateDownloadChunkSize(req.Msg.ChunkSizeByte); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
 	// 检查请求的文件
 	for _, resourcePath := range req.Msg.Paths {
 		resourceInfo, err := os.Stat(resourcePath)

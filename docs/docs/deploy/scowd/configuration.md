@@ -226,6 +226,12 @@ ai:
 
 `ai.enabled=true` 时 `sharedFolderPath` 必填，启用相应 AI 文件处理方式；不能将此开关理解为跳过所有文件路径或权限检查。`containerRuntime` 支持 `containerd`、`docker`，未配置时使用 containerd。
 
+### 文件下载分块
+
+门户的普通下载和压缩下载均由 portal-server 使用环境变量 `DOWNLOAD_CHUNK_SIZE` 指定分块大小，默认 `3145728` 字节（3 MiB）。portal-web 不接收浏览器传入的分块大小，只转发下载数据流。
+
+SCOWD 的 `Download` 和 `CompressAndDownload` 接口要求 `chunk_size_byte` 在 **1～3145728 字节**之间；零值、未传值或超出上限均返回 `InvalidArgument`。该检查覆盖主进程转发、用户子进程和 K8s 模式，并在访问文件或分配缓冲区前执行。已有部署若自定义了更大的 `DOWNLOAD_CHUNK_SIZE`，升级前需将其调至该范围内。
+
 ### 跨集群文件传输
 
 在对应集群的 SCOW 配置中设置：
