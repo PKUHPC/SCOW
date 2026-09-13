@@ -3,10 +3,10 @@ package adapter_storage_routes
 import (
 	"net/http"
 
-	commonMiddlewares "scowd/internal/api/middlewares"
-	"scowd/internal/process/middlewares"
-	"scowd/internal/storage/service/handlers"
-	"scowd/protos/gen/api/storage/apiv1connect"
+	commonMiddlewares "github.com/PKUHPC/private-scow/apps/scowd/internal/api/middlewares"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/middlewares"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/service/handlers"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage/apiv1connect"
 
 	"connectrpc.com/connect"
 )

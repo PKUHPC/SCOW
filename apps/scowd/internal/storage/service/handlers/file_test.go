@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	apiv1 "scowd/protos/gen/api/storage"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"connectrpc.com/connect"
 )

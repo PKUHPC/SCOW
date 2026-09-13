@@ -6,9 +6,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"scowd/internal/auth"
-	"scowd/internal/storage/disk"
-	apiv1 "scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/disk"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"github.com/sirupsen/logrus"
 )

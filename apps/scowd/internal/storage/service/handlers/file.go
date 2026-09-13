@@ -16,12 +16,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"scowd/internal/config"
-	"scowd/internal/auth"
-	global_child "scowd/internal/process/childstate"
-	fileUtils "scowd/internal/storage/file"
-	storageUtils "scowd/internal/storage/disk"
-	apiv1 "scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	global_child "github.com/PKUHPC/private-scow/apps/scowd/internal/process/childstate"
+	storageUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/disk"
+	fileUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/file"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"connectrpc.com/connect"
 	"github.com/gabriel-vasile/mimetype"

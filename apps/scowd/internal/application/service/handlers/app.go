@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"scowd/internal/config"
-	"scowd/internal/auth"
-	"scowd/internal/utils"
-	"scowd/internal/application/submission"
-	"scowd/internal/desktop"
-	apiv1 "scowd/protos/gen/api/application"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/application/submission"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/desktop"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
 	"strconv"
 	"strings"
 

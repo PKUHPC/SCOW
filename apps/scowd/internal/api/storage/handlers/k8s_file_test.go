@@ -7,15 +7,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"scowd/internal/config"
-	apiv1 "scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"connectrpc.com/connect"
 )
 
 // TestGetRelativePathForUser 测试用户路径转换函数
 func TestGetRelativePathForUser(t *testing.T) {
-	// 获取当前用户信息
+	// 使用登录用户名（Username）查找用户，Name 是可能为空的显示名称。
 	currentUser, err := user.Current()
 	t.Logf("currentUser: %+v", currentUser)
 	if err != nil {
@@ -31,21 +31,21 @@ func TestGetRelativePathForUser(t *testing.T) {
 	}{
 		{
 			name:         "valid path in home directory",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: filepath.Join(currentUser.HomeDir, "test", "file.txt"),
 			wantErr:      false,
 			expected:     filepath.Join("test", "file.txt"),
 		},
 		{
 			name:         "home directory itself",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: currentUser.HomeDir,
 			wantErr:      false,
 			expected:     ".",
 		},
 		{
 			name:         "path outside home directory",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: filepath.Join(filepath.Dir(currentUser.HomeDir), "other"),
 			wantErr:      true,
 		},
@@ -58,26 +58,26 @@ func TestGetRelativePathForUser(t *testing.T) {
 		// 边界情况测试
 		{
 			name:         "empty path",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: "",
 			wantErr:      true,
 		},
 		{
 			name:         "relative path input",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: "relative/path",
 			wantErr:      true,
 		},
 		{
 			name:         "path with double slashes",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: filepath.Join(currentUser.HomeDir, "test//file.txt"),
 			wantErr:      false,
 			expected:     filepath.Join("test", "file.txt"),
 		},
 		{
 			name:         "path with dot segments",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: filepath.Join(currentUser.HomeDir, "./test/./file.txt"),
 			wantErr:      false,
 			expected:     filepath.Join("test", "file.txt"),
@@ -100,7 +100,7 @@ func TestGetRelativePathForUser(t *testing.T) {
 
 // TestGetRelativePathForRoot 测试根据共享文件夹状态的路径转换函数
 func TestGetRelativePathForRoot(t *testing.T) {
-	// 获取当前用户信息
+	// 使用登录用户名（Username）查找用户，Name 是可能为空的显示名称。
 	currentUser, err := user.Current()
 	if err != nil {
 		t.Skipf("Cannot get current user: %v", err)
@@ -125,7 +125,7 @@ func TestGetRelativePathForRoot(t *testing.T) {
 	}{
 		{
 			name:         "shared folder path",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: "/shared/test/file.txt",
 			inShared:     true,
 			wantErr:      false,
@@ -133,7 +133,7 @@ func TestGetRelativePathForRoot(t *testing.T) {
 		},
 		{
 			name:         "shared folder root",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: "/shared",
 			inShared:     true,
 			wantErr:      false,
@@ -141,14 +141,14 @@ func TestGetRelativePathForRoot(t *testing.T) {
 		},
 		{
 			name:         "path outside shared folder",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: "/other/path",
 			inShared:     true,
 			wantErr:      true,
 		},
 		{
 			name:         "user home path when not in shared",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: filepath.Join(currentUser.HomeDir, "test.txt"),
 			inShared:     false,
 			wantErr:      false,
@@ -156,7 +156,7 @@ func TestGetRelativePathForRoot(t *testing.T) {
 		},
 		{
 			name:         "path outside user home when not in shared",
-			userID:       currentUser.Name,
+			userID:       currentUser.Username,
 			absolutePath: "/tmp/test.txt",
 			inShared:     false,
 			wantErr:      true,

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"strings"
 
-	apiv1 "scowd/protos/gen/api/storage"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
-	"scowd/internal/storage/filesystem"
-	storageUtils "scowd/internal/storage/disk"
+	storageUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/disk"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/filesystem"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

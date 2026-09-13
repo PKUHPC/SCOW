@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"scowd/internal/config"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
 
 	"github.com/sirupsen/logrus"
 )

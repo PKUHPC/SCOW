@@ -10,15 +10,15 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"scowd/internal/api/utils/process"
-	"scowd/internal/api/utils/request"
-	customError "scowd/internal/api/rpcerror"
-	"scowd/internal/auth"
-	"scowd/internal/process/parent"
-	fileUtils "scowd/internal/storage/file"
+	customError "github.com/PKUHPC/private-scow/apps/scowd/internal/api/rpcerror"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/process"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/request"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
+	fileUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/file"
 
-	apiv1 "scowd/protos/gen/api/storage"
-	"scowd/protos/gen/api/storage/apiv1connect"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage/apiv1connect"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

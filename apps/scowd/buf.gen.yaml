@@ -1,5 +1,14 @@
 version: v2
 clean: true
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      path: api/application
+      value: github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application;apiv1
+    - file_option: go_package
+      path: api/storage
+      value: github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage;apiv1
 plugins:
   - local: ["go", "tool", "google.golang.org/protobuf/cmd/protoc-gen-go"]
     out: protos/gen

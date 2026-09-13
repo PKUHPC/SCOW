@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"scowd/internal/config"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
 )
 
 // 自定义的日志格式化器，在每条日志消息前添加一个前缀

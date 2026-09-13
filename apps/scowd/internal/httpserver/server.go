@@ -9,13 +9,13 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	apiApplicationRoutes "scowd/internal/api/application/routes"
-	apiStorageRoutes "scowd/internal/api/storage/routes"
-	"scowd/internal/config"
-	"scowd/internal/storage/filetransfer"
-	globalChild "scowd/internal/process/childstate"
-	servicesApplicationRoutes "scowd/internal/application/service/routes"
-	servicesStorageRoutes "scowd/internal/storage/service/routes"
+	apiApplicationRoutes "github.com/PKUHPC/private-scow/apps/scowd/internal/api/application/routes"
+	apiStorageRoutes "github.com/PKUHPC/private-scow/apps/scowd/internal/api/storage/routes"
+	servicesApplicationRoutes "github.com/PKUHPC/private-scow/apps/scowd/internal/application/service/routes"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	globalChild "github.com/PKUHPC/private-scow/apps/scowd/internal/process/childstate"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/filetransfer"
+	servicesStorageRoutes "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/service/routes"
 )
 
 func InitMainHttpService(scowdConfig *config.ScowdConfig, transferTaskManager *filetransfer.TaskManager) *http.Server {

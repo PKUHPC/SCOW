@@ -9,7 +9,7 @@ import (
 	"sync"
 	"syscall"
 
-	"scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
 )
 
 // 创建用户隔离目录使用的前缀黑名单（/opt, /home可能会使用，不在黑名单中定义）

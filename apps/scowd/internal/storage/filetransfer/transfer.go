@@ -14,12 +14,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"scowd/internal/config"
-	"scowd/internal/utils"
-	"scowd/internal/utils/client"
-	fileUtils "scowd/internal/storage/file"
-	apiv1 "scowd/protos/gen/api/storage"
-	"scowd/protos/gen/api/storage/apiv1connect"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	fileUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/file"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils/client"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage/apiv1connect"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"

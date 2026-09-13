@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	tlsUtil "github.com/PKUHPC/private-scow/apps/scowd/internal/tls"
 	"io"
 	"net"
-	"scowd/internal/config"
-	tlsUtil "scowd/internal/tls"
 	"time"
 
 	"github.com/sirupsen/logrus"

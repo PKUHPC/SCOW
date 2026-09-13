@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 	"io"
 	"net/http"
-	apiv1 "scowd/protos/gen/api/storage"
 	"strings"
 	"time"
 

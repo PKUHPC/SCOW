@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
 
-	httpUtils "scowd/internal/httpserver/httputil"
+	httpUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/httpserver/httputil"
 
 	"github.com/sirupsen/logrus"
 )

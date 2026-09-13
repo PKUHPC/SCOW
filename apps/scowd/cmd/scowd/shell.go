@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"scowd"
+	"github.com/PKUHPC/private-scow/apps/scowd"
 )
 
 var scowShellFileSh = scowd.ShellScript

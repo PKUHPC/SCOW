@@ -3,12 +3,12 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"regexp"
-	"scowd/internal/config"
 	"strings"
 	"time"
 

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"scowd/internal/config"
-	"scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
 
 	"github.com/sirupsen/logrus"
 )

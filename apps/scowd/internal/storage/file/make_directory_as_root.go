@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

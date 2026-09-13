@@ -20,10 +20,11 @@ ENV GOPATH=/go
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 ENV GOPROXY=https://goproxy.cn,direct
 
-WORKDIR /app/apps/scowd
-COPY apps/scowd/go.mod apps/scowd/go.sum ./
+WORKDIR /app
+COPY go.mod go.sum ./
 RUN go mod download
 
+WORKDIR /app/apps/scowd
 COPY apps/scowd/ ./
 COPY libs/protos/scowd/protos/ /app/libs/protos/scowd/protos/
 RUN make build ARCH="${TARGETARCH}" VERSION="${VERSION}" EXPIRE_TIME="${EXPIRE_TIME}"

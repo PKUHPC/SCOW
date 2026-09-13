@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/net/http2"
 
-	"scowd/internal/config"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
 )
 
 type ClientCreator[C any] func(httpClient *http.Client, url string) C

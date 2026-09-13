@@ -1,8 +1,8 @@
 package stream
 
 import (
-	"scowd/internal/application/image"
-	apiv1 "scowd/protos/gen/api/application"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/application/image"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
 	"sync"
 
 	"connectrpc.com/connect"

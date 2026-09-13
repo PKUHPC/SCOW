@@ -3,8 +3,8 @@ package tls
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
 	"os"
-	"scowd/internal/config"
 
 	"github.com/sirupsen/logrus"
 )

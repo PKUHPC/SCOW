@@ -2,12 +2,12 @@ package filetransfer
 
 import (
 	"fmt"
-	"scowd/internal/config"
-	"scowd/internal/utils"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils"
 	"sync"
 	"time"
 
-	fileUtils "scowd/internal/storage/file"
+	fileUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/file"
 
 	"github.com/sirupsen/logrus"
 )

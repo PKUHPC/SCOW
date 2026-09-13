@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"scowd/internal/auth"
-	apiv1 "scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"github.com/sirupsen/logrus"
 )

@@ -1,13 +1,13 @@
 package routes
 
 import (
+	commonMiddlewares "github.com/PKUHPC/private-scow/apps/scowd/internal/api/middlewares"
 	"net/http"
-	commonMiddlewares "scowd/internal/api/middlewares"
 
-	"scowd/internal/api/application/handlers"
-	"scowd/internal/desktop/dao"
-	"scowd/internal/desktop/repository"
-	"scowd/protos/gen/api/application/apiv1connect"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/application/handlers"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/desktop/dao"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/desktop/repository"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application/apiv1connect"
 
 	"connectrpc.com/connect"
 )

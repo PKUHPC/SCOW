@@ -8,14 +8,14 @@ import (
 	"net/http"
 	"sync"
 
-	"scowd/internal/api/utils"
-	"scowd/internal/api/utils/process"
-	customError "scowd/internal/api/rpcerror"
-	"scowd/internal/storage/filetransfer"
-	"scowd/internal/process/parent"
+	customError "github.com/PKUHPC/private-scow/apps/scowd/internal/api/rpcerror"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/process"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/filetransfer"
 
-	apiv1 "scowd/protos/gen/api/storage"
-	"scowd/protos/gen/api/storage/apiv1connect"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage/apiv1connect"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

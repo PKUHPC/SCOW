@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"scowd/internal/api/utils/process"
-	"scowd/internal/api/utils/request"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/process"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/request"
 
-	apiv1 "scowd/protos/gen/api/application"
-	"scowd/protos/gen/api/application/apiv1connect"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application/apiv1connect"
 
 	"connectrpc.com/connect"
 )

@@ -2,7 +2,7 @@ package request
 
 import (
 	"encoding/base64"
-	"scowd/internal/process/parent"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
 
 	"connectrpc.com/connect"
 )

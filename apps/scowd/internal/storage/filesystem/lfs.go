@@ -10,9 +10,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"scowd/internal/auth"
-	storageUtils "scowd/internal/storage/disk"
-	apiv1 "scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	storageUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/disk"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 )
 
 type LfsAdapter struct {

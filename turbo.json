@@ -56,23 +56,88 @@
     "@scow/scow-adapters#lint": {
       "dependsOn": ["prepareDev"],
       "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "buf.genCrane.yaml", "buf.genCrane-ai.yaml"]
-    }
-    ,"@scow/scowd#build": {
-      "dependsOn": ["prepareDev"],
-      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"],
-      "outputs": ["build/**", "protos/gen/**"]
+    },
+    "@scow/scowd#build": {
+      "dependsOn": [
+        "prepareDev"
+      ],
+      "inputs": [
+        "**/*.go",
+        "assets/**",
+        "configs/**",
+        "Makefile",
+        "package.json",
+        "buf.gen.yaml",
+        "$TURBO_ROOT$/go.mod",
+        "$TURBO_ROOT$/go.sum",
+        "$TURBO_ROOT$/go.work",
+        "$TURBO_ROOT$/go.work.sum",
+        "$TURBO_ROOT$/apps/scow-adapters/go.mod",
+        "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"
+      ],
+      "env": [
+        "ARCH",
+        "VERSION",
+        "EXPIRE_TIME"
+      ],
+      "outputs": [
+        "build/**",
+        "protos/gen/**"
+      ]
     },
     "@scow/scowd#prepareDev": {
-      "inputs": ["buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"],
-      "outputs": ["protos/gen/**"]
+      "inputs": [
+        "Makefile",
+        "package.json",
+        "buf.gen.yaml",
+        "$TURBO_ROOT$/go.mod",
+        "$TURBO_ROOT$/go.sum",
+        "$TURBO_ROOT$/go.work",
+        "$TURBO_ROOT$/go.work.sum",
+        "$TURBO_ROOT$/apps/scow-adapters/go.mod",
+        "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"
+      ],
+      "outputs": [
+        "protos/gen/**"
+      ]
     },
     "@scow/scowd#lint": {
-      "dependsOn": ["prepareDev"],
-      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"]
+      "dependsOn": [
+        "prepareDev"
+      ],
+      "inputs": [
+        "**/*.go",
+        "assets/**",
+        "configs/**",
+        "Makefile",
+        "package.json",
+        "buf.gen.yaml",
+        "$TURBO_ROOT$/go.mod",
+        "$TURBO_ROOT$/go.sum",
+        "$TURBO_ROOT$/go.work",
+        "$TURBO_ROOT$/go.work.sum",
+        "$TURBO_ROOT$/apps/scow-adapters/go.mod",
+        "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"
+      ]
     },
     "@scow/scowd#test": {
-      "dependsOn": ["prepareDev"],
-      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "buf.gen.yaml", "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"],
+      "dependsOn": [
+        "prepareDev"
+      ],
+      "inputs": [
+        "**/*.go",
+        "assets/**",
+        "configs/**",
+        "Makefile",
+        "package.json",
+        "buf.gen.yaml",
+        "$TURBO_ROOT$/go.mod",
+        "$TURBO_ROOT$/go.sum",
+        "$TURBO_ROOT$/go.work",
+        "$TURBO_ROOT$/go.work.sum",
+        "$TURBO_ROOT$/apps/scow-adapters/go.mod",
+        "$TURBO_ROOT$/libs/protos/scowd/protos/**/*.proto"
+      ],
       "outputs": []
     }
   }

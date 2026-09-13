@@ -3,9 +3,9 @@ package process
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
 	"net"
 	"net/http"
-	"scowd/internal/process/parent"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"

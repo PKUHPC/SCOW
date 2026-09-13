@@ -2,8 +2,8 @@ package process
 
 import (
 	"errors"
-	customError "scowd/internal/api/rpcerror"
-	"scowd/internal/process/parent"
+	customError "github.com/PKUHPC/private-scow/apps/scowd/internal/api/rpcerror"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/parent"
 
 	"github.com/sirupsen/logrus"
 )

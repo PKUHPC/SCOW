@@ -6,7 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"scowd/internal/process/common"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/common"
 	"sync"
 )
 

@@ -3,16 +3,16 @@ package filetransfer
 import (
 	"context"
 	"fmt"
+	fileUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/file"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils/buzhash32"
 	"io"
 	"os"
-	"scowd/internal/utils"
-	"scowd/internal/utils/buzhash32"
-	fileUtils "scowd/internal/storage/file"
 	"slices"
 	"sync"
 	"syscall"
 
-	apiv1 "scowd/protos/gen/api/storage"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"github.com/sirupsen/logrus"
 	"github.com/zeebo/xxh3"

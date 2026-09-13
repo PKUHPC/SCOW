@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"scowd/internal/config"
-	httpUtils "scowd/internal/httpserver/httputil"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	httpUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/httpserver/httputil"
 
 	"github.com/sirupsen/logrus"
 )

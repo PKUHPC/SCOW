@@ -2,7 +2,7 @@ package app
 
 import (
 	"encoding/json"
-	apiv1 "scowd/protos/gen/api/application"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"

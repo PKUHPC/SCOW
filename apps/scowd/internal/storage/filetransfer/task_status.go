@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
 
 	"github.com/sirupsen/logrus"
 )

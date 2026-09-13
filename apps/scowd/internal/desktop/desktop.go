@@ -3,10 +3,10 @@ package desktop
 import (
 	"bytes"
 	"fmt"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"scowd/internal/auth"
 	"strconv"
 	"strings"
 

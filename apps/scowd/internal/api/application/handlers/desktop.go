@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"time"
 
-	"scowd/internal/api/utils/process"
-	"scowd/internal/api/utils/request"
-	"scowd/internal/desktop/model"
-	"scowd/internal/desktop/repository"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/process"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/request"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/desktop/model"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/desktop/repository"
 
-	apiv1 "scowd/protos/gen/api/application"
-	"scowd/protos/gen/api/application/apiv1connect"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application/apiv1connect"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 

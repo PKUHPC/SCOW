@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"scowd/internal/process/childstate"
-	"scowd/internal/process/common"
-	"scowd/internal/utils/security"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/childstate"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/process/common"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils/security"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

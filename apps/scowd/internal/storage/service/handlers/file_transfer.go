@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
-	"scowd/internal/utils"
-	"scowd/internal/utils/buzhash32"
-	fileUtils "scowd/internal/storage/file"
-	"scowd/internal/storage/disk"
-	apiv1 "scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/disk"
+	fileUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/storage/file"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils/buzhash32"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

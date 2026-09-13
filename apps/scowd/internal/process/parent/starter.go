@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"scowd/internal/config"
-	"scowd/internal/auth"
-	httpUtils "scowd/internal/httpserver/httputil"
-	"scowd/internal/utils/security"
-	"scowd/internal/utils/system"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	httpUtils "github.com/PKUHPC/private-scow/apps/scowd/internal/httpserver/httputil"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils/security"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils/system"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"

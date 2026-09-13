@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"context"
-	global_child "scowd/internal/process/childstate"
+	global_child "github.com/PKUHPC/private-scow/apps/scowd/internal/process/childstate"
 	"time"
 
 	"connectrpc.com/connect"

@@ -2,11 +2,11 @@
 
 SCOWD 是运行在集群节点上的 Go 服务，提供文件、存储配额、交互式应用、桌面、Shell 和代理能力。
 
-源码迁自 [PKUHPC/SCOWD](https://github.com/PKUHPC/SCOWD)，基于提交 `6825724b4d4784553890ef3cbeb3cf55fe84ed70`（`feat: v1.12.0 (#115)`）。服务继续使用独立的 `scowd` Go module；`libs/scowd` 是 TypeScript 客户端库。
+源码迁自 [PKUHPC/SCOWD](https://github.com/PKUHPC/SCOWD)，基于提交 `6825724b4d4784553890ef3cbeb3cf55fe84ed70`（`feat: v1.12.0 (#115)`）。服务属于根 module `github.com/PKUHPC/private-scow`，依赖和 proto 生成工具由根 `go.mod`、`go.sum` 与 `go.work` 统一管理；`libs/scowd` 是 TypeScript 客户端库。
 
 ## 本地开发与构建
 
-需要 Linux、Go 1.25.6 或更新版本、make 和仓库指定的 pnpm。以下命令在本目录执行：
+需要 Linux、根 `go.mod` 指定的 Go 版本、make 和仓库指定的 pnpm。以下命令在本目录执行：
 
 ```bash
 # 从本仓库 libs/protos/scowd/protos 生成 Go 和 Connect-RPC 代码
@@ -28,7 +28,9 @@ ARCH=arm64 pnpm build:docker
 
 也可在仓库根目录执行 `pnpm build:scowd`。根目录的 `pnpm prepareDev`、`pnpm lint`、`pnpm test` 会包含本服务；`pnpm build:scow` 不包含独立部署的 SCOWD。
 
-Proto 唯一来源是 `../../libs/protos/scowd/protos`。生成文件位于 `protos/gen`，不提交到 Git；不再通过 GitHub token 或远端分支/tag 获取 proto。修改 proto 后重新运行 `pnpm prepareDev`。
+Proto 唯一来源是 `../../libs/protos/scowd/protos`。生成文件位于 `protos/gen`，不提交到 Git；不再通过 GitHub token 或远端分支/tag 获取 proto。修改 proto 后重新运行 `pnpm prepareDev`。Buf managed 模式将 Go 包路径映射到根 module，保留 `apiv1` 包名及 RPC 协议，无需修改共享 proto。`go tool` 会按根 `go.mod` 的 `tool` 声明自动下载和编译生成工具。
+
+SCOWD 不再维护独立的 `go.mod/go.sum`，也无需作为单独 module 加入 `go.work`。新增 Go 依赖时在仓库根目录维护，先生成 proto，再运行 `go mod tidy` 整理根 module 依赖。Docker 与 scowctl 一样使用根 `go.mod/go.sum` 构建，只复制所需服务源码。
 
 ## 运行
 
@@ -43,8 +45,8 @@ Proto 唯一来源是 `../../libs/protos/scowd/protos`。生成文件位于 `pro
 
 ## 流水线
 
-- `test-build-publish.yaml` 构建 SCOWD：PR/master 构建 amd64，tag 同时构建 arm64。发布路径为 `scowbin/scowd/<master|tag|pr-N>/scowd-<amd64|arm64>`，PR 关闭时清理对应产物。
-- `build-multi-arch-expire.yaml` 支持手动构建 arm64 和注入 `expire_time`，使用 `target` 指定产物目录。默认不注入有效期；指定时须使用 RFC3339 时间格式。
+- `scowd.yaml` 构建 SCOWD：PR/master 构建 amd64，tag 同时构建 arm64。发布路径为 `scowbin/scowd/<master|tag|pr-N>/scowd-<amd64|arm64>`，PR 关闭时清理对应产物。
+- 同一流水线支持手动构建 arm64 和注入 `expire_time`，使用 `target` 指定产物目录。默认不注入有效期；指定时须使用 RFC3339 时间格式。
 - Docker 构建使用 `docker/Dockerfile.scowd`，只导出二进制。proto 与服务源码来自同一次 checkout，版本号使用当前 SCOW 分支/tag。
 
 ## 集群回归验证

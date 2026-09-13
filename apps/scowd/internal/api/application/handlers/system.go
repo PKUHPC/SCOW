@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application/apiv1connect"
 	"net/http"
-	"scowd/internal/auth"
-	apiv1 "scowd/protos/gen/api/application"
-	"scowd/protos/gen/api/application/apiv1connect"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

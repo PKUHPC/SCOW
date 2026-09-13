@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"scowd/internal/config"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
 )
 
 var runtimeCommands = map[config.ContainerRuntime]string{

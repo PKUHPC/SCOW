@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"scowd/internal/storage/filesystem"
-	apiv1 "scowd/protos/gen/api/storage"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/filesystem"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage"
 
 	"connectrpc.com/connect"
 )

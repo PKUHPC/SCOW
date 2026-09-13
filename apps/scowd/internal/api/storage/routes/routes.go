@@ -1,12 +1,12 @@
 package routes
 
 import (
+	commonMiddlewares "github.com/PKUHPC/private-scow/apps/scowd/internal/api/middlewares"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/api/storage/handlers"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/config"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/storage/filetransfer"
+	"github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/storage/apiv1connect"
 	"net/http"
-	"scowd/internal/api/storage/handlers"
-	"scowd/internal/config"
-	"scowd/internal/storage/filetransfer"
-	commonMiddlewares "scowd/internal/api/middlewares"
-	"scowd/protos/gen/api/storage/apiv1connect"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"

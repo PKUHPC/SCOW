@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/PKUHPC/private-scow/apps/scowd"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"scowd"
 
 	"github.com/sirupsen/logrus"
 )

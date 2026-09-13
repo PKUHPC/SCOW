@@ -8,12 +8,12 @@ import (
 	"regexp"
 	"strings"
 
-	stream "scowd/internal/api/utils/stream"
-	"scowd/internal/auth"
-	"scowd/internal/utils"
-	"scowd/internal/application/container"
-	"scowd/internal/application/image"
-	apiv1 "scowd/protos/gen/api/application"
+	stream "github.com/PKUHPC/private-scow/apps/scowd/internal/api/utils/stream"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/application/container"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/application/image"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/auth"
+	"github.com/PKUHPC/private-scow/apps/scowd/internal/utils"
+	apiv1 "github.com/PKUHPC/private-scow/apps/scowd/protos/gen/api/application"
 
 	"connectrpc.com/connect"
 	"github.com/sirupsen/logrus"
