@@ -189,7 +189,13 @@ export class ScowdFileDriver implements FileDriver {
 
       // 仅当完全匹配含 {{userId}} 的快捷路径时，自动创建用户私有目录（权限 700）
       try {
-        await this.client.file.makeDirectory({ userId: this.userId, dirPath: path, mode: "0700" });
+        // 上方已精确匹配用户私有入口路径，显式授权 SCOWD 以 root 代建。
+        await this.client.file.makeDirectory({
+          userId: this.userId,
+          dirPath: path,
+          mode: "0700",
+          noCheckPermission: true,
+        });
       } catch (mkErr) {
         this.logger.error(
           `Failed to create user private entry path directory ${path} for user ${this.userId} on cluster ${this.clusterId}.`,

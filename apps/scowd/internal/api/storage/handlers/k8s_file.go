@@ -542,6 +542,10 @@ func (k *K8sFileServer) MakeDirectory(
 	}
 
 	if req.Msg.Mode != nil {
+		// 与普通模式一致，mode 不能隐式绕过用户家目录或共享目录边界。
+		if !req.Msg.GetNoCheckPermission() {
+			return nil, connect.NewError(connect.CodePermissionDenied, errors.New("creating a directory with mode as root requires no_check_permission=true"))
+		}
 		logrus.Infof("k8s creating directory %s with mode %s for user %s", req.Msg.DirPath, *req.Msg.Mode, req.Msg.UserId)
 		dirMode, err := fileUtils.ParseMakeDirMode(req.Msg.Mode, 0775)
 		if err != nil {

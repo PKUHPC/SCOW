@@ -190,8 +190,8 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient, cl
       }
 
       try {
-        // portal-server 的 scowd 侧尚未实现 noCheckPermission 的提权行为，不传递该参数。
-        await client.file.makeDirectory({ userId, dirPath: path, mode: "0700" });
+        // 上方已精确匹配用户私有入口路径，显式授权 SCOWD 以 root 代建。
+        await client.file.makeDirectory({ userId, dirPath: path, mode: "0700", noCheckPermission: true });
       } catch (mkErr) {
         // 用 FAILED_PRECONDITION 统一标识「快捷路径目录自动创建失败」，
         // 前端 list.ts 将其映射为 HTTP 503 / ENTRY_PATH_CREATE_FAILED。

@@ -80,8 +80,11 @@ func (f *FileServer) MakeDirectory(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	// 前端明确传递了 mode，表示需要创建特殊权限目录，允许 root 代创
+	// mode 只指定权限；root 代建必须由已校验目标路径的后端显式授权。
 	if req.Msg.Mode != nil {
+		if !req.Msg.GetNoCheckPermission() {
+			return nil, connect.NewError(connect.CodePermissionDenied, errors.New("creating a directory with mode as root requires no_check_permission=true"))
+		}
 		dirMode, err := fileUtils.ParseMakeDirMode(req.Msg.Mode, 0775)
 		if err != nil {
 			logrus.WithError(err).Errorf("invalid mode for directory %s", req.Msg.DirPath)

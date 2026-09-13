@@ -226,6 +226,14 @@ ai:
 
 `ai.enabled=true` 时 `sharedFolderPath` 必填，启用相应 AI 文件处理方式；不能将此开关理解为跳过所有文件路径或权限检查。`containerRuntime` 支持 `containerd`、`docker`，未配置时使用 containerd。
 
+### 用户私有目录代建
+
+`MakeDirectory` 带 `mode` 的请求使用 root 代建单级目录并转交给指定用户，必须同时显式传入 `noCheckPermission: true`；未传或为 `false` 时返回 `PermissionDenied`。该要求同时适用于普通模式和 K8s 模式，原有系统路径黑名单和隐藏目录限制仍然生效。
+
+`noCheckPermission` 是可信后端完成路径授权后设置的标志，不能直接接受浏览器传值。portal-server 和 AI 仅在路径精确匹配配置中含 `{{userId}}` 的用户私有入口时，使用 `mode: "0700"` 和该标志自动创建目录。普通建目录请求保持原有权限检查。
+
+升级时先更新 portal-server、AI 等调用方，再更新 SCOWD；旧调用方仅传 `mode` 的代建请求会被新版 SCOWD 拒绝。proto 字段保持不变。
+
 ### 文件下载分块
 
 门户的普通下载和压缩下载均由 portal-server 使用环境变量 `DOWNLOAD_CHUNK_SIZE` 指定分块大小，默认 `3145728` 字节（3 MiB）。portal-web 不接收浏览器传入的分块大小，只转发下载数据流。
