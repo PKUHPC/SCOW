@@ -130,9 +130,8 @@ func (c *PacificAdapter) Login() error {
 	}
 
 	jsonData, _ := json.Marshal(authData)
-	c.logger.WithFields(logrus.Fields{
-		"request_payload": string(jsonData),
-	}).Debug("[DEBUG] Login: Sending authentication request")
+	// 登录载荷包含密码，不写入日志。
+	c.logger.Debug("[DEBUG] Login: Sending authentication request")
 
 	req, _ := http.NewRequest("POST", authURL, bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
@@ -158,13 +157,16 @@ func (c *PacificAdapter) Login() error {
 	var authResp AuthResponse
 	body, _ := io.ReadAll(resp.Body)
 	c.logger.WithFields(logrus.Fields{
-		"response_body": string(body),
-		"status_code":   resp.StatusCode,
+		"status_code": resp.StatusCode,
 	}).Debug("[DEBUG] Login: Received authentication response")
 
 	if err := json.Unmarshal(body, &authResp); err != nil {
-		logrus.WithField("response_body", string(body)).Errorf("Failed to parse auth response: %v", err)
-		return fmt.Errorf("failed to parse authentication response: %v", err)
+		// 响应及解析错误可能包含 token 或服务端回显的凭据，日志和返回错误均不带原文。
+		c.logger.WithFields(logrus.Fields{
+			"status_code": resp.StatusCode,
+			"error_type":  fmt.Sprintf("%T", err),
+		}).Error("Failed to parse auth response")
+		return errors.New("failed to parse authentication response")
 	}
 
 	c.AuthToken = authResp.Data.XAuthToken
